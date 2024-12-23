@@ -1,5 +1,5 @@
 {
-  description = "Dioxus Full Stack Demo";
+  description = "Medical Records";
 
   inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
@@ -87,7 +87,7 @@
         frontend = let
           common = {
             src = ./.;
-            pname = "dioxus-fs-demo-frontend";
+            pname = "penguin-nurse-frontend";
             version = "0.0.0";
             cargoExtraArgs = "--features web";
             # nativeBuildInputs = with pkgs; [ pkg-config ];
@@ -126,7 +126,7 @@
         };
 
         frontend-bindgen = pkgs.stdenv.mkDerivation {
-          name = "dioxus-fs-demo-frontend-bindgen";
+          name = "penguin-nurse-frontend-bindgen";
           src = ./.;
 
           buildPhase = ''
@@ -134,7 +134,7 @@
               --target bundler \
               --out-dir pkg \
               --omit-default-module-path \
-              ${frontend.pkg}/bin/dioxus-fs-demo.wasm
+              ${frontend.pkg}/bin/penguin-nurse.wasm
 
             ln -s ${nodePackages}/node_modules ./node_modules
             export PATH="${nodejs}/bin:${nodePackages}/bin:$PATH"
@@ -172,7 +172,7 @@
             version = "0.0.0";
             cargoExtraArgs = "--features server";
             # nativeBuildInputs = with pkgs; [ pkg-config ];
-            buildInputs = with pkgs; [
+            buildInputs = [
               pkgs.postgresql_15
               #   openssl
               #   python3
@@ -214,7 +214,7 @@
           inherit clippy coverage pkg;
         };
 
-        combined = pkgs.runCommand "dioxus-fs-demo" {} ''
+        combined = pkgs.runCommand "penguin-nurse" {} ''
           mkdir -p $out
           mkdir -p $out/bin/public
           cp -r ${backend.pkg}/. $out
@@ -222,16 +222,16 @@
         '';
 
         test_module = pkgs.nixosTest {
-          name = "dioxus-fs-demo-test";
+          name = "penguin-nurse-test";
           nodes.machine = {...}: {
             imports = [
               self.nixosModules.default
             ];
-            services.dioxus-fs-demo = {
+            services.penguin-nurse = {
               enable = true;
               port = 4000;
-              secretsFile = builtins.toFile "dioxus-fs-demo.env" ''
-                DATABASE_URL="postgresql://dioxus_fs_demo:your_secure_password_here@localhost/dioxus_fs_demo"
+              secretsFile = builtins.toFile "penguin-nurse.env" ''
+                DATABASE_URL="postgresql://penguin_nurse:your_secure_password_here@localhost/penguin_nurse"
               '';
             };
             system.stateVersion = "24.11";
@@ -241,16 +241,16 @@
               package = pkgs.postgresql_15;
               extensions = ps: [ps.postgis];
               initialScript = pkgs.writeText "init.psql" ''
-                CREATE DATABASE dioxus_fs_demo;
-                CREATE USER dioxus_fs_demo with encrypted password 'your_secure_password_here';
-                ALTER DATABASE dioxus_fs_demo OWNER TO dioxus_fs_demo;
-                ALTER USER dioxus_fs_demo WITH SUPERUSER;
+                CREATE DATABASE penguin_nurse;
+                CREATE USER penguin_nurse with encrypted password 'your_secure_password_here';
+                ALTER DATABASE penguin_nurse OWNER TO penguin_nurse;
+                ALTER USER penguin_nurse WITH SUPERUSER;
               '';
             };
           };
 
           testScript = ''
-            machine.wait_for_unit("dioxus-fs-demo.service")
+            machine.wait_for_unit("penguin-nurse.service")
             machine.wait_for_open_port(4000)
             machine.succeed("${pkgs.curl}/bin/curl --fail -v http://localhost:4000/_health")
           '';
@@ -282,20 +282,20 @@
               enterShell = ''
                 # export DIOXUS_ASSET_ROOT="dist"
                 export PORT="${toString port}"
-                export DATABASE_URL="postgresql://dioxus_fs_demo:your_secure_password_here@localhost:${toString postgres_port}/dioxus_fs_demo"
+                export DATABASE_URL="postgresql://penguin_nurse:your_secure_password_here@localhost:${toString postgres_port}/penguin_nurse"
               '';
               services.postgres = {
                 enable = true;
                 package = pkgs.postgresql_15.withPackages (ps: [ps.postgis]);
                 listen_addresses = "127.0.0.1";
                 port = postgres_port;
-                initialDatabases = [{name = "dioxus_fs_demo";}];
+                initialDatabases = [{name = "penguin_nurse";}];
                 initialScript = ''
-                  \c dioxus_fs_demo;
-                  CREATE USER dioxus_fs_demo with encrypted password 'your_secure_password_here';
-                  GRANT ALL PRIVILEGES ON DATABASE dioxus_fs_demo TO dioxus_fs_demo;
-                  -- GRANT ALL ON SCHEMA public TO dioxus_fs_demo;
-                  ALTER USER dioxus_fs_demo WITH SUPERUSER;
+                  \c penguin_nurse;
+                  CREATE USER penguin_nurse with encrypted password 'your_secure_password_here';
+                  GRANT ALL PRIVILEGES ON DATABASE penguin_nurse TO penguin_nurse;
+                  -- GRANT ALL ON SCHEMA public TO penguin_nurse;
+                  ALTER USER penguin_nurse WITH SUPERUSER;
                 '';
               };
             }

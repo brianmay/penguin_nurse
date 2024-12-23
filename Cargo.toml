@@ -8,12 +8,23 @@ edition = "2021"
 
 [dependencies]
 dioxus = { version = "0.6.1", features = ["router", "fullstack"] }
+chrono = { version = "0.4.39", features = ["serde"] }
+tracing = { version = "0.1.41" }
+diesel = { version = "2.2.0", features = ["postgres", "chrono"], optional = true }
+axum = { version = "0.7.9", optional = true }
+diesel-async = { version = "0.5.2", features = ["async-connection-wrapper", "mobc", "postgres"], optional = true }
+diesel-derive-enum = { version = "2.1.0", features = ["postgres"], optional = true }
+diesel_migrations = { version = "2.2.0", features = ["postgres"], optional = true }
+dioxus-cli-config = { version = "*", optional = true }
+tokio = { version = "1.42.0", optional = true }
+tracing-subscriber = { version = "0.3.19", optional = true }
 
 [features]
 default = []
 web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
+server = ["dioxus/server", "dioxus-cli-config", "tokio", "axum", "diesel", "diesel-async", "diesel-derive-enum", "diesel_migrations", "tracing-subscriber", "tokio"]
 
 [profile]
 
