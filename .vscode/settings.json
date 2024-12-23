@@ -1,0 +1,10 @@
+{
+    "cSpell.words": [
+        "axum",
+        "conn",
+        "dioxus"
+    ],
+    "rust-analyzer.cargo.features": [
+        "server"
+    ]
+}

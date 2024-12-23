@@ -1,12 +1,10 @@
-use chrono::Utc;
 use diesel::pg::Pg;
-use diesel::prelude::*;
 use diesel_async::async_connection_wrapper::AsyncConnectionWrapper;
 use diesel_async::pooled_connection::mobc::Pool;
+use diesel_async::pooled_connection::mobc::PooledConnection;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use diesel_async::AsyncConnection;
 use diesel_async::AsyncPgConnection;
-use diesel_async::RunQueryDsl;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 
 use std::env;
@@ -14,6 +12,7 @@ use std::env;
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
 pub type DatabasePool = Pool<AsyncPgConnection>;
+pub type DatabaseConnection = PooledConnection<AsyncPgConnection>;
 
 async fn run_migrations<A>(async_connection: A) -> Result<(), Box<dyn std::error::Error>>
 where

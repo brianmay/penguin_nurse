@@ -276,8 +276,9 @@
                 dioxus-cli
                 pkgs.b3sum
                 pkgs.diesel-cli
+                pkgs.diesel-cli-ext
                 pkgs.postgresql_15
-                pkgs.tailwindcss
+                # pkgs.tailwindcss
               ];
               enterShell = ''
                 # export DIOXUS_ASSET_ROOT="dist"

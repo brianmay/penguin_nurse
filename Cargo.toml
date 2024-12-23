@@ -10,7 +10,7 @@ edition = "2021"
 dioxus = { version = "0.6.1", features = ["router", "fullstack"] }
 chrono = { version = "0.4.39", features = ["serde"] }
 tracing = { version = "0.1.41" }
-diesel = { version = "2.2.0", features = ["postgres", "chrono"], optional = true }
+diesel = { version = "2.2.0", features = ["postgres", "chrono", "serde_json"], optional = true }
 axum = { version = "0.7.9", optional = true }
 diesel-async = { version = "0.5.2", features = ["async-connection-wrapper", "mobc", "postgres"], optional = true }
 diesel-derive-enum = { version = "2.1.0", features = ["postgres"], optional = true }
@@ -18,13 +18,26 @@ diesel_migrations = { version = "2.2.0", features = ["postgres"], optional = tru
 dioxus-cli-config = { version = "*", optional = true }
 tokio = { version = "1.42.0", optional = true }
 tracing-subscriber = { version = "0.3.19", optional = true }
+tower-sessions = { version = "0.13.0", optional = true }
+thiserror = "2.0.9"
+async-trait = "0.1.83"
+mobc = { version = "0.8.5", optional = true }
+tap = "1.0.1"
+serde = "1.0.216"
+serde_json = "1.0.134"
+base64 = "0.22.1"
+time = "0.3.37"
+tower-sessions-core = { version = "0.13.0", features = ["deletion-task"] }
+getrandom = { version = "0.2.15", features = ["js"] }
 
 [features]
 default = []
 web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
-server = ["dioxus/server", "dioxus-cli-config", "tokio", "axum", "diesel", "diesel-async", "diesel-derive-enum", "diesel_migrations", "tracing-subscriber", "tokio"]
+server = ["dioxus/server", "dioxus-cli-config", "tokio", "axum", "diesel", "diesel-async", "diesel-derive-enum", "diesel_migrations", "tracing-subscriber", "tokio", "tower-sessions", "mobc"]
+tower-sessions = ["dep:tower-sessions"]
+diesel = ["dep:diesel"]
 
 [profile]
 
@@ -37,3 +50,5 @@ inherits = "dev"
 
 [profile.android-dev]
 inherits = "dev"
+
+[dev-dependencies]
