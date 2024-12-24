@@ -17,9 +17,8 @@ use tap::Pipe;
 use tower_sessions::session::{Id, Record};
 use tracing_subscriber::registry::Data;
 
+use crate::server::database::connection::DatabaseConnection;
 use crate::server::database::schema;
-
-use super::connection::DatabaseConnection;
 
 #[derive(Selectable, Queryable, Debug)]
 #[diesel(table_name = schema::session)]

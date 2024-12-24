@@ -7,10 +7,11 @@ use tower_sessions::session::Record;
 use tower_sessions::{session::Id, session_store};
 use tower_sessions::{ExpiredDeletion, SessionStore};
 
-use crate::server::database::models::session_exists;
+use crate::server::database::models::session::{
+    create_session, delete_expired, delete_session, load_session, session_exists,
+};
 
 use super::database::connection::{DatabaseConnection, DatabasePool};
-use super::database::models::{create_session, delete_expired, delete_session, load_session};
 
 /// An error type for SQLx stores.
 #[derive(Error, Debug)]
