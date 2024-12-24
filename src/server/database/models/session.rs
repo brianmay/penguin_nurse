@@ -20,7 +20,7 @@ use tracing_subscriber::registry::Data;
 use crate::server::database::connection::DatabaseConnection;
 use crate::server::database::schema;
 
-#[derive(Selectable, Queryable, Debug)]
+#[derive(Queryable, Debug)]
 #[diesel(table_name = schema::session)]
 pub struct Session {
     pub id: String,

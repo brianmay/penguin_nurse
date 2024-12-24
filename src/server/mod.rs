@@ -1,5 +1,6 @@
 use dioxus::prelude::*;
 
+pub mod auth;
 pub mod database;
 mod handlers;
 mod session_store;
@@ -12,6 +13,8 @@ use tower_sessions::{cookie::SameSite, ExpiredDeletion, Expiry, SessionManagerLa
 // The entry point for the server
 #[cfg(feature = "server")]
 pub async fn init(app: fn() -> Element) {
+    use axum_login::AuthManagerLayerBuilder;
+
     tracing_subscriber::fmt::init();
 
     let database = database::connection::init().await;
@@ -31,6 +34,15 @@ pub async fn init(app: fn() -> Element) {
             .with_same_site(SameSite::Lax)
     };
 
+    let auth_layer = {
+        // Auth service.
+        //
+        // This combines the session layer with our backend to establish the auth
+        // service which will provide the auth session as a request extension.
+        let backend = auth::Backend::new(database.clone());
+        AuthManagerLayerBuilder::new(backend, session_layer).build()
+    };
+
     // Get the address the server should run on. If the CLI is running, the CLI proxies fullstack into the main address
     // and we use the generated address the CLI gives us
     let address = dioxus_cli_config::fullstack_address_or_localhost();
@@ -44,7 +56,7 @@ pub async fn init(app: fn() -> Element) {
         .serve_dioxus_application(cfg, app)
         .route("/_health", get(health_check))
         .route("/_dioxus", get(dioxus_handler))
-        .layer(session_layer)
+        .layer(auth_layer)
         .layer(Extension(database));
 
     // Finally, we can launch the server

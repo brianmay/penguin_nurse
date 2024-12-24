@@ -6,5 +6,17 @@
     ],
     "rust-analyzer.cargo.features": [
         "server"
+    ],
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 6201,
+            "driver": "PostgreSQL",
+            "name": "penguin_nurse",
+            "database": "penguin_nurse",
+            "username": "penguin_nurse",
+            "password": "your_secure_password_here"
+        }
     ]
 }

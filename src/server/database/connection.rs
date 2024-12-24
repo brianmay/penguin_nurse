@@ -3,9 +3,11 @@ use diesel_async::async_connection_wrapper::AsyncConnectionWrapper;
 use diesel_async::pooled_connection::mobc::Pool;
 use diesel_async::pooled_connection::mobc::PooledConnection;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
+use diesel_async::pooled_connection::PoolError;
 use diesel_async::AsyncConnection;
 use diesel_async::AsyncPgConnection;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use thiserror::Error;
 
 use std::env;
 
@@ -13,6 +15,25 @@ const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
 pub type DatabasePool = Pool<AsyncPgConnection>;
 pub type DatabaseConnection = PooledConnection<AsyncPgConnection>;
+
+/// An error type for SQLx stores.
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error(transparent)]
+    Diesel(#[from] diesel::result::Error),
+
+    #[error(transparent)]
+    Mobc(#[from] mobc::Error<PoolError>),
+
+    #[error(transparent)]
+    Encode(serde_json::Error),
+
+    #[error(transparent)]
+    Decode(serde_json::Error),
+
+    #[error(transparent)]
+    DecodeSlice(#[from] base64::DecodeSliceError),
+}
 
 async fn run_migrations<A>(async_connection: A) -> Result<(), Box<dyn std::error::Error>>
 where

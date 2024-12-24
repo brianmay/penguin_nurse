@@ -1,5 +1,4 @@
 use axum::async_trait;
-use diesel_async::pooled_connection::PoolError;
 use tap::Pipe;
 use thiserror::Error;
 use tower_sessions::cookie::time;
@@ -11,16 +10,14 @@ use crate::server::database::models::session::{
     create_session, delete_expired, delete_session, load_session, session_exists,
 };
 
+use super::database;
 use super::database::connection::{DatabaseConnection, DatabasePool};
 
 /// An error type for SQLx stores.
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("Diesel error: {0}")]
-    Diesel(#[from] diesel::result::Error),
-
-    #[error("MOBC error: {0}")]
-    Mobc(#[from] mobc::Error<PoolError>),
+    Database(#[from] database::connection::Error),
 
     #[error("Error encoding session data: {0}")]
     Encode(serde_json::Error),
@@ -35,8 +32,7 @@ pub enum Error {
 impl From<Error> for session_store::Error {
     fn from(err: Error) -> Self {
         match err {
-            Error::Diesel(inner) => session_store::Error::Backend(inner.to_string()),
-            Error::Mobc(inner) => session_store::Error::Backend(inner.to_string()),
+            Error::Database(inner) => session_store::Error::Backend(inner.to_string()),
             Error::Encode(inner) => session_store::Error::Backend(inner.to_string()),
             Error::Decode(inner) => session_store::Error::Backend(inner.to_string()),
             Error::DecodeSlice(inner) => session_store::Error::Backend(inner.to_string()),
@@ -92,7 +88,8 @@ impl PostgresStore {
     ) -> session_store::Result<bool> {
         session_exists(conn, &id.to_string())
             .await
-            .map_err(Error::Diesel)?
+            .map_err(database::connection::Error::from)
+            .map_err(Error::Database)?
             .pipe(Ok)
     }
 
@@ -101,7 +98,7 @@ impl PostgresStore {
         conn: &mut DatabaseConnection,
         record: &Record,
     ) -> session_store::Result<()> {
-        let json = serde_json::to_value(record).map_err(Error::Encode)?;
+        let json = serde_json::to_value(&record.data).map_err(Error::Encode)?;
 
         create_session(
             conn,
@@ -110,7 +107,8 @@ impl PostgresStore {
             time_to_chrono(record.expiry_date),
         )
         .await
-        .map_err(Error::Diesel)?;
+        .map_err(database::connection::Error::from)
+        .map_err(Error::Database)?;
 
         Ok(())
     }
@@ -119,9 +117,17 @@ impl PostgresStore {
 #[async_trait]
 impl ExpiredDeletion for PostgresStore {
     async fn delete_expired(&self) -> session_store::Result<()> {
-        let mut conn = self.pool.get().await.map_err(Error::Mobc)?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(database::connection::Error::from)
+            .map_err(Error::Database)?;
 
-        delete_expired(&mut conn).await.map_err(Error::Diesel)?;
+        delete_expired(&mut conn)
+            .await
+            .map_err(database::connection::Error::from)
+            .map_err(Error::Database)?;
 
         Ok(())
     }
@@ -130,7 +136,12 @@ impl ExpiredDeletion for PostgresStore {
 #[async_trait]
 impl SessionStore for PostgresStore {
     async fn create(&self, record: &mut Record) -> session_store::Result<()> {
-        let mut conn = self.pool.get().await.map_err(Error::Mobc)?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(database::connection::Error::from)
+            .map_err(Error::Database)?;
 
         while self.id_exists(&mut conn, &record.id).await? {
             record.id = Id::default();
@@ -140,17 +151,28 @@ impl SessionStore for PostgresStore {
     }
 
     async fn save(&self, record: &Record) -> session_store::Result<()> {
-        let mut conn = self.pool.get().await.map_err(Error::Mobc)?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(database::connection::Error::from)
+            .map_err(Error::Database)?;
         self.save_with_conn(&mut conn, record).await?;
         Ok(())
     }
 
     async fn load(&self, session_id: &Id) -> session_store::Result<Option<Record>> {
-        let mut conn = self.pool.get().await.map_err(Error::Mobc)?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(database::connection::Error::from)
+            .map_err(Error::Database)?;
 
         load_session(&mut conn, &session_id.to_string())
             .await
-            .map_err(Error::Diesel)?
+            .map_err(database::connection::Error::from)
+            .map_err(Error::Database)?
             .map_or(Ok(None), |session| {
                 Record {
                     id: session.id.parse().map_err(Error::DecodeSlice)?,
@@ -163,10 +185,16 @@ impl SessionStore for PostgresStore {
     }
 
     async fn delete(&self, session_id: &Id) -> session_store::Result<()> {
-        let mut conn = self.pool.get().await.map_err(Error::Mobc)?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(database::connection::Error::from)
+            .map_err(Error::Database)?;
         delete_session(&mut conn, &session_id.to_string())
             .await
-            .map_err(Error::Diesel)?
+            .map_err(database::connection::Error::from)
+            .map_err(Error::Database)?
             .pipe(Ok)
     }
 }
