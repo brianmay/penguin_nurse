@@ -65,14 +65,17 @@ pub fn Login() -> Element {
                                         div {
                                             h1 { "Login failed!" }
                                             h2 { {err.to_string()} }
-                                            button {
-                                                r#type: "button",
-                                                class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
-                                                onclick: move |_| {
-                                                    user.set(Arc::new(None));
-                                                    result.set(None);
-                                                },
-                                                "Try again"
+                                            form { novalidate: true, action: "javascript:void(0);",
+                                                button {
+                                                    r#type: "submit",
+                                                    class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
+                                                    autofocus: true,
+                                                    onclick: move |_| {
+                                                        user.set(Arc::new(None));
+                                                        result.set(None);
+                                                    },
+                                                    "Try again"
+                                                }
                                             }
                                         }
                                     }
@@ -84,14 +87,8 @@ pub fn Login() -> Element {
                                         }
                                         form {
                                             novalidate: true,
-                                            action: "",
+                                            action: "javascript:void(0);",
                                             class: "space-y-4 md:space-y-6",
-                                            onkeyup: move |e| async move {
-                                                if e.key() == Key::Enter {
-                                                    e.prevent_default();
-                                                    on_save(()).await;
-                                                }
-                                            },
                                             div {
                                                 label {
                                                     r#for: "username",
@@ -105,6 +102,7 @@ pub fn Login() -> Element {
                                                     placeholder: "name",
                                                     required: "",
                                                     class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500",
+                                                    autofocus: true,
                                                     value: username(),
                                                     oninput: move |e| {
                                                         username.set(e.value());
@@ -137,7 +135,7 @@ pub fn Login() -> Element {
                                                             required: "",
                                                             "aria-describedby": "remember",
                                                             class: "w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800",
-                                                        
+
                                                         }
                                                     }
                                                     div { class: "ml-3 text-sm",
@@ -155,7 +153,7 @@ pub fn Login() -> Element {
                                                 }
                                             }
                                             button {
-                                                r#type: "button",
+                                                r#type: "submit",
                                                 class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
                                                 onclick: move |_e| async move { on_save(()).await },
                                                 "Sign in"
@@ -218,21 +216,17 @@ pub fn Logout() -> Element {
                                     rsx! {
                                         div {
                                             h1 { "Logout success!" }
-                                            button {
-                                                r#type: "button",
-                                                class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
-                                                onkeyup: move |e| async move {
-                                                    if e.key() == Key::Enter {
-                                                        e.prevent_default();
+                                            form { novalidate: true, action: "javascript:void(0);",
+                                                button {
+                                                    r#type: "submit",
+                                                    class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
+                                                    autofocus: true,
+                                                    onclick: move |_| {
                                                         let navigator = navigator();
-                                                        navigator.push(Route::Login {});
-                                                    }
-                                                },
-                                                onclick: move |_| {
-                                                    let navigator = navigator();
-                                                    navigator.push(Route::Login {});
-                                                },
-                                                "Login"
+                                                        navigator.push(Route::Home {});
+                                                    },
+                                                    "Home"
+                                                }
                                             }
                                         }
                                     }
@@ -248,13 +242,16 @@ pub fn Logout() -> Element {
                                 None => {
                                     rsx! {
                                         div {
-                                            button {
-                                                r#type: "button",
-                                                class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
-                                                onclick: move |_| async move {
-                                                    on_save(()).await;
-                                                },
-                                                "Logout"
+                                            form { novalidate: true, action: "javascript:void(0);",
+                                                button {
+                                                    r#type: "submit",
+                                                    class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
+                                                    autofocus: true,
+                                                    onclick: move |_| async move {
+                                                        on_save(()).await;
+                                                    },
+                                                    "Logout"
+                                                }
                                             }
                                         }
                                     }
@@ -262,14 +259,19 @@ pub fn Logout() -> Element {
                             }
                         } else {
                             h1 { "You are not logged in!" }
-                            button {
-                                r#type: "button",
-                                class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
-                                onclick: move |_| {
-                                    let navigator = navigator();
-                                    navigator.push(Route::Login {});
-                                },
-                                "Login"
+                            form {
+                                novalidate: true,
+                                action: "javascript:void(0);",
+                                button {
+                                    r#type: "submit",
+                                    class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
+                                    autofocus: true,
+                                    onclick: move |_| {
+                                        let navigator = navigator();
+                                        navigator.push(Route::Login {});
+                                    },
+                                    "Login"
+                                }
                             }
                         }
                     }
