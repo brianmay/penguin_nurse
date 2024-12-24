@@ -1,7 +1,10 @@
+use std::sync::Arc;
+
 use dioxus::prelude::*;
 
 use components::Navbar;
-use views::{Blog, Home, Login};
+use models::User;
+use views::{get_user, Blog, Home, Login, Logout};
 
 mod components;
 mod models;
@@ -15,6 +18,8 @@ mod server;
 enum Route {
     #[route("/login")]
     Login {},
+    #[route("/logout")]
+    Logout {},
     #[layout(Navbar)]
     #[route("/")]
     Home {},
@@ -40,6 +45,22 @@ async fn main() {
 #[component]
 fn App() -> Element {
     // Build cool things ✌️
+
+    let mut user: Signal<Arc<Option<Result<User, ServerFnError>>>> = use_signal(|| Arc::new(None));
+
+    use_context_provider(|| user);
+
+    use_future(move || async move {
+        let current_user = get_user().await;
+
+        let current_user = match current_user {
+            Ok(Some(user)) => Some(Ok(user)),
+            Ok(None) => None,
+            Err(err) => Some(Err(err)),
+        };
+
+        user.set(Arc::new(current_user));
+    });
 
     rsx! {
         // Global app resources

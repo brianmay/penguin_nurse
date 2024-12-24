@@ -1,4 +1,6 @@
-use crate::models::User;
+use std::sync::Arc;
+
+use crate::{models::User, Route};
 use dioxus::prelude::*;
 use tap::Pipe;
 use tracing::error;
@@ -9,19 +11,7 @@ const NURSE_SVG: Asset = asset!("/assets/nurse.svg");
 pub fn Login() -> Element {
     let mut username = use_signal(String::new);
     let mut password = use_signal(String::new);
-    let mut user: Signal<Option<Result<User, ServerFnError>>> = use_signal(|| None);
-
-    use_future(move || async move {
-        let current_user = get_user().await;
-
-        let current_user = match current_user {
-            Ok(Some(user)) => Some(Ok(user)),
-            Ok(None) => None,
-            Err(err) => Some(Err(err)),
-        };
-
-        user.set(current_user);
-    });
+    let mut user: Signal<Arc<Option<Result<User, ServerFnError>>>> = use_context();
 
     rsx! {
         section { class: "bg-gray-50 dark:bg-gray-900",
@@ -36,12 +26,12 @@ pub fn Login() -> Element {
                 }
                 div { class: "w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700",
                     div { class: "p-6 space-y-4 md:space-y-6 sm:p-8",
-                        match user() {
+                        match &*user() {
                             Some(Ok(user)) => {
                                 rsx! {
                                     div {
                                         h1 { "Welcome back, " }
-                                        h2 { {user.username} }
+                                        h2 { {&*user.username} }
                                     }
                                 }
                             }
@@ -51,8 +41,9 @@ pub fn Login() -> Element {
                                         h1 { "Login failed!" }
                                         h2 { {err.to_string()} }
                                         button {
+                                            r#type: "button",
                                             class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
-                                            onclick: move |_| user.set(None),
+                                            onclick: move |_| user.set(Arc::new(None)),
                                             "Try again"
                                         }
                                     }
@@ -63,10 +54,22 @@ pub fn Login() -> Element {
                                     h1 { class: "text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white",
                                         "\n                  Sign in to your account\n              "
                                     }
-                                    div {
-                                        // novalidate: true,
-                                        // action: "",
+                                    form {
+                                        novalidate: true,
+                                        action: "",
                                         class: "space-y-4 md:space-y-6",
+                                        onkeypress: move |e| async move {
+                                            if e.key() == Key::Enter {
+                                                e.prevent_default();
+                                                let new_user = login_with_password(username().clone(), password().clone())
+                                                    .await;
+                                                if new_user.is_ok() {
+                                                    let navigator = navigator();
+                                                    navigator.push(Route::Home {});
+                                                }
+                                                user.set(Arc::new(Some(new_user)));
+                                            }
+                                        },
                                         div {
                                             label {
                                                 r#for: "username",
@@ -130,13 +133,17 @@ pub fn Login() -> Element {
                                             }
                                         }
                                         button {
-                                            r#type: "submit",
+                                            r#type: "button",
                                             class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
                                             onclick: move |_| {
                                                 async move {
                                                     let new_user = login_with_password(username().clone(), password().clone())
                                                         .await;
-                                                    user.set(Some(new_user));
+                                                    if new_user.is_ok() {
+                                                        let navigator = navigator();
+                                                        navigator.push(Route::Home {});
+                                                    }
+                                                    user.set(Arc::new(Some(new_user)));
                                                 }
                                             },
                                             "Sign in"
@@ -151,6 +158,91 @@ pub fn Login() -> Element {
                                         }
                                     }
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[component]
+pub fn Logout() -> Element {
+    let mut result: Signal<Option<Result<(), ServerFnError>>> = use_signal(|| None);
+    let user: Signal<Arc<Option<Result<User, ServerFnError>>>> = use_context();
+
+    rsx! {
+        section { class: "bg-gray-50 dark:bg-gray-900",
+            div { class: "flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0",
+                a {
+                    href: "#",
+                    class: "flex items-center mb-6 text-2xl font-semibold text-gray-900 dark:text-white",
+                    img { alt: "Nurse Logo", src: NURSE_SVG, class: "h-8" }
+                    span { class: "self-center text-2xl font-semibold whitespace-nowrap dark:text-white",
+                        "Penguin Nurse"
+                    }
+                }
+                div { class: "w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700",
+                    div { class: "p-6 space-y-4 md:space-y-6 sm:p-8",
+                        if let Some(Ok(_user_object)) = &*user() {
+                            match result() {
+                                Some(Ok(())) => {
+                                    rsx! {
+                                        div {
+                                            h1 { "Logout success!" }
+                                            button {
+                                                r#type: "button",
+                                                class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
+                                                onclick: move |_| {
+                                                    let navigator = navigator();
+                                                    navigator.push(Route::Login {});
+                                                },
+                                                "Login"
+                                            }
+                                        }
+                                    }
+                                }
+                                Some(Err(err)) => {
+                                    rsx! {
+                                        div {
+                                            h1 { "Logout failed!" }
+                                            h2 { {err.to_string()} }
+                                        }
+                                    }
+                                }
+                                None => {
+                                    rsx! {
+                                        div {
+                                            button {
+                                                r#type: "button",
+                                                class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
+                                                onclick: move |_| {
+                                                    async move {
+                                                        let results = do_logout().await;
+                                                        if results.is_ok() {
+                                                            let navigator = navigator();
+                                                            navigator.push(Route::Home {});
+                                                        }
+                                                        result.set(Some(results));
+                                                    }
+                                                },
+                                                "Logout"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            h1 { "You are not logged in!" }
+                            button {
+                                r#type: "button",
+                                class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
+                                onclick: move |_| {
+                                    let navigator = navigator();
+                                    navigator.push(Route::Login {});
+                                },
+                                "Login"
                             }
                         }
                     }
@@ -197,7 +289,16 @@ async fn login_with_password(username: String, password: String) -> Result<User,
 }
 
 #[server]
-async fn get_user() -> Result<Option<User>, ServerFnError> {
+async fn do_logout() -> Result<(), ServerFnError> {
+    use crate::server::auth::Session;
+
+    let mut session: Session = extract().await?;
+    session.logout().await?;
+    Ok(())
+}
+
+#[server]
+pub async fn get_user() -> Result<Option<User>, ServerFnError> {
     use crate::server::auth::Session;
 
     let session: Session = extract().await?;

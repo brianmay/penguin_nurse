@@ -5,4 +5,4 @@ mod blog;
 pub use blog::Blog;
 
 mod auth;
-pub use auth::Login;
+pub use auth::{get_user, Login, Logout};
