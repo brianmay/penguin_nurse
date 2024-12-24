@@ -14,23 +14,23 @@ let
     mkIf
     ;
 
-  cfg = config.services.dioxus-fs-demo;
+  cfg = config.services.penguin-nurse;
 
   system = pkgs.stdenv.system;
-  dioxus-fs-demo = self.packages.${system}.default;
+  penguin-nurse = self.packages.${system}.default;
 
-  wrapper = pkgs.writeShellScriptBin "dioxus-fs-demo" ''
-    export RUST_LOG=info
-    export PORT=${toString cfg.port}
-    exec "${dioxus-fs-demo}/bin/dioxus-fs-demo"
-  '';
 in
+# wrapper = pkgs.writeShellScriptBin "penguin-nurse" ''
+#   export RUST_LOG=info
+#   export PORT=${toString cfg.port}
+#   exec "${penguin-nurse}/bin/server"
+# '';
 {
-  options.services.dioxus-fs-demo = {
-    enable = mkEnableOption "dioxus-fs-demo service";
+  options.services.penguin-nurse = {
+    enable = mkEnableOption "penguin-nurse service";
     data_dir = mkOption {
       type = types.str;
-      default = "/var/lib/dioxus";
+      default = "/var/lib/penguin-nurse";
     };
     port = mkOption {
       type = types.int;
@@ -38,9 +38,9 @@ in
     };
     secretsFile = mkOption {
       type = types.str;
-      example = "/run/secrets/dioxus-fs-demo.env";
+      example = "/run/secrets/penguin-nurse.env";
       description = lib.mdDoc ''
-        Path to an env file containing the secrets used by dioxus-fs-demo.
+        Path to an env file containing the secrets used by penguin-nurse.
 
         Must contain at least:
         - `DATABASE_URL` - The URL to the database.
@@ -49,22 +49,26 @@ in
   };
 
   config = mkIf cfg.enable {
-    users.users.dioxus = {
+    users.users.penguin-nurse = {
       isSystemUser = true;
       description = "Robotica user";
-      group = "dioxus";
+      group = "penguin-nurse";
       createHome = true;
       home = "${cfg.data_dir}";
     };
 
-    users.groups.dioxus = { };
+    users.groups.penguin-nurse = { };
 
-    systemd.services.dioxus-fs-demo = {
+    systemd.services.penguin-nurse = {
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
-        User = "dioxus";
-        ExecStart = "${wrapper}/bin/dioxus-fs-demo";
+        User = "penguin-nurse";
+        ExecStart = "${penguin-nurse}/bin/server";
         EnvironmentFile = cfg.secretsFile;
+      };
+      environment = {
+        RUST_LOG = "info";
+        PORT = toString cfg.port;
       };
     };
   };
