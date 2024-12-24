@@ -42,24 +42,34 @@ async fn main() {
     server::init(App).await;
 }
 
+#[derive(Debug, Clone)]
+struct UserLoadError(Signal<Result<(), ServerFnError>>);
+
 #[component]
 fn App() -> Element {
-    // Build cool things ✌️
-
-    let mut user: Signal<Arc<Option<Result<User, ServerFnError>>>> = use_signal(|| Arc::new(None));
+    let mut user: Signal<Arc<Option<User>>> = use_signal(|| Arc::new(None));
+    let mut result: Signal<Result<(), ServerFnError>> = use_signal(|| Ok(()));
 
     use_context_provider(|| user);
+    use_context_provider(|| UserLoadError(result));
 
     use_future(move || async move {
-        let current_user = get_user().await;
+        let data = get_user().await;
 
-        let current_user = match current_user {
-            Ok(Some(user)) => Some(Ok(user)),
-            Ok(None) => None,
-            Err(err) => Some(Err(err)),
+        let the_error = match &data {
+            Ok(Some(_user)) => Ok(()),
+            Ok(None) => Ok(()),
+            Err(err) => Err(err.clone()),
         };
 
-        user.set(Arc::new(current_user));
+        let the_user = match data {
+            Ok(Some(user)) => Some(user),
+            Ok(None) => None,
+            Err(_err) => None,
+        };
+
+        result.set(the_error);
+        user.set(Arc::new(the_user));
     });
 
     rsx! {

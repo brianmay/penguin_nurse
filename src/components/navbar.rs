@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{models::User, Route};
+use crate::{models::User, Route, UserLoadError};
 use dioxus::prelude::*;
 
 const NAVBAR_CSS: Asset = asset!("/assets/styling/navbar.css");
@@ -26,7 +26,8 @@ pub fn MenuItem(route: Route, title: String) -> Element {
 #[component]
 pub fn Navbar() -> Element {
     let mut show_menu = use_signal(|| false);
-    let user: Signal<Arc<Option<Result<User, ServerFnError>>>> = use_context();
+    let user: Signal<Arc<Option<User>>> = use_context();
+    let user_load_error: UserLoadError = use_context();
 
     let menu_class = if show_menu() { "" } else { "hidden" };
 
@@ -82,6 +83,10 @@ pub fn Navbar() -> Element {
                     }
                 }
             }
+        }
+
+        if let Err(err) = user_load_error.0() {
+            div { class: "bg-red-500 text-white p-2 text-center", {err.to_string()} }
         }
 
         Outlet::<Route> {}
