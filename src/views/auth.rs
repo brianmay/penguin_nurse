@@ -1,6 +1,15 @@
 use std::sync::Arc;
 
-use crate::{models::User, Route, UserLoadError};
+use crate::{
+    forms::{
+        buttons::SubmitButton,
+        fields::{InputString, PasswordString},
+        forms::MyForm,
+        validation::{validate_password, validate_username},
+    },
+    models::User,
+    Route, UserLoadError,
+};
 use dioxus::prelude::*;
 use tap::Pipe;
 use tracing::error;
@@ -30,11 +39,20 @@ pub fn LoginWindow(children: Element) -> Element {
 
 #[component]
 pub fn Login() -> Element {
-    let mut username = use_signal(String::new);
-    let mut password = use_signal(String::new);
+    let username = use_signal(String::new);
+    let password = use_signal(String::new);
+    let validate_username = use_memo(move || validate_username(&username()));
+    let validate_password = use_memo(move || validate_password(&password()));
+
     let mut result: Signal<Option<Result<(), ServerFnError>>> = use_signal(|| None);
     let mut user: Signal<Arc<Option<User>>> = use_context();
     let user_load_error: UserLoadError = use_context();
+
+    // disable form while waiting for response
+    let disabled = use_memo(move || result().is_some());
+    let disabled_save = use_memo(move || {
+        validate_username().is_err() || validate_password().is_err() || disabled()
+    });
 
     let on_save = use_callback(move |()| async move {
         let maybe_new_user = login_with_password(username(), password()).await;
@@ -67,7 +85,7 @@ pub fn Login() -> Element {
                             autofocus: true,
                             onclick: move |_| {
                                 let navigator = navigator();
-                                navigator.push(Route::Home {  });
+                                navigator.push(Route::Home {});
                             },
                             "Home"
                         }
@@ -107,47 +125,22 @@ pub fn Login() -> Element {
                             div {
                                 h1 { class: "text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white",
                                     "Sign in to your account"
+                                    {username()}
                                 }
-                                form {
-                                    novalidate: true,
-                                    action: "javascript:void(0);",
-                                    class: "space-y-4 md:space-y-6",
-                                    div {
-                                        label {
-                                            r#for: "username",
-                                            class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
-                                            "Your username"
-                                        }
-                                        input {
-                                            id: "username",
-                                            name: "username",
-                                            r#type: "username",
-                                            placeholder: "name",
-                                            required: "",
-                                            class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500",
-                                            autofocus: true,
-                                            value: username(),
-                                            oninput: move |e| {
-                                                username.set(e.value());
-                                            },
-                                        }
+                                MyForm {
+                                    InputString {
+                                        id: "username",
+                                        label: "Username",
+                                        value: username,
+                                        validate: validate_username,
+                                        disabled,
                                     }
-                                    div {
-                                        label {
-                                            r#for: "password",
-                                            class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
-                                            "Password"
-                                        }
-                                        input {
-                                            id: "password",
-                                            required: "",
-                                            r#type: "password",
-                                            name: "password",
-                                            placeholder: "••••••••",
-                                            class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500",
-                                            value: password(),
-                                            oninput: move |e| password.set(e.value()),
-                                        }
+                                    PasswordString {
+                                        id: "password",
+                                        label: "Password",
+                                        value: password,
+                                        validate: validate_password,
+                                        disabled,
                                     }
                                     div { class: "flex items-center justify-between",
                                         div { class: "flex items-start",
@@ -158,7 +151,7 @@ pub fn Login() -> Element {
                                                     required: "",
                                                     "aria-describedby": "remember",
                                                     class: "w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800",
-
+                                                
                                                 }
                                             }
                                             div { class: "ml-3 text-sm",
@@ -175,11 +168,10 @@ pub fn Login() -> Element {
                                             "Forgot password?"
                                         }
                                     }
-                                    button {
-                                        r#type: "submit",
-                                        class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
-                                        onclick: move |_e| async move { on_save(()).await },
-                                        "Sign in"
+                                    SubmitButton {
+                                        disabled: disabled_save,
+                                        title: "Sign in",
+                                        on_save: move |_e| async move { on_save(()).await },
                                     }
                                     p { class: "text-sm font-light text-gray-500 dark:text-gray-400",
                                         "Don’t have an account yet?"
@@ -195,7 +187,7 @@ pub fn Login() -> Element {
                     }
                 }
             }
-
+        
         }
     }
 }

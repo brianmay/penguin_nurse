@@ -7,6 +7,7 @@ use models::User;
 use views::{get_user, Blog, Home, Login, Logout};
 
 mod components;
+mod forms;
 mod models;
 mod views;
 
