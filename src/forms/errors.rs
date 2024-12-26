@@ -6,11 +6,11 @@ use thiserror::Error;
 #[error("{0}")]
 pub struct ValidationError(pub String);
 
-pub enum Saving {
-    No,
-    Yes,
-    Finished(Result<(), EditError>),
-}
+// pub enum Saving {
+//     No,
+//     Yes,
+//     Finished(Result<(), EditError>),
+// }
 
 #[derive(Error, Debug)]
 pub enum EditError {

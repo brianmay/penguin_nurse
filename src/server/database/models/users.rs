@@ -1,20 +1,27 @@
 use axum_login::AuthUser;
-use diesel::{ExpressionMethods, OptionalExtension, QueryDsl, Queryable};
+use diesel::prelude::{AsChangeset, Insertable};
+use diesel::{
+    ExpressionMethods, OptionalExtension, QueryDsl, Queryable, Selectable, SelectableHelper,
+};
 use diesel_async::RunQueryDsl;
 use tap::Pipe;
 
 use crate::server::database::connection::DatabaseConnection;
 use crate::server::database::schema;
 
-#[derive(Queryable, Debug)]
+#[derive(Queryable, Selectable, Debug)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[diesel(table_name = schema::groups)]
 pub struct Group {
-    pub id: i32,
+    pub id: i64,
     pub name: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
-#[derive(Queryable, Debug)]
+#[derive(Queryable, Selectable, Debug)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[diesel(table_name = schema::user_groups)]
 #[diesel(belongs_to(Group))]
 #[diesel(belongs_to(User))]
 #[diesel(primary_key(user_id, group_id))]
@@ -23,7 +30,9 @@ pub struct UserGroup {
     pub group_id: i64,
 }
 
-#[derive(Queryable, Debug, Clone)]
+#[derive(Queryable, Selectable, Debug, Clone)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[diesel(table_name = schema::users)]
 pub struct User {
     pub id: i64,
     pub username: String,
@@ -34,6 +43,18 @@ pub struct User {
     pub is_admin: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+
+impl AuthUser for User {
+    type Id = i64;
+
+    fn id(&self) -> Self::Id {
+        self.id
+    }
+
+    fn session_auth_hash(&self) -> &[u8] {
+        self.password.as_bytes()
+    }
 }
 
 impl From<User> for crate::models::User {
@@ -51,15 +72,53 @@ impl From<User> for crate::models::User {
     }
 }
 
-impl AuthUser for User {
-    type Id = i64;
+#[derive(Insertable, Debug, Clone)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[diesel(table_name = schema::users)]
+pub struct NewUser<'a> {
+    pub username: &'a str,
+    pub full_name: &'a str,
+    pub password: &'a str,
+    pub oidc_id: Option<&'a str>,
+    pub email: &'a str,
+    pub is_admin: bool,
+}
 
-    fn id(&self) -> Self::Id {
-        self.id
+impl<'a> NewUser<'a> {
+    pub fn from_front_end(user: &'a crate::models::NewUser) -> Self {
+        Self {
+            username: &user.username,
+            password: &user.password,
+            full_name: &user.full_name,
+            oidc_id: user.oidc_id.as_deref(),
+            email: &user.email,
+            is_admin: user.is_admin,
+        }
     }
+}
 
-    fn session_auth_hash(&self) -> &[u8] {
-        self.password.as_bytes()
+#[derive(AsChangeset, Debug, Clone)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[diesel(table_name = schema::users)]
+pub struct UpdateUser<'a> {
+    pub username: Option<&'a str>,
+    pub full_name: Option<&'a str>,
+    pub password: Option<&'a str>,
+    pub oidc_id: Option<Option<&'a str>>,
+    pub email: Option<&'a str>,
+    pub is_admin: Option<bool>,
+}
+
+impl<'a> UpdateUser<'a> {
+    pub fn from_front_end(user: &'a crate::models::UpdateUser) -> Self {
+        Self {
+            username: user.username.as_deref(),
+            password: user.password.as_deref(),
+            full_name: user.full_name.as_deref(),
+            oidc_id: user.oidc_id.as_ref().map(|x| x.as_deref()),
+            email: user.email.as_deref(),
+            is_admin: user.is_admin,
+        }
     }
 }
 
@@ -91,4 +150,67 @@ pub async fn get_user_by_username(
         .await
         .optional()?
         .pipe(Ok)
+}
+
+pub async fn get_users(conn: &mut DatabaseConnection) -> Result<Vec<User>, diesel::result::Error> {
+    use schema::users::table;
+    table.load(conn).await
+}
+
+pub async fn create_user(
+    conn: &mut DatabaseConnection,
+    updates: NewUser<'_>,
+) -> Result<User, diesel::result::Error> {
+    use schema::users::table;
+
+    let hash = updates.password.pipe(password_auth::generate_hash);
+    let updates = {
+        let mut new_user = updates;
+        new_user.password = &hash;
+        new_user
+    };
+
+    diesel::insert_into(table)
+        .values(&updates)
+        .returning(User::as_returning())
+        .get_result(conn)
+        .await
+}
+
+pub async fn update_user(
+    conn: &mut DatabaseConnection,
+    id: i64,
+    updates: UpdateUser<'_>,
+) -> Result<User, diesel::result::Error> {
+    use schema::users::id as q_id;
+    use schema::users::table;
+
+    let hash = updates.password.map(password_auth::generate_hash);
+    let updates = {
+        let mut updates = updates;
+        updates.password = hash.as_deref();
+        updates
+    };
+
+    diesel::update(table)
+        .filter(q_id.eq(id))
+        .set(&updates)
+        .returning(User::as_returning())
+        .get_result(conn)
+        .await
+}
+
+pub async fn delete_user(
+    conn: &mut DatabaseConnection,
+    id: i64,
+) -> Result<(), diesel::result::Error> {
+    use schema::users::id as q_id;
+    use schema::users::table;
+
+    table
+        .filter(q_id.eq(id))
+        .pipe(diesel::delete)
+        .execute(conn)
+        .await
+        .pipe(|_| Ok(()))
 }

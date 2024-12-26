@@ -6,3 +6,6 @@ pub use blog::Blog;
 
 mod auth;
 pub use auth::{get_user, Login, Logout};
+
+mod users;
+pub use users::UserList;

@@ -75,7 +75,10 @@ pub fn Navbar() -> Element {
                     ul { class: "flex flex-col font-medium p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700",
                         MenuItem { route: Route::Home {}, title: "Home" }
                         MenuItem { route: Route::Blog { id: 1 }, title: "Blog" }
-                        if user().is_some() {
+                        if let Some(user) = user().as_ref() {
+                            if user.is_admin {
+                                MenuItem { route: Route::UserList {}, title: "Users" }
+                            }
                             MenuItem { route: Route::Logout {}, title: "Logout" }
                         } else {
                             MenuItem { route: Route::Login {}, title: "Login" }
@@ -86,7 +89,7 @@ pub fn Navbar() -> Element {
         }
 
         if let Err(err) = user_load_error.0() {
-            div { class: "bg-red-500 text-white p-2 text-center", {err.to_string()} }
+            div { class: "alert alert-error", {err.to_string()} }
         }
 
         Outlet::<Route> {}

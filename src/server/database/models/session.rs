@@ -14,6 +14,7 @@ use diesel::{
 use diesel_async::{AsyncConnection, RunQueryDsl};
 use serde::Serialize;
 use tap::Pipe;
+use tokio::fs::File;
 use tower_sessions::session::{Id, Record};
 use tracing_subscriber::registry::Data;
 
@@ -76,7 +77,9 @@ pub async fn delete_expired(conn: &mut DatabaseConnection) -> Result<(), diesel:
     use schema::session::expiry_date;
     use schema::session::table;
 
-    diesel::delete(table.filter(expiry_date.lt(Utc::now())))
+    table
+        .filter(expiry_date.lt(Utc::now()))
+        .pipe(|filter| diesel::delete(filter))
         .execute(conn)
         .await?;
 
@@ -90,7 +93,9 @@ pub async fn delete_session(
     use schema::session::id as q_id;
     use schema::session::table;
 
-    diesel::delete(table.filter(q_id.eq(id)))
+    table
+        .filter(q_id.eq(id))
+        .pipe(|filter| diesel::delete(filter))
         .execute(conn)
         .await?;
 

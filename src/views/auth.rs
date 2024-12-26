@@ -2,10 +2,7 @@ use std::sync::Arc;
 
 use crate::{
     forms::{
-        buttons::SubmitButton,
-        fields::{InputString, PasswordString},
-        forms::MyForm,
-        validation::{validate_password, validate_username},
+        validate_password, validate_username, InputPassword, InputString, MyForm, SubmitButton,
     },
     models::User,
     Route, UserLoadError,
@@ -135,7 +132,7 @@ pub fn Login() -> Element {
                                         validate: validate_username,
                                         disabled,
                                     }
-                                    PasswordString {
+                                    InputPassword {
                                         id: "password",
                                         label: "Password",
                                         value: password,
@@ -151,7 +148,6 @@ pub fn Login() -> Element {
                                                     required: "",
                                                     "aria-describedby": "remember",
                                                     class: "w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800",
-                                                
                                                 }
                                             }
                                             div { class: "ml-3 text-sm",
@@ -187,7 +183,6 @@ pub fn Login() -> Element {
                     }
                 }
             }
-        
         }
     }
 }

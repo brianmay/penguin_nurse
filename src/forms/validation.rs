@@ -19,7 +19,24 @@ use super::errors::ValidationError;
 
 pub fn validate_username(str: &str) -> Result<String, ValidationError> {
     if str.is_empty() {
+        return Err(ValidationError("Username cannot be empty".to_string()));
+    }
+    Ok(str.to_string())
+}
+
+pub fn validate_full_name(str: &str) -> Result<String, ValidationError> {
+    if str.is_empty() {
         return Err(ValidationError("Name cannot be empty".to_string()));
+    }
+    Ok(str.to_string())
+}
+
+pub fn validate_email(str: &str) -> Result<String, ValidationError> {
+    if str.is_empty() {
+        return Err(ValidationError("Email cannot be empty".to_string()));
+    }
+    if !str.contains('@') {
+        return Err(ValidationError("Email should contain @".to_string()));
     }
     Ok(str.to_string())
 }
@@ -31,17 +48,24 @@ pub fn validate_password(str: &str) -> Result<String, ValidationError> {
     Ok(str.to_string())
 }
 
-pub fn validate_new_password(str: &str) -> Result<String, ValidationError> {
+pub fn validate_1st_password(str: &str) -> Result<String, ValidationError> {
     if str.is_empty() {
         return Err(ValidationError("Password cannot be empty".to_string()));
     }
     if str == "password" {
         return Err(ValidationError("Password cannot be 'password'".to_string()));
     }
-    if str.len() < 16 {
-        return Err(ValidationError(
-            "Password must be at least 16 characters".to_string(),
-        ));
+    // if str.len() < 16 {
+    //     return Err(ValidationError(
+    //         "Password must be at least 16 characters".to_string(),
+    //     ));
+    // }
+    Ok(str.to_string())
+}
+
+pub fn validate_2nd_password(str: &str, str2: &str) -> Result<String, ValidationError> {
+    if str != str2 {
+        return Err(ValidationError("Passwords do not match".to_string()));
     }
     Ok(str.to_string())
 }

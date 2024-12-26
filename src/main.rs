@@ -4,10 +4,11 @@ use dioxus::prelude::*;
 
 use components::Navbar;
 use models::User;
-use views::{get_user, Blog, Home, Login, Logout};
+use views::{get_user, Blog, Home, Login, Logout, UserList};
 
 mod components;
 mod forms;
+mod functions;
 mod models;
 mod views;
 
@@ -26,6 +27,8 @@ enum Route {
     Home {},
     #[route("/blog/:id")]
     Blog { id: i32 },
+    #[route("/users")]
+    UserList {},
 }
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");

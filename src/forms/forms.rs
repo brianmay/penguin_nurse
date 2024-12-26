@@ -2,23 +2,31 @@ use dioxus::prelude::*;
 
 use super::errors::EditError;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Operation<T> {
-    Add,
-    Edit(T),
-}
+// #[derive(Debug, Clone, PartialEq, Eq)]
+// pub enum Operation<T> {
+//     Add,
+//     Edit(T),
+// }
 
-#[derive(Debug, Clone, Copy)]
-pub enum ActiveDialog<T> {
-    Editing(Operation<T>),
-    Deleting(T),
-    Idle,
-}
+// impl Operation<()> {
+//     pub fn is_add(&self) -> bool {
+//         matches!(self, Operation::Add)
+//     }
+//     pub fn is_edit(&self) -> bool {
+//         matches!(self, Operation::Edit(_))
+//     }
+// }
 
 pub enum Saving {
     No,
     Yes,
     Finished(Result<(), EditError>),
+}
+
+impl Saving {
+    pub fn is_saving(&self) -> bool {
+        matches!(self, Saving::Yes)
+    }
 }
 
 #[component]

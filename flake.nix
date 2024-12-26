@@ -63,7 +63,7 @@
         };
         # craneLib = (crane.mkLib pkgs).overrideToolchain rustPlatform;
 
-        # nodejs = pkgs.nodejs_20;
+        nodejs = pkgs.nodejs_20;
 
         build_env = {
           BUILD_DATE = with flockenzeit.lib.splitSecondsSinceEpoch {} self.lastModified; "${F}T${T}${Z}";
@@ -303,7 +303,7 @@
                 rustPlatform
                 pkgs.rust-analyzer
                 # wasm-bindgen-cli
-                # nodejs
+                nodejs
                 pkgs.cargo-watch
                 pkgs.sqlx-cli
                 # pkgs.jq
