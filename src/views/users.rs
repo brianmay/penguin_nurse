@@ -33,7 +33,7 @@ pub fn UserItem(
             td { {if user.is_admin { "Admin" } else { "User" }} }
             td {
                 button {
-                    class: "btn btn-primary mx-1 my-1",
+                    class: "btn btn-secondary mx-1 my-1",
                     onclick: move |_| on_change(user_clone_3.clone()),
                     "Edit"
                 }

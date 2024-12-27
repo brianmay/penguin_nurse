@@ -221,7 +221,7 @@ pub fn CreateUser(on_cancel: Callback, on_save: Callback<User>) -> Element {
                     SubmitButton {
                         disabled: disabled_save,
                         on_save: move |_| on_save(()),
-                        title: "Delete",
+                        title: "Create",
                     }
                 }
             }
