@@ -10,6 +10,7 @@ mod components;
 mod forms;
 mod functions;
 mod models;
+mod version;
 mod views;
 
 #[cfg(feature = "server")]

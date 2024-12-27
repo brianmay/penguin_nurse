@@ -5,8 +5,8 @@ use dioxus::prelude::*;
 use crate::{
     forms::{
         validate_1st_password, validate_2nd_password, validate_email, validate_full_name,
-        validate_username, EditError, InputBoolean, InputPassword, InputString, Saving,
-        ValidationError,
+        validate_username, CancelButton, EditError, InputBoolean, InputPassword, InputString,
+        Saving, SubmitButton, ValidationError,
     },
     functions::users::{create_user, delete_user, update_user},
     models::{NewUser, UpdateUser, User},
@@ -218,18 +218,11 @@ pub fn CreateUser(on_cancel: Callback, on_save: Callback<User>) -> Element {
                         disabled,
                     }
                     div { class: "modal-action",
-                        button {
-                            r#type: "button",
-                            class: "btn btn-warning",
-                            onclick: move |_| on_cancel(()),
-                            "Close"
-                        }
-                        button {
-                            r#type: "submit",
-                            class: "btn btn-primary",
+                        CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                        SubmitButton {
                             disabled: disabled_save,
-                            onclick: move |_| on_save(()),
-                            "Save"
+                            on_save: move |_| on_save(()),
+                            title: "Delete",
                         }
                     }
                 }
@@ -357,18 +350,11 @@ pub fn ChangeUser(user: User, on_cancel: Callback, on_save: Callback<User>) -> E
                         disabled,
                     }
                     div { class: "modal-action",
-                        button {
-                            r#type: "button",
-                            class: "btn btn-warning",
-                            onclick: move |_| on_cancel(()),
-                            "Close"
-                        }
-                        button {
-                            r#type: "submit",
-                            class: "btn btn-primary",
+                        CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                        SubmitButton {
                             disabled: disabled_save,
-                            onclick: move |_| on_save(()),
-                            "Save"
+                            on_save: move |_| on_save(()),
+                            title: "Delete",
                         }
                     }
                 }
@@ -474,17 +460,11 @@ pub fn ChangePassword(user: User, on_cancel: Callback, on_save: Callback<User>) 
                         disabled,
                     }
                     div { class: "modal-action",
-                        button {
-                            class: "btn btn-warning",
-                            onclick: move |_| on_cancel(()),
-                            "Close"
-                        }
-                        button {
-                            r#type: "submit",
-                            class: "btn btn-primary",
+                        CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                        SubmitButton {
                             disabled: disabled_save,
-                            onclick: move |_| on_save(()),
-                            "Save"
+                            on_save: move |_| on_save(()),
+                            title: "Save",
                         }
                     }
                 }
@@ -558,18 +538,11 @@ pub fn DeleteUser(user: User, on_cancel: Callback, on_delete: Callback<User>) ->
                         }
                     },
                     div { class: "modal-action",
-                        button {
-                            r#type: "button",
-                            class: "btn btn-warning",
-                            onclick: move |_| on_cancel(()),
-                            "Close"
-                        }
-                        button {
-                            r#type: "submit",
-                            class: "btn btn-primary",
+                        CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                        SubmitButton {
                             disabled,
-                            onclick: move |_| on_save(()),
-                            "Delete"
+                            on_save: move |_| on_save(()),
+                            title: "Delete",
                         }
                     }
                 }

@@ -93,5 +93,26 @@ pub fn Navbar() -> Element {
         }
 
         Outlet::<Route> {}
+
+        footer { class: "footer bg-base-200 text-base-content p-10",
+            aside {
+                div {
+                    "version: "
+                    {crate::version::VCS_REF.unwrap_or("unknown")}
+                }
+                div {
+                    "build: "
+                    {crate::version::BUILD_DATE.unwrap_or("unknown")}
+                }
+
+                div { "Penguin Nurse © 2025, Brian May" }
+            }
+
+            nav {
+                div {
+                    a { href: "https://github.com/brianmay/penguin_nurse", "Source Code" }
+                }
+            }
+        }
     }
 }

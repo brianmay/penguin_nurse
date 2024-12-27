@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use crate::{
     forms::{
-        validate_password, validate_username, InputPassword, InputString, MyForm, SubmitButton,
+        validate_password, validate_username, CancelButton, InputPassword, InputString, MyForm,
+        SubmitButton,
     },
     models::User,
     Route, UserLoadError,
@@ -76,15 +77,13 @@ pub fn Login() -> Element {
                     h1 { "Welcome back, " }
                     h2 { {&*user_obj.username} }
                     form { novalidate: true, action: "javascript:void(0);",
-                        button {
-                            r#type: "submit",
-                            class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
-                            autofocus: true,
-                            onclick: move |_| {
+                        SubmitButton {
+                            disabled: Memo::new(|| false),
+                            on_save: move |_| {
                                 let navigator = navigator();
                                 navigator.push(Route::Home {});
                             },
-                            "Home"
+                            title: "Home",
                         }
                     }
                 }
@@ -103,15 +102,13 @@ pub fn Login() -> Element {
                                 h1 { "Login failed!" }
                                 h2 { {err.to_string()} }
                                 form { novalidate: true, action: "javascript:void(0);",
-                                    button {
-                                        r#type: "submit",
-                                        class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
-                                        autofocus: true,
-                                        onclick: move |_| {
+                                    SubmitButton {
+                                        disabled: Memo::new(|| false),
+                                        on_save: move |_| {
                                             user.set(Arc::new(None));
                                             result.set(None);
                                         },
-                                        "Try again"
+                                        title: "Home",
                                     }
                                 }
                             }
@@ -215,15 +212,13 @@ pub fn Logout() -> Element {
                             div {
                                 h1 { "Logout success!" }
                                 form { novalidate: true, action: "javascript:void(0);",
-                                    button {
-                                        r#type: "submit",
-                                        class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
-                                        autofocus: true,
-                                        onclick: move |_| {
+                                    SubmitButton {
+                                        disabled: Memo::new(|| false),
+                                        title: "Home",
+                                        on_save: move |_| {
                                             let navigator = navigator();
                                             navigator.push(Route::Home {});
                                         },
-                                        "Home"
                                     }
                                 }
                             }
@@ -242,14 +237,17 @@ pub fn Logout() -> Element {
                             div {
                                 h1 { "Are you sure you want to logout?" }
                                 form { novalidate: true, action: "javascript:void(0);",
-                                    button {
-                                        r#type: "submit",
-                                        class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
-                                        autofocus: true,
-                                        onclick: move |_| async move {
-                                            on_save(()).await;
+                                    CancelButton {
+                                        on_cancel: move |_| {
+                                            let navigator = navigator();
+                                            navigator.push(Route::Home {});
                                         },
-                                        "Logout"
+                                        title: "Cancel",
+                                    }
+                                    SubmitButton {
+                                        disabled: Memo::new(|| false),
+                                        title: "Logout",
+                                        on_save: move |_e| async move { on_save(()).await },
                                     }
                                 }
                             }
@@ -260,15 +258,12 @@ pub fn Logout() -> Element {
                 div {
                     h1 { "You are not logged in!" }
                     form { novalidate: true, action: "javascript:void(0);",
-                        button {
-                            r#type: "submit",
-                            class: "w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
-                            autofocus: true,
-                            onclick: move |_| {
+                        CancelButton {
+                            on_cancel: move |_| {
                                 let navigator = navigator();
-                                navigator.push(Route::Login {});
+                                navigator.push(Route::Home {});
                             },
-                            "Login"
+                            title: "Home",
                         }
                     }
                 }

@@ -31,22 +31,23 @@ pub fn UserItem(
             td { {user.full_name} }
             td { {user.email} }
             td { {if user.is_admin { "Admin" } else { "User" }} }
-            td { class: "text-right",
+            td {
                 button {
-                    class: "btn btn-warning",
-                    onclick: move |_| on_delete(user_clone_1.clone()),
-                    "Delete"
+                    class: "btn btn-primary mx-1 my-1",
+                    onclick: move |_| on_change(user_clone_3.clone()),
+                    "Edit"
                 }
                 button {
-                    class: "btn btn-secondary",
+                    class: "btn btn-secondary mx-1 my-1",
                     onclick: move |_| on_change_password(user_clone_2.clone()),
                     "Password"
                 }
                 button {
-                    class: "btn btn-primary",
-                    onclick: move |_| on_change(user_clone_3.clone()),
-                    "Edit"
+                    class: "btn btn-warning mx-1 my-1",
+                    onclick: move |_| on_delete(user_clone_1.clone()),
+                    "Delete"
                 }
+            
             }
         }
     }
@@ -64,7 +65,7 @@ pub fn UserList() -> Element {
                     if users.is_empty() {
                         p { {"No users found."} }
                     } else {
-                        table { class: "table-auto",
+                        table { class: "table",
                             thead {
                                 tr {
                                     th { "ID" }

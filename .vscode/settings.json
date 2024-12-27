@@ -18,5 +18,11 @@
             "username": "penguin_nurse",
             "password": "your_secure_password_here"
         }
+    ],
+    "tailwindCSS.includeLanguages": {
+        "rust": "html"
+    },
+    "tailwindCSS.experimental.classRegex": [
+        "class: \"([^\"]+)"
     ]
 }
