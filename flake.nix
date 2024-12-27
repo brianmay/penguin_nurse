@@ -9,21 +9,23 @@
   inputs.crane.url = "github:ipetkov/crane";
   inputs.flockenzeit.url = "github:balsoft/flockenzeit";
 
-  outputs = inputs @ {
-    self,
-    nixpkgs,
-    nixpkgs-unstable,
-    flake-utils,
-    rust-overlay,
-    devenv,
-    crane,
-    flockenzeit,
-  }:
+  outputs =
+    inputs@{
+      self,
+      nixpkgs,
+      nixpkgs-unstable,
+      flake-utils,
+      rust-overlay,
+      devenv,
+      crane,
+      flockenzeit,
+    }:
     flake-utils.lib.eachDefaultSystem (
-      system: let
+      system:
+      let
         pkgs = import nixpkgs {
           inherit system;
-          overlays = [(import rust-overlay)];
+          overlays = [ (import rust-overlay) ];
         };
         pkgs-unstable = nixpkgs-unstable.legacyPackages.${system};
         wasm-bindgen-cli = pkgs.wasm-bindgen-cli.override (old: {
@@ -55,18 +57,18 @@
         # });
         dioxus-cli =
           pkgs.callPackage ./nix/dioxus-cli.nix
-          {
-          };
+            {
+            };
         rustPlatform = pkgs.rust-bin.stable.latest.default.override {
-          targets = ["wasm32-unknown-unknown"];
-          extensions = ["rust-src"];
+          targets = [ "wasm32-unknown-unknown" ];
+          extensions = [ "rust-src" ];
         };
         # craneLib = (crane.mkLib pkgs).overrideToolchain rustPlatform;
 
         nodejs = pkgs.nodejs_20;
 
         build_env = {
-          BUILD_DATE = with flockenzeit.lib.splitSecondsSinceEpoch {} self.lastModified; "${F}T${T}${Z}";
+          BUILD_DATE = with flockenzeit.lib.splitSecondsSinceEpoch { } self.lastModified; "${F}T${T}${Z}";
           VCS_REF = "${self.shortRev or self.dirtyShortRev or "dirty"}";
         };
 
@@ -227,16 +229,17 @@
         #   cp -r ${frontend-bindgen}/. $out/bin/public
         # '';
 
-        combined = let
-          cargoToml = builtins.fromTOML (builtins.readFile ./Cargo.toml);
-          rev = build_env.VCS_REF;
-        in
+        combined =
+          let
+            cargoToml = builtins.fromTOML (builtins.readFile ./Cargo.toml);
+            rev = build_env.VCS_REF;
+          in
           pkgs.rustPlatform.buildRustPackage {
             pname = cargoToml.package.name;
             version = "${cargoToml.package.version}-${rev}";
             src = ./.;
             strictDeps = true;
-            buildInputs = [];
+            buildInputs = [ ];
             nativeBuildInputs = [
               dioxus-cli
               rustPlatform
@@ -244,6 +247,8 @@
               postgres
             ];
             buildPhase = ''
+              export VCS_REF="${build_env.VCS_REF}"
+              export BUILD_DATE="${build_env.BUILD_DATE}"
               export XDG_DATA_HOME="$PWD/.data"
               mkdir -p .data/dioxus/wasm-bindgen
               ln -s ${wasm-bindgen-cli}/bin/wasm-bindgen .data/dioxus/wasm-bindgen/wasm-bindgen-0.2.99
@@ -259,31 +264,33 @@
 
         test_module = pkgs.nixosTest {
           name = "penguin-nurse-test";
-          nodes.machine = {...}: {
-            imports = [
-              self.nixosModules.default
-            ];
-            services.penguin-nurse = {
-              enable = true;
-              port = 4000;
-              secretsFile = builtins.toFile "penguin-nurse.env" ''
-                DATABASE_URL="postgresql://penguin_nurse:your_secure_password_here@localhost/penguin_nurse"
-              '';
-            };
-            system.stateVersion = "24.11";
+          nodes.machine =
+            { ... }:
+            {
+              imports = [
+                self.nixosModules.default
+              ];
+              services.penguin-nurse = {
+                enable = true;
+                port = 4000;
+                secretsFile = builtins.toFile "penguin-nurse.env" ''
+                  DATABASE_URL="postgresql://penguin_nurse:your_secure_password_here@localhost/penguin_nurse"
+                '';
+              };
+              system.stateVersion = "24.11";
 
-            services.postgresql = {
-              enable = true;
-              package = pkgs.postgresql_15;
-              extensions = ps: [ps.postgis];
-              initialScript = pkgs.writeText "init.psql" ''
-                CREATE DATABASE penguin_nurse;
-                CREATE USER penguin_nurse with encrypted password 'your_secure_password_here';
-                ALTER DATABASE penguin_nurse OWNER TO penguin_nurse;
-                ALTER USER penguin_nurse WITH SUPERUSER;
-              '';
+              services.postgresql = {
+                enable = true;
+                package = pkgs.postgresql_15;
+                extensions = ps: [ ps.postgis ];
+                initialScript = pkgs.writeText "init.psql" ''
+                  CREATE DATABASE penguin_nurse;
+                  CREATE USER penguin_nurse with encrypted password 'your_secure_password_here';
+                  ALTER DATABASE penguin_nurse OWNER TO penguin_nurse;
+                  ALTER USER penguin_nurse WITH SUPERUSER;
+                '';
+              };
             };
-          };
 
           testScript = ''
             machine.wait_for_unit("penguin-nurse.service")
@@ -323,10 +330,10 @@
               '';
               services.postgres = {
                 enable = true;
-                package = pkgs.postgresql_15.withPackages (ps: [ps.postgis]);
+                package = pkgs.postgresql_15.withPackages (ps: [ ps.postgis ]);
                 listen_addresses = "127.0.0.1";
                 port = postgres_port;
-                initialDatabases = [{name = "penguin_nurse";}];
+                initialDatabases = [ { name = "penguin_nurse"; } ];
                 initialScript = ''
                   \c penguin_nurse;
                   CREATE USER penguin_nurse with encrypted password 'your_secure_password_here';
@@ -338,7 +345,8 @@
             }
           ];
         };
-      in {
+      in
+      {
         checks = {
           # brian-backend = backend.clippy;
           # frontend-bindgen = frontend.clippy;
@@ -355,6 +363,6 @@
       }
     )
     // {
-      nixosModules.default = import ./nix/module.nix {inherit self;};
+      nixosModules.default = import ./nix/module.nix { inherit self; };
     };
 }

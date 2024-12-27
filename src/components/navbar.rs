@@ -94,7 +94,7 @@ pub fn Navbar() -> Element {
 
         Outlet::<Route> {}
 
-        footer { class: "footer bg-base-200 text-base-content p-10",
+        footer { class: "footer bg-base-200 text-base-content p-10 mt-20",
             aside {
                 div {
                     "version: "

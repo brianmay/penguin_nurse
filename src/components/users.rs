@@ -217,13 +217,11 @@ pub fn CreateUser(on_cancel: Callback, on_save: Callback<User>) -> Element {
                         value: is_admin,
                         disabled,
                     }
-                    div { class: "modal-action",
-                        CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                        SubmitButton {
-                            disabled: disabled_save,
-                            on_save: move |_| on_save(()),
-                            title: "Delete",
-                        }
+                    CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                    SubmitButton {
+                        disabled: disabled_save,
+                        on_save: move |_| on_save(()),
+                        title: "Delete",
                     }
                 }
             }
@@ -349,13 +347,11 @@ pub fn ChangeUser(user: User, on_cancel: Callback, on_save: Callback<User>) -> E
                         value: is_admin,
                         disabled,
                     }
-                    div { class: "modal-action",
-                        CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                        SubmitButton {
-                            disabled: disabled_save,
-                            on_save: move |_| on_save(()),
-                            title: "Delete",
-                        }
+                    CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                    SubmitButton {
+                        disabled: disabled_save,
+                        on_save: move |_| on_save(()),
+                        title: "Save",
                     }
                 }
             }
@@ -459,14 +455,13 @@ pub fn ChangePassword(user: User, on_cancel: Callback, on_save: Callback<User>) 
                         validate: validate_password_confirm,
                         disabled,
                     }
-                    div { class: "modal-action",
-                        CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                        SubmitButton {
-                            disabled: disabled_save,
-                            on_save: move |_| on_save(()),
-                            title: "Save",
-                        }
+                    CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                    SubmitButton {
+                        disabled: disabled_save,
+                        on_save: move |_| on_save(()),
+                        title: "Save",
                     }
+                
                 }
             }
         }
@@ -537,13 +532,11 @@ pub fn DeleteUser(user: User, on_cancel: Callback, on_delete: Callback<User>) ->
                             on_cancel(());
                         }
                     },
-                    div { class: "modal-action",
-                        CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                        SubmitButton {
-                            disabled,
-                            on_save: move |_| on_save(()),
-                            title: "Delete",
-                        }
+                    CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                    SubmitButton {
+                        disabled,
+                        on_save: move |_| on_save(()),
+                        title: "Delete",
                     }
                 }
             }

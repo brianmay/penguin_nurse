@@ -2135,6 +2135,11 @@ html {
   margin-bottom: 0.25rem;
 }
 
+.my-5 {
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
 .mb-2 {
   margin-bottom: 0.5rem;
 }
@@ -2153,6 +2158,18 @@ html {
 
 .mt-4 {
   margin-top: 1rem;
+}
+
+.mt-20 {
+  margin-top: 5rem;
+}
+
+.mb-10 {
+  margin-bottom: 2.5rem;
+}
+
+.mb-5 {
+  margin-bottom: 1.25rem;
 }
 
 .box-content {

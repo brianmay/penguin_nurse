@@ -30,7 +30,7 @@ pub fn InputString<D: 'static + Clone + Eq + PartialEq>(
     let mut changed = use_signal(|| false);
 
     rsx! {
-        div {
+        div { class: "mb-5",
             label {
                 r#for: id,
                 class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
@@ -74,7 +74,7 @@ pub fn InputPassword<D: 'static + Clone + Eq + PartialEq>(
     let mut changed = use_signal(|| false);
 
     rsx! {
-        div {
+        div { class: "my-5",
             label {
                 r#for: id,
                 class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
@@ -220,8 +220,7 @@ pub fn InputBoolean(
             }
             input {
                 r#type: "checkbox",
-                class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                    .to_string() + get_input_classes(true, changed(), disabled()),
+                class: "checkbox ".to_string() + get_input_classes(true, changed(), disabled()),
                 id,
                 checked: value(),
                 disabled,
