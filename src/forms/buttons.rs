@@ -4,6 +4,7 @@ use dioxus::{prelude::*, signals::Memo};
 pub fn CancelButton(title: String, on_cancel: Callback<()>) -> Element {
     rsx! {
         button {
+            r#type: "button",
             class: "w-full btn btn-secondary my-2",
             onclick: move |_e| on_cancel(()),
             {title}
