@@ -1,0 +1,2 @@
+DROP TABLE poos;
+DROP TABLE wees;

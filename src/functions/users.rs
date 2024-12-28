@@ -4,35 +4,7 @@ use server_fn::error::NoCustomError;
 use crate::models;
 
 #[cfg(feature = "server")]
-use crate::server::database::connection::DatabaseConnection;
-
-#[cfg(feature = "server")]
-pub async fn get_database_connection() -> Result<DatabaseConnection, ServerFnError> {
-    use crate::server::database::connection::DatabasePool;
-    use axum::Extension;
-
-    let Extension(pool): Extension<DatabasePool> = extract().await?;
-    pool.get().await.map_err(ServerFnError::from)
-}
-
-#[cfg(feature = "server")]
-pub async fn assert_is_admin() -> Result<(), ServerFnError> {
-    use crate::server::auth::Session;
-
-    let session: Session = extract().await?;
-    let user = session
-        .user
-        .as_ref()
-        .ok_or(ServerFnError::ServerError::<NoCustomError>(
-            "Not Logged In".to_string(),
-        ))?;
-    user.is_admin
-        .then_some(())
-        .ok_or(ServerFnError::ServerError::<NoCustomError>(
-            "Not Admin".to_string(),
-        ))?;
-    Ok(())
-}
+use super::common::{assert_is_admin, get_database_connection};
 
 #[server]
 pub async fn get_users() -> Result<Vec<models::User>, ServerFnError> {

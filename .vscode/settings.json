@@ -1,8 +1,10 @@
 {
     "cSpell.words": [
         "axum",
+        "chrono",
         "conn",
-        "dioxus"
+        "dioxus",
+        "poos"
     ],
     "rust-analyzer.cargo.features": [
         "server"

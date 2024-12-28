@@ -39,8 +39,8 @@ pub struct UserGroup {
 pub struct User {
     pub id: i64,
     pub username: String,
-    pub full_name: String,
     pub password: String,
+    pub full_name: String,
     pub oidc_id: Option<String>,
     pub email: String,
     pub is_admin: bool,
@@ -80,8 +80,8 @@ impl From<User> for crate::models::User {
 #[diesel(table_name = schema::users)]
 pub struct NewUser<'a> {
     pub username: &'a str,
-    pub full_name: &'a str,
     pub password: &'a str,
+    pub full_name: &'a str,
     pub oidc_id: Option<&'a str>,
     pub email: &'a str,
     pub is_admin: bool,
@@ -105,8 +105,8 @@ impl<'a> NewUser<'a> {
 #[diesel(table_name = schema::users)]
 pub struct UpdateUser<'a> {
     pub username: Option<&'a str>,
-    pub full_name: Option<&'a str>,
     pub password: Option<&'a str>,
+    pub full_name: Option<&'a str>,
     pub oidc_id: Option<Option<&'a str>>,
     pub email: Option<&'a str>,
     pub is_admin: Option<bool>,

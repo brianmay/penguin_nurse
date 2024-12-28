@@ -31,6 +31,8 @@ pub fn UserItem(
             td { {user.full_name} }
             td { {user.email} }
             td { {if user.is_admin { "Admin" } else { "User" }} }
+            td { {user.created_at.to_string()} }
+            td { {user.updated_at.to_string()} }
             td {
                 button {
                     class: "btn btn-secondary mx-1 my-1",
@@ -47,7 +49,6 @@ pub fn UserItem(
                     onclick: move |_| on_delete(user_clone_1.clone()),
                     "Delete"
                 }
-            
             }
         }
     }
@@ -73,6 +74,8 @@ pub fn UserList() -> Element {
                                     th { "Name" }
                                     th { "Email" }
                                     th { "Role" }
+                                    th { "Inserted At" }
+                                    th { "Updated At" }
                                     th { "Actions" }
                                 }
                             }
