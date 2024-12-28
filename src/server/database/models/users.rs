@@ -9,6 +9,7 @@ use tap::Pipe;
 use crate::server::database::connection::DatabaseConnection;
 use crate::server::database::schema;
 
+#[allow(dead_code)]
 #[derive(Queryable, Selectable, Debug)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::groups)]
@@ -19,6 +20,7 @@ pub struct Group {
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
+#[allow(dead_code)]
 #[derive(Queryable, Selectable, Debug)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::user_groups)]
@@ -30,6 +32,7 @@ pub struct UserGroup {
     pub group_id: i64,
 }
 
+#[allow(dead_code)]
 #[derive(Queryable, Selectable, Debug, Clone)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::users)]
