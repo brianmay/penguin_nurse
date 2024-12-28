@@ -108,7 +108,7 @@ pub fn Login() -> Element {
                                             user.set(Arc::new(None));
                                             result.set(None);
                                         },
-                                        title: "Home",
+                                        title: "Retry",
                                     }
                                 }
                             }
