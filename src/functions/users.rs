@@ -63,7 +63,8 @@ pub async fn create_user(user: models::NewUser) -> Result<models::User, ServerFn
     assert_is_admin().await?;
     let mut conn = get_database_connection().await?;
 
-    let new_user: server::NewUser = server::NewUser::from_front_end(&user);
+    let hashed_password = password_auth::generate_hash(&user.password);
+    let new_user: server::NewUser = server::NewUser::from_front_end(&user, &hashed_password);
 
     crate::server::database::models::users::create_user(&mut conn, new_user)
         .await
@@ -78,7 +79,10 @@ pub async fn update_user(id: i64, user: models::UpdateUser) -> Result<models::Us
     assert_is_admin().await?;
     let mut conn = get_database_connection().await?;
 
-    let updates: server::UpdateUser = server::UpdateUser::from_front_end(&user);
+    let hashed_password = user.password.as_ref().map(password_auth::generate_hash);
+
+    let updates: server::UpdateUser =
+        server::UpdateUser::from_front_end(&user, hashed_password.as_deref());
 
     crate::server::database::models::users::update_user(&mut conn, id, updates)
         .await

@@ -88,10 +88,10 @@ pub struct NewUser<'a> {
 }
 
 impl<'a> NewUser<'a> {
-    pub fn from_front_end(user: &'a crate::models::NewUser) -> Self {
+    pub fn from_front_end(user: &'a crate::models::NewUser, hashed_password: &'a str) -> Self {
         Self {
             username: &user.username,
-            password: &user.password,
+            password: hashed_password,
             full_name: &user.full_name,
             oidc_id: user.oidc_id.as_deref(),
             email: &user.email,
@@ -113,10 +113,13 @@ pub struct UpdateUser<'a> {
 }
 
 impl<'a> UpdateUser<'a> {
-    pub fn from_front_end(user: &'a crate::models::UpdateUser) -> Self {
+    pub fn from_front_end(
+        user: &'a crate::models::UpdateUser,
+        hashed_password: Option<&'a str>,
+    ) -> Self {
         Self {
             username: user.username.as_deref(),
-            password: user.password.as_deref(),
+            password: hashed_password,
             full_name: user.full_name.as_deref(),
             oidc_id: user.oidc_id.as_ref().map(|x| x.as_deref()),
             email: user.email.as_deref(),
@@ -166,13 +169,6 @@ pub async fn create_user(
 ) -> Result<User, diesel::result::Error> {
     use schema::users::table;
 
-    let hash = updates.password.pipe(password_auth::generate_hash);
-    let updates = {
-        let mut new_user = updates;
-        new_user.password = &hash;
-        new_user
-    };
-
     diesel::insert_into(table)
         .values(&updates)
         .returning(User::as_returning())
@@ -187,13 +183,6 @@ pub async fn update_user(
 ) -> Result<User, diesel::result::Error> {
     use schema::users::id as q_id;
     use schema::users::table;
-
-    let hash = updates.password.map(password_auth::generate_hash);
-    let updates = {
-        let mut updates = updates;
-        updates.password = hash.as_deref();
-        updates
-    };
 
     diesel::update(table)
         .filter(q_id.eq(id))
