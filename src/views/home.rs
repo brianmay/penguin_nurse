@@ -1,11 +1,15 @@
+use std::sync::Arc;
+
 use crate::{
+    components::{ChangeWee, DeleteWee, WeeOperation},
     functions::{poos::get_poos_for_time_range, wees::get_wees_for_time_range},
-    models::{Entry, EntryData, Timeline},
+    models::{Entry, EntryData, Timeline, User, Wee},
 };
 use chrono::{DateTime, Local, NaiveDate, TimeZone, Timelike, Utc};
 use dioxus::prelude::*;
 use palette::IntoColor;
 use server_fn::error::NoCustomError;
+use tap::Pipe;
 use tracing::error;
 
 const WEE_SVG: Asset = asset!("/assets/wee.svg");
@@ -32,11 +36,32 @@ fn event_time(time: chrono::DateTime<Utc>) -> Element {
 }
 
 #[component]
+fn event_urgency(urgency: i32) -> Element {
+    rsx! {
+        if urgency == 0 {
+            span { class: "text-success", {"No urgency"} }
+        } else if urgency == 1 {
+            span { class: "text-success", {"Low urgency"} }
+        } else if urgency == 2 {
+            span { class: "text-success", {"Medium-Low urgency"} }
+        } else if urgency == 3 {
+            span { class: "text-success", {"Medium urgency"} }
+        } else if urgency == 4 {
+            span { class: "text-warning", {"Medium-High urgency"} }
+        } else if urgency == 5 {
+            span { class: "text-error", {"High urgency"} }
+        } else {
+            span { class: "text-error", {"Unknown urgency"} }
+        }
+    }
+}
+
+#[component]
 fn wee_delta(delta: chrono::Duration) -> Element {
     rsx! {
         if delta.num_seconds() == 0 {
             span { class: "text-error", {delta.num_seconds().to_string() + " seconds"} }
-        } else if delta.num_seconds() < 60 {
+        } else if delta.num_seconds() < 120 {
             span { class: "text-success", {delta.num_seconds().to_string() + " seconds"} }
         } else if delta.num_minutes() < 60 {
             span { class: "text-warning", {delta.num_minutes().to_string() + " minutes"} }
@@ -53,8 +78,7 @@ fn wee_mls(mls: i32) -> Element {
     rsx! {
         if mls == 0 {
             span { class: "text-error", {mls.to_string() + " ml"} }
-        }
-        if mls < 100 {
+        } else if mls < 100 {
             span { class: "text-warning", {mls.to_string() + " ml"} }
         } else if mls < 500 {
             span { class: "text-success", {mls.to_string() + " ml"} }
@@ -162,33 +186,52 @@ fn get_utc_times_for_date(
         ServerFnError::<NoCustomError>::ServerError("Failed to get tomorrow's date".to_string())
     })?;
 
-    let start = today.and_hms_opt(0, 0, 0).map_or_else(
+    let start = today.and_hms_opt(7, 0, 0).map_or_else(
         || {
             error!("Failed to create start time for date: {:?}", today);
             Err(ServerFnError::<NoCustomError>::ServerError(
                 "Failed to create start time".to_string(),
             ))
         },
-        |x| Ok(Utc.from_utc_datetime(&x)),
+        |x| Ok(Local.from_local_datetime(&x)),
     )?;
 
-    let end = tomorrow.and_hms_opt(0, 0, 0).map_or_else(
+    let end = tomorrow.and_hms_opt(7, 0, 0).map_or_else(
         || {
             error!("Failed to create end time for date: {:?}", tomorrow);
             Err(ServerFnError::<NoCustomError>::ServerError(
                 "Failed to create end time".to_string(),
             ))
         },
-        |x| Ok(Utc.from_utc_datetime(&x)),
+        |x| Ok(Local.from_local_datetime(&x)),
     )?;
+
+    error!("Start: {:?}, End: {:?}", start, end);
+
+    let start = start.single().unwrap_or_else(|| {
+        error!("Failed to convert start time to UTC for date: {:?}", today);
+        panic!("Failed to convert start time to UTC");
+    });
+
+    let end = end.single().unwrap_or_else(|| {
+        error!("Failed to convert end time to UTC for date: {:?}", tomorrow);
+        panic!("Failed to convert end time to UTC");
+    });
+
+    let start = start.with_timezone(&Utc);
+    let end = end.with_timezone(&Utc);
+
+    error!("Start: {:?}, End: {:?}", start, end);
 
     Ok((start, end))
 }
 
 #[component]
-fn EntryRow(entry: Entry) -> Element {
+fn EntryRow(entry: Entry, on_click: Callback<Entry>) -> Element {
     rsx! {
         tr {
+            class: "hover:bg-gray-100",
+            onclick: move |_| on_click(entry.clone()),
             td {
                 event_time { time: entry.time }
             }
@@ -204,7 +247,15 @@ fn EntryRow(entry: Entry) -> Element {
                         td { class: "flex",
                             wee_colour { colour: wee.colour }
                             div {
-                                wee_mls { mls: wee.mls }
+                                div {
+                                    wee_mls { mls: wee.mls }
+                                }
+                                div {
+                                    event_urgency { urgency: wee.urgency }
+                                }
+                                if let Some(comments) = &wee.comments {
+                                    div { {comments.to_string()} }
+                                }
                             }
                         }
                     }
@@ -226,6 +277,12 @@ fn EntryRow(entry: Entry) -> Element {
                                 div {
                                     poo_quantity { quantity: poo.quantity }
                                 }
+                                div {
+                                    event_urgency { urgency: poo.urgency }
+                                }
+                                if let Some(comments) = &wee.comments {
+                                    div { {comments.to_string()} }
+                                }
                             }
                         }
                     }
@@ -236,55 +293,96 @@ fn EntryRow(entry: Entry) -> Element {
     }
 }
 
+enum ActiveDialog {
+    ChangeWee(WeeOperation),
+    DeleteWee(Arc<Wee>),
+    None,
+}
+
 #[component]
 pub fn Home() -> Element {
+    let user: Signal<Arc<Option<User>>> = use_context();
+
+    let user: &Option<User> = &user.read();
+    let Some(user) = user.as_ref() else {
+        return rsx! {
+            p { class: "alert alert-danger", "You are not logged in." }
+        };
+    };
+
+    let user_id = user.pipe(|x| x.id);
+
+    let mut active_dialog = use_signal(|| ActiveDialog::None);
+
     let mut date = use_signal(|| {
         let now = Local::now();
         now.date_naive()
     });
 
-    let timeline: Resource<Result<Timeline, ServerFnError>> = use_resource(move || async move {
-        let today = &*date.read();
-        let (start, end) = get_utc_times_for_date(*today)?;
+    let mut timeline: Resource<Result<Timeline, ServerFnError>> =
+        use_resource(move || async move {
+            let today = &*date.read();
+            let (start, end) = get_utc_times_for_date(*today)?;
 
-        let mut timeline = Timeline::new();
-        let wees = get_wees_for_time_range(start, end).await?;
-        timeline.add_wees(wees);
+            let mut timeline = Timeline::new();
+            let wees = get_wees_for_time_range(user_id, start, end).await?;
+            timeline.add_wees(wees);
 
-        let poos = get_poos_for_time_range(start, end).await?;
-        timeline.add_poos(poos);
+            let poos = get_poos_for_time_range(user_id, start, end).await?;
+            timeline.add_poos(poos);
 
-        timeline.sort();
+            timeline.sort();
 
-        Ok(timeline)
-    });
+            Ok(timeline)
+        });
 
     let x = timeline.read();
 
     rsx! {
-        div {
-            button {
-                class: "btn btn-primary inline-block mr-2",
-                onclick: move |_| {
-                    let new_date = date.read().pred_opt();
-                    if let Some(new_date) = new_date {
-                        date.set(new_date);
-                    }
-                },
-                "<"
+        div { class: "ml-2",
+            div { class: "mb-2",
+                button {
+                    class: "btn btn-primary",
+                    onclick: move |_| {
+                        active_dialog.set(ActiveDialog::ChangeWee(WeeOperation::Create { user_id }))
+                    },
+                    "Create Wee"
+                }
             }
-            p { class: "inline-block", {date.read().to_string()} }
-            button {
-                class: "btn btn-primary inline-block ml-2",
-                onclick: move |_| {
-                    let new_date = date.read().succ_opt();
-                    if let Some(new_date) = new_date {
+
+            div { class: "mb-2",
+                button {
+                    class: "btn btn-primary inline-block mr-2",
+                    onclick: move |_| {
+                        let new_date = date.read().pred_opt();
+                        if let Some(new_date) = new_date {
+                            date.set(new_date);
+                        }
+                    },
+                    "<"
+                }
+                p { class: "inline-block", {date.read().to_string()} }
+                button {
+                    class: "btn btn-primary inline-block ml-2",
+                    onclick: move |_| {
+                        let new_date = Local::now().date_naive();
                         date.set(new_date);
-                    }
-                },
-                ">"
+                    },
+                    "today"
+                }
+                button {
+                    class: "btn btn-primary inline-block ml-2",
+                    onclick: move |_| {
+                        let new_date = date.read().succ_opt();
+                        if let Some(new_date) = new_date {
+                            date.set(new_date);
+                        }
+                    },
+                    ">"
+                }
             }
         }
+
         match &*x {
             Some(Err(err)) => rsx! {
                 div { class: "alert alert-danger",
@@ -302,12 +400,28 @@ pub fn Home() -> Element {
                             th { "When" }
                             th { "What" }
                             th { "How Long" }
-                            th { "Event" }
+                            th { "Details" }
                         }
                     }
                     tbody {
                         for entry in timeline.iter() {
-                            EntryRow { key: "{entry.get_id()}", entry: entry.clone() }
+                            EntryRow {
+                                key: "{entry.get_id()}",
+                                entry: entry.clone(),
+                                on_click: move |entry: Entry| {
+                                    match &entry.data {
+                                        EntryData::Wee(wee) => {
+                                            active_dialog
+                                                .set(
+                                                    ActiveDialog::ChangeWee(WeeOperation::Update {
+                                                        wee: wee.clone(),
+                                                    }),
+                                                );
+                                        }
+                                        EntryData::Poo(_) => {}
+                                    }
+                                },
+                            }
                         }
                     }
                 }
@@ -316,6 +430,40 @@ pub fn Home() -> Element {
                 rsx! {
                     p { class: "alert alert-info", "Loading..." }
                 }
+            }
+        }
+
+        match &*active_dialog.read() {
+            ActiveDialog::ChangeWee(op) => {
+                rsx! {
+                    ChangeWee {
+                        op: op.clone(),
+                        on_cancel: move || active_dialog.set(ActiveDialog::None),
+                        on_save: move |_wee| {
+                            active_dialog.set(ActiveDialog::None);
+                            timeline.restart();
+                        },
+                        on_delete: move |wee| {
+                            active_dialog.set(ActiveDialog::DeleteWee(wee));
+                            timeline.restart();
+                        },
+                    }
+                }
+            }
+            ActiveDialog::DeleteWee(wee) => {
+                rsx! {
+                    DeleteWee {
+                        wee: wee.clone(),
+                        on_cancel: move || active_dialog.set(ActiveDialog::None),
+                        on_delete: move |_wee| {
+                            active_dialog.set(ActiveDialog::None);
+                            timeline.restart();
+                        },
+                    }
+                }
+            }
+            ActiveDialog::None => {
+                rsx! {}
             }
         }
     }

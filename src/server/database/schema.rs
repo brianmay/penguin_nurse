@@ -15,11 +15,13 @@ diesel::table! {
         user_id -> Int8,
         time -> Timestamptz,
         duration -> Interval,
+        urgency -> Int4,
         quantity -> Int4,
         bristol -> Int4,
-        hue -> Float4,
-        saturation -> Float4,
-        value -> Float4,
+        colour_hue -> Float4,
+        colour_saturation -> Float4,
+        colour_value -> Float4,
+        comments -> Nullable<Text>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
     }
@@ -60,10 +62,12 @@ diesel::table! {
         user_id -> Int8,
         time -> Timestamptz,
         duration -> Interval,
+        urgency -> Int4,
         mls -> Int4,
-        hue -> Float4,
-        saturation -> Float4,
-        value -> Float4,
+        colour_hue -> Float4,
+        colour_saturation -> Float4,
+        colour_value -> Float4,
+        comments -> Nullable<Text>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
     }
@@ -74,11 +78,4 @@ diesel::joinable!(user_groups -> groups (group_id));
 diesel::joinable!(user_groups -> users (user_id));
 diesel::joinable!(wees -> users (user_id));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    groups,
-    poos,
-    session,
-    user_groups,
-    users,
-    wees,
-);
+diesel::allow_tables_to_appear_in_same_query!(groups, poos, session, user_groups, users, wees,);

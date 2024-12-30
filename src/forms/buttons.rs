@@ -13,6 +13,18 @@ pub fn CancelButton(title: String, on_cancel: Callback<()>) -> Element {
 }
 
 #[component]
+pub fn DeleteButton(title: String, on_delete: Callback<()>) -> Element {
+    rsx! {
+        button {
+            r#type: "button",
+            class: "w-full btn btn-error my-2",
+            onclick: move |_e| on_delete(()),
+            {title}
+        }
+    }
+}
+
+#[component]
 pub fn SubmitButton(disabled: Memo<bool>, title: String, on_save: Callback<()>) -> Element {
     let disabled = disabled();
     rsx! {

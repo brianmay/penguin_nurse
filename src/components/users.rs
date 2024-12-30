@@ -496,7 +496,7 @@ pub fn DeleteUser(user: User, on_cancel: Callback, on_delete: Callback<User>) ->
         dialog { class: "modal modal-open", id: "my_modal_1",
             div { class: "modal-box",
                 h3 { class: "text-lg font-bold",
-                    "Change password for "
+                    "Delete user "
                     {&*user.username}
                 }
                 p { class: "py-4", "Press ESC key or click the button below to close" }
