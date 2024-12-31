@@ -1,6 +1,8 @@
 use chrono::{TimeDelta, Utc};
 use palette::Hsv;
 
+use crate::models::Bristol;
+
 use super::errors::ValidationError;
 
 // pub fn validate_order(str: &str) -> Result<i32, ValidationError> {
@@ -116,13 +118,10 @@ pub fn validate_mls(str: &str) -> Result<i32, ValidationError> {
     }
 }
 
-pub fn validate_bristol(str: &str) -> Result<i32, ValidationError> {
+pub fn validate_bristol(str: &str) -> Result<Bristol, ValidationError> {
     match str.parse() {
-        Ok(bristol) if (0..=7).contains(&bristol) => Ok(bristol),
-        Ok(_) => Err(ValidationError(
-            "Bristol must be between 0 and 7".to_string(),
-        )),
-        Err(err) => Err(ValidationError(format!("Invalid integer: {err}"))),
+        Ok(bristol) => Ok(bristol),
+        Err(_) => Err(ValidationError("Invalid Bristol".to_string())),
     }
 }
 

@@ -6,7 +6,7 @@ mod validation;
 
 pub use buttons::{CancelButton, DeleteButton, SubmitButton};
 pub use errors::{EditError, ValidationError};
-pub use fields::{InputBoolean, InputColour, InputPassword, InputString};
+pub use fields::{InputBoolean, InputColour, InputPassword, InputSelect, InputString};
 pub use saving::MyForm;
 pub use saving::Saving;
 pub use validation::{

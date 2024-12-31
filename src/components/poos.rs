@@ -7,10 +7,10 @@ use crate::{
     forms::{
         validate_bristol, validate_colour, validate_comments, validate_duration,
         validate_poo_quantity, validate_time, validate_urgency, CancelButton, DeleteButton,
-        EditError, InputColour, InputString, Saving, SubmitButton, ValidationError,
+        EditError, InputColour, InputSelect, InputString, Saving, SubmitButton, ValidationError,
     },
     functions::poos::{create_poo, delete_poo, update_poo},
-    models::{NewPoo, Poo, UpdatePoo},
+    models::{Bristol, NewPoo, Poo, UpdatePoo},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -25,7 +25,7 @@ async fn do_save(
     validate_duration: Result<TimeDelta, ValidationError>,
     validate_urgency: Result<i32, ValidationError>,
     validate_quantity: Result<i32, ValidationError>,
-    validate_bristol: Result<i32, ValidationError>,
+    validate_bristol: Result<Bristol, ValidationError>,
     validate_colour: Result<Hsv, ValidationError>,
     validate_comments: Result<Option<String>, ValidationError>,
 ) -> Result<Poo, EditError> {
@@ -99,7 +99,7 @@ pub fn ChangePoo(
     });
     let bristol = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { poo } => poo.bristol.to_string(),
+        Operation::Update { poo } => poo.bristol.as_value().to_string(),
     });
     let colour = use_signal(|| match &op {
         Operation::Create { .. } => (String::new(), String::new(), String::new()),
@@ -236,11 +236,12 @@ pub fn ChangePoo(
                         validate: validate_quantity,
                         disabled,
                     }
-                    InputString {
+                    InputSelect {
                         id: "bristol",
                         label: "Bristol",
                         value: bristol,
                         validate: validate_bristol,
+                        options: Bristol::options(),
                         disabled,
                     }
                     InputColour {

@@ -9,6 +9,7 @@ pub use wees::UpdateWee;
 pub use wees::Wee;
 
 mod poos;
+pub use poos::Bristol;
 pub use poos::NewPoo;
 pub use poos::Poo;
 pub use poos::UpdatePoo;

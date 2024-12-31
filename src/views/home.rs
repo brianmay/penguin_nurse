@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::{
     components::{ChangePoo, ChangeWee, DeletePoo, DeleteWee, PooOperation, WeeOperation},
     functions::{poos::get_poos_for_time_range, wees::get_wees_for_time_range},
-    models::{Entry, EntryData, MaybeString, Poo, Timeline, User, Wee},
+    models::{Bristol, Entry, EntryData, MaybeString, Poo, Timeline, User, Wee},
 };
 use chrono::{DateTime, Local, NaiveDate, TimeZone, Timelike, Utc};
 use dioxus::prelude::*;
@@ -123,27 +123,35 @@ fn poo_delta(delta: chrono::Duration) -> Element {
 }
 
 #[component]
-fn poo_bristol(bristol: i32) -> Element {
-    rsx! {
-        if bristol == 0 {
-            span { class: "text-error", {"No poop"} }
-        } else if bristol == 1 {
-            span { class: "text-error", {"Separate hard lumps, like nuts"} }
-        } else if bristol == 2 {
-            span { class: "text-success", {"Sausage-shaped, but lumpy"} }
-        } else if bristol == 3 {
-            span { class: "text-success", {"Like a sausage but with cracks on its surface"} }
-        } else if bristol == 4 {
-            span { class: "text-success", {"Like a sausage or snake, smooth and soft"} }
-        } else if bristol == 5 {
-            span { class: "text-warning", {"Soft blobs with clear cut edges"} }
-        } else if bristol == 6 {
-            span { class: "text-warning", {"Fluffy pieces with ragged edges, a mushy stool"} }
-        } else if bristol == 7 {
-            span { class: "text-error", {"Watery, no solid pieces, entirely liquid"} }
-        } else {
-            span { class: "text-error", {"Unknown"} }
-        }
+fn poo_bristol(bristol: Bristol) -> Element {
+    let bristol_string = bristol.as_str();
+
+    match bristol {
+        Bristol::B0 => rsx! {
+            span { class: "text-error", {bristol_string} }
+        },
+        Bristol::B1 => rsx! {
+            span { class: "text-error", {bristol_string} }
+        },
+        Bristol::B2 => rsx! {
+            span { class: "text-success", {bristol_string} }
+        },
+        Bristol::B3 => rsx! {
+            span { class: "text-success", {bristol_string} }
+        },
+        Bristol::B4 => rsx! {
+            span { class: "text-success", {bristol_string} }
+        },
+        Bristol::B5 => rsx! {
+            span { class: "text-warning", {bristol_string} }
+        },
+
+        Bristol::B6 => rsx! {
+            span { class: "text-warning", {bristol_string} }
+        },
+        Bristol::B7 => rsx! {
+            span { class: "text-error", {bristol_string} }
+        },
     }
 }
 

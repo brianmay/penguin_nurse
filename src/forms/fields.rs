@@ -74,7 +74,7 @@ pub fn InputPassword<D: 'static + Clone + Eq + PartialEq>(
     validate: Memo<Result<D, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
-    let mut changed = use_signal(|| false);
+    let mut changed: Signal<bool> = use_signal(|| false);
 
     rsx! {
         div { class: "my-5",
@@ -152,57 +152,49 @@ pub fn InputPassword<D: 'static + Clone + Eq + PartialEq>(
 //     }
 // }
 
-// #[component]
-// pub fn InputSelect<D: 'static + Clone + Eq + PartialEq>(
-//     id: &'static str,
-//     label: &'static str,
-//     validate: Memo<Result<D, ValidationError>>,
-//     changed: Signal<bool>,
-//     value: Signal<String>,
-//     disabled: bool,
-//     options: Vec<(&'static str, &'static str)>,
-// ) -> Element {
-//     rsx! {
-//         div {
-//             class: "form-group",
-//             label {
-//                 for: id,
-//                 "{label}"
-//             }
-//             select {
-//                 class: get_input_classes(validate().is_ok(), changed()),
-//                 id: "input",
-//                 disabled: disabled,
-//                 oninput: move |e| {
-//                     changed.set(true);
-//                     value.set(e.value());
-//                 },
-//                 value: value(),
-//                 option {
-//                     value: "",
-//                     label: "Select..."
-//                 }
-//                 for (label, value) in options {
-//                     option {
-//                         value: value,
-//                         label
-//                     }
-//                 }
-//             }
-//             if let Err(err) = validate() {
-//                 div {
-//                     class: "invalid-feedback",
-//                     "{err}"
-//                 }
-//             } else {
-//                 div {
-//                     class: "valid-feedback",
-//                     "Looks good!"
-//                 }
-//             }
-//         }
-//     }
-// }
+#[component]
+pub fn InputSelect<D: 'static + Clone + Eq + PartialEq>(
+    id: &'static str,
+    label: &'static str,
+    validate: Memo<Result<D, ValidationError>>,
+    value: Signal<String>,
+    disabled: Memo<bool>,
+    options: Vec<(&'static str, &'static str)>,
+) -> Element {
+    let mut changed: Signal<bool> = use_signal(|| false);
+    tracing::error!("value = {:?}", value.read());
+
+    rsx! {
+        div { class: "form-group",
+            label { r#for: id, "{label}" }
+            select {
+                class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
+                    .to_string() + get_input_classes(validate().is_ok(), changed(), disabled()),
+                id: "input",
+                disabled,
+                oninput: move |e| {
+                    changed.set(true);
+                    value.set(e.value());
+                },
+                value: value(),
+                option { value: "", label: "Select..." }
+                for (id , label) in options {
+                    option { value: id, label, selected: id == value() }
+                }
+            }
+            if disabled() {
+
+            }
+            if !changed() {
+
+            } else if let Err(err) = validate() {
+                div { class: "text-red-500", "{err}" }
+            } else {
+                div { class: "text-green-500", "Looks good!" }
+            }
+        }
+    }
+}
 
 #[component]
 pub fn InputBoolean(
