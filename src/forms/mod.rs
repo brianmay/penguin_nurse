@@ -8,7 +8,9 @@ mod validation;
 pub use buttons::{CancelButton, DeleteButton, SubmitButton};
 pub use dialog::Dialog;
 pub use errors::{EditError, ValidationError};
-pub use fields::{InputBoolean, InputColour, InputPassword, InputSelect, InputString};
+pub use fields::{
+    InputBoolean, InputColour, InputPassword, InputSelect, InputString, InputTextArea,
+};
 pub use saving::MyForm;
 pub use saving::Saving;
 pub use validation::{

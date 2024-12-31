@@ -110,47 +110,48 @@ pub fn InputPassword<D: 'static + Clone + Eq + PartialEq>(
     }
 }
 
-// #[component]
-// pub fn InputTextArea<D: 'static + Clone + Eq + PartialEq>(
-//     id: &'static str,
-//     label: &'static str,
-//     validate: Memo<Result<D, ValidationError>>,
-//     changed: Signal<bool>,
-//     value: Signal<String>,
-//     disabled: bool,
-// ) -> Element {
-//     rsx! {
-//         div {
-//             class: "form-group",
-//             label {
-//                 for: id,
-//                 "{label}"
-//             }
-//             textarea {
-//                 class: get_input_classes(validate().is_ok(), changed()),
-//                 id: id,
-//                 placeholder: "Enter input",
-//                 value: value(),
-//                 disabled: disabled,
-//                 oninput: move |e| {
-//                     changed.set(true);
-//                     value.set(e.value());
-//                 }
-//             }
-//             if let Err(err) = validate() {
-//                 div {
-//                     class: "invalid-feedback",
-//                     "{err}"
-//                 }
-//             } else {
-//                 div {
-//                     class: "valid-feedback",
-//                     "Looks good!"
-//                 }
-//             }
-//         }
-//     }
-// }
+#[component]
+pub fn InputTextArea<D: 'static + Clone + Eq + PartialEq>(
+    id: &'static str,
+    label: &'static str,
+    value: Signal<String>,
+    validate: Memo<Result<D, ValidationError>>,
+    disabled: Memo<bool>,
+) -> Element {
+    let mut changed = use_signal(|| false);
+
+    rsx! {
+        div { class: "mb-5",
+            label {
+                r#for: id,
+                class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
+                "{label}"
+            }
+            textarea {
+                class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
+                    .to_string() + get_input_classes(validate().is_ok(), changed(), disabled()),
+                id,
+                placeholder: "Enter input",
+                value: "{value()}",
+                disabled,
+                oninput: move |e| {
+                    changed.set(true);
+                    value.set(e.value());
+                },
+            }
+            if disabled() {
+
+            }
+            if !changed() {
+
+            } else if let Err(err) = validate() {
+                div { class: "text-red-500", "{err}" }
+            } else {
+                div { class: "text-green-500", "Looks good!" }
+            }
+        }
+    }
+}
 
 #[component]
 pub fn InputSelect<D: 'static + Clone + Eq + PartialEq>(

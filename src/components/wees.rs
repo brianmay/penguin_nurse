@@ -7,7 +7,7 @@ use crate::{
     forms::{
         validate_colour, validate_comments, validate_duration, validate_mls, validate_time,
         validate_urgency, CancelButton, DeleteButton, Dialog, EditError, InputColour, InputString,
-        Saving, SubmitButton, ValidationError,
+        InputTextArea, Saving, SubmitButton, ValidationError,
     },
     functions::wees::{create_wee, delete_wee, update_wee},
     models::{NewWee, UpdateWee, Wee},
@@ -235,7 +235,7 @@ pub fn ChangeWee(
                     ],
                     disabled,
                 }
-                InputString {
+                InputTextArea {
                     id: "comments",
                     label: "Comments",
                     value: comments,

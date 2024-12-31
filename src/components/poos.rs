@@ -7,7 +7,8 @@ use crate::{
     forms::{
         validate_bristol, validate_colour, validate_comments, validate_duration,
         validate_poo_quantity, validate_time, validate_urgency, CancelButton, DeleteButton, Dialog,
-        EditError, InputColour, InputSelect, InputString, Saving, SubmitButton, ValidationError,
+        EditError, InputColour, InputSelect, InputString, InputTextArea, Saving, SubmitButton,
+        ValidationError,
     },
     functions::poos::{create_poo, delete_poo, update_poo},
     models::{Bristol, NewPoo, Poo, UpdatePoo},
@@ -256,7 +257,7 @@ pub fn ChangePoo(
                     ],
                     disabled,
                 }
-                InputString {
+                InputTextArea {
                     id: "comments",
                     label: "Comments",
                     value: comments,
