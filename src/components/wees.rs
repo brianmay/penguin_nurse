@@ -6,8 +6,8 @@ use std::sync::Arc;
 use crate::{
     forms::{
         validate_colour, validate_comments, validate_duration, validate_mls, validate_time,
-        validate_urgency, CancelButton, DeleteButton, EditError, InputColour, InputString, Saving,
-        SubmitButton, ValidationError,
+        validate_urgency, CancelButton, DeleteButton, Dialog, EditError, InputColour, InputString,
+        Saving, SubmitButton, ValidationError,
     },
     functions::wees::{create_wee, delete_wee, update_wee},
     models::{NewWee, UpdateWee, Wee},
@@ -154,111 +154,109 @@ pub fn ChangeWee(
 
     rsx! {
 
-        dialog { class: "modal modal-open", id: "my_modal_1",
-            div { class: "modal-box",
-                h3 { class: "text-lg font-bold",
-                    match &op {
-                        Operation::Create { .. } => "Create Wee".to_string(),
-                        Operation::Update { wee } => format!("Edit Wee {}", wee.id),
+        Dialog {
+            h3 { class: "text-lg font-bold",
+                match &op {
+                    Operation::Create { .. } => "Create Wee".to_string(),
+                    Operation::Update { wee } => format!("Edit Wee {}", wee.id),
+                }
+            }
+            p { class: "py-4", "Press ESC key or click the button below to close" }
+            match &*saving.read() {
+                Saving::Yes => {
+                    rsx! {
+                        div { class: "alert alert-info", "Saving..." }
                     }
                 }
-                p { class: "py-4", "Press ESC key or click the button below to close" }
-                match &*saving.read() {
-                    Saving::Yes => {
-                        rsx! {
-                            div { class: "alert alert-info", "Saving..." }
-                        }
-                    }
-                    Saving::Finished(Ok(())) => {
-                        rsx! {
-                            div { class: "alert alert-success", "Saved!" }
-                        }
-                    }
-                    Saving::Finished(Err(err)) => {
-                        rsx! {
-                            div { class: "alert alert-error",
-                                "Error: "
-                                {err.to_string()}
-                            }
-                        }
-                    }
-                    _ => {
-                        rsx! {}
+                Saving::Finished(Ok(())) => {
+                    rsx! {
+                        div { class: "alert alert-success", "Saved!" }
                     }
                 }
-                form {
-                    novalidate: true,
-                    action: "javascript:void(0)",
-                    method: "dialog",
-                    onkeyup: move |event| {
-                        if event.key() == Key::Escape {
-                            on_cancel(());
+                Saving::Finished(Err(err)) => {
+                    rsx! {
+                        div { class: "alert alert-error",
+                            "Error: "
+                            {err.to_string()}
                         }
-                    },
-                    InputString {
-                        id: "time",
-                        label: "Time",
-                        value: time,
-                        validate: validate_time,
-                        disabled,
                     }
-                    InputString {
-                        id: "duration",
-                        label: "Duration",
-                        value: duration,
-                        validate: validate_duration,
-                        disabled,
+                }
+                _ => {
+                    rsx! {}
+                }
+            }
+            form {
+                novalidate: true,
+                action: "javascript:void(0)",
+                method: "dialog",
+                onkeyup: move |event| {
+                    if event.key() == Key::Escape {
+                        on_cancel(());
                     }
-                    InputString {
-                        id: "urgency",
-                        label: "Urgency",
-                        value: urgency,
-                        validate: validate_urgency,
-                        disabled,
-                    }
-                    InputString {
-                        id: "mls",
-                        label: "Mls",
-                        value: mls,
-                        validate: validate_mls,
-                        disabled,
-                    }
-                    InputColour {
-                        id: "colour",
-                        label: "Colour",
-                        value: colour,
-                        validate: validate_colour,
-                        colours: vec![
-                            ("light".to_string(), Hsv::new(60.0, 0.2, 1.0)),
-                            ("normal".to_string(), Hsv::new(60.0, 1.0, 1.0)),
-                            ("dark".to_string(), Hsv::new(44.0, 1.0, 1.0)),
-                            ("red".to_string(), Hsv::new(0.0, 1.0, 1.0)),
-                        ],
-                        disabled,
-                    }
-                    InputString {
-                        id: "comments",
-                        label: "Comments",
-                        value: comments,
-                        validate: validate_comments,
-                        disabled,
-                    }
+                },
+                InputString {
+                    id: "time",
+                    label: "Time",
+                    value: time,
+                    validate: validate_time,
+                    disabled,
+                }
+                InputString {
+                    id: "duration",
+                    label: "Duration",
+                    value: duration,
+                    validate: validate_duration,
+                    disabled,
+                }
+                InputString {
+                    id: "urgency",
+                    label: "Urgency",
+                    value: urgency,
+                    validate: validate_urgency,
+                    disabled,
+                }
+                InputString {
+                    id: "mls",
+                    label: "Mls",
+                    value: mls,
+                    validate: validate_mls,
+                    disabled,
+                }
+                InputColour {
+                    id: "colour",
+                    label: "Colour",
+                    value: colour,
+                    validate: validate_colour,
+                    colours: vec![
+                        ("light".to_string(), Hsv::new(60.0, 0.2, 1.0)),
+                        ("normal".to_string(), Hsv::new(60.0, 1.0, 1.0)),
+                        ("dark".to_string(), Hsv::new(44.0, 1.0, 1.0)),
+                        ("red".to_string(), Hsv::new(0.0, 1.0, 1.0)),
+                    ],
+                    disabled,
+                }
+                InputString {
+                    id: "comments",
+                    label: "Comments",
+                    value: comments,
+                    validate: validate_comments,
+                    disabled,
+                }
 
-                    SubmitButton {
-                        disabled: disabled_save,
-                        on_save: move |_| on_save(()),
-                        title: match &op {
-                            Operation::Create { .. } => "Create",
-                            Operation::Update { .. } => "Save",
-                        },
-                    }
-                    CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                    if let Operation::Update { wee } = &op {
-                        {
-                            let wee: Arc<Wee> = wee.clone();
-                            rsx! {
-                                DeleteButton { on_delete: move |()| on_delete(wee.clone()), title: "Delete" }
-                            }
+                SubmitButton {
+                    disabled: disabled_save,
+                    on_save: move |_| on_save(()),
+                    title: match &op {
+                        Operation::Create { .. } => "Create",
+                        Operation::Update { .. } => "Save",
+                    },
+                }
+                CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                if let Operation::Update { wee } = &op {
+                    {
+                        let wee: Arc<Wee> = wee.clone();
+                        rsx! {
+                            DeleteButton { on_delete: move |()| on_delete(wee.clone()), title: "Delete" }
                         }
                     }
                 }
@@ -290,51 +288,49 @@ pub fn DeleteWee(wee: Arc<Wee>, on_cancel: Callback, on_delete: Callback<Arc<Wee
     });
 
     rsx! {
-        dialog { class: "modal modal-open", id: "my_modal_1",
-            div { class: "modal-box",
-                h3 { class: "text-lg font-bold",
-                    "Delete wee "
-                    {wee.id.to_string()}
-                }
-                p { class: "py-4", "Press ESC key or click the button below to close" }
-                match &*saving.read() {
-                    Saving::Yes => {
-                        rsx! {
-                            div { class: "alert alert-info", "Deleting..." }
-                        }
-                    }
-                    Saving::Finished(Ok(())) => {
-                        rsx! {
-                            div { class: "alert alert-success", "Deleted!" }
-                        }
-                    }
-                    Saving::Finished(Err(err)) => {
-                        rsx! {
-                            div { class: "alert alert-error",
-                                "Error: "
-                                {err.to_string()}
-                            }
-                        }
-                    }
-                    _ => {
-                        rsx! {}
+        Dialog {
+            h3 { class: "text-lg font-bold",
+                "Delete wee "
+                {wee.id.to_string()}
+            }
+            p { class: "py-4", "Press ESC key or click the button below to close" }
+            match &*saving.read() {
+                Saving::Yes => {
+                    rsx! {
+                        div { class: "alert alert-info", "Deleting..." }
                     }
                 }
-                form {
-                    novalidate: true,
-                    action: "javascript:void(0)",
-                    method: "dialog",
-                    onkeyup: move |event| {
-                        if event.key() == Key::Escape {
-                            on_cancel(());
-                        }
-                    },
-                    CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                    SubmitButton {
-                        disabled,
-                        on_save: move |_| on_save(()),
-                        title: "Delete",
+                Saving::Finished(Ok(())) => {
+                    rsx! {
+                        div { class: "alert alert-success", "Deleted!" }
                     }
+                }
+                Saving::Finished(Err(err)) => {
+                    rsx! {
+                        div { class: "alert alert-error",
+                            "Error: "
+                            {err.to_string()}
+                        }
+                    }
+                }
+                _ => {
+                    rsx! {}
+                }
+            }
+            form {
+                novalidate: true,
+                action: "javascript:void(0)",
+                method: "dialog",
+                onkeyup: move |event| {
+                    if event.key() == Key::Escape {
+                        on_cancel(());
+                    }
+                },
+                CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                SubmitButton {
+                    disabled,
+                    on_save: move |_| on_save(()),
+                    title: "Delete",
                 }
             }
         }

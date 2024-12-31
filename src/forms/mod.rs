@@ -1,10 +1,12 @@
 mod buttons;
+mod dialog;
 mod errors;
 mod fields;
 mod saving;
 mod validation;
 
 pub use buttons::{CancelButton, DeleteButton, SubmitButton};
+pub use dialog::Dialog;
 pub use errors::{EditError, ValidationError};
 pub use fields::{InputBoolean, InputColour, InputPassword, InputSelect, InputString};
 pub use saving::MyForm;

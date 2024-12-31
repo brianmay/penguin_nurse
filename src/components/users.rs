@@ -5,8 +5,8 @@ use dioxus::prelude::*;
 use crate::{
     forms::{
         validate_1st_password, validate_2nd_password, validate_email, validate_full_name,
-        validate_username, CancelButton, EditError, InputBoolean, InputPassword, InputString,
-        Saving, SubmitButton, ValidationError,
+        validate_username, CancelButton, Dialog, EditError, InputBoolean, InputPassword,
+        InputString, Saving, SubmitButton, ValidationError,
     },
     functions::users::{create_user, delete_user, update_user},
     models::{MaybeString, NewUser, UpdateUser, User},
@@ -140,89 +140,87 @@ pub fn CreateUser(on_cancel: Callback, on_save: Callback<User>) -> Element {
 
     rsx! {
 
-        dialog { class: "modal modal-open", id: "my_modal_1",
-            div { class: "modal-box",
-                h3 { class: "text-lg font-bold", "Create User" }
-                p { class: "py-4", "Press ESC key or click the button below to close" }
-                match &*saving.read() {
-                    Saving::Yes => {
-                        rsx! {
-                            div { class: "alert alert-info", "Saving..." }
-                        }
-                    }
-                    Saving::Finished(Ok(())) => {
-                        rsx! {
-                            div { class: "alert alert-success", "Saved!" }
-                        }
-                    }
-                    Saving::Finished(Err(err)) => {
-                        rsx! {
-                            div { class: "alert alert-error",
-                                "Error: "
-                                {err.to_string()}
-                            }
-                        }
-                    }
-                    _ => {
-                        rsx! {}
+        Dialog {
+            h3 { class: "text-lg font-bold", "Create User" }
+            p { class: "py-4", "Press ESC key or click the button below to close" }
+            match &*saving.read() {
+                Saving::Yes => {
+                    rsx! {
+                        div { class: "alert alert-info", "Saving..." }
                     }
                 }
-                form {
-                    novalidate: true,
-                    action: "javascript:void(0)",
-                    method: "dialog",
-                    onkeyup: move |event| {
-                        if event.key() == Key::Escape {
-                            on_cancel(());
+                Saving::Finished(Ok(())) => {
+                    rsx! {
+                        div { class: "alert alert-success", "Saved!" }
+                    }
+                }
+                Saving::Finished(Err(err)) => {
+                    rsx! {
+                        div { class: "alert alert-error",
+                            "Error: "
+                            {err.to_string()}
                         }
-                    },
-                    InputString {
-                        id: "username",
-                        label: "Username",
-                        value: username,
-                        validate: validate_username,
-                        disabled,
                     }
-                    InputString {
-                        id: "email",
-                        label: "Email",
-                        value: email,
-                        validate: validate_email,
-                        disabled,
+                }
+                _ => {
+                    rsx! {}
+                }
+            }
+            form {
+                novalidate: true,
+                action: "javascript:void(0)",
+                method: "dialog",
+                onkeyup: move |event| {
+                    if event.key() == Key::Escape {
+                        on_cancel(());
                     }
-                    InputString {
-                        id: "full_name",
-                        label: "Full Name",
-                        value: full_name,
-                        validate: validate_full_name,
-                        disabled,
-                    }
-                    InputPassword {
-                        id: "password",
-                        label: "Password",
-                        value: password,
-                        validate: validate_password,
-                        disabled,
-                    }
-                    InputPassword {
-                        id: "password_confirm",
-                        label: "Confirm Password",
-                        value: password_confirm,
-                        validate: validate_password_confirm,
-                        disabled,
-                    }
-                    InputBoolean {
-                        id: "is_admin",
-                        label: "Is Admin",
-                        value: is_admin,
-                        disabled,
-                    }
-                    CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                    SubmitButton {
-                        disabled: disabled_save,
-                        on_save: move |_| on_save(()),
-                        title: "Create",
-                    }
+                },
+                InputString {
+                    id: "username",
+                    label: "Username",
+                    value: username,
+                    validate: validate_username,
+                    disabled,
+                }
+                InputString {
+                    id: "email",
+                    label: "Email",
+                    value: email,
+                    validate: validate_email,
+                    disabled,
+                }
+                InputString {
+                    id: "full_name",
+                    label: "Full Name",
+                    value: full_name,
+                    validate: validate_full_name,
+                    disabled,
+                }
+                InputPassword {
+                    id: "password",
+                    label: "Password",
+                    value: password,
+                    validate: validate_password,
+                    disabled,
+                }
+                InputPassword {
+                    id: "password_confirm",
+                    label: "Confirm Password",
+                    value: password_confirm,
+                    validate: validate_password_confirm,
+                    disabled,
+                }
+                InputBoolean {
+                    id: "is_admin",
+                    label: "Is Admin",
+                    value: is_admin,
+                    disabled,
+                }
+                CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                SubmitButton {
+                    disabled: disabled_save,
+                    on_save: move |_| on_save(()),
+                    title: "Create",
                 }
             }
         }
@@ -280,79 +278,76 @@ pub fn ChangeUser(user: User, on_cancel: Callback, on_save: Callback<User>) -> E
     });
 
     rsx! {
-
-        dialog { class: "modal modal-open", id: "my_modal_1",
-            div { class: "modal-box",
-                h3 { class: "text-lg font-bold",
-                    "Edit User: "
-                    {&*user.username}
-                }
-                p { class: "py-4", "Press ESC key or click the button below to close" }
-                match &*saving.read() {
-                    Saving::Yes => {
-                        rsx! {
-                            div { class: "alert alert-info", "Saving..." }
-                        }
-                    }
-                    Saving::Finished(Ok(())) => {
-                        rsx! {
-                            div { class: "alert alert-success", "Saved!" }
-                        }
-                    }
-                    Saving::Finished(Err(err)) => {
-                        rsx! {
-                            div { class: "alert alert-error",
-                                "Error: "
-                                {err.to_string()}
-                            }
-                        }
-                    }
-                    _ => {
-                        rsx! {}
+        Dialog {
+            h3 { class: "text-lg font-bold",
+                "Edit User: "
+                {&*user.username}
+            }
+            p { class: "py-4", "Press ESC key or click the button below to close" }
+            match &*saving.read() {
+                Saving::Yes => {
+                    rsx! {
+                        div { class: "alert alert-info", "Saving..." }
                     }
                 }
-                form {
-                    novalidate: true,
-                    action: "javascript:void(0)",
-                    method: "dialog",
-                    onkeyup: move |event| {
-                        if event.key() == Key::Escape {
-                            on_cancel(());
+                Saving::Finished(Ok(())) => {
+                    rsx! {
+                        div { class: "alert alert-success", "Saved!" }
+                    }
+                }
+                Saving::Finished(Err(err)) => {
+                    rsx! {
+                        div { class: "alert alert-error",
+                            "Error: "
+                            {err.to_string()}
                         }
-                    },
-                    InputString {
-                        id: "username",
-                        label: "Username",
-                        value: username,
-                        validate: validate_username,
-                        disabled,
                     }
-                    InputString {
-                        id: "email",
-                        label: "Email",
-                        value: email,
-                        validate: validate_email,
-                        disabled,
+                }
+                _ => {
+                    rsx! {}
+                }
+            }
+            form {
+                novalidate: true,
+                action: "javascript:void(0)",
+                method: "dialog",
+                onkeyup: move |event| {
+                    if event.key() == Key::Escape {
+                        on_cancel(());
                     }
-                    InputString {
-                        id: "full_name",
-                        label: "Full Name",
-                        value: full_name,
-                        validate: validate_full_name,
-                        disabled,
-                    }
-                    InputBoolean {
-                        id: "is_admin",
-                        label: "Is Admin",
-                        value: is_admin,
-                        disabled,
-                    }
-                    CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                    SubmitButton {
-                        disabled: disabled_save,
-                        on_save: move |_| on_save(()),
-                        title: "Save",
-                    }
+                },
+                InputString {
+                    id: "username",
+                    label: "Username",
+                    value: username,
+                    validate: validate_username,
+                    disabled,
+                }
+                InputString {
+                    id: "email",
+                    label: "Email",
+                    value: email,
+                    validate: validate_email,
+                    disabled,
+                }
+                InputString {
+                    id: "full_name",
+                    label: "Full Name",
+                    value: full_name,
+                    validate: validate_full_name,
+                    disabled,
+                }
+                InputBoolean {
+                    id: "is_admin",
+                    label: "Is Admin",
+                    value: is_admin,
+                    disabled,
+                }
+                CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                SubmitButton {
+                    disabled: disabled_save,
+                    on_save: move |_| on_save(()),
+                    title: "Save",
                 }
             }
         }
@@ -402,67 +397,65 @@ pub fn ChangePassword(user: User, on_cancel: Callback, on_save: Callback<User>) 
     });
 
     rsx! {
-        dialog { class: "modal modal-open", id: "my_modal_1",
-            div { class: "modal-box",
-                h3 { class: "text-lg font-bold",
-                    "Change password for "
-                    {&*user.username}
-                }
-                p { class: "py-4", "Press ESC key or click the button below to close" }
-                match &*saving.read() {
-                    Saving::Yes => {
-                        rsx! {
-                            div { class: "alert alert-info", "Saving..." }
-                        }
-                    }
-                    Saving::Finished(Ok(())) => {
-                        rsx! {
-                            div { class: "alert alert-success", "Saved!" }
-                        }
-                    }
-                    Saving::Finished(Err(err)) => {
-                        rsx! {
-                            div { class: "alert alert-error",
-                                "Error: "
-                                {err.to_string()}
-                            }
-                        }
-                    }
-                    _ => {
-                        rsx! {}
+        Dialog {
+            h3 { class: "text-lg font-bold",
+                "Change password for "
+                {&*user.username}
+            }
+            p { class: "py-4", "Press ESC key or click the button below to close" }
+            match &*saving.read() {
+                Saving::Yes => {
+                    rsx! {
+                        div { class: "alert alert-info", "Saving..." }
                     }
                 }
-                form {
-                    novalidate: true,
-                    action: "javascript:void(0)",
-                    method: "dialog",
-                    onkeyup: move |event| {
-                        if event.key() == Key::Escape {
-                            on_cancel(());
-                        }
-                    },
-                    InputPassword {
-                        id: "password",
-                        label: "Password",
-                        value: password,
-                        validate: validate_password,
-                        disabled,
+                Saving::Finished(Ok(())) => {
+                    rsx! {
+                        div { class: "alert alert-success", "Saved!" }
                     }
-                    InputPassword {
-                        id: "password_confirm",
-                        label: "Confirm Password",
-                        value: password_confirm,
-                        validate: validate_password_confirm,
-                        disabled,
-                    }
-                    CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                    SubmitButton {
-                        disabled: disabled_save,
-                        on_save: move |_| on_save(()),
-                        title: "Save",
-                    }
-                
                 }
+                Saving::Finished(Err(err)) => {
+                    rsx! {
+                        div { class: "alert alert-error",
+                            "Error: "
+                            {err.to_string()}
+                        }
+                    }
+                }
+                _ => {
+                    rsx! {}
+                }
+            }
+            form {
+                novalidate: true,
+                action: "javascript:void(0)",
+                method: "dialog",
+                onkeyup: move |event| {
+                    if event.key() == Key::Escape {
+                        on_cancel(());
+                    }
+                },
+                InputPassword {
+                    id: "password",
+                    label: "Password",
+                    value: password,
+                    validate: validate_password,
+                    disabled,
+                }
+                InputPassword {
+                    id: "password_confirm",
+                    label: "Confirm Password",
+                    value: password_confirm,
+                    validate: validate_password_confirm,
+                    disabled,
+                }
+                CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                SubmitButton {
+                    disabled: disabled_save,
+                    on_save: move |_| on_save(()),
+                    title: "Save",
+                }
+            
             }
         }
     }
@@ -493,51 +486,49 @@ pub fn DeleteUser(user: User, on_cancel: Callback, on_delete: Callback<User>) ->
     });
 
     rsx! {
-        dialog { class: "modal modal-open", id: "my_modal_1",
-            div { class: "modal-box",
-                h3 { class: "text-lg font-bold",
-                    "Delete user "
-                    {&*user.username}
-                }
-                p { class: "py-4", "Press ESC key or click the button below to close" }
-                match &*saving.read() {
-                    Saving::Yes => {
-                        rsx! {
-                            div { class: "alert alert-info", "Deleting..." }
-                        }
-                    }
-                    Saving::Finished(Ok(())) => {
-                        rsx! {
-                            div { class: "alert alert-success", "Deleted!" }
-                        }
-                    }
-                    Saving::Finished(Err(err)) => {
-                        rsx! {
-                            div { class: "alert alert-error",
-                                "Error: "
-                                {err.to_string()}
-                            }
-                        }
-                    }
-                    _ => {
-                        rsx! {}
+        Dialog {
+            h3 { class: "text-lg font-bold",
+                "Delete user "
+                {&*user.username}
+            }
+            p { class: "py-4", "Press ESC key or click the button below to close" }
+            match &*saving.read() {
+                Saving::Yes => {
+                    rsx! {
+                        div { class: "alert alert-info", "Deleting..." }
                     }
                 }
-                form {
-                    novalidate: true,
-                    action: "javascript:void(0)",
-                    method: "dialog",
-                    onkeyup: move |event| {
-                        if event.key() == Key::Escape {
-                            on_cancel(());
-                        }
-                    },
-                    CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                    SubmitButton {
-                        disabled,
-                        on_save: move |_| on_save(()),
-                        title: "Delete",
+                Saving::Finished(Ok(())) => {
+                    rsx! {
+                        div { class: "alert alert-success", "Deleted!" }
                     }
+                }
+                Saving::Finished(Err(err)) => {
+                    rsx! {
+                        div { class: "alert alert-error",
+                            "Error: "
+                            {err.to_string()}
+                        }
+                    }
+                }
+                _ => {
+                    rsx! {}
+                }
+            }
+            form {
+                novalidate: true,
+                action: "javascript:void(0)",
+                method: "dialog",
+                onkeyup: move |event| {
+                    if event.key() == Key::Escape {
+                        on_cancel(());
+                    }
+                },
+                CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                SubmitButton {
+                    disabled,
+                    on_save: move |_| on_save(()),
+                    title: "Delete",
                 }
             }
         }

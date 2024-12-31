@@ -217,21 +217,21 @@ fn get_utc_times_for_date(
 fn EntryRow(entry: Entry, on_click: Callback<Entry>) -> Element {
     rsx! {
         tr {
-            class: "hover:bg-gray-800",
+            class: "hover:bg-gray-500 border-blue-300 m-2 p-2 border-2 h-96 w-48 sm:w-auto sm:border-none sm:h-auto inline-block sm:table-row",
             onclick: move |_| on_click(entry.clone()),
-            td {
+            td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 event_time { time: entry.time }
             }
             match &entry.data {
                 EntryData::Wee(wee) => {
                     rsx! {
-                        td {
+                        td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             img { class: "w-10 invert inline-block", alt: "Wee", src: WEE_SVG }
                         }
-                        td {
+                        td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             wee_delta { delta: wee.duration }
                         }
-                        td { class: "flex",
+                        td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             event_colour { colour: wee.colour }
                             div {
                                 div {
@@ -249,13 +249,13 @@ fn EntryRow(entry: Entry, on_click: Callback<Entry>) -> Element {
                 }
                 EntryData::Poo(poo) => {
                     rsx! {
-                        td {
+                        td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             img { class: "w-10 invert inline-block", alt: "Poo", src: POO_SVG }
                         }
-                        td {
+                        td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             poo_delta { delta: poo.duration }
                         }
-                        td { class: "flex",
+                        td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             event_colour { colour: poo.colour }
                             div {
                                 div {
@@ -390,8 +390,8 @@ pub fn Home() -> Element {
                 p { class: "alert alert-info", "No entries found for this date." }
             },
             Some(Ok(timeline)) => rsx! {
-                table { class: "table",
-                    thead {
+                table { class: "block sm:table",
+                    thead { class: "hidden sm:table-header-group",
                         tr {
                             th { "When" }
                             th { "What" }
@@ -399,7 +399,7 @@ pub fn Home() -> Element {
                             th { "Details" }
                         }
                     }
-                    tbody {
+                    tbody { class: "block sm:table-row-group",
                         for entry in timeline.iter() {
                             EntryRow {
                                 key: "{entry.get_id()}",
