@@ -25,15 +25,19 @@ pub fn UserItem(
     let user_clone_3 = user.clone();
 
     rsx! {
-        tr {
-            td { {user.id.as_inner().to_string()} }
-            td { {user.username} }
-            td { {user.full_name} }
-            td { {user.email} }
-            td { {if user.is_admin { "Admin" } else { "User" }} }
-            td { {user.created_at.to_string()} }
-            td { {user.updated_at.to_string()} }
-            td {
+        tr { class: "hover:bg-gray-500 border-blue-300 m-2 p-2 border-2 h-96 w-48 sm:w-auto sm:border-none sm:h-auto inline-block sm:table-row",
+            td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
+                {user.id.as_inner().to_string()}
+            }
+            td { class: "block sm:table-cell border-blue-300 sm:border-t-2", {user.username} }
+            td { class: "block sm:table-cell border-blue-300 sm:border-t-2", {user.full_name} }
+            td { class: "block sm:table-cell border-blue-300 sm:border-t-2 text-xs",
+                {user.email}
+            }
+            td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
+                {if user.is_admin { "Admin" } else { "User" }}
+            }
+            td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 button {
                     class: "btn btn-secondary mx-1 my-1",
                     onclick: move |_| on_change(user_clone_3.clone()),
@@ -66,20 +70,18 @@ pub fn UserList() -> Element {
                     if users.is_empty() {
                         p { {"No users found."} }
                     } else {
-                        table { class: "table",
-                            thead {
+                        table { class: "block sm:table",
+                            thead { class: "hidden sm:table-header-group",
                                 tr {
                                     th { "ID" }
                                     th { "Username" }
                                     th { "Name" }
                                     th { "Email" }
                                     th { "Role" }
-                                    th { "Inserted At" }
-                                    th { "Updated At" }
                                     th { "Actions" }
                                 }
                             }
-                            tbody {
+                            tbody { class: "block sm:table-row-group",
                                 for user in users {
                                     UserItem {
                                         key: user.id,
