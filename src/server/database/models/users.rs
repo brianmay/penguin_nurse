@@ -6,6 +6,7 @@ use diesel::{
 use diesel_async::RunQueryDsl;
 use tap::Pipe;
 
+use crate::models::UserId;
 use crate::server::database::connection::DatabaseConnection;
 use crate::server::database::schema;
 
@@ -63,7 +64,7 @@ impl AuthUser for User {
 impl From<User> for crate::models::User {
     fn from(user: User) -> Self {
         Self {
-            id: user.id,
+            id: UserId::new(user.id),
             username: user.username,
             full_name: user.full_name,
             oidc_id: user.oidc_id.into(),

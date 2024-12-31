@@ -26,7 +26,7 @@ pub fn UserItem(
 
     rsx! {
         tr {
-            td { {user.id.to_string()} }
+            td { {user.id.as_inner().to_string()} }
             td { {user.username} }
             td { {user.full_name} }
             td { {user.email} }

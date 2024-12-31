@@ -402,7 +402,7 @@ pub fn Home() -> Element {
                     tbody { class: "block sm:table-row-group",
                         for entry in timeline.iter() {
                             EntryRow {
-                                key: "{entry.get_id()}",
+                                key: "{entry.get_id().as_str()}",
                                 entry: entry.clone(),
                                 on_click: move |entry: Entry| {
                                     match &entry.data {

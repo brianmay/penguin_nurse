@@ -3,7 +3,7 @@ use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use super::common::MaybeString;
+use super::{common::MaybeString, UserId};
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]
 #[serde(tag = "type")]
@@ -17,6 +17,24 @@ pub enum Bristol {
     B5,
     B6,
     B7,
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct PooId(i64);
+
+impl PooId {
+    pub fn new(id: i64) -> Self {
+        Self(id)
+    }
+    pub fn as_inner(self) -> i64 {
+        self.0
+    }
+}
+
+impl std::fmt::Display for PooId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "PooId({})", self.0)
+    }
 }
 
 #[derive(Error, Debug)]
@@ -109,8 +127,8 @@ impl Bristol {
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Poo {
-    pub id: i64,
-    pub user_id: i64,
+    pub id: PooId,
+    pub user_id: UserId,
     pub time: chrono::DateTime<chrono::Utc>,
     pub duration: chrono::Duration,
     pub urgency: i32,
@@ -125,7 +143,7 @@ pub struct Poo {
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewPoo {
-    pub user_id: i64,
+    pub user_id: UserId,
     pub time: chrono::DateTime<chrono::Utc>,
     pub duration: chrono::Duration,
     pub urgency: i32,
@@ -138,7 +156,7 @@ pub struct NewPoo {
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct UpdatePoo {
-    pub user_id: Option<i64>,
+    pub user_id: Option<UserId>,
     pub time: Option<chrono::DateTime<chrono::Utc>>,
     pub duration: Option<chrono::Duration>,
     pub urgency: Option<i32>,

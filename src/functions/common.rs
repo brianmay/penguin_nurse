@@ -2,6 +2,7 @@ use axum::Extension;
 use dioxus::prelude::*;
 use server_fn::error::NoCustomError;
 
+use crate::models::UserId;
 use crate::server::auth::Session;
 use crate::server::database::connection::DatabaseConnection;
 use crate::server::database::connection::DatabasePool;
@@ -11,13 +12,13 @@ pub async fn get_database_connection() -> Result<DatabaseConnection, ServerFnErr
     pool.get().await.map_err(ServerFnError::from)
 }
 
-pub async fn get_user_id() -> Result<i64, ServerFnError> {
+pub async fn get_user_id() -> Result<UserId, ServerFnError> {
     let session: Session = extract().await?;
 
     session
         .user
         .as_ref()
-        .map(|x| x.id)
+        .map(|x| UserId::new(x.id))
         .ok_or(ServerFnError::ServerError::<NoCustomError>(
             "Not Logged In".to_string(),
         ))

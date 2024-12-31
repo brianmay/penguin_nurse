@@ -3,9 +3,21 @@ use serde::{Deserialize, Serialize};
 
 // Types from database::models that frontend requires. This excludes secrets such as the users password.
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct UserId(i64);
+
+impl UserId {
+    pub fn new(id: i64) -> Self {
+        Self(id)
+    }
+    pub fn as_inner(self) -> i64 {
+        self.0
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 pub struct User {
-    pub id: i64,
+    pub id: UserId,
     pub username: String,
     pub full_name: String,
     pub oidc_id: MaybeString,

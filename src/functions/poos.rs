@@ -1,4 +1,4 @@
-use crate::models;
+use crate::models::{self, PooId, UserId};
 use chrono::{DateTime, Utc};
 use dioxus::prelude::*;
 
@@ -7,7 +7,7 @@ use super::common::{get_database_connection, get_user_id};
 
 #[server]
 pub async fn get_poos_for_time_range(
-    user_id: i64,
+    user_id: UserId,
     start: DateTime<Utc>,
     end: DateTime<Utc>,
 ) -> Result<Vec<models::Poo>, ServerFnError> {
@@ -22,7 +22,7 @@ pub async fn get_poos_for_time_range(
     let mut conn = get_database_connection().await?;
     crate::server::database::models::poos::get_poos_for_time_range(
         &mut conn,
-        logged_in_user_id,
+        logged_in_user_id.as_inner(),
         start,
         end,
     )
@@ -53,7 +53,7 @@ pub async fn create_poo(poo: models::NewPoo) -> Result<models::Poo, ServerFnErro
 }
 
 #[server]
-pub async fn update_poo(id: i64, poo: models::UpdatePoo) -> Result<models::Poo, ServerFnError> {
+pub async fn update_poo(id: PooId, poo: models::UpdatePoo) -> Result<models::Poo, ServerFnError> {
     let logged_in_user_id = get_user_id().await?;
 
     if let Some(req_user_id) = poo.user_id {
@@ -70,18 +70,22 @@ pub async fn update_poo(id: i64, poo: models::UpdatePoo) -> Result<models::Poo, 
     let updates = crate::server::database::models::poos::UpdatePoo::from_front_end(&poo);
     error!("updates: {:?}", updates.comments);
 
-    crate::server::database::models::poos::update_poo(&mut conn, id, updates)
+    crate::server::database::models::poos::update_poo(&mut conn, id.as_inner(), updates)
         .await
         .map(|x| x.into())
         .map_err(ServerFnError::from)
 }
 
 #[server]
-pub async fn delete_poo(id: i64) -> Result<(), ServerFnError> {
+pub async fn delete_poo(id: PooId) -> Result<(), ServerFnError> {
     let logged_in_user_id = get_user_id().await?;
     let mut conn = get_database_connection().await?;
 
-    crate::server::database::models::poos::delete_poo(&mut conn, id, logged_in_user_id)
-        .await
-        .map_err(ServerFnError::from)
+    crate::server::database::models::poos::delete_poo(
+        &mut conn,
+        id.as_inner(),
+        logged_in_user_id.as_inner(),
+    )
+    .await
+    .map_err(ServerFnError::from)
 }

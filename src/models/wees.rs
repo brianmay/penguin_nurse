@@ -1,12 +1,30 @@
 use serde::{Deserialize, Serialize};
 
-use super::common::MaybeString;
+use super::{common::MaybeString, UserId};
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct WeeId(i64);
+
+impl WeeId {
+    pub fn new(id: i64) -> Self {
+        Self(id)
+    }
+    pub fn as_inner(self) -> i64 {
+        self.0
+    }
+}
+
+impl std::fmt::Display for WeeId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "WeeId({})", self.0)
+    }
+}
 
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Wee {
-    pub id: i64,
-    pub user_id: i64,
+    pub id: WeeId,
+    pub user_id: UserId,
     pub time: chrono::DateTime<chrono::Utc>,
     pub duration: chrono::Duration,
     pub urgency: i32,
@@ -20,7 +38,7 @@ pub struct Wee {
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewWee {
-    pub user_id: i64,
+    pub user_id: UserId,
     pub time: chrono::DateTime<chrono::Utc>,
     pub duration: chrono::Duration,
     pub urgency: i32,
@@ -32,7 +50,7 @@ pub struct NewWee {
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct UpdateWee {
-    pub user_id: Option<i64>,
+    pub user_id: Option<UserId>,
     pub time: Option<chrono::DateTime<chrono::Utc>>,
     pub duration: Option<chrono::Duration>,
     pub urgency: Option<i32>,

@@ -1,7 +1,10 @@
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 
-use crate::server::database::{connection::DatabaseConnection, schema};
+use crate::{
+    models::{PooId, UserId},
+    server::database::{connection::DatabaseConnection, schema},
+};
 
 #[allow(dead_code)]
 #[derive(Queryable, Selectable, Debug, Clone)]
@@ -26,8 +29,8 @@ pub struct Poo {
 impl From<Poo> for crate::models::Poo {
     fn from(poo: Poo) -> Self {
         Self {
-            id: poo.id,
-            user_id: poo.user_id,
+            id: PooId::new(poo.id),
+            user_id: UserId::new(poo.user_id),
             time: poo.time,
             duration: poo.duration,
             urgency: poo.urgency,
@@ -79,7 +82,7 @@ pub struct NewPoo<'a> {
 impl<'a> NewPoo<'a> {
     pub fn from_front_end(poo: &'a crate::models::NewPoo) -> Self {
         Self {
-            user_id: poo.user_id,
+            user_id: poo.user_id.as_inner(),
             time: poo.time,
             duration: poo.duration,
             urgency: poo.urgency,

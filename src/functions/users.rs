@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use server_fn::error::NoCustomError;
 
-use crate::models;
+use crate::models::{self, UserId};
 
 #[cfg(feature = "server")]
 use super::common::{assert_is_admin, get_database_connection};
@@ -45,7 +45,10 @@ pub async fn create_user(user: models::NewUser) -> Result<models::User, ServerFn
 }
 
 #[server]
-pub async fn update_user(id: i64, user: models::UpdateUser) -> Result<models::User, ServerFnError> {
+pub async fn update_user(
+    id: UserId,
+    user: models::UpdateUser,
+) -> Result<models::User, ServerFnError> {
     use crate::server::database::models::users as server;
 
     assert_is_admin().await?;
@@ -56,18 +59,18 @@ pub async fn update_user(id: i64, user: models::UpdateUser) -> Result<models::Us
     let updates: server::UpdateUser =
         server::UpdateUser::from_front_end(&user, hashed_password.as_deref());
 
-    crate::server::database::models::users::update_user(&mut conn, id, updates)
+    crate::server::database::models::users::update_user(&mut conn, id.as_inner(), updates)
         .await
         .map(|x| x.into())
         .map_err(ServerFnError::<NoCustomError>::from)
 }
 
 #[server]
-pub async fn delete_user(id: i64) -> Result<(), ServerFnError> {
+pub async fn delete_user(id: UserId) -> Result<(), ServerFnError> {
     assert_is_admin().await?;
     let mut conn = get_database_connection().await?;
 
-    crate::server::database::models::users::delete_user(&mut conn, id)
+    crate::server::database::models::users::delete_user(&mut conn, id.as_inner())
         .await
         .map_err(ServerFnError::<NoCustomError>::from)
 }

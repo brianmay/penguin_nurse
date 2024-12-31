@@ -10,12 +10,12 @@ use crate::{
         InputTextArea, Saving, SubmitButton, ValidationError,
     },
     functions::wees::{create_wee, delete_wee, update_wee},
-    models::{NewWee, UpdateWee, Wee},
+    models::{NewWee, UpdateWee, UserId, Wee},
 };
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Operation {
-    Create { user_id: i64 },
+    Create { user_id: UserId },
     Update { wee: Arc<Wee> },
 }
 

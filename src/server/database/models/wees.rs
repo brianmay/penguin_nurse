@@ -1,3 +1,4 @@
+use crate::models::{UserId, WeeId};
 use crate::server::database::{connection::DatabaseConnection, schema};
 use diesel::prelude::*;
 use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
@@ -25,8 +26,8 @@ pub struct Wee {
 impl From<Wee> for crate::models::Wee {
     fn from(wee: Wee) -> Self {
         Self {
-            id: wee.id,
-            user_id: wee.user_id,
+            id: WeeId::new(wee.id),
+            user_id: UserId::new(wee.user_id),
             time: wee.time,
             duration: wee.duration,
             urgency: wee.urgency,
@@ -76,7 +77,7 @@ pub struct NewWee<'a> {
 impl<'a> NewWee<'a> {
     pub fn from_front_end(wee: &'a crate::models::NewWee) -> Self {
         Self {
-            user_id: wee.user_id,
+            user_id: wee.user_id.as_inner(),
             time: wee.time,
             duration: wee.duration,
             urgency: wee.urgency,

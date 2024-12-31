@@ -11,12 +11,12 @@ use crate::{
         ValidationError,
     },
     functions::poos::{create_poo, delete_poo, update_poo},
-    models::{Bristol, NewPoo, Poo, UpdatePoo},
+    models::{Bristol, NewPoo, Poo, UpdatePoo, UserId},
 };
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Operation {
-    Create { user_id: i64 },
+    Create { user_id: UserId },
     Update { poo: Arc<Poo> },
 }
 
