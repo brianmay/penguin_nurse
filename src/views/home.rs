@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use crate::{
-    components::{ChangeWee, DeleteWee, WeeOperation},
+    components::{ChangePoo, ChangeWee, DeletePoo, DeleteWee, PooOperation, WeeOperation},
     functions::{poos::get_poos_for_time_range, wees::get_wees_for_time_range},
-    models::{Entry, EntryData, Timeline, User, Wee},
+    models::{Entry, EntryData, MaybeString, Poo, Timeline, User, Wee},
 };
 use chrono::{DateTime, Local, NaiveDate, TimeZone, Timelike, Utc};
 use dioxus::prelude::*;
@@ -57,6 +57,23 @@ fn event_urgency(urgency: i32) -> Element {
 }
 
 #[component]
+fn event_colour(colour: palette::Hsv) -> Element {
+    let colour: palette::Srgb = colour.into_color();
+
+    rsx! {
+        div {
+            class: "w-20 h-20 m-1 inline-block border-2 border-white",
+            style: format!(
+                "background-color: rgb({}, {}, {})",
+                colour.red * 255.0,
+                colour.green * 255.0,
+                colour.blue * 255.0,
+            ),
+        }
+    }
+}
+
+#[component]
 fn wee_delta(delta: chrono::Duration) -> Element {
     rsx! {
         if delta.num_seconds() == 0 {
@@ -84,23 +101,6 @@ fn wee_mls(mls: i32) -> Element {
             span { class: "text-success", {mls.to_string() + " ml"} }
         } else {
             span { class: "text-error", {mls.to_string() + " ml"} }
-        }
-    }
-}
-
-#[component]
-fn wee_colour(colour: palette::Hsv) -> Element {
-    let colour: palette::Srgb = colour.into_color();
-
-    rsx! {
-        div {
-            class: "w-10 h-10 m-1 inline-block border-2 border-white",
-            style: format!(
-                "background-color: rgb({}, {}, {})",
-                colour.red * 255.0,
-                colour.green * 255.0,
-                colour.blue * 255.0,
-            ),
         }
     }
 }
@@ -160,23 +160,6 @@ fn poo_quantity(quantity: i32) -> Element {
     }
 }
 
-#[component]
-fn poo_colour(colour: palette::Hsv) -> Element {
-    let colour: palette::Srgb = colour.into_color();
-
-    rsx! {
-        div {
-            class: "w-10 h-10 m-1 inline-block border-2 border-white",
-            style: format!(
-                "background-color: rgb({}, {}, {})",
-                colour.red * 255.0,
-                colour.green * 255.0,
-                colour.blue * 255.0,
-            ),
-        }
-    }
-}
-
 fn get_utc_times_for_date(
     date: NaiveDate,
 ) -> Result<(DateTime<Utc>, DateTime<Utc>), ServerFnError> {
@@ -206,8 +189,6 @@ fn get_utc_times_for_date(
         |x| Ok(Local.from_local_datetime(&x)),
     )?;
 
-    error!("Start: {:?}, End: {:?}", start, end);
-
     let start = start.single().unwrap_or_else(|| {
         error!("Failed to convert start time to UTC for date: {:?}", today);
         panic!("Failed to convert start time to UTC");
@@ -221,8 +202,6 @@ fn get_utc_times_for_date(
     let start = start.with_timezone(&Utc);
     let end = end.with_timezone(&Utc);
 
-    error!("Start: {:?}, End: {:?}", start, end);
-
     Ok((start, end))
 }
 
@@ -230,7 +209,7 @@ fn get_utc_times_for_date(
 fn EntryRow(entry: Entry, on_click: Callback<Entry>) -> Element {
     rsx! {
         tr {
-            class: "hover:bg-gray-100",
+            class: "hover:bg-gray-800",
             onclick: move |_| on_click(entry.clone()),
             td {
                 event_time { time: entry.time }
@@ -245,7 +224,7 @@ fn EntryRow(entry: Entry, on_click: Callback<Entry>) -> Element {
                             wee_delta { delta: wee.duration }
                         }
                         td { class: "flex",
-                            wee_colour { colour: wee.colour }
+                            event_colour { colour: wee.colour }
                             div {
                                 div {
                                     wee_mls { mls: wee.mls }
@@ -253,7 +232,7 @@ fn EntryRow(entry: Entry, on_click: Callback<Entry>) -> Element {
                                 div {
                                     event_urgency { urgency: wee.urgency }
                                 }
-                                if let Some(comments) = &wee.comments {
+                                if let MaybeString::Some(comments) = &wee.comments {
                                     div { {comments.to_string()} }
                                 }
                             }
@@ -269,7 +248,7 @@ fn EntryRow(entry: Entry, on_click: Callback<Entry>) -> Element {
                             poo_delta { delta: poo.duration }
                         }
                         td { class: "flex",
-                            poo_colour { colour: poo.colour }
+                            event_colour { colour: poo.colour }
                             div {
                                 div {
                                     poo_bristol { bristol: poo.bristol }
@@ -280,7 +259,7 @@ fn EntryRow(entry: Entry, on_click: Callback<Entry>) -> Element {
                                 div {
                                     event_urgency { urgency: poo.urgency }
                                 }
-                                if let Some(comments) = &wee.comments {
+                                if let MaybeString::Some(comments) = &poo.comments {
                                     div { {comments.to_string()} }
                                 }
                             }
@@ -295,7 +274,9 @@ fn EntryRow(entry: Entry, on_click: Callback<Entry>) -> Element {
 
 enum ActiveDialog {
     ChangeWee(WeeOperation),
+    ChangePoo(PooOperation),
     DeleteWee(Arc<Wee>),
+    DeletePoo(Arc<Poo>),
     None,
 }
 
@@ -346,7 +327,14 @@ pub fn Home() -> Element {
                     onclick: move |_| {
                         active_dialog.set(ActiveDialog::ChangeWee(WeeOperation::Create { user_id }))
                     },
-                    "Create Wee"
+                    "Wee"
+                }
+                button {
+                    class: "btn btn-primary ml-2",
+                    onclick: move |_| {
+                        active_dialog.set(ActiveDialog::ChangePoo(PooOperation::Create { user_id }))
+                    },
+                    "Poo"
                 }
             }
 
@@ -418,7 +406,14 @@ pub fn Home() -> Element {
                                                     }),
                                                 );
                                         }
-                                        EntryData::Poo(_) => {}
+                                        EntryData::Poo(poo) => {
+                                            active_dialog
+                                                .set(
+                                                    ActiveDialog::ChangePoo(PooOperation::Update {
+                                                        poo: poo.clone(),
+                                                    }),
+                                                );
+                                        }
                                     }
                                 },
                             }
@@ -456,6 +451,34 @@ pub fn Home() -> Element {
                         wee: wee.clone(),
                         on_cancel: move || active_dialog.set(ActiveDialog::None),
                         on_delete: move |_wee| {
+                            active_dialog.set(ActiveDialog::None);
+                            timeline.restart();
+                        },
+                    }
+                }
+            }
+            ActiveDialog::ChangePoo(op) => {
+                rsx! {
+                    ChangePoo {
+                        op: op.clone(),
+                        on_cancel: move || active_dialog.set(ActiveDialog::None),
+                        on_save: move |_poo| {
+                            active_dialog.set(ActiveDialog::None);
+                            timeline.restart();
+                        },
+                        on_delete: move |poo| {
+                            active_dialog.set(ActiveDialog::DeletePoo(poo));
+                            timeline.restart();
+                        },
+                    }
+                }
+            }
+            ActiveDialog::DeletePoo(poo) => {
+                rsx! {
+                    DeletePoo {
+                        poo: poo.clone(),
+                        on_cancel: move || active_dialog.set(ActiveDialog::None),
+                        on_delete: move |_poo| {
                             active_dialog.set(ActiveDialog::None);
                             timeline.restart();
                         },

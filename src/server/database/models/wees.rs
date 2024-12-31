@@ -34,7 +34,7 @@ impl From<Wee> for crate::models::Wee {
             colour: palette::Hsv::new(wee.colour_hue, wee.colour_saturation, wee.colour_value),
             created_at: wee.created_at,
             updated_at: wee.updated_at,
-            comments: wee.comments,
+            comments: wee.comments.into(),
         }
     }
 }

@@ -19,3 +19,6 @@ pub use entry::EntryData;
 
 mod timeline;
 pub use timeline::Timeline;
+
+mod common;
+pub use common::MaybeString;

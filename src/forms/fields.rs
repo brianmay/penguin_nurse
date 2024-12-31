@@ -252,7 +252,7 @@ pub fn ColourButton(colour: Hsv, name: String, on_click: Callback<Hsv>) -> Eleme
 
     rsx! {
         button {
-            class: "w-10 h-10 m-1 inline-block border-2 border-white",
+            class: "p-5 m-1 inline-block border-2 border-white",
             style: format!(
                 "background-color: rgb({}, {}, {})",
                 rgb.red * 255.0,
@@ -399,7 +399,7 @@ pub fn InputColour(
 
             if let Some(colour) = colour {
                 div {
-                    class: "w-10 h-10 m-1 inline-block border-2 border-white",
+                    class: "w-20 h-20 m-1 inline-block border-2 border-white",
                     style: format!(
                         "background-color: rgb({}, {}, {})",
                         colour.red * 255.0,

@@ -65,7 +65,10 @@ pub async fn update_poo(id: i64, poo: models::UpdatePoo) -> Result<models::Poo, 
     }
 
     let mut conn = get_database_connection().await?;
+    use tracing::error;
+    error!("poo: {:?}", poo.comments);
     let updates = crate::server::database::models::poos::UpdatePoo::from_front_end(&poo);
+    error!("updates: {:?}", updates.comments);
 
     crate::server::database::models::poos::update_poo(&mut conn, id, updates)
         .await

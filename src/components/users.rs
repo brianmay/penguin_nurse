@@ -9,7 +9,7 @@ use crate::{
         Saving, SubmitButton, ValidationError,
     },
     functions::users::{create_user, delete_user, update_user},
-    models::{NewUser, UpdateUser, User},
+    models::{MaybeString, NewUser, UpdateUser, User},
 };
 
 async fn do_save_new_user(
@@ -32,7 +32,7 @@ async fn do_save_new_user(
         email,
         full_name,
         password,
-        oidc_id: None,
+        oidc_id: MaybeString::None,
         is_admin,
     };
     create_user(user_updates).await.map_err(EditError::Server)

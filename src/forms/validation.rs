@@ -1,6 +1,5 @@
 use chrono::{TimeDelta, Utc};
 use palette::Hsv;
-use serde::de::value;
 
 use super::errors::ValidationError;
 
@@ -173,6 +172,16 @@ pub fn validate_urgency(str: &str) -> Result<i32, ValidationError> {
         Ok(urgency) if (0..=5).contains(&urgency) => Ok(urgency),
         Ok(_) => Err(ValidationError(
             "Urgency must be between 0 and 5".to_string(),
+        )),
+        Err(err) => Err(ValidationError(format!("Invalid integer: {err}"))),
+    }
+}
+
+pub fn validate_poo_quantity(str: &str) -> Result<i32, ValidationError> {
+    match str.parse() {
+        Ok(quantity) if (0..=5).contains(&quantity) => Ok(quantity),
+        Ok(_) => Err(ValidationError(
+            "Quantity must be between 0 and 5".to_string(),
         )),
         Err(err) => Err(ValidationError(format!("Invalid integer: {err}"))),
     }

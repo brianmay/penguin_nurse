@@ -34,7 +34,7 @@ impl From<Poo> for crate::models::Poo {
             quantity: poo.quantity,
             bristol: poo.bristol,
             colour: palette::Hsv::new(poo.colour_hue, poo.colour_saturation, poo.colour_value),
-            comments: poo.comments,
+            comments: poo.comments.into(),
             created_at: poo.created_at,
             updated_at: poo.updated_at,
         }

@@ -66,7 +66,7 @@ impl From<User> for crate::models::User {
             id: user.id,
             username: user.username,
             full_name: user.full_name,
-            oidc_id: user.oidc_id,
+            oidc_id: user.oidc_id.into(),
             email: user.email,
             is_admin: user.is_admin,
             created_at: user.created_at,

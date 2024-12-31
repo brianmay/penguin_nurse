@@ -5,18 +5,18 @@ use std::sync::Arc;
 
 use crate::{
     forms::{
-        validate_colour, validate_comments, validate_duration, validate_mls, validate_time,
-        validate_urgency, CancelButton, DeleteButton, EditError, InputColour, InputString, Saving,
-        SubmitButton, ValidationError,
+        validate_bristol, validate_colour, validate_comments, validate_duration,
+        validate_poo_quantity, validate_time, validate_urgency, CancelButton, DeleteButton,
+        EditError, InputColour, InputString, Saving, SubmitButton, ValidationError,
     },
-    functions::wees::{create_wee, delete_wee, update_wee},
-    models::{NewWee, UpdateWee, Wee},
+    functions::poos::{create_poo, delete_poo, update_poo},
+    models::{NewPoo, Poo, UpdatePoo},
 };
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Operation {
     Create { user_id: i64 },
-    Update { wee: Arc<Wee> },
+    Update { poo: Arc<Poo> },
 }
 
 async fn do_save(
@@ -24,90 +24,101 @@ async fn do_save(
     validate_time: Result<DateTime<Utc>, ValidationError>,
     validate_duration: Result<TimeDelta, ValidationError>,
     validate_urgency: Result<i32, ValidationError>,
-    validate_mls: Result<i32, ValidationError>,
+    validate_quantity: Result<i32, ValidationError>,
+    validate_bristol: Result<i32, ValidationError>,
     validate_colour: Result<Hsv, ValidationError>,
     validate_comments: Result<Option<String>, ValidationError>,
-) -> Result<Wee, EditError> {
+) -> Result<Poo, EditError> {
     let time = validate_time?;
     let duration = validate_duration?;
     let urgency = validate_urgency?;
-    let mls = validate_mls?;
+    let quantity = validate_quantity?;
+    let bristol = validate_bristol?;
     let colour = validate_colour?;
     let comments = validate_comments?;
 
     match op {
         Operation::Create { user_id } => {
-            let updates = NewWee {
+            let updates = NewPoo {
                 user_id: *user_id,
                 time,
                 duration,
                 urgency,
-                mls,
+                quantity,
+                bristol,
                 colour,
                 comments: comments.into(),
             };
-            create_wee(updates).await.map_err(EditError::Server)
+            create_poo(updates).await.map_err(EditError::Server)
         }
-        Operation::Update { wee } => {
-            let updates = UpdateWee {
+        Operation::Update { poo } => {
+            let updates = UpdatePoo {
                 user_id: None,
                 time: Some(time),
                 duration: Some(duration),
                 urgency: Some(urgency),
-                mls: Some(mls),
+                quantity: Some(quantity),
+                bristol: Some(bristol),
                 colour: Some(colour),
                 comments: Some(comments.into()),
             };
-            update_wee(wee.id, updates).await.map_err(EditError::Server)
+            use tracing::error;
+            error!("updates: {:?}", updates);
+            update_poo(poo.id, updates).await.map_err(EditError::Server)
         }
     }
 }
 
 #[component]
-pub fn ChangeWee(
+pub fn ChangePoo(
     op: Operation,
     on_cancel: Callback,
-    on_save: Callback<Wee>,
-    on_delete: Callback<Arc<Wee>>,
+    on_save: Callback<Poo>,
+    on_delete: Callback<Arc<Poo>>,
 ) -> Element {
     // let user: Signal<Arc<Option<User>>> = use_context();
 
     let time = use_signal(|| match &op {
         Operation::Create { .. } => Utc::now().with_timezone(&Local).to_rfc3339(),
-        Operation::Update { wee } => {
-            let local = wee.time.with_timezone(&Local);
+        Operation::Update { poo } => {
+            let local = poo.time.with_timezone(&Local);
             local.to_rfc3339()
         }
     });
     let duration = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { wee } => wee.duration.num_seconds().to_string(),
+        Operation::Update { poo } => poo.duration.num_seconds().to_string(),
     });
     let urgency = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { wee } => wee.urgency.to_string(),
+        Operation::Update { poo } => poo.urgency.to_string(),
     });
-    let mls = use_signal(|| match &op {
+    let quantity = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { wee } => wee.mls.to_string(),
+        Operation::Update { poo } => poo.quantity.to_string(),
+    });
+    let bristol = use_signal(|| match &op {
+        Operation::Create { .. } => String::new(),
+        Operation::Update { poo } => poo.bristol.to_string(),
     });
     let colour = use_signal(|| match &op {
         Operation::Create { .. } => (String::new(), String::new(), String::new()),
-        Operation::Update { wee } => (
-            wee.colour.hue.into_inner().to_string(),
-            wee.colour.saturation.to_string(),
-            wee.colour.value.to_string(),
+        Operation::Update { poo } => (
+            poo.colour.hue.into_inner().to_string(),
+            poo.colour.saturation.to_string(),
+            poo.colour.value.to_string(),
         ),
     });
     let comments = use_signal(|| match &op {
         Operation::Create { .. } => "".to_string(),
-        Operation::Update { wee } => wee.comments.clone().option().unwrap_or_default(),
+        Operation::Update { poo } => poo.comments.clone().option().unwrap_or_default(),
     });
 
     let validate_time = use_memo(move || validate_time(&time()));
     let validate_duration = use_memo(move || validate_duration(&duration()));
     let validate_urgency = use_memo(move || validate_urgency(&urgency()));
-    let validate_mls = use_memo(move || validate_mls(&mls()));
+    let validate_quantity = use_memo(move || validate_poo_quantity(&quantity()));
+    let validate_bristol = use_memo(move || validate_bristol(&bristol()));
     let validate_colour = use_memo(move || validate_colour(colour()));
     let validate_comments = use_memo(move || validate_comments(&comments()));
 
@@ -119,7 +130,8 @@ pub fn ChangeWee(
         validate_time().is_err()
             || validate_duration().is_err()
             || validate_urgency().is_err()
-            || validate_mls().is_err()
+            || validate_quantity().is_err()
+            || validate_bristol().is_err()
             || validate_colour().is_err()
             || validate_comments().is_err()
             || disabled()
@@ -136,16 +148,17 @@ pub fn ChangeWee(
                 validate_time(),
                 validate_duration(),
                 validate_urgency(),
-                validate_mls(),
+                validate_quantity(),
+                validate_bristol(),
                 validate_colour(),
                 validate_comments(),
             )
             .await;
 
             match result {
-                Ok(wee) => {
+                Ok(poo) => {
                     saving.set(Saving::Finished(Ok(())));
-                    on_save(wee);
+                    on_save(poo);
                 }
                 Err(err) => saving.set(Saving::Finished(Err(err))),
             }
@@ -158,8 +171,8 @@ pub fn ChangeWee(
             div { class: "modal-box",
                 h3 { class: "text-lg font-bold",
                     match &op {
-                        Operation::Create { .. } => "Create Wee".to_string(),
-                        Operation::Update { wee } => format!("Edit Wee {}", wee.id),
+                        Operation::Create { .. } => "Create Poo".to_string(),
+                        Operation::Update { poo } => format!("Edit Poo {}", poo.id),
                     }
                 }
                 p { class: "py-4", "Press ESC key or click the button below to close" }
@@ -217,10 +230,17 @@ pub fn ChangeWee(
                         disabled,
                     }
                     InputString {
-                        id: "mls",
-                        label: "Mls",
-                        value: mls,
-                        validate: validate_mls,
+                        id: "quantity",
+                        label: "Quantity",
+                        value: quantity,
+                        validate: validate_quantity,
+                        disabled,
+                    }
+                    InputString {
+                        id: "bristol",
+                        label: "Bristol",
+                        value: bristol,
+                        validate: validate_bristol,
                         disabled,
                     }
                     InputColour {
@@ -229,9 +249,9 @@ pub fn ChangeWee(
                         value: colour,
                         validate: validate_colour,
                         colours: vec![
-                            ("light".to_string(), Hsv::new(60.0, 0.2, 1.0)),
-                            ("normal".to_string(), Hsv::new(60.0, 1.0, 1.0)),
-                            ("dark".to_string(), Hsv::new(44.0, 1.0, 1.0)),
+                            ("light".to_string(), Hsv::new(25.0, 1.0, 0.8)),
+                            ("normal".to_string(), Hsv::new(25.0, 1.0, 0.5)),
+                            ("dark".to_string(), Hsv::new(25.0, 1.0, 0.2)),
                             ("red".to_string(), Hsv::new(0.0, 1.0, 1.0)),
                         ],
                         disabled,
@@ -253,11 +273,11 @@ pub fn ChangeWee(
                         },
                     }
                     CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                    if let Operation::Update { wee } = &op {
+                    if let Operation::Update { poo } = &op {
                         {
-                            let wee: Arc<Wee> = wee.clone();
+                            let poo: Arc<Poo> = poo.clone();
                             rsx! {
-                                DeleteButton { on_delete: move |()| on_delete(wee.clone()), title: "Delete" }
+                                DeleteButton { on_delete: move |()| on_delete(poo.clone()), title: "Delete" }
                             }
                         }
                     }
@@ -268,21 +288,21 @@ pub fn ChangeWee(
 }
 
 #[component]
-pub fn DeleteWee(wee: Arc<Wee>, on_cancel: Callback, on_delete: Callback<Arc<Wee>>) -> Element {
+pub fn DeletePoo(poo: Arc<Poo>, on_cancel: Callback, on_delete: Callback<Arc<Poo>>) -> Element {
     let mut saving = use_signal(|| Saving::No);
 
     let disabled = use_memo(move || saving.read().is_saving());
 
-    let wee_clone = wee.clone();
+    let poo_clone = poo.clone();
     let on_save = use_callback(move |()| {
-        let wee_clone = wee_clone.clone();
+        let poo_clone = poo_clone.clone();
         spawn(async move {
             saving.set(Saving::Yes);
 
-            match delete_wee(wee_clone.id).await {
+            match delete_poo(poo_clone.id).await {
                 Ok(_) => {
                     saving.set(Saving::Finished(Ok(())));
-                    on_delete(wee_clone.clone());
+                    on_delete(poo_clone.clone());
                 }
                 Err(err) => saving.set(Saving::Finished(Err(EditError::Server(err)))),
             }
@@ -293,8 +313,8 @@ pub fn DeleteWee(wee: Arc<Wee>, on_cancel: Callback, on_delete: Callback<Arc<Wee
         dialog { class: "modal modal-open", id: "my_modal_1",
             div { class: "modal-box",
                 h3 { class: "text-lg font-bold",
-                    "Delete wee "
-                    {wee.id.to_string()}
+                    "Delete poo "
+                    {poo.id.to_string()}
                 }
                 p { class: "py-4", "Press ESC key or click the button below to close" }
                 match &*saving.read() {

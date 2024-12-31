@@ -11,3 +11,8 @@ mod wees;
 pub use wees::ChangeWee;
 pub use wees::DeleteWee;
 pub use wees::Operation as WeeOperation;
+
+mod poos;
+pub use poos::ChangePoo;
+pub use poos::DeletePoo;
+pub use poos::Operation as PooOperation;

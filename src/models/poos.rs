@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use super::common::MaybeString;
+
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Poo {
@@ -11,7 +13,7 @@ pub struct Poo {
     pub quantity: i32,
     pub bristol: i32,
     pub colour: palette::Hsv,
-    pub comments: Option<String>,
+    pub comments: MaybeString,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -26,7 +28,7 @@ pub struct NewPoo {
     pub quantity: i32,
     pub bristol: i32,
     pub colour: palette::Hsv,
-    pub comments: Option<String>,
+    pub comments: MaybeString,
 }
 
 #[allow(dead_code)]
@@ -39,5 +41,5 @@ pub struct UpdatePoo {
     pub quantity: Option<i32>,
     pub bristol: Option<i32>,
     pub colour: Option<palette::Hsv>,
-    pub comments: Option<Option<String>>,
+    pub comments: Option<MaybeString>,
 }
