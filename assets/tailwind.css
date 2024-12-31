@@ -2804,6 +2804,18 @@ html {
     height: 100vh;
   }
 
+  .md\:h-auto {
+    height: auto;
+  }
+
+  .md\:max-h-screen {
+    max-height: 100vh;
+  }
+
+  .md\:max-h-\[calc\(100vh-5em\)\] {
+    max-height: calc(100vh - 5em);
+  }
+
   .md\:w-auto {
     width: auto;
   }
