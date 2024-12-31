@@ -12,20 +12,23 @@ use crate::{
     models::{MaybeString, NewUser, UpdateUser, User},
 };
 
-async fn do_save_new_user(
-    username: Result<String, ValidationError>,
-    email: Result<String, ValidationError>,
-    full_name: Result<String, ValidationError>,
-    password: Result<String, ValidationError>,
-    password_confirm: Result<String, ValidationError>,
-    is_admin: Result<bool, ValidationError>,
-) -> Result<User, EditError> {
-    let username = username?;
-    let email = email?;
-    let full_name = full_name?;
-    let password = password?;
-    let _password_confirm = password_confirm?;
-    let is_admin = is_admin?;
+#[derive(Debug, Clone)]
+struct ValidateSaveNewUser {
+    username: Memo<Result<String, ValidationError>>,
+    email: Memo<Result<String, ValidationError>>,
+    full_name: Memo<Result<String, ValidationError>>,
+    password: Memo<Result<String, ValidationError>>,
+    password_confirm: Memo<Result<String, ValidationError>>,
+    is_admin: Memo<Result<bool, ValidationError>>,
+}
+
+async fn do_save_new_user(validate: &ValidateSaveNewUser) -> Result<User, EditError> {
+    let username = validate.username.read().clone()?;
+    let email = validate.email.read().clone()?;
+    let full_name = validate.full_name.read().clone()?;
+    let password = validate.password.read().clone()?;
+    let _password_confirm = validate.password_confirm.read().clone()?;
+    let is_admin = validate.is_admin.read().clone()?;
 
     let user_updates = NewUser {
         username,
@@ -38,17 +41,22 @@ async fn do_save_new_user(
     create_user(user_updates).await.map_err(EditError::Server)
 }
 
+#[derive(Debug, Clone)]
+struct ValidateUpdateExistingUser {
+    username: Memo<Result<String, ValidationError>>,
+    email: Memo<Result<String, ValidationError>>,
+    full_name: Memo<Result<String, ValidationError>>,
+    is_admin: Memo<Result<bool, ValidationError>>,
+}
+
 async fn do_update_existing_user(
     user: &User,
-    username: Result<String, ValidationError>,
-    email: Result<String, ValidationError>,
-    full_name: Result<String, ValidationError>,
-    is_admin: Result<bool, ValidationError>,
+    validate: &ValidateUpdateExistingUser,
 ) -> Result<User, EditError> {
-    let username = username?;
-    let email = email?;
-    let full_name = full_name?;
-    let is_admin = is_admin?;
+    let username = validate.username.read().clone()?;
+    let email = validate.email.read().clone()?;
+    let full_name = validate.full_name.read().clone()?;
+    let is_admin = validate.is_admin.read().clone()?;
 
     let user_updates = UpdateUser {
         username: Some(username),
@@ -63,13 +71,18 @@ async fn do_update_existing_user(
         .map_err(EditError::Server)
 }
 
+#[derive(Debug, Clone)]
+struct ValidateChangePassword {
+    password: Memo<Result<String, ValidationError>>,
+    password_confirm: Memo<Result<String, ValidationError>>,
+}
+
 async fn do_change_password(
     user: &User,
-    password: Result<String, ValidationError>,
-    password_confirm: Result<String, ValidationError>,
+    validate: &ValidateChangePassword,
 ) -> Result<User, EditError> {
-    let password = password?;
-    let _password_confirm = password_confirm?;
+    let password = validate.password.read().clone()?;
+    let _password_confirm = validate.password_confirm.read().clone()?;
 
     let user_updates = UpdateUser {
         username: None,
@@ -93,41 +106,36 @@ pub fn CreateUser(on_cancel: Callback, on_save: Callback<User>) -> Element {
     let password_confirm = use_signal(String::new);
     let is_admin = use_signal(|| false);
 
-    let validate_username = use_memo(move || validate_username(&username()));
-    let validate_email = use_memo(move || validate_email(&email()));
-    let validate_full_name = use_memo(move || validate_full_name(&full_name()));
-    let validate_password = use_memo(move || validate_1st_password(&password()));
-    let validate_password_confirm =
-        use_memo(move || validate_2nd_password(&password(), &password_confirm()));
-    let validate_is_admin = use_memo(move || Ok(is_admin()));
+    let validate = ValidateSaveNewUser {
+        username: use_memo(move || validate_username(&username())),
+        email: use_memo(move || validate_email(&email())),
+        full_name: use_memo(move || validate_full_name(&full_name())),
+        password: use_memo(move || validate_1st_password(&password())),
+        password_confirm: use_memo(move || validate_2nd_password(&password(), &password_confirm())),
+        is_admin: use_memo(move || Ok(is_admin())),
+    };
 
     let mut saving = use_signal(|| Saving::No);
 
     // disable form while waiting for response
     let disabled = use_memo(move || saving.read().is_saving());
     let disabled_save = use_memo(move || {
-        validate_username().is_err()
-            || validate_email().is_err()
-            || validate_full_name().is_err()
-            || validate_password().is_err()
-            || validate_password_confirm().is_err()
+        validate.username.read().is_err()
+            || validate.email.read().is_err()
+            || validate.full_name.read().is_err()
+            || validate.password.read().is_err()
+            || validate.password_confirm.read().is_err()
+            || validate.is_admin.read().is_err()
             || disabled()
     });
 
+    let validate_clone = validate.clone();
     let on_save = use_callback(move |()| {
+        let validate = validate_clone.clone();
         spawn(async move {
             saving.set(Saving::Yes);
 
-            let result = do_save_new_user(
-                validate_username(),
-                validate_email(),
-                validate_full_name(),
-                validate_password(),
-                validate_password_confirm(),
-                validate_is_admin(),
-            )
-            .await;
-
+            let result = do_save_new_user(&validate).await;
             match result {
                 Ok(user) => {
                     saving.set(Saving::Finished(Ok(())));
@@ -179,35 +187,35 @@ pub fn CreateUser(on_cancel: Callback, on_save: Callback<User>) -> Element {
                     id: "username",
                     label: "Username",
                     value: username,
-                    validate: validate_username,
+                    validate: validate.username,
                     disabled,
                 }
                 InputString {
                     id: "email",
                     label: "Email",
                     value: email,
-                    validate: validate_email,
+                    validate: validate.email,
                     disabled,
                 }
                 InputString {
                     id: "full_name",
                     label: "Full Name",
                     value: full_name,
-                    validate: validate_full_name,
+                    validate: validate.full_name,
                     disabled,
                 }
                 InputPassword {
                     id: "password",
                     label: "Password",
                     value: password,
-                    validate: validate_password,
+                    validate: validate.password,
                     disabled,
                 }
                 InputPassword {
                     id: "password_confirm",
                     label: "Confirm Password",
                     value: password_confirm,
-                    validate: validate_password_confirm,
+                    validate: validate.password_confirm,
                     disabled,
                 }
                 InputBoolean {
@@ -236,36 +244,34 @@ pub fn ChangeUser(user: User, on_cancel: Callback, on_save: Callback<User>) -> E
     let full_name = use_signal(|| user.full_name.clone());
     let is_admin = use_signal(|| user.is_admin);
 
-    let validate_username = use_memo(move || validate_username(&username()));
-    let validate_email = use_memo(move || validate_email(&email()));
-    let validate_full_name = use_memo(move || validate_full_name(&full_name()));
-    let validate_is_admin = use_memo(move || Ok(is_admin()));
+    let validate = ValidateUpdateExistingUser {
+        username: use_memo(move || validate_username(&username())),
+        email: use_memo(move || validate_email(&email())),
+        full_name: use_memo(move || validate_full_name(&full_name())),
+        is_admin: use_memo(move || Ok(is_admin())),
+    };
 
     let mut saving = use_signal(|| Saving::No);
 
     // disable form while waiting for response
     let disabled = use_memo(move || saving.read().is_saving());
     let disabled_save = use_memo(move || {
-        validate_username().is_err()
-            || validate_email().is_err()
-            || validate_full_name().is_err()
+        validate.username.read().is_err()
+            || validate.email.read().is_err()
+            || validate.full_name.read().is_err()
+            || validate.is_admin.read().is_err()
             || disabled()
     });
 
     let user_clone = user.clone();
+    let validate_clone = validate.clone();
     let on_save = use_callback(move |()| {
-        let user_clone = user_clone.clone();
+        let user = user_clone.clone();
+        let validate = validate_clone.clone();
         spawn(async move {
             saving.set(Saving::Yes);
 
-            let result = do_update_existing_user(
-                &user_clone,
-                validate_username(),
-                validate_email(),
-                validate_full_name(),
-                validate_is_admin(),
-            )
-            .await;
+            let result = do_update_existing_user(&user, &validate).await;
 
             match result {
                 Ok(user) => {
@@ -320,21 +326,21 @@ pub fn ChangeUser(user: User, on_cancel: Callback, on_save: Callback<User>) -> E
                     id: "username",
                     label: "Username",
                     value: username,
-                    validate: validate_username,
+                    validate: validate.username,
                     disabled,
                 }
                 InputString {
                     id: "email",
                     label: "Email",
                     value: email,
-                    validate: validate_email,
+                    validate: validate.email,
                     disabled,
                 }
                 InputString {
                     id: "full_name",
                     label: "Full Name",
                     value: full_name,
-                    validate: validate_full_name,
+                    validate: validate.full_name,
                     disabled,
                 }
                 InputBoolean {
@@ -361,31 +367,28 @@ pub fn ChangePassword(user: User, on_cancel: Callback, on_save: Callback<User>) 
     let password = use_signal(String::new);
     let password_confirm = use_signal(String::new);
 
-    let validate_password = use_memo(move || validate_1st_password(&password()));
-    let validate_password_confirm =
-        use_memo(move || validate_2nd_password(&password(), &password_confirm()));
+    let validate = ValidateChangePassword {
+        password: use_memo(move || validate_1st_password(&password())),
+        password_confirm: use_memo(move || validate_2nd_password(&password(), &password_confirm())),
+    };
 
     let mut saving = use_signal(|| Saving::No);
 
     // disable form while waiting for response
     let disabled = use_memo(move || saving.read().is_saving());
     let disabled_save = use_memo(move || {
-        validate_password().is_err() || validate_password_confirm().is_err() || disabled()
+        validate.password.read().is_err() || validate.password_confirm.read().is_err() || disabled()
     });
 
     let user_clone = user.clone();
-
+    let validate_clone = validate.clone();
     let on_save = use_callback(move |()| {
-        let user_clone = user_clone.clone();
+        let user = user_clone.clone();
+        let validate = validate_clone.clone();
         spawn(async move {
             saving.set(Saving::Yes);
 
-            let result = do_change_password(
-                &user_clone,
-                validate_password(),
-                validate_password_confirm(),
-            )
-            .await;
+            let result = do_change_password(&user, &validate).await;
             match result {
                 Ok(user) => {
                     saving.set(Saving::Finished(Ok(())));
@@ -439,14 +442,14 @@ pub fn ChangePassword(user: User, on_cancel: Callback, on_save: Callback<User>) 
                     id: "password",
                     label: "Password",
                     value: password,
-                    validate: validate_password,
+                    validate: validate.password,
                     disabled,
                 }
                 InputPassword {
                     id: "password_confirm",
                     label: "Confirm Password",
                     value: password_confirm,
-                    validate: validate_password_confirm,
+                    validate: validate.password_confirm,
                     disabled,
                 }
                 CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }

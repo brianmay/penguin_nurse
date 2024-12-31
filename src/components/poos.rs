@@ -20,23 +20,25 @@ pub enum Operation {
     Update { poo: Arc<Poo> },
 }
 
-async fn do_save(
-    op: &Operation,
-    validate_time: Result<DateTime<Utc>, ValidationError>,
-    validate_duration: Result<TimeDelta, ValidationError>,
-    validate_urgency: Result<i32, ValidationError>,
-    validate_quantity: Result<i32, ValidationError>,
-    validate_bristol: Result<Bristol, ValidationError>,
-    validate_colour: Result<Hsv, ValidationError>,
-    validate_comments: Result<Option<String>, ValidationError>,
-) -> Result<Poo, EditError> {
-    let time = validate_time?;
-    let duration = validate_duration?;
-    let urgency = validate_urgency?;
-    let quantity = validate_quantity?;
-    let bristol = validate_bristol?;
-    let colour = validate_colour?;
-    let comments = validate_comments?;
+#[derive(Debug, Clone)]
+struct Validate {
+    time: Memo<Result<DateTime<Utc>, ValidationError>>,
+    duration: Memo<Result<TimeDelta, ValidationError>>,
+    urgency: Memo<Result<i32, ValidationError>>,
+    quantity: Memo<Result<i32, ValidationError>>,
+    bristol: Memo<Result<Bristol, ValidationError>>,
+    colour: Memo<Result<Hsv, ValidationError>>,
+    comments: Memo<Result<Option<String>, ValidationError>>,
+}
+
+async fn do_save(op: &Operation, validate: &Validate) -> Result<Poo, EditError> {
+    let time = validate.time.read().clone()?;
+    let duration = validate.duration.read().clone()?;
+    let urgency = validate.urgency.read().clone()?;
+    let quantity = validate.quantity.read().clone()?;
+    let bristol = validate.bristol.read().clone()?;
+    let colour = validate.colour.read().clone()?;
+    let comments = validate.comments.read().clone()?;
 
     match op {
         Operation::Create { user_id } => {
@@ -115,47 +117,40 @@ pub fn ChangePoo(
         Operation::Update { poo } => poo.comments.clone().option().unwrap_or_default(),
     });
 
-    let validate_time = use_memo(move || validate_time(&time()));
-    let validate_duration = use_memo(move || validate_duration(&duration()));
-    let validate_urgency = use_memo(move || validate_urgency(&urgency()));
-    let validate_quantity = use_memo(move || validate_poo_quantity(&quantity()));
-    let validate_bristol = use_memo(move || validate_bristol(&bristol()));
-    let validate_colour = use_memo(move || validate_colour(colour()));
-    let validate_comments = use_memo(move || validate_comments(&comments()));
+    let validate = Validate {
+        time: use_memo(move || validate_time(&time())),
+        duration: use_memo(move || validate_duration(&duration())),
+        urgency: use_memo(move || validate_urgency(&urgency())),
+        quantity: use_memo(move || validate_poo_quantity(&quantity())),
+        bristol: use_memo(move || validate_bristol(&bristol())),
+        colour: use_memo(move || validate_colour(colour())),
+        comments: use_memo(move || validate_comments(&comments())),
+    };
 
     let mut saving = use_signal(|| Saving::No);
 
     // disable form while waiting for response
     let disabled = use_memo(move || saving.read().is_saving());
     let disabled_save = use_memo(move || {
-        validate_time().is_err()
-            || validate_duration().is_err()
-            || validate_urgency().is_err()
-            || validate_quantity().is_err()
-            || validate_bristol().is_err()
-            || validate_colour().is_err()
-            || validate_comments().is_err()
+        validate.time.read().is_err()
+            || validate.duration.read().is_err()
+            || validate.urgency.read().is_err()
+            || validate.quantity.read().is_err()
+            || validate.bristol.read().is_err()
+            || validate.colour.read().is_err()
+            || validate.comments.read().is_err()
             || disabled()
     });
 
     let op_clone = op.clone();
+    let validate_clone = validate.clone();
     let on_save = use_callback(move |()| {
         let op = op_clone.clone();
+        let validate = validate_clone.clone();
         spawn(async move {
             saving.set(Saving::Yes);
 
-            let result = do_save(
-                &op,
-                validate_time(),
-                validate_duration(),
-                validate_urgency(),
-                validate_quantity(),
-                validate_bristol(),
-                validate_colour(),
-                validate_comments(),
-            )
-            .await;
-
+            let result = do_save(&op, &validate).await;
             match result {
                 Ok(poo) => {
                     saving.set(Saving::Finished(Ok(())));
@@ -212,35 +207,35 @@ pub fn ChangePoo(
                     id: "time",
                     label: "Time",
                     value: time,
-                    validate: validate_time,
+                    validate: validate.time,
                     disabled,
                 }
                 InputString {
                     id: "duration",
                     label: "Duration",
                     value: duration,
-                    validate: validate_duration,
+                    validate: validate.duration,
                     disabled,
                 }
                 InputString {
                     id: "urgency",
                     label: "Urgency",
                     value: urgency,
-                    validate: validate_urgency,
+                    validate: validate.urgency,
                     disabled,
                 }
                 InputString {
                     id: "quantity",
                     label: "Quantity",
                     value: quantity,
-                    validate: validate_quantity,
+                    validate: validate.quantity,
                     disabled,
                 }
                 InputSelect {
                     id: "bristol",
                     label: "Bristol",
                     value: bristol,
-                    validate: validate_bristol,
+                    validate: validate.bristol,
                     options: Bristol::options(),
                     disabled,
                 }
@@ -248,7 +243,7 @@ pub fn ChangePoo(
                     id: "colour",
                     label: "Colour",
                     value: colour,
-                    validate: validate_colour,
+                    validate: validate.colour,
                     colours: vec![
                         ("light".to_string(), Hsv::new(25.0, 1.0, 0.8)),
                         ("normal".to_string(), Hsv::new(25.0, 1.0, 0.5)),
@@ -261,7 +256,7 @@ pub fn ChangePoo(
                     id: "comments",
                     label: "Comments",
                     value: comments,
-                    validate: validate_comments,
+                    validate: validate.comments,
                     disabled,
                 }
 

@@ -19,21 +19,23 @@ pub enum Operation {
     Update { wee: Arc<Wee> },
 }
 
-async fn do_save(
-    op: &Operation,
-    validate_time: Result<DateTime<Utc>, ValidationError>,
-    validate_duration: Result<TimeDelta, ValidationError>,
-    validate_urgency: Result<i32, ValidationError>,
-    validate_mls: Result<i32, ValidationError>,
-    validate_colour: Result<Hsv, ValidationError>,
-    validate_comments: Result<Option<String>, ValidationError>,
-) -> Result<Wee, EditError> {
-    let time = validate_time?;
-    let duration = validate_duration?;
-    let urgency = validate_urgency?;
-    let mls = validate_mls?;
-    let colour = validate_colour?;
-    let comments = validate_comments?;
+#[derive(Debug, Clone)]
+struct Validate {
+    time: Memo<Result<DateTime<Utc>, ValidationError>>,
+    duration: Memo<Result<TimeDelta, ValidationError>>,
+    urgency: Memo<Result<i32, ValidationError>>,
+    mls: Memo<Result<i32, ValidationError>>,
+    colour: Memo<Result<Hsv, ValidationError>>,
+    comments: Memo<Result<Option<String>, ValidationError>>,
+}
+
+async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> {
+    let time = validate.time.read().clone()?;
+    let duration = validate.duration.read().clone()?;
+    let urgency = validate.urgency.read().clone()?;
+    let mls = validate.mls.read().clone()?;
+    let colour = validate.colour.read().clone()?;
+    let comments = validate.comments.read().clone()?;
 
     match op {
         Operation::Create { user_id } => {
@@ -104,43 +106,38 @@ pub fn ChangeWee(
         Operation::Update { wee } => wee.comments.clone().option().unwrap_or_default(),
     });
 
-    let validate_time = use_memo(move || validate_time(&time()));
-    let validate_duration = use_memo(move || validate_duration(&duration()));
-    let validate_urgency = use_memo(move || validate_urgency(&urgency()));
-    let validate_mls = use_memo(move || validate_mls(&mls()));
-    let validate_colour = use_memo(move || validate_colour(colour()));
-    let validate_comments = use_memo(move || validate_comments(&comments()));
+    let validate = Validate {
+        time: use_memo(move || validate_time(&time())),
+        duration: use_memo(move || validate_duration(&duration())),
+        urgency: use_memo(move || validate_urgency(&urgency())),
+        mls: use_memo(move || validate_mls(&mls())),
+        colour: use_memo(move || validate_colour(colour())),
+        comments: use_memo(move || validate_comments(&comments())),
+    };
 
     let mut saving = use_signal(|| Saving::No);
 
     // disable form while waiting for response
     let disabled = use_memo(move || saving.read().is_saving());
     let disabled_save = use_memo(move || {
-        validate_time().is_err()
-            || validate_duration().is_err()
-            || validate_urgency().is_err()
-            || validate_mls().is_err()
-            || validate_colour().is_err()
-            || validate_comments().is_err()
+        validate.time.read().is_err()
+            || validate.duration.read().is_err()
+            || validate.urgency.read().is_err()
+            || validate.mls.read().is_err()
+            || validate.colour.read().is_err()
+            || validate.comments.read().is_err()
             || disabled()
     });
 
     let op_clone = op.clone();
+    let validate_clone = validate.clone();
     let on_save = use_callback(move |()| {
         let op = op_clone.clone();
+        let validate = validate_clone.clone();
         spawn(async move {
             saving.set(Saving::Yes);
 
-            let result = do_save(
-                &op,
-                validate_time(),
-                validate_duration(),
-                validate_urgency(),
-                validate_mls(),
-                validate_colour(),
-                validate_comments(),
-            )
-            .await;
+            let result = do_save(&op, &validate).await;
 
             match result {
                 Ok(wee) => {
@@ -198,35 +195,35 @@ pub fn ChangeWee(
                     id: "time",
                     label: "Time",
                     value: time,
-                    validate: validate_time,
+                    validate: validate.time,
                     disabled,
                 }
                 InputString {
                     id: "duration",
                     label: "Duration",
                     value: duration,
-                    validate: validate_duration,
+                    validate: validate.duration,
                     disabled,
                 }
                 InputString {
                     id: "urgency",
                     label: "Urgency",
                     value: urgency,
-                    validate: validate_urgency,
+                    validate: validate.urgency,
                     disabled,
                 }
                 InputString {
                     id: "mls",
                     label: "Mls",
                     value: mls,
-                    validate: validate_mls,
+                    validate: validate.mls,
                     disabled,
                 }
                 InputColour {
                     id: "colour",
                     label: "Colour",
                     value: colour,
-                    validate: validate_colour,
+                    validate: validate.colour,
                     colours: vec![
                         ("light".to_string(), Hsv::new(60.0, 0.2, 1.0)),
                         ("normal".to_string(), Hsv::new(60.0, 1.0, 1.0)),
@@ -239,7 +236,7 @@ pub fn ChangeWee(
                     id: "comments",
                     label: "Comments",
                     value: comments,
-                    validate: validate_comments,
+                    validate: validate.comments,
                     disabled,
                 }
 
