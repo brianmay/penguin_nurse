@@ -18,11 +18,11 @@ pub async fn get_users() -> Result<Vec<models::User>, ServerFnError> {
 }
 
 #[server]
-pub async fn get_user(id: i64) -> Result<Option<models::User>, ServerFnError> {
+pub async fn get_user(id: UserId) -> Result<Option<models::User>, ServerFnError> {
     assert_is_admin().await?;
     let mut conn = get_database_connection().await?;
 
-    crate::server::database::models::users::get_user_by_id(&mut conn, id)
+    crate::server::database::models::users::get_user_by_id(&mut conn, id.as_inner())
         .await
         .map(|x| x.map(|y| y.into()))
         .map_err(ServerFnError::<NoCustomError>::from)

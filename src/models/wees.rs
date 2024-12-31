@@ -16,7 +16,7 @@ impl WeeId {
 
 impl std::fmt::Display for WeeId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "WeeId({})", self.0)
+        self.0.fmt(f)
     }
 }
 

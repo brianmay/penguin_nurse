@@ -33,7 +33,7 @@ impl PooId {
 
 impl std::fmt::Display for PooId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "PooId({})", self.0)
+        self.0.fmt(f)
     }
 }
 

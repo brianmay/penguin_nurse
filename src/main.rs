@@ -3,8 +3,8 @@ use std::sync::Arc;
 use dioxus::prelude::*;
 
 use components::Navbar;
-use models::User;
-use views::{get_user, Blog, Home, Login, Logout, UserList};
+use models::{User, UserId};
+use views::{get_user, Home, Login, Logout, UserDetail, UserList};
 
 mod components;
 mod forms;
@@ -26,10 +26,11 @@ enum Route {
     #[layout(Navbar)]
     #[route("/")]
     Home {},
-    #[route("/blog/:id")]
-    Blog { id: i32 },
     #[route("/users")]
     UserList {},
+    #[route("/users/:user_id")]
+    UserDetail { user_id: UserId },
+
 }
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");

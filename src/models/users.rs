@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use super::common::MaybeString;
 use serde::{Deserialize, Serialize};
 
@@ -12,6 +14,20 @@ impl UserId {
     }
     pub fn as_inner(self) -> i64 {
         self.0
+    }
+}
+
+impl FromStr for UserId {
+    type Err = std::num::ParseIntError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(s.parse()?))
+    }
+}
+
+impl std::fmt::Display for UserId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
     }
 }
 
