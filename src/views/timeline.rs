@@ -35,7 +35,7 @@ fn EntryRow(entry: Entry, on_click: Callback<Entry>) -> Element {
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             event_colour { colour: wee.colour }
-                            div {
+                            div { class: "inline-block ml-2 align-top",
                                 div {
                                     wee_mls { mls: wee.mls }
                                 }
@@ -57,7 +57,7 @@ fn EntryRow(entry: Entry, on_click: Callback<Entry>) -> Element {
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             event_colour { colour: poo.colour }
-                            div {
+                            div { class: "inline-block ml-2 align-top",
                                 div {
                                     poo_bristol { bristol: poo.bristol }
                                 }
@@ -75,7 +75,6 @@ fn EntryRow(entry: Entry, on_click: Callback<Entry>) -> Element {
                     }
                 }
             }
-        
         }
     }
 }
@@ -248,7 +247,6 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                             active_dialog.set(ActiveDialog::None);
                             timeline.restart();
                         },
-                    
                     }
                 }
             }
