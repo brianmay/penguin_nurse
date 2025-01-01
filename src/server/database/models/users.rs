@@ -159,6 +159,42 @@ pub async fn get_user_by_username(
         .pipe(Ok)
 }
 
+pub async fn get_user_by_oidc_id(
+    conn: &mut DatabaseConnection,
+    oidc_id: &str,
+) -> Result<Option<User>, diesel::result::Error> {
+    use schema::users::oidc_id as q_oidc_id;
+    use schema::users::table;
+
+    table
+        .filter(q_oidc_id.eq(oidc_id))
+        .get_result(conn)
+        .await
+        .optional()?
+        .pipe(Ok)
+}
+
+pub async fn get_user_by_email(
+    conn: &mut DatabaseConnection,
+    email: &str,
+) -> Result<Option<User>, diesel::result::Error> {
+    use schema::users::email as q_email;
+    use schema::users::table;
+
+    table
+        .filter(q_email.eq(email))
+        .get_results(conn)
+        .await?
+        .pipe(|mut x| {
+            if x.len() == 1 {
+                Some(x.remove(0))
+            } else {
+                None
+            }
+        })
+        .pipe(Ok)
+}
+
 pub async fn get_users(conn: &mut DatabaseConnection) -> Result<Vec<User>, diesel::result::Error> {
     use schema::users::table;
     table.load(conn).await

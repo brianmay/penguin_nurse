@@ -13,7 +13,7 @@ use crate::server::database::models::session::{
 use super::database;
 use super::database::connection::{DatabaseConnection, DatabasePool};
 
-/// An error type for SQLx stores.
+/// An error type for Diesel stores.
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("Diesel error: {0}")]

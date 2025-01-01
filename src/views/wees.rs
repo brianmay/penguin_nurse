@@ -99,7 +99,7 @@ pub fn WeeDialog(
 pub fn WeeDetail(wee_id: WeeId) -> Element {
     let mut wee = use_resource(move || async move { get_wee_by_id(wee_id).await });
     let mut dialog: Signal<ActiveDialog> = use_signal(|| ActiveDialog::Idle);
-    let navigator = use_navigator();
+    let navigator = navigator();
 
     match wee() {
         Some(Ok(Some(obj))) => {

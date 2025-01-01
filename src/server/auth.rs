@@ -96,6 +96,7 @@ impl AuthnBackend for Backend {
 //
 // Note that we've supplied our concrete backend here.
 pub type AuthSession = axum_login::AuthSession<Backend>;
+pub type AuthError = axum_login::Error<Backend>;
 
 pub struct Session(AuthSession);
 

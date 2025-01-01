@@ -6,7 +6,8 @@
         "dialog",
         "dioxus",
         "onclick",
-        "poos"
+        "poos",
+        "thiserror"
     ],
     "rust-analyzer.cargo.features": [
         "server"

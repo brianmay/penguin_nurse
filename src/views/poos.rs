@@ -130,7 +130,7 @@ pub fn PooDialog(
 pub fn PooDetail(poo_id: PooId) -> Element {
     let mut poo = use_resource(move || async move { get_poo_by_id(poo_id).await });
     let mut dialog: Signal<ActiveDialog> = use_signal(|| ActiveDialog::Idle);
-    let navigator = use_navigator();
+    let navigator = navigator();
 
     match poo() {
         Some(Ok(Some(obj))) => {

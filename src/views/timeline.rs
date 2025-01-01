@@ -89,7 +89,7 @@ enum ActiveDialog {
 #[component]
 pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
     let user: Signal<Arc<Option<User>>> = use_context();
-    let navigator = use_navigator();
+    let navigator = navigator();
 
     let user: &Option<User> = &user.read();
     let Some(user) = user.as_ref() else {

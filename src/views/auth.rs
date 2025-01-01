@@ -37,6 +37,8 @@ pub fn LoginWindow(children: Element) -> Element {
 
 #[component]
 pub fn Login() -> Element {
+    let is_oidc_enabled = use_resource(is_oidc_enabled);
+
     let username = use_signal(String::new);
     let password = use_signal(String::new);
     let validate_username = use_memo(move || validate_username(&username()));
@@ -119,7 +121,6 @@ pub fn Login() -> Element {
                             div {
                                 h1 { class: "text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white",
                                     "Sign in to your account"
-                                    {username()}
                                 }
                                 MyForm {
                                     InputString {
@@ -165,6 +166,26 @@ pub fn Login() -> Element {
                                         disabled: disabled_save,
                                         title: "Sign in",
                                         on_save: move |_e| async move { on_save(()).await },
+                                    }
+                                    if is_oidc_enabled().unwrap_or(Ok(false)).unwrap_or(false) {
+                                        div { class: "flex items-center justify-center",
+                                            button {
+                                                r#type: "button",
+                                                class: "w-full btn btn-primary my-2",
+                                                onclick: move |_| async move {
+                                                    let url = login_with_oidc().await;
+                                                    match url {
+                                                        Ok(url) => {
+                                                            result.set(None);
+                                                            let navigator = navigator();
+                                                            navigator.push(NavigationTarget::<Route>::External(url));
+                                                        }
+                                                        Err(err) => result.set(Some(Err(err))),
+                                                    }
+                                                },
+                                                "Sign in with OIDC"
+                                            }
+                                        }
                                     }
                                     p { class: "text-sm font-light text-gray-500 dark:text-gray-400",
                                         "Don’t have an account yet?"
@@ -325,4 +346,30 @@ pub async fn get_user() -> Result<Option<User>, ServerFnError> {
 
     let session: Session = extract().await?;
     session.user.clone().map(|x| x.into()).pipe(Ok)
+}
+
+#[server]
+pub async fn is_oidc_enabled() -> Result<bool, ServerFnError> {
+    use crate::server::OidcClientState;
+    use axum::Extension;
+
+    let Extension(client): Extension<OidcClientState> = extract().await?;
+    Ok(client.load().is_some())
+}
+
+#[server]
+pub async fn login_with_oidc() -> Result<String, ServerFnError> {
+    use crate::server::OidcClientState;
+    use axum::Extension;
+
+    let Extension(oidc_client): Extension<OidcClientState> = extract().await?;
+
+    let oidc_client = oidc_client.load();
+    let Some(oidc_client) = oidc_client.as_ref() else {
+        return Err(ServerFnError::ServerError(
+            "OIDC not initialized".to_string(),
+        ));
+    };
+    let auth_url = oidc_client.get_auth_url("/");
+    Ok(auth_url)
 }

@@ -164,7 +164,7 @@ pub fn UserDetail(user_id: UserId) -> Element {
                     button {
                         class: "btn btn-secondary me-2 mb-2",
                         onclick: move |_| {
-                            use_navigator().push(Route::UserList {});
+                            navigator().push(Route::UserList {});
                         },
                         "User List"
                     }
@@ -198,7 +198,7 @@ pub fn UserDetail(user_id: UserId) -> Element {
 pub fn UserList() -> Element {
     let mut users = use_resource(|| async { get_users().await });
     let mut dialog: Signal<ActiveDialog> = use_signal(|| ActiveDialog::Idle);
-    let navigator = use_navigator();
+    let navigator = navigator();
 
     rsx! {
         match users() {

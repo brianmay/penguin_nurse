@@ -3,6 +3,7 @@ use dioxus::prelude::*;
 pub mod auth;
 pub mod database;
 mod handlers;
+mod oidc;
 mod session_store;
 
 use axum::{routing::get, Extension};
@@ -10,10 +11,14 @@ use handlers::{dioxus_handler, health_check};
 use time::Duration;
 use tower_sessions::{cookie::SameSite, ExpiredDeletion, Expiry, SessionManagerLayer};
 
+pub use oidc::middleware::ClientState as OidcClientState;
+
 // The entry point for the server
 #[cfg(feature = "server")]
 pub async fn init(app: fn() -> Element) {
     use axum_login::AuthManagerLayerBuilder;
+    use oidc::middleware::add_oidc_middleware;
+    use tap::Pipe;
 
     tracing_subscriber::fmt::init();
 
@@ -56,6 +61,7 @@ pub async fn init(app: fn() -> Element) {
         .serve_dioxus_application(cfg, app)
         .route("/_health", get(health_check))
         .route("/_dioxus", get(dioxus_handler))
+        .pipe(add_oidc_middleware)
         .layer(auth_layer)
         .layer(Extension(database));
 
