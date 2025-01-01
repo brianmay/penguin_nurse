@@ -241,11 +241,19 @@ pub fn InputBoolean(
 
 #[component]
 pub fn ColourButton(colour: Hsv, name: String, on_click: Callback<Hsv>) -> Element {
+    let class = if colour.value < 0.5 {
+        let class = "text-white";
+        class
+    } else {
+        let class = "text-black";
+        class
+    };
+
     let rgb: Srgb = colour.into_color();
 
     rsx! {
         button {
-            class: "p-5 m-1 inline-block border-2 border-white",
+            class: "p-5 m-1 inline-block border-2 border-white {class}",
             style: format!(
                 "background-color: rgb({}, {}, {})",
                 rgb.red * 255.0,
