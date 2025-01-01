@@ -54,6 +54,16 @@ CREATE TABLE poos (
         bristol >= 0
         AND bristol <= 7
     ),
+    CONSTRAINT check_bristol_quantity CHECK (
+        (
+            bristol = 0
+            AND quantity = 0
+        )
+        OR (
+            bristol > 0
+            AND quantity > 0
+        )
+    ),
     CONSTRAINT check_quantity CHECK (
         quantity >= 0
         AND quantity <= 5

@@ -78,4 +78,11 @@ diesel::joinable!(user_groups -> groups (group_id));
 diesel::joinable!(user_groups -> users (user_id));
 diesel::joinable!(wees -> users (user_id));
 
-diesel::allow_tables_to_appear_in_same_query!(groups, poos, session, user_groups, users, wees,);
+diesel::allow_tables_to_appear_in_same_query!(
+    groups,
+    poos,
+    session,
+    user_groups,
+    users,
+    wees,
+);
