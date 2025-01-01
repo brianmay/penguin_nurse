@@ -3,7 +3,9 @@
         "axum",
         "chrono",
         "conn",
+        "dialog",
         "dioxus",
+        "onclick",
         "poos"
     ],
     "rust-analyzer.cargo.features": [

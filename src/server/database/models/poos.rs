@@ -63,6 +63,23 @@ pub async fn get_poos_for_time_range(
         .await
 }
 
+pub async fn get_poo_by_id(
+    conn: &mut DatabaseConnection,
+    id: i64,
+    user_id: i64,
+) -> Result<Option<Poo>, diesel::result::Error> {
+    use crate::server::database::schema::poos::id as q_id;
+    use crate::server::database::schema::poos::table;
+    use crate::server::database::schema::poos::user_id as q_user_id;
+
+    table
+        .filter(q_id.eq(id))
+        .filter(q_user_id.eq(user_id))
+        .get_result(conn)
+        .await
+        .optional()
+}
+
 #[derive(Insertable, Debug, Clone)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::poos)]

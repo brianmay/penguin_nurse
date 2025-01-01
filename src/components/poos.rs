@@ -6,8 +6,8 @@ use std::sync::Arc;
 use crate::{
     forms::{
         validate_bristol, validate_colour, validate_comments, validate_duration,
-        validate_poo_quantity, validate_time, validate_urgency, CancelButton, DeleteButton, Dialog,
-        EditError, InputColour, InputSelect, InputString, InputTextArea, Saving, SubmitButton,
+        validate_poo_quantity, validate_time, validate_urgency, CancelButton, Dialog, EditError,
+        InputColour, InputSelect, InputString, InputTextArea, Saving, SubmitButton,
         ValidationError,
     },
     functions::poos::{create_poo, delete_poo, update_poo},
@@ -73,14 +73,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Poo, EditError> 
 }
 
 #[component]
-pub fn ChangePoo(
-    op: Operation,
-    on_cancel: Callback,
-    on_save: Callback<Poo>,
-    on_delete: Callback<Arc<Poo>>,
-) -> Element {
-    // let user: Signal<Arc<Option<User>>> = use_context();
-
+pub fn ChangePoo(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> Element {
     let time = use_signal(|| match &op {
         Operation::Create { .. } => Utc::now().with_timezone(&Local).to_rfc3339(),
         Operation::Update { poo } => {
@@ -269,14 +262,6 @@ pub fn ChangePoo(
                     },
                 }
                 CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                if let Operation::Update { poo } = &op {
-                    {
-                        let poo: Arc<Poo> = poo.clone();
-                        rsx! {
-                            DeleteButton { on_delete: move |()| on_delete(poo.clone()), title: "Delete" }
-                        }
-                    }
-                }
             }
         }
     }

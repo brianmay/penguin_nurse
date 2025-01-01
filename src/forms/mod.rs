@@ -5,7 +5,7 @@ mod fields;
 mod saving;
 mod validation;
 
-pub use buttons::{CancelButton, DeleteButton, SubmitButton};
+pub use buttons::{CancelButton, SubmitButton};
 pub use dialog::Dialog;
 pub use errors::{EditError, ValidationError};
 pub use fields::{

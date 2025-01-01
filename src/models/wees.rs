@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use serde::{Deserialize, Serialize};
 
 use super::{common::MaybeString, UserId};
@@ -11,6 +13,14 @@ impl WeeId {
     }
     pub fn as_inner(self) -> i64 {
         self.0
+    }
+}
+
+impl FromStr for WeeId {
+    type Err = std::num::ParseIntError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(s.parse()?))
     }
 }
 

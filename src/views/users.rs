@@ -15,7 +15,8 @@ pub enum ActiveDialog {
 }
 
 #[component]
-pub fn UserItem(user: User, on_click: Callback<User>) -> Element {
+pub fn UserItem(user: ReadOnlySignal<User>, on_click: Callback<User>) -> Element {
+    let user = user();
     let user_clone_0 = user.clone();
 
     rsx! {
@@ -143,18 +144,18 @@ pub fn UserDetail(user_id: UserId) -> Element {
                     button {
                         class: "btn btn-secondary me-2 mb-2",
                         onclick: move |_| dialog.set(ActiveDialog::Change(user_clone_1.clone())),
-                        "Change User"
+                        "Change"
                     }
 
                     button {
                         class: "btn btn-secondary me-2 mb-2",
                         onclick: move |_| dialog.set(ActiveDialog::ChangePassword(user_clone_2.clone())),
-                        "Change Password"
+                        "Password"
                     }
                     button {
                         class: "btn btn-error me-2 mb-2",
                         onclick: move |_| dialog.set(ActiveDialog::Delete(user_clone_3.clone())),
-                        "Delete User"
+                        "Delete"
                     }
                 }
                 div { class: "p-4",

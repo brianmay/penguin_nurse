@@ -31,6 +31,21 @@ pub async fn get_wees_for_time_range(
 }
 
 #[server]
+pub async fn get_wee_by_id(id: WeeId) -> Result<Option<models::Wee>, ServerFnError> {
+    let logged_in_user_id = get_user_id().await?;
+    let mut conn = get_database_connection().await?;
+
+    crate::server::database::models::wees::get_wee_by_id(
+        &mut conn,
+        id.as_inner(),
+        logged_in_user_id.as_inner(),
+    )
+    .await
+    .map(|x| x.map(|y| y.into()))
+    .map_err(ServerFnError::from)
+}
+
+#[server]
 pub async fn create_wee(wee: models::NewWee) -> Result<models::Wee, ServerFnError> {
     use crate::server::database::models::wees;
 

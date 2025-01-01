@@ -6,8 +6,8 @@ use std::sync::Arc;
 use crate::{
     forms::{
         validate_colour, validate_comments, validate_duration, validate_mls, validate_time,
-        validate_urgency, CancelButton, DeleteButton, Dialog, EditError, InputColour, InputString,
-        InputTextArea, Saving, SubmitButton, ValidationError,
+        validate_urgency, CancelButton, Dialog, EditError, InputColour, InputString, InputTextArea,
+        Saving, SubmitButton, ValidationError,
     },
     functions::wees::{create_wee, delete_wee, update_wee},
     models::{NewWee, UpdateWee, UserId, Wee},
@@ -66,14 +66,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> 
 }
 
 #[component]
-pub fn ChangeWee(
-    op: Operation,
-    on_cancel: Callback,
-    on_save: Callback<Wee>,
-    on_delete: Callback<Arc<Wee>>,
-) -> Element {
-    // let user: Signal<Arc<Option<User>>> = use_context();
-
+pub fn ChangeWee(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> Element {
     let time = use_signal(|| match &op {
         Operation::Create { .. } => Utc::now().with_timezone(&Local).to_rfc3339(),
         Operation::Update { wee } => {
@@ -249,14 +242,6 @@ pub fn ChangeWee(
                     },
                 }
                 CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                if let Operation::Update { wee } = &op {
-                    {
-                        let wee: Arc<Wee> = wee.clone();
-                        rsx! {
-                            DeleteButton { on_delete: move |()| on_delete(wee.clone()), title: "Delete" }
-                        }
-                    }
-                }
             }
         }
     }

@@ -32,6 +32,21 @@ pub async fn get_poos_for_time_range(
 }
 
 #[server]
+pub async fn get_poo_by_id(id: PooId) -> Result<Option<models::Poo>, ServerFnError> {
+    let logged_in_user_id = get_user_id().await?;
+    let mut conn = get_database_connection().await?;
+
+    crate::server::database::models::poos::get_poo_by_id(
+        &mut conn,
+        id.as_inner(),
+        logged_in_user_id.as_inner(),
+    )
+    .await
+    .map(|x| x.map(|y| y.into()))
+    .map_err(ServerFnError::from)
+}
+
+#[server]
 pub async fn create_poo(poo: models::NewPoo) -> Result<models::Poo, ServerFnError> {
     use crate::server::database::models::poos;
 

@@ -1,12 +1,16 @@
 use std::sync::Arc;
 
+use chrono::NaiveDate;
 use dioxus::prelude::*;
 
 use components::Navbar;
-use models::{User, UserId};
-use views::{get_user, Home, Login, Logout, UserDetail, UserList};
+use models::{PooId, User, UserId, WeeId};
+use views::{
+    get_user, Home, Login, Logout, PooDetail, TimelineList, UserDetail, UserList, WeeDetail,
+};
 
 mod components;
+mod dt;
 mod forms;
 mod functions;
 mod models;
@@ -25,12 +29,17 @@ enum Route {
     Logout {},
     #[layout(Navbar)]
     #[route("/")]
-    Home {},
+    Home {  },
+    #[route("/:date")]
+    TimelineList { date: NaiveDate },
     #[route("/users")]
     UserList {},
     #[route("/users/:user_id")]
     UserDetail { user_id: UserId },
-
+    #[route("/wees/:wee_id")]
+    WeeDetail { wee_id: WeeId },
+    #[route("/poos/:poo_id")]
+    PooDetail { poo_id: PooId },
 }
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
