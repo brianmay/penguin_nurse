@@ -1,3 +1,4 @@
+use chrono::Local;
 use dioxus::prelude::*;
 
 use crate::components::{ChangePassword, ChangeUser, CreateUser, DeleteUser};
@@ -132,11 +133,11 @@ pub fn UserDetail(user_id: UserId) -> Element {
                         }
                         tr {
                             td { "Created" }
-                            td { {obj.created_at.to_string()} }
+                            td { {obj.created_at.with_timezone(&Local).to_string()} }
                         }
                         tr {
                             td { "Updated" }
-                            td { {obj.updated_at.to_string()} }
+                            td { {obj.updated_at.with_timezone(&Local).to_string()} }
                         }
                     }
                 }
