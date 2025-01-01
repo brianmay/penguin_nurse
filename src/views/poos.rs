@@ -19,19 +19,36 @@ pub fn poo_icon() -> Element {
     }
 }
 
+pub fn div_rem(a: i64, b: i64) -> (i64, i64) {
+    (a / b, a % b)
+}
+
 #[component]
 pub fn poo_duration(duration: chrono::TimeDelta) -> Element {
+    let seconds = duration.num_seconds();
+    let (minutes, seconds) = div_rem(seconds, 60);
+    let (hours, minutes) = div_rem(minutes, 60);
+    let (days, hours) = div_rem(hours, 24);
+
+    let text = if duration.num_seconds() < 60 {
+        format!("{seconds} seconds")
+    } else if duration.num_minutes() < 60 {
+        format!("{minutes} minutes + {seconds} seconds")
+    } else if duration.num_hours() < 24 {
+        format!("{hours} hours + {minutes} minutes")
+    } else {
+        format!("{days} days + {hours} hours")
+    };
+
     rsx! {
         if duration.num_seconds() == 0 {
-            span { class: "text-error", {duration.num_seconds().to_string() + " seconds"} }
-        } else if duration.num_seconds() < 60 {
-            span { class: "text-success", {duration.num_seconds().to_string() + " seconds"} }
-        } else if duration.num_minutes() < 60 {
-            span { class: "text-warning", {duration.num_minutes().to_string() + " minutes"} }
-        } else if duration.num_hours() < 24 {
-            span { class: "text-error", {duration.num_hours().to_string() + " hours"} }
+            span { class: "text-error", {text} }
+        } else if duration.num_minutes() < 3 {
+            span { class: "text-success", {text} }
+        } else if duration.num_minutes() < 10 {
+            span { class: "text-warning", {text} }
         } else {
-            span { class: "text-error", {duration.num_days().to_string() + " days"} }
+            span { class: "text-error", {text} }
         }
     }
 }
