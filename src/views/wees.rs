@@ -170,7 +170,7 @@ pub fn WeeDetail(wee_id: WeeId) -> Element {
                     button {
                         class: "btn btn-secondary me-2 mb-2",
                         onclick: move |_| {
-                            let date = get_date_for_entry_dt(obj.created_at);
+                            let date = get_date_for_entry_dt(obj.time);
                             if let Ok(date) = date {
                                 navigator.push(Route::TimelineList { date });
                             }
@@ -183,7 +183,7 @@ pub fn WeeDetail(wee_id: WeeId) -> Element {
                     dialog,
                     reload: move || (wee.restart()),
                     delete: move || {
-                        let date = get_date_for_entry_dt(obj.created_at);
+                        let date = get_date_for_entry_dt(obj.time);
                         if let Ok(date) = date {
                             navigator.push(Route::TimelineList { date });
                         }

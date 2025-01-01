@@ -187,7 +187,6 @@ pub fn PooDetail(poo_id: PooId) -> Element {
                                     poo_bristol { bristol: obj.bristol }
                                 }
                             }
-                        
                         }
                     }
                 }
@@ -209,7 +208,7 @@ pub fn PooDetail(poo_id: PooId) -> Element {
                     button {
                         class: "btn btn-secondary me-2 mb-2",
                         onclick: move |_| {
-                            let date = get_date_for_entry_dt(obj.created_at);
+                            let date = get_date_for_entry_dt(obj.time);
                             if let Ok(date) = date {
                                 navigator.push(Route::TimelineList { date });
                             }
@@ -222,7 +221,7 @@ pub fn PooDetail(poo_id: PooId) -> Element {
                     dialog,
                     reload: move || (poo.restart()),
                     delete: move || {
-                        let date = get_date_for_entry_dt(obj.created_at);
+                        let date = get_date_for_entry_dt(obj.time);
                         if let Ok(date) = date {
                             navigator.push(Route::TimelineList { date });
                         }
