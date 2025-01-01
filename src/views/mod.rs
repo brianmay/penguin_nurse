@@ -15,3 +15,5 @@ pub use wees::WeeDetail;
 
 mod poos;
 pub use poos::PooDetail;
+
+mod event;

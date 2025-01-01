@@ -1,172 +1,21 @@
 use std::{ops::Deref, sync::Arc};
 
+use chrono::{Local, NaiveDate};
+use dioxus::prelude::*;
+use tap::Pipe;
+
 use crate::{
     components::{ChangePoo, ChangeWee, PooOperation, WeeOperation},
     dt::get_utc_times_for_date,
     functions::{poos::get_poos_for_time_range, wees::get_wees_for_time_range},
-    models::{Bristol, Entry, EntryData, MaybeString, Timeline, User},
+    models::{Entry, EntryData, MaybeString, Timeline, User},
+    views::{
+        event::{event_colour, event_time, event_urgency},
+        poos::{poo_bristol, poo_duration, poo_icon, poo_quantity},
+        wees::{wee_duration, wee_icon, wee_mls},
+    },
     Route,
 };
-use chrono::{Local, NaiveDate, Timelike, Utc};
-use dioxus::prelude::*;
-use palette::IntoColor;
-use tap::Pipe;
-
-const WEE_SVG: Asset = asset!("/assets/wee.svg");
-const POO_SVG: Asset = asset!("/assets/poo.svg");
-
-#[component]
-fn event_time(time: chrono::DateTime<Utc>) -> Element {
-    let time = time.with_timezone(&Local);
-    let string = time.format("%H:%M:%S").to_string();
-
-    if time.hour() < 7 {
-        return rsx! {
-            span { class: "text-error", {string} }
-        };
-    } else if time.hour() < 21 {
-        return rsx! {
-            span { class: "text-success", {string} }
-        };
-    } else {
-        return rsx! {
-            span { class: "text-warning", {string} }
-        };
-    }
-}
-
-#[component]
-fn event_urgency(urgency: i32) -> Element {
-    rsx! {
-        if urgency == 0 {
-            span { class: "text-success", {"No urgency"} }
-        } else if urgency == 1 {
-            span { class: "text-success", {"Low urgency"} }
-        } else if urgency == 2 {
-            span { class: "text-success", {"Medium-Low urgency"} }
-        } else if urgency == 3 {
-            span { class: "text-success", {"Medium urgency"} }
-        } else if urgency == 4 {
-            span { class: "text-warning", {"Medium-High urgency"} }
-        } else if urgency == 5 {
-            span { class: "text-error", {"High urgency"} }
-        } else {
-            span { class: "text-error", {"Unknown urgency"} }
-        }
-    }
-}
-
-#[component]
-fn event_colour(colour: palette::Hsv) -> Element {
-    let colour: palette::Srgb = colour.into_color();
-
-    rsx! {
-        div {
-            class: "w-20 h-20 m-1 inline-block border-2 border-white",
-            style: format!(
-                "background-color: rgb({}, {}, {})",
-                colour.red * 255.0,
-                colour.green * 255.0,
-                colour.blue * 255.0,
-            ),
-        }
-    }
-}
-
-#[component]
-fn wee_delta(delta: chrono::Duration) -> Element {
-    rsx! {
-        if delta.num_seconds() == 0 {
-            span { class: "text-error", {delta.num_seconds().to_string() + " seconds"} }
-        } else if delta.num_seconds() < 120 {
-            span { class: "text-success", {delta.num_seconds().to_string() + " seconds"} }
-        } else if delta.num_minutes() < 60 {
-            span { class: "text-warning", {delta.num_minutes().to_string() + " minutes"} }
-        } else if delta.num_hours() < 24 {
-            span { class: "text-error", {delta.num_hours().to_string() + " hours"} }
-        } else {
-            span { class: "text-error", {delta.num_days().to_string() + " days"} }
-        }
-    }
-}
-
-#[component]
-fn wee_mls(mls: i32) -> Element {
-    rsx! {
-        if mls == 0 {
-            span { class: "text-error", {mls.to_string() + " ml"} }
-        } else if mls < 100 {
-            span { class: "text-warning", {mls.to_string() + " ml"} }
-        } else if mls < 500 {
-            span { class: "text-success", {mls.to_string() + " ml"} }
-        } else {
-            span { class: "text-error", {mls.to_string() + " ml"} }
-        }
-    }
-}
-
-#[component]
-fn poo_delta(delta: chrono::Duration) -> Element {
-    rsx! {
-        if delta.num_seconds() == 0 {
-            span { class: "text-error", {delta.num_seconds().to_string() + " seconds"} }
-        } else if delta.num_seconds() < 60 {
-            span { class: "text-success", {delta.num_seconds().to_string() + " seconds"} }
-        } else if delta.num_minutes() < 60 {
-            span { class: "text-warning", {delta.num_minutes().to_string() + " minutes"} }
-        } else if delta.num_hours() < 24 {
-            span { class: "text-error", {delta.num_hours().to_string() + " hours"} }
-        } else {
-            span { class: "text-error", {delta.num_days().to_string() + " days"} }
-        }
-    }
-}
-
-#[component]
-fn poo_bristol(bristol: Bristol) -> Element {
-    let bristol_string = bristol.as_str();
-
-    match bristol {
-        Bristol::B0 => rsx! {
-            span { class: "text-error", {bristol_string} }
-        },
-        Bristol::B1 => rsx! {
-            span { class: "text-error", {bristol_string} }
-        },
-        Bristol::B2 => rsx! {
-            span { class: "text-success", {bristol_string} }
-        },
-        Bristol::B3 => rsx! {
-            span { class: "text-success", {bristol_string} }
-        },
-        Bristol::B4 => rsx! {
-            span { class: "text-success", {bristol_string} }
-        },
-        Bristol::B5 => rsx! {
-            span { class: "text-warning", {bristol_string} }
-        },
-
-        Bristol::B6 => rsx! {
-            span { class: "text-warning", {bristol_string} }
-        },
-        Bristol::B7 => rsx! {
-            span { class: "text-error", {bristol_string} }
-        },
-    }
-}
-
-#[component]
-fn poo_quantity(quantity: i32) -> Element {
-    rsx! {
-        if quantity == 0 {
-            span { class: "text-error", {quantity.to_string() + " out of 5"} }
-        } else if quantity < 2 {
-            span { class: "text-warning", {quantity.to_string() + " out of 5"} }
-        } else {
-            span { class: "text-success", {quantity.to_string() + " out of 5"} }
-        }
-    }
-}
 
 #[component]
 fn EntryRow(entry: Entry, on_click: Callback<Entry>) -> Element {
@@ -180,11 +29,9 @@ fn EntryRow(entry: Entry, on_click: Callback<Entry>) -> Element {
             match &entry.data {
                 EntryData::Wee(wee) => {
                     rsx! {
+                        td { class: "block sm:table-cell border-blue-300 sm:border-t-2", wee_icon {} }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            img { class: "w-10 invert inline-block", alt: "Wee", src: WEE_SVG }
-                        }
-                        td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            wee_delta { delta: wee.duration }
+                            wee_duration { duration: wee.duration }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             event_colour { colour: wee.colour }
@@ -204,11 +51,9 @@ fn EntryRow(entry: Entry, on_click: Callback<Entry>) -> Element {
                 }
                 EntryData::Poo(poo) => {
                     rsx! {
+                        td { class: "block sm:table-cell border-blue-300 sm:border-t-2", poo_icon {} }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            img { class: "w-10 invert inline-block", alt: "Poo", src: POO_SVG }
-                        }
-                        td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            poo_delta { delta: poo.duration }
+                            poo_duration { duration: poo.duration }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             event_colour { colour: poo.colour }

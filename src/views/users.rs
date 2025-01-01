@@ -108,35 +108,36 @@ pub fn UserDetail(user_id: UserId) -> Element {
             let user_clone_3 = obj.clone();
 
             rsx! {
-                div { class: "p-4",
-                    h1 { "User Details" }
-                    p {
-                        "ID: "
-                        {obj.id.as_inner().to_string()}
-                    }
-                    p {
-                        "Username: "
-                        {obj.username}
-                    }
-                    p {
-                        "Full Name: "
-                        {obj.full_name}
-                    }
-                    p {
-                        "Email: "
-                        {obj.email}
-                    }
-                    p {
-                        "Role: "
-                        {if obj.is_admin { "Admin" } else { "User" }}
-                    }
-                    p {
-                        "Created: "
-                        {obj.created_at.to_string()}
-                    }
-                    p {
-                        "Updated: "
-                        {obj.updated_at.to_string()}
+                table { class: "table table-striped",
+                    tbody {
+                        tr {
+                            td { "ID" }
+                            td { {obj.id.as_inner().to_string()} }
+                        }
+                        tr {
+                            td { "Username" }
+                            td { {obj.username} }
+                        }
+                        tr {
+                            td { "Full Name" }
+                            td { {obj.full_name} }
+                        }
+                        tr {
+                            td { "Email" }
+                            td { {obj.email} }
+                        }
+                        tr {
+                            td { "Role" }
+                            td { {if obj.is_admin { "Admin" } else { "User" }} }
+                        }
+                        tr {
+                            td { "Created" }
+                            td { {obj.created_at.to_string()} }
+                        }
+                        tr {
+                            td { "Updated" }
+                            td { {obj.updated_at.to_string()} }
+                        }
                     }
                 }
 

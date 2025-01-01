@@ -1,12 +1,86 @@
 use std::sync::Arc;
 
+use chrono::Local;
 use dioxus::prelude::*;
 
 use crate::components::{ChangePoo, DeletePoo, PooOperation};
 use crate::dt::get_date_for_entry_dt;
 use crate::functions::poos::get_poo_by_id;
-use crate::models::{Poo, PooId};
+use crate::models::{Bristol, Poo, PooId};
+use crate::views::event::{event_colour, event_urgency};
 use crate::Route;
+
+const POO_SVG: Asset = asset!("/assets/poo.svg");
+
+#[component]
+pub fn poo_icon() -> Element {
+    rsx! {
+        img { class: "w-10 invert inline-block", alt: "Poo", src: POO_SVG }
+    }
+}
+
+#[component]
+pub fn poo_duration(duration: chrono::TimeDelta) -> Element {
+    rsx! {
+        if duration.num_seconds() == 0 {
+            span { class: "text-error", {duration.num_seconds().to_string() + " seconds"} }
+        } else if duration.num_seconds() < 60 {
+            span { class: "text-success", {duration.num_seconds().to_string() + " seconds"} }
+        } else if duration.num_minutes() < 60 {
+            span { class: "text-warning", {duration.num_minutes().to_string() + " minutes"} }
+        } else if duration.num_hours() < 24 {
+            span { class: "text-error", {duration.num_hours().to_string() + " hours"} }
+        } else {
+            span { class: "text-error", {duration.num_days().to_string() + " days"} }
+        }
+    }
+}
+
+#[component]
+pub fn poo_bristol(bristol: Bristol) -> Element {
+    let bristol_string = bristol.as_str();
+
+    match bristol {
+        Bristol::B0 => rsx! {
+            span { class: "text-error", {bristol_string} }
+        },
+        Bristol::B1 => rsx! {
+            span { class: "text-error", {bristol_string} }
+        },
+        Bristol::B2 => rsx! {
+            span { class: "text-success", {bristol_string} }
+        },
+        Bristol::B3 => rsx! {
+            span { class: "text-success", {bristol_string} }
+        },
+        Bristol::B4 => rsx! {
+            span { class: "text-success", {bristol_string} }
+        },
+        Bristol::B5 => rsx! {
+            span { class: "text-warning", {bristol_string} }
+        },
+
+        Bristol::B6 => rsx! {
+            span { class: "text-warning", {bristol_string} }
+        },
+        Bristol::B7 => rsx! {
+            span { class: "text-error", {bristol_string} }
+        },
+    }
+}
+
+#[component]
+pub fn poo_quantity(quantity: i32) -> Element {
+    rsx! {
+        if quantity == 0 {
+            span { class: "text-error", {quantity.to_string() + " out of 5"} }
+        } else if quantity < 2 {
+            span { class: "text-warning", {quantity.to_string() + " out of 5"} }
+        } else {
+            span { class: "text-success", {quantity.to_string() + " out of 5"} }
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ActiveDialog {
@@ -65,20 +139,59 @@ pub fn PooDetail(poo_id: PooId) -> Element {
 
             rsx! {
                 div { class: "p-4",
-                    h1 { "Poo Details" }
-                    p {
-                        "ID: "
-                        {obj.id.as_inner().to_string()}
-                    }
-                    p {
-                        "Created: "
-                        {obj.created_at.to_string()}
-                    }
-                    p {
-                        "Updated: "
-                        {obj.updated_at.to_string()}
+                    table { class: "table table-striped",
+                        tbody {
+                            tr {
+                                td { "Event" }
+                                td { poo_icon {} }
+                            }
+                            tr {
+                                td { "ID" }
+                                td { {obj.id.as_inner().to_string()} }
+                            }
+                            tr {
+                                td { "Created" }
+                                td { {obj.created_at.with_timezone(&Local).to_string()} }
+                            }
+                            tr {
+                                td { "Updated" }
+                                td { {obj.updated_at.with_timezone(&Local).to_string()} }
+                            }
+                            tr {
+                                td { "Colour" }
+                                td {
+                                    event_colour { colour: obj.colour }
+                                }
+                            }
+                            tr {
+                                td { "Urgency" }
+                                td {
+                                    event_urgency { urgency: obj.urgency }
+                                }
+                            }
+                            tr {
+                                td { "Duration" }
+                                td {
+                                    poo_duration { duration: obj.duration }
+                                }
+                            }
+                            tr {
+                                td { "Quantity" }
+                                td {
+                                    poo_quantity { quantity: obj.quantity }
+                                }
+                            }
+                            tr {
+                                td { "Bristol" }
+                                td {
+                                    poo_bristol { bristol: obj.bristol }
+                                }
+                            }
+                        
+                        }
                     }
                 }
+
 
                 div { class: "p-4",
                     button {
