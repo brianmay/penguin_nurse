@@ -31,10 +31,24 @@ in
     data_dir = mkOption {
       type = types.str;
       default = "/var/lib/penguin-nurse";
+      description = lib.mdDoc ''
+        The directory where penguin-nurse stores its home directory.
+      '';
     };
     port = mkOption {
       type = types.int;
       default = 8080;
+      description = lib.mdDoc ''
+        The port on which the penguin-nurse service listens.
+      '';
+    };
+    base_url = mkOption {
+      type = types.str;
+      default = "http://localhost:${toString cfg.port}";
+      description = lib.mdDoc ''
+        The external base URL of the penguin-nurse service.
+        Used to generate the OIDC redirect URL. Not used if OIDC not configured.
+      '';
     };
     secretsFile = mkOption {
       type = types.str;
@@ -69,6 +83,7 @@ in
       environment = {
         RUST_LOG = "info";
         PORT = toString cfg.port;
+        BASE_URL = cfg.base_url;
       };
     };
   };
