@@ -6,8 +6,8 @@ use std::sync::Arc;
 use crate::{
     forms::{
         validate_colour, validate_comments, validate_duration, validate_mls, validate_time,
-        validate_urgency, CancelButton, Dialog, EditError, InputColour, InputDuration, InputString,
-        InputTextArea, Saving, SubmitButton, ValidationError,
+        validate_urgency, CancelButton, Dialog, EditError, InputColour, InputDuration, InputNumber,
+        InputString, InputTextArea, Saving, SubmitButton, ValidationError,
     },
     functions::wees::{create_wee, delete_wee, update_wee},
     models::{NewWee, UpdateWee, UserId, Wee},
@@ -198,14 +198,14 @@ pub fn ChangeWee(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
                     validate: validate.duration,
                     disabled,
                 }
-                InputString {
+                InputNumber {
                     id: "urgency",
                     label: "Urgency",
                     value: urgency,
                     validate: validate.urgency,
                     disabled,
                 }
-                InputString {
+                InputNumber {
                     id: "mls",
                     label: "Mls",
                     value: mls,

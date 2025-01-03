@@ -7,8 +7,8 @@ use crate::{
     forms::{
         validate_bristol, validate_colour, validate_comments, validate_duration,
         validate_poo_quantity, validate_time, validate_urgency, CancelButton, Dialog, EditError,
-        InputColour, InputDuration, InputSelect, InputString, InputTextArea, Saving, SubmitButton,
-        ValidationError,
+        InputColour, InputDuration, InputNumber, InputSelect, InputString, InputTextArea, Saving,
+        SubmitButton, ValidationError,
     },
     functions::poos::{create_poo, delete_poo, update_poo},
     models::{Bristol, NewPoo, Poo, UpdatePoo, UserId},
@@ -208,14 +208,14 @@ pub fn ChangePoo(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
                     validate: validate.duration,
                     disabled,
                 }
-                InputString {
+                InputNumber {
                     id: "urgency",
                     label: "Urgency",
                     value: urgency,
                     validate: validate.urgency,
                     disabled,
                 }
-                InputString {
+                InputNumber {
                     id: "quantity",
                     label: "Quantity",
                     value: quantity,
