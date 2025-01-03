@@ -218,6 +218,8 @@ pub fn InputDuration<D: 'static + Clone + Eq + PartialEq>(
                     .to_string() + get_input_classes(validate().is_ok(), changed(), disabled()),
                 id,
                 type: "number",
+                pattern: "[0-9]*",
+                inputmode: "numeric",
                 placeholder: "Enter input",
                 value: "{value()}",
                 disabled,
