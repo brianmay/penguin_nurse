@@ -110,14 +110,12 @@ impl Client {
             .into();
 
         if let Some(id_token) = token.id_token.as_mut() {
-            debug!("token: {:?}", id_token);
             self.oidc_client
                 .decode_token(id_token)
                 .map_err(Error::TokenDecode)?;
             self.oidc_client
                 .validate_token(id_token, None, None)
                 .map_err(Error::TokenValidation)?;
-            debug!("token: {:?}", id_token);
         } else {
             return Err(Error::NoToken);
         }
@@ -135,9 +133,6 @@ impl Client {
             .request_userinfo(&token)
             .await
             .map_err(Error::RequestUserInfo)?;
-
-        println!("groups: {:#?}", groups);
-        println!("user info: {:#?}", user_info);
 
         let sub = user_info
             .sub
