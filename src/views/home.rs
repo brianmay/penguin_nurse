@@ -5,10 +5,18 @@ use crate::Route;
 
 #[component]
 pub fn Home() -> Element {
-    let navigator = navigator();
     let date = Local::now().date_naive();
-    navigator.replace(Route::TimelineList { date });
     rsx! {
-        p { {"Redirecting..."} }
+        div {
+            h1 { "Welcome to Penguin Nurse" }
+            p { "This is a simple web application written in Rust using the Dioxus framework." }
+            button {
+                class: "btn btn-primary",
+                onclick: move |_| {
+                    navigator().push(Route::TimelineList { date });
+                },
+                "Today"
+            }
+        }
     }
 }

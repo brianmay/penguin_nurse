@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crate::{models::User, Route, UserLoadError};
+use chrono::Local;
 use dioxus::prelude::*;
 
 const NURSE_SVG: Asset = asset!("/assets/nurse.svg");
@@ -27,6 +28,7 @@ pub fn Navbar() -> Element {
     let mut show_menu = use_signal(|| false);
     let user: Signal<Arc<Option<User>>> = use_context();
     let user_load_error: UserLoadError = use_context();
+    let date = Local::now().date_naive();
 
     let menu_class = if show_menu() { "" } else { "hidden" };
 
@@ -70,7 +72,10 @@ pub fn Navbar() -> Element {
                     id: "navbar-multi-level",
                     class: "{menu_class} w-full md:block md:w-auto",
                     ul { class: "flex flex-col font-medium p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700",
-                        MenuItem { route: Route::Home {}, title: "Home" }
+                        MenuItem {
+                            route: Route::TimelineList { date },
+                            title: "Today",
+                        }
                         if let Some(user) = user().as_ref() {
                             if user.is_admin {
                                 MenuItem { route: Route::UserList {}, title: "Users" }
