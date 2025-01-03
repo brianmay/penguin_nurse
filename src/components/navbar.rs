@@ -3,7 +3,6 @@ use std::sync::Arc;
 use crate::{models::User, Route, UserLoadError};
 use dioxus::prelude::*;
 
-const NAVBAR_CSS: Asset = asset!("/assets/styling/navbar.css");
 const NURSE_SVG: Asset = asset!("/assets/nurse.svg");
 
 #[component]
@@ -32,14 +31,12 @@ pub fn Navbar() -> Element {
     let menu_class = if show_menu() { "" } else { "hidden" };
 
     rsx! {
-        document::Link { rel: "stylesheet", href: NAVBAR_CSS }
-
         nav { class: "bg-white border-gray-200 dark:bg-gray-900 dark:border-gray-700",
             div { class: "flex flex-wrap items-center justify-between mx-auto p-4",
                 Link {
                     to: Route::Home {},
                     class: "flex items-center space-x-3 rtl:space-x-reverse",
-                    img { alt: "Nurse Logo", src: NURSE_SVG, class: "h-8" }
+                    img { alt: "Nurse Logo", src: NURSE_SVG, class: "h-12" }
                     span { class: "self-center text-2xl font-semibold whitespace-nowrap dark:text-white",
                         "Penguin Nurse"
                     }

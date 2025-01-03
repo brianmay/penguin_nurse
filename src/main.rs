@@ -42,8 +42,7 @@ enum Route {
     PooDetail { poo_id: PooId },
 }
 
-const FAVICON: Asset = asset!("/assets/favicon.ico");
-const MAIN_CSS: Asset = asset!("/assets/styling/main.css");
+const MEDICAL_SVG: Asset = asset!("/assets/medical.svg");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
 #[cfg(not(feature = "server"))]
@@ -89,8 +88,7 @@ fn App() -> Element {
 
     rsx! {
         // Global app resources
-        document::Link { rel: "icon", href: FAVICON }
-        document::Link { rel: "stylesheet", href: MAIN_CSS }
+        document::Link { rel: "icon", href: MEDICAL_SVG}
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
 
         Router::<Route> {}
