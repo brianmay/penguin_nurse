@@ -65,8 +65,6 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Poo, EditError> 
                 colour: Some(colour),
                 comments: Some(comments.into()),
             };
-            use tracing::error;
-            error!("updates: {:?}", updates);
             update_poo(poo.id, updates).await.map_err(EditError::Server)
         }
     }

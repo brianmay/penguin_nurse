@@ -268,7 +268,6 @@ pub fn InputSelect<D: 'static + Clone + Eq + PartialEq>(
     options: Vec<(&'static str, &'static str)>,
 ) -> Element {
     let mut changed: Signal<bool> = use_signal(|| false);
-    tracing::error!("value = {:?}", value.read());
 
     rsx! {
         div { class: "form-group",
