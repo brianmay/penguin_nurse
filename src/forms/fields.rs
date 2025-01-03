@@ -241,6 +241,7 @@ pub fn InputBoolean(
 
 #[component]
 pub fn ColourButton(colour: Hsv, name: String, on_click: Callback<Hsv>) -> Element {
+    #[allow(clippy::let_and_return)]
     let class = if colour.value < 0.5 {
         let class = "text-white";
         class

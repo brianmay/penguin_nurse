@@ -8,7 +8,6 @@ use axum::{
     response::{IntoResponse, Redirect, Response},
     Extension,
 };
-use dioxus::html::base;
 use tap::Pipe;
 use thiserror::Error;
 use url::Url;

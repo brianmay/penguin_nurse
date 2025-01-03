@@ -3,7 +3,6 @@ pub mod middleware;
 
 use openid::{error::ClientError, Discovered, Options};
 use thiserror::Error;
-use tracing::debug;
 use url::Url;
 
 use crate::server::database::models::users::{

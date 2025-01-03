@@ -2,12 +2,23 @@
     "cSpell.words": [
         "axum",
         "chrono",
+        "Color",
         "conn",
+        "creds",
+        "describedby",
         "dialog",
         "dioxus",
+        "joinable",
+        "Mobc",
+        "novalidate",
         "onclick",
+        "oninput",
         "poos",
-        "thiserror"
+        "Srgb",
+        "thiserror",
+        "Timestamptz",
+        "timezone",
+        "userinfo"
     ],
     "rust-analyzer.cargo.features": [
         "server"
