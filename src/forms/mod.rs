@@ -9,7 +9,8 @@ pub use buttons::{CancelButton, SubmitButton};
 pub use dialog::Dialog;
 pub use errors::{EditError, ValidationError};
 pub use fields::{
-    InputBoolean, InputColour, InputPassword, InputSelect, InputString, InputTextArea,
+    InputBoolean, InputColour, InputDuration, InputPassword, InputSelect, InputString,
+    InputTextArea,
 };
 pub use saving::MyForm;
 pub use saving::Saving;

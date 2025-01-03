@@ -1,5 +1,8 @@
 #![allow(non_snake_case)]
+use chrono::Utc;
 use dioxus::{prelude::*, signals::Signal};
+use futures::{select, StreamExt};
+use gloo_timers::future::IntervalStream;
 use palette::{Hsv, IntoColor, Srgb};
 
 use crate::forms::{validate_colour_hue, validate_colour_saturation, validate_colour_value};
@@ -138,6 +141,106 @@ pub fn InputTextArea<D: 'static + Clone + Eq + PartialEq>(
                     changed.set(true);
                     value.set(e.value());
                 },
+            }
+            if disabled() {
+
+            }
+            if !changed() {
+
+            } else if let Err(err) = validate() {
+                div { class: "text-red-500", "{err}" }
+            } else {
+                div { class: "text-green-500", "Looks good!" }
+            }
+        }
+    }
+}
+
+enum TimerButton {
+    Restart,
+    Stop,
+}
+
+#[component]
+pub fn InputDuration<D: 'static + Clone + Eq + PartialEq>(
+    id: &'static str,
+    label: &'static str,
+    value: Signal<String>,
+    validate: Memo<Result<D, ValidationError>>,
+    disabled: Memo<bool>,
+) -> Element {
+    let mut changed = use_signal(|| false);
+
+    let mut stop_watch_running = use_signal(|| false);
+
+    let stopwatch = use_coroutine(move |mut rx: UnboundedReceiver<TimerButton>| async move {
+        let mut start = Utc::now();
+        let mut interval = IntervalStream::new(1000).fuse();
+        let mut running = false;
+
+        loop {
+            stop_watch_running.set(running);
+
+            select! {
+                maybe_button = rx.next() => {
+                    match maybe_button {
+                        Some(TimerButton::Restart) => {
+                            start = Utc::now();
+                            running = true;
+                        }
+                        Some(TimerButton::Stop) => {
+                            running = false;
+                        }
+                        None => break,
+                    }
+                }
+                _ = interval.next() => {
+                }
+            }
+
+            if running {
+                let duration = Utc::now() - start;
+                value.set(duration.num_seconds().to_string());
+            }
+        }
+    });
+
+    rsx! {
+        div { class: "mb-5",
+            label {
+                r#for: id,
+                class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
+                "{label}"
+            }
+            input {
+                r#type: "text",
+                class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
+                    .to_string() + get_input_classes(validate().is_ok(), changed(), disabled()),
+                id,
+                type: "number",
+                placeholder: "Enter input",
+                value: "{value()}",
+                disabled,
+                oninput: move |e| {
+                    changed.set(true);
+                    value.set(e.value());
+                },
+            }
+            button {
+                class: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded",
+                onclick: move |_e| {
+                    stopwatch.send(TimerButton::Restart);
+                },
+                "Start"
+            }
+            if stop_watch_running() {
+                button {
+                    class: "bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded",
+                    onclick: move |_e| {
+                        stopwatch.send(TimerButton::Stop);
+                    },
+                    "Stop"
+                }
             }
             if disabled() {
 
