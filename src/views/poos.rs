@@ -90,11 +90,11 @@ pub fn poo_bristol(bristol: Bristol) -> Element {
 pub fn poo_quantity(quantity: i32) -> Element {
     rsx! {
         if quantity == 0 {
-            span { class: "text-error", {quantity.to_string() + " out of 5"} }
+            span { class: "text-error", {quantity.to_string() + " out of 10"} }
         } else if quantity < 2 {
-            span { class: "text-warning", {quantity.to_string() + " out of 5"} }
+            span { class: "text-warning", {quantity.to_string() + " out of 10"} }
         } else {
-            span { class: "text-success", {quantity.to_string() + " out of 5"} }
+            span { class: "text-success", {quantity.to_string() + " out of 10"} }
         }
     }
 }

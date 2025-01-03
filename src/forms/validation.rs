@@ -178,9 +178,9 @@ pub fn validate_urgency(str: &str) -> Result<i32, ValidationError> {
 
 pub fn validate_poo_quantity(str: &str) -> Result<i32, ValidationError> {
     match str.parse() {
-        Ok(quantity) if (0..=5).contains(&quantity) => Ok(quantity),
+        Ok(quantity) if (0..=10).contains(&quantity) => Ok(quantity),
         Ok(_) => Err(ValidationError(
-            "Quantity must be between 0 and 5".to_string(),
+            "Quantity must be between 0 and 10".to_string(),
         )),
         Err(err) => Err(ValidationError(format!("Invalid integer: {err}"))),
     }
