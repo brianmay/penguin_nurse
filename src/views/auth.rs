@@ -305,10 +305,10 @@ async fn login_with_password(username: String, password: String) -> Result<User,
         // next: None,
     };
 
-    let user = match session.authenticate(creds.clone()).await {
+    let user = match session.authenticate(creds).await {
         Ok(Some(user)) => user,
         Ok(None) => {
-            error!("Invalid credentials: {:?}", creds);
+            error!("Invalid credentials");
             return Err(ServerFnError::ServerError(
                 "Invalid credentials".to_string(),
             ));
