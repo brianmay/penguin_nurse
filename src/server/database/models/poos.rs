@@ -148,7 +148,7 @@ impl<'a> UpdatePoo<'a> {
             duration: poo.duration,
             urgency: poo.urgency,
             quantity: poo.quantity,
-            bristol: poo.bristol.as_ref().map(|x| x.as_value()),
+            bristol: poo.bristol.as_ref().map(|x| (*x).into()),
             colour_hue: poo.colour.map(|x| x.hue.into_inner()),
             colour_saturation: poo.colour.map(|x| x.saturation),
             colour_value: poo.colour.map(|x| x.value),

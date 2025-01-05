@@ -3,6 +3,8 @@ use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+use crate::forms::{FieldValue, FieldValueError};
+
 use super::{common::MaybeString, UserId};
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]
@@ -82,11 +84,31 @@ impl From<Bristol> for i32 {
     }
 }
 
-impl FromStr for Bristol {
-    type Err = BristolParseError;
+// impl FromStr for Bristol {
+//     type Err = BristolParseError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
+//     fn from_str(s: &str) -> Result<Self, Self::Err> {
+//         match s {
+//             "0" => Ok(Bristol::B0),
+//             "1" => Ok(Bristol::B1),
+//             "2" => Ok(Bristol::B2),
+//             "3" => Ok(Bristol::B3),
+//             "4" => Ok(Bristol::B4),
+//             "5" => Ok(Bristol::B5),
+//             "6" => Ok(Bristol::B6),
+//             "7" => Ok(Bristol::B7),
+//             _ => Err(BristolParseError),
+//         }
+//     }
+// }
+
+impl FieldValue for Bristol {
+    fn as_string(&self) -> String {
+        let v: i32 = (*self).into();
+        v.to_string()
+    }
+    fn from_string(value: &str) -> Result<Self, FieldValueError> {
+        match value {
             "0" => Ok(Bristol::B0),
             "1" => Ok(Bristol::B1),
             "2" => Ok(Bristol::B2),
@@ -95,15 +117,15 @@ impl FromStr for Bristol {
             "5" => Ok(Bristol::B5),
             "6" => Ok(Bristol::B6),
             "7" => Ok(Bristol::B7),
-            _ => Err(BristolParseError),
+            _ => Err(FieldValueError::InvalidValue),
         }
     }
 }
 
 impl Bristol {
-    pub fn as_value(&self) -> i32 {
-        (*self).into()
-    }
+    // pub fn as_value(&self) -> i32 {
+    //     (*self).into()
+    // }
 
     pub fn as_str(&self) -> &'static str {
         match self {

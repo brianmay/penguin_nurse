@@ -76,6 +76,10 @@ pub fn Navbar() -> Element {
                             route: Route::TimelineList { date },
                             title: "Today",
                         }
+                        MenuItem {
+                            route: Route::ConsumableList {},
+                            title: "Consumables",
+                        }
                         if let Some(user) = user().as_ref() {
                             if user.is_admin {
                                 MenuItem { route: Route::UserList {}, title: "Users" }

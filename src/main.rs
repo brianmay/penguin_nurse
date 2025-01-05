@@ -6,7 +6,8 @@ use dioxus::prelude::*;
 use components::Navbar;
 use models::{PooId, User, UserId, WeeId};
 use views::{
-    get_user, Home, Login, Logout, PooDetail, TimelineList, UserDetail, UserList, WeeDetail,
+    get_user, ConsumableList, Home, Login, Logout, PooDetail, TimelineList, UserDetail, UserList,
+    WeeDetail,
 };
 
 mod components;
@@ -40,6 +41,8 @@ enum Route {
     WeeDetail { wee_id: WeeId },
     #[route("/poos/:poo_id")]
     PooDetail { poo_id: PooId },
+    #[route("/consumables")]
+    ConsumableList {},
 }
 
 const MEDICAL_SVG: Asset = asset!("/assets/medical.svg");
@@ -88,7 +91,7 @@ fn App() -> Element {
 
     rsx! {
         // Global app resources
-        document::Link { rel: "icon", href: MEDICAL_SVG}
+        document::Link { rel: "icon", href: MEDICAL_SVG }
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
 
         Router::<Route> {}

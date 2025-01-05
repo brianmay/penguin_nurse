@@ -16,3 +16,8 @@ mod poos;
 pub use poos::ChangePoo;
 pub use poos::DeletePoo;
 pub use poos::Operation as PooOperation;
+
+mod consumables;
+pub use consumables::ChangeConsumable;
+pub use consumables::DeleteConsumable;
+pub use consumables::Operation as ConsumableOperation;

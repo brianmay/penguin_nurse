@@ -1,56 +1,43 @@
 use chrono::{TimeDelta, Utc};
 use palette::Hsv;
 
-use crate::models::Bristol;
+use crate::models::{Bristol, ConsumableUnit, MaybeDateTime, MaybeString};
 
-use super::errors::ValidationError;
+use super::{errors::ValidationError, FieldValue};
 
-// pub fn validate_order(str: &str) -> Result<i32, ValidationError> {
-//     if str.is_empty() {
-//         return Err(ValidationError("Order cannot be empty".to_string()));
-//     }
+pub fn validate_field_value<T: FieldValue>(str: &str) -> Result<T, ValidationError> {
+    T::from_string(str).map_err(|_| ValidationError("Invalid value".to_string()))
+}
 
-//     str.parse()
-//         .map_err(|err| ValidationError(format!("Invalid integer: {err}")))
-// }
+pub fn validate_name(str: &str) -> Result<String, ValidationError> {
+    validate_field_value(str)
+}
 
-// pub fn validate_regexp(str: &str) -> Result<String, ValidationError> {
-//     if str.is_empty() {
-//         return Err(ValidationError("Regexp cannot be empty".to_string()));
-//     }
-//     regex::Regex::new(str).map_err(|err| ValidationError(format!("Invalid regexp: {err}")))?;
-//     Ok(str.to_string())
-// }
+pub fn validate_brand(str: &str) -> Result<MaybeString, ValidationError> {
+    validate_field_value(str)
+}
+
+pub fn validate_barcode(str: &str) -> Result<MaybeString, ValidationError> {
+    validate_field_value(str)
+}
 
 pub fn validate_username(str: &str) -> Result<String, ValidationError> {
-    if str.is_empty() {
-        return Err(ValidationError("Username cannot be empty".to_string()));
-    }
-    Ok(str.to_string())
+    validate_field_value(str)
 }
 
 pub fn validate_full_name(str: &str) -> Result<String, ValidationError> {
-    if str.is_empty() {
-        return Err(ValidationError("Name cannot be empty".to_string()));
-    }
-    Ok(str.to_string())
+    validate_field_value(str)
 }
 
 pub fn validate_email(str: &str) -> Result<String, ValidationError> {
-    if str.is_empty() {
-        return Err(ValidationError("Email cannot be empty".to_string()));
-    }
     if !str.contains('@') {
         return Err(ValidationError("Email should contain @".to_string()));
     }
-    Ok(str.to_string())
+    validate_field_value(str)
 }
 
 pub fn validate_password(str: &str) -> Result<String, ValidationError> {
-    if str.is_empty() {
-        return Err(ValidationError("Password cannot be empty".to_string()));
-    }
-    Ok(str.to_string())
+    validate_field_value(str)
 }
 
 pub fn validate_1st_password(str: &str) -> Result<String, ValidationError> {
@@ -60,69 +47,42 @@ pub fn validate_1st_password(str: &str) -> Result<String, ValidationError> {
     if str == "password" {
         return Err(ValidationError("Password cannot be 'password'".to_string()));
     }
-    // if str.len() < 16 {
-    //     return Err(ValidationError(
-    //         "Password must be at least 16 characters".to_string(),
-    //     ));
-    // }
-    Ok(str.to_string())
+    validate_field_value(str)
 }
 
 pub fn validate_2nd_password(str: &str, str2: &str) -> Result<String, ValidationError> {
     if str != str2 {
         return Err(ValidationError("Passwords do not match".to_string()));
     }
-    Ok(str.to_string())
+    validate_field_value(str)
 }
 
-// pub fn validate_phone_number(str: &str) -> Result<String, ValidationError> {
-//     if str.is_empty() {
-//         return Err(ValidationError("Phone number cannot be empty".to_string()));
-//     }
-//     Ok(str.to_string())
-// }
+pub fn validate_comments(str: &str) -> Result<MaybeString, ValidationError> {
+    validate_field_value(str)
+}
 
-// pub fn validate_action(str: &str) -> Result<Action, ValidationError> {
-//     Action::try_from(str).map_err(|err| ValidationError(format!("Invalid action: {err}")))
-// }
+pub fn validate_date_time(str: &str) -> Result<chrono::DateTime<Utc>, ValidationError> {
+    validate_field_value(str)
+}
 
-// pub fn validate_comments(str: &str) -> Result<Option<String>, ValidationError> {
-//     if str.is_empty() {
-//         Ok(None)
-//     } else {
-//         Ok(Some(str.to_string()))
-//     }
-// }
-
-pub fn validate_time(str: &str) -> Result<chrono::DateTime<Utc>, ValidationError> {
-    match chrono::DateTime::parse_from_rfc3339(str) {
-        Ok(time) => Ok(time.with_timezone(&Utc)),
-        Err(err) => Err(ValidationError(format!("Invalid time: {err}"))),
-    }
+pub fn validate_maybe_date_time(str: &str) -> Result<MaybeDateTime, ValidationError> {
+    validate_field_value(str)
 }
 
 pub fn validate_duration(str: &str) -> Result<TimeDelta, ValidationError> {
-    match str.parse() {
-        Ok(duration) if duration >= 0 => Ok(TimeDelta::seconds(duration)),
-        Ok(_) => Err(ValidationError(
-            "Duration must be greater than or 0".to_string(),
-        )),
-        Err(err) => Err(ValidationError(format!("Invalid integer: {err}"))),
-    }
+    validate_field_value(str)
 }
 
-pub fn validate_mls(str: &str) -> Result<i32, ValidationError> {
-    match str.parse() {
-        Ok(mls) => Ok(mls),
-        Err(err) => Err(ValidationError(format!("Invalid integer: {err}"))),
-    }
+pub fn validate_millilitres(str: &str) -> Result<i32, ValidationError> {
+    validate_field_value(str)
+}
+
+pub fn validate_consumable_unit(str: &str) -> Result<ConsumableUnit, ValidationError> {
+    validate_field_value(str)
 }
 
 pub fn validate_bristol(str: &str) -> Result<Bristol, ValidationError> {
-    match str.parse() {
-        Ok(bristol) => Ok(bristol),
-        Err(_) => Err(ValidationError("Invalid Bristol".to_string())),
-    }
+    validate_field_value(str)
 }
 
 pub fn validate_colour_hue(str: &str) -> Result<f32, ValidationError> {
@@ -156,14 +116,6 @@ pub fn validate_colour(
     let saturation = validate_colour_saturation(str::trim(&saturation))?;
     let value = validate_colour_value(str::trim(&value))?;
     Ok(Hsv::new(hue, saturation, value))
-}
-
-pub fn validate_comments(str: &str) -> Result<Option<String>, ValidationError> {
-    if str.is_empty() {
-        Ok(None)
-    } else {
-        Ok(Some(str.to_string()))
-    }
 }
 
 pub fn validate_urgency(str: &str) -> Result<i32, ValidationError> {

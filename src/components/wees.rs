@@ -5,12 +5,13 @@ use std::sync::Arc;
 
 use crate::{
     forms::{
-        validate_colour, validate_comments, validate_duration, validate_mls, validate_time,
-        validate_urgency, CancelButton, Dialog, EditError, InputColour, InputDuration, InputNumber,
-        InputString, InputTextArea, Saving, SubmitButton, ValidationError,
+        validate_colour, validate_comments, validate_date_time, validate_duration,
+        validate_millilitres, validate_urgency, CancelButton, Dialog, EditError, FieldValue,
+        InputColour, InputDateTime, InputDuration, InputNumber, InputTextArea, Saving,
+        SubmitButton, ValidationError,
     },
     functions::wees::{create_wee, delete_wee, update_wee},
-    models::{NewWee, UpdateWee, UserId, Wee},
+    models::{MaybeString, NewWee, UpdateWee, UserId, Wee},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -26,7 +27,7 @@ struct Validate {
     urgency: Memo<Result<i32, ValidationError>>,
     mls: Memo<Result<i32, ValidationError>>,
     colour: Memo<Result<Hsv, ValidationError>>,
-    comments: Memo<Result<Option<String>, ValidationError>>,
+    comments: Memo<Result<MaybeString, ValidationError>>,
 }
 
 async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> {
@@ -46,7 +47,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> 
                 urgency,
                 mls,
                 colour,
-                comments: comments.into(),
+                comments,
             };
             create_wee(updates).await.map_err(EditError::Server)
         }
@@ -58,7 +59,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> 
                 urgency: Some(urgency),
                 mls: Some(mls),
                 colour: Some(colour),
-                comments: Some(comments.into()),
+                comments: Some(comments),
             };
             update_wee(wee.id, updates).await.map_err(EditError::Server)
         }
@@ -76,34 +77,34 @@ pub fn ChangeWee(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
     });
     let duration = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { wee } => wee.duration.num_seconds().to_string(),
+        Operation::Update { wee } => wee.duration.as_string(),
     });
     let urgency = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { wee } => wee.urgency.to_string(),
+        Operation::Update { wee } => wee.urgency.as_string(),
     });
     let mls = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { wee } => wee.mls.to_string(),
+        Operation::Update { wee } => wee.mls.as_string(),
     });
     let colour = use_signal(|| match &op {
         Operation::Create { .. } => (String::new(), String::new(), String::new()),
         Operation::Update { wee } => (
-            wee.colour.hue.into_inner().to_string(),
-            wee.colour.saturation.to_string(),
-            wee.colour.value.to_string(),
+            wee.colour.hue.as_string(),
+            wee.colour.saturation.as_string(),
+            wee.colour.value.as_string(),
         ),
     });
     let comments = use_signal(|| match &op {
-        Operation::Create { .. } => "".to_string(),
-        Operation::Update { wee } => wee.comments.clone().option().unwrap_or_default(),
+        Operation::Create { .. } => String::new(),
+        Operation::Update { wee } => wee.comments.as_string(),
     });
 
     let validate = Validate {
-        time: use_memo(move || validate_time(&time())),
+        time: use_memo(move || validate_date_time(&time())),
         duration: use_memo(move || validate_duration(&duration())),
         urgency: use_memo(move || validate_urgency(&urgency())),
-        mls: use_memo(move || validate_mls(&mls())),
+        mls: use_memo(move || validate_millilitres(&mls())),
         colour: use_memo(move || validate_colour(colour())),
         comments: use_memo(move || validate_comments(&comments())),
     };
@@ -184,7 +185,7 @@ pub fn ChangeWee(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
                         on_cancel(());
                     }
                 },
-                InputString {
+                InputDateTime {
                     id: "time",
                     label: "Time",
                     value: time,

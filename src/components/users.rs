@@ -5,8 +5,8 @@ use dioxus::prelude::*;
 use crate::{
     forms::{
         validate_1st_password, validate_2nd_password, validate_email, validate_full_name,
-        validate_username, CancelButton, Dialog, EditError, InputBoolean, InputPassword,
-        InputString, Saving, SubmitButton, ValidationError,
+        validate_username, CancelButton, Dialog, EditError, FieldValue, InputBoolean,
+        InputPassword, InputString, Saving, SubmitButton, ValidationError,
     },
     functions::users::{create_user, delete_user, update_user},
     models::{MaybeString, NewUser, UpdateUser, User},
@@ -239,9 +239,9 @@ pub fn CreateUser(on_cancel: Callback, on_save: Callback<User>) -> Element {
 pub fn ChangeUser(user: User, on_cancel: Callback, on_save: Callback<User>) -> Element {
     let user = Arc::new(user);
 
-    let username = use_signal(|| user.username.clone());
-    let email = use_signal(|| user.email.clone());
-    let full_name = use_signal(|| user.full_name.clone());
+    let username = use_signal(|| user.username.as_string());
+    let email = use_signal(|| user.email.as_string());
+    let full_name = use_signal(|| user.full_name.as_string());
     let is_admin = use_signal(|| user.is_admin);
 
     let validate = ValidateUpdateExistingUser {
@@ -458,7 +458,6 @@ pub fn ChangePassword(user: User, on_cancel: Callback, on_save: Callback<User>) 
                     on_save: move |_| on_save(()),
                     title: "Save",
                 }
-            
             }
         }
     }

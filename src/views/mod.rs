@@ -16,4 +16,7 @@ pub use wees::WeeDetail;
 mod poos;
 pub use poos::PooDetail;
 
+mod consumables;
+pub use consumables::ConsumableList;
+
 mod event;

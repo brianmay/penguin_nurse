@@ -1,17 +1,17 @@
-use chrono::{DateTime, Local, TimeDelta, Utc};
+use chrono::{DateTime, TimeDelta, Utc};
 use dioxus::prelude::*;
 use palette::Hsv;
 use std::sync::Arc;
 
 use crate::{
     forms::{
-        validate_bristol, validate_colour, validate_comments, validate_duration,
-        validate_poo_quantity, validate_time, validate_urgency, CancelButton, Dialog, EditError,
-        InputColour, InputDuration, InputNumber, InputSelect, InputString, InputTextArea, Saving,
-        SubmitButton, ValidationError,
+        validate_bristol, validate_colour, validate_comments, validate_date_time,
+        validate_duration, validate_poo_quantity, validate_urgency, CancelButton, Dialog,
+        EditError, FieldValue, InputColour, InputDateTime, InputDuration, InputNumber, InputSelect,
+        InputTextArea, Saving, SubmitButton, ValidationError,
     },
     functions::poos::{create_poo, delete_poo, update_poo},
-    models::{Bristol, NewPoo, Poo, UpdatePoo, UserId},
+    models::{Bristol, MaybeString, NewPoo, Poo, UpdatePoo, UserId},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -28,7 +28,7 @@ struct Validate {
     quantity: Memo<Result<i32, ValidationError>>,
     bristol: Memo<Result<Bristol, ValidationError>>,
     colour: Memo<Result<Hsv, ValidationError>>,
-    comments: Memo<Result<Option<String>, ValidationError>>,
+    comments: Memo<Result<MaybeString, ValidationError>>,
 }
 
 async fn do_save(op: &Operation, validate: &Validate) -> Result<Poo, EditError> {
@@ -50,7 +50,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Poo, EditError> 
                 quantity,
                 bristol,
                 colour,
-                comments: comments.into(),
+                comments,
             };
             create_poo(updates).await.map_err(EditError::Server)
         }
@@ -63,7 +63,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Poo, EditError> 
                 quantity: Some(quantity),
                 bristol: Some(bristol),
                 colour: Some(colour),
-                comments: Some(comments.into()),
+                comments: Some(comments),
             };
             update_poo(poo.id, updates).await.map_err(EditError::Server)
         }
@@ -73,34 +73,31 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Poo, EditError> 
 #[component]
 pub fn ChangePoo(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).to_rfc3339(),
-        Operation::Update { poo } => {
-            let local = poo.time.with_timezone(&Local);
-            local.to_rfc3339()
-        }
+        Operation::Create { .. } => Utc::now().as_string(),
+        Operation::Update { poo } => poo.time.as_string(),
     });
     let duration = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { poo } => poo.duration.num_seconds().to_string(),
+        Operation::Update { poo } => poo.duration.as_string(),
     });
     let urgency = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { poo } => poo.urgency.to_string(),
+        Operation::Update { poo } => poo.urgency.as_string(),
     });
     let quantity = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { poo } => poo.quantity.to_string(),
+        Operation::Update { poo } => poo.quantity.as_string(),
     });
     let bristol = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { poo } => poo.bristol.as_value().to_string(),
+        Operation::Update { poo } => poo.bristol.as_string(),
     });
     let colour = use_signal(|| match &op {
         Operation::Create { .. } => (String::new(), String::new(), String::new()),
         Operation::Update { poo } => (
-            poo.colour.hue.into_inner().to_string(),
-            poo.colour.saturation.to_string(),
-            poo.colour.value.to_string(),
+            poo.colour.hue.as_string(),
+            poo.colour.saturation.as_string(),
+            poo.colour.value.as_string(),
         ),
     });
     let comments = use_signal(|| match &op {
@@ -109,7 +106,7 @@ pub fn ChangePoo(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
     });
 
     let validate = Validate {
-        time: use_memo(move || validate_time(&time())),
+        time: use_memo(move || validate_date_time(&time())),
         duration: use_memo(move || validate_duration(&duration())),
         urgency: use_memo(move || validate_urgency(&urgency())),
         quantity: use_memo(move || validate_poo_quantity(&quantity())),
@@ -194,7 +191,7 @@ pub fn ChangePoo(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
                         on_cancel(());
                     }
                 },
-                InputString {
+                InputDateTime {
                     id: "time",
                     label: "Time",
                     value: time,

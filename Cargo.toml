@@ -45,7 +45,6 @@ web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
 server = ["dioxus/server", "dioxus-cli-config", "tokio", "axum", "diesel", "diesel-async", "diesel-derive-enum", "diesel_migrations", "tracing-subscriber", "tokio", "tower-sessions", "mobc", "axum-login", "password-auth", "openid", "arc-swap", "url"]
-url = ["dep:url"]
 
 [profile.wasm-dev]
 inherits = "dev"
