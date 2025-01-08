@@ -1,7 +1,7 @@
 use chrono::Local;
 use dioxus::prelude::*;
 
-use crate::components::{ChangePassword, ChangeUser, CreateUser, DeleteUser};
+use crate::components::users::{ChangePassword, ChangeUser, CreateUser, DeleteUser};
 use crate::functions::users::{get_user, get_users};
 use crate::models::{User, UserId};
 use crate::Route;
@@ -228,7 +228,6 @@ pub fn UserList() -> Element {
                                                     user_id: user.id,
                                                 });
                                         },
-                                    
                                     }
                                 }
                             }

@@ -84,7 +84,7 @@ impl std::fmt::Display for ConsumableId {
 }
 
 #[allow(dead_code)]
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct Consumable {
     pub id: ConsumableId,
     pub name: String,

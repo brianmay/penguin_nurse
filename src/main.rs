@@ -3,12 +3,9 @@ use std::sync::Arc;
 use chrono::NaiveDate;
 use dioxus::prelude::*;
 
-use components::Navbar;
-use models::{PooId, User, UserId, WeeId};
-use views::{
-    get_user, ConsumableList, Home, Login, Logout, PooDetail, TimelineList, UserDetail, UserList,
-    WeeDetail,
-};
+use components::navbar::Navbar;
+use models::{User, UserId};
+use views::{get_user, ConsumableList, Home, Login, Logout, TimelineList, UserDetail, UserList};
 
 mod components;
 mod dt;
@@ -37,12 +34,9 @@ enum Route {
     UserList {},
     #[route("/users/:user_id")]
     UserDetail { user_id: UserId },
-    #[route("/wees/:wee_id")]
-    WeeDetail { wee_id: WeeId },
-    #[route("/poos/:poo_id")]
-    PooDetail { poo_id: PooId },
     #[route("/consumables")]
     ConsumableList {},
+
 }
 
 const MEDICAL_SVG: Asset = asset!("/assets/medical.svg");

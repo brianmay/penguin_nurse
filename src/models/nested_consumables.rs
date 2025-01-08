@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::{common::MaybeF64, consumables::ConsumableId, MaybeString};
+use super::{consumables::ConsumableId, MaybeF64, MaybeString};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct NestedConsumableId(ConsumableId, ConsumableId);

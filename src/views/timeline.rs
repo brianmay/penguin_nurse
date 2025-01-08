@@ -5,15 +5,15 @@ use dioxus::prelude::*;
 use tap::Pipe;
 
 use crate::{
-    components::{ChangePoo, ChangeWee, PooOperation, WeeOperation},
+    components::{
+        events::{event_colour, event_time, event_urgency},
+        poos::{self, poo_bristol, poo_duration, poo_icon, poo_quantity},
+        timeline::{ActiveDialog, TimelineDialog},
+        wees::{self, wee_duration, wee_icon, wee_mls},
+    },
     dt::get_utc_times_for_date,
     functions::{poos::get_poos_for_time_range, wees::get_wees_for_time_range},
     models::{Entry, EntryData, MaybeString, Timeline, User},
-    views::{
-        event::{event_colour, event_time, event_urgency},
-        poos::{poo_bristol, poo_duration, poo_icon, poo_quantity},
-        wees::{wee_duration, wee_icon, wee_mls},
-    },
     Route,
 };
 
@@ -79,12 +79,6 @@ fn EntryRow(entry: Entry, on_click: Callback<Entry>) -> Element {
     }
 }
 
-enum ActiveDialog {
-    ChangeWee(WeeOperation),
-    ChangePoo(PooOperation),
-    None,
-}
-
 #[component]
 pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
     let user: Signal<Arc<Option<User>>> = use_context();
@@ -99,7 +93,7 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
 
     let user_id = user.pipe(|x| x.id);
 
-    let mut active_dialog = use_signal(|| ActiveDialog::None);
+    let mut dialog = use_signal(|| ActiveDialog::Idle);
 
     let mut timeline: Resource<Result<Timeline, ServerFnError>> =
         use_resource(move || async move {
@@ -123,14 +117,24 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                 button {
                     class: "btn btn-primary",
                     onclick: move |_| {
-                        active_dialog.set(ActiveDialog::ChangeWee(WeeOperation::Create { user_id }))
+                        dialog
+                            .set(
+                                ActiveDialog::Wee(
+                                    wees::ActiveDialog::Change(wees::Operation::Create { user_id }),
+                                ),
+                            )
                     },
                     "Wee"
                 }
                 button {
                     class: "btn btn-primary ml-2",
                     onclick: move |_| {
-                        active_dialog.set(ActiveDialog::ChangePoo(PooOperation::Create { user_id }))
+                        dialog
+                            .set(
+                                ActiveDialog::Poo(
+                                    poos::ActiveDialog::Change(poos::Operation::Create { user_id }),
+                                ),
+                            )
                     },
                     "Poo"
                 }
@@ -204,12 +208,22 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                                 key: "{entry.get_id().as_str()}",
                                 entry: entry.clone(),
                                 on_click: move |entry: Entry| {
-                                    match &entry.data {
+                                    match entry.data {
                                         EntryData::Wee(wee) => {
-                                            navigator.push(Route::WeeDetail { wee_id: wee.id });
+                                            dialog
+                                                .set(
+                                                    ActiveDialog::Wee(
+                                                        wees::ActiveDialog::Change(wees::Operation::Update { wee }),
+                                                    ),
+                                                )
                                         }
                                         EntryData::Poo(poo) => {
-                                            navigator.push(Route::PooDetail { poo_id: poo.id });
+                                            dialog
+                                                .set(
+                                                    ActiveDialog::Poo(
+                                                        poos::ActiveDialog::Change(poos::Operation::Update { poo }),
+                                                    ),
+                                                )
                                         }
                                     }
                                 },
@@ -225,34 +239,6 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
             }
         }
 
-        match &*active_dialog.read() {
-            ActiveDialog::ChangeWee(op) => {
-                rsx! {
-                    ChangeWee {
-                        op: op.clone(),
-                        on_cancel: move || active_dialog.set(ActiveDialog::None),
-                        on_save: move |_wee| {
-                            active_dialog.set(ActiveDialog::None);
-                            timeline.restart();
-                        },
-                    }
-                }
-            }
-            ActiveDialog::ChangePoo(op) => {
-                rsx! {
-                    ChangePoo {
-                        op: op.clone(),
-                        on_cancel: move || active_dialog.set(ActiveDialog::None),
-                        on_save: move |_poo| {
-                            active_dialog.set(ActiveDialog::None);
-                            timeline.restart();
-                        },
-                    }
-                }
-            }
-            ActiveDialog::None => {
-                rsx! {}
-            }
-        }
+        TimelineDialog { dialog, on_change: move || timeline.restart() }
     }
 }

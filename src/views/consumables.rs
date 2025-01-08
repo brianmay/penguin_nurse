@@ -1,25 +1,12 @@
 use std::{ops::Deref, sync::Arc};
 
-use chrono::{Local, NaiveDate};
+use chrono::Local;
 use dioxus::prelude::*;
-use tap::Pipe;
 
 use crate::{
-    components::{
-        ChangeConsumable, ChangePoo, ChangeWee, ConsumableOperation, PooOperation, WeeOperation,
-    },
-    dt::get_utc_times_for_date,
-    functions::{
-        consumables::search_consumables, poos::get_poos_for_time_range,
-        wees::get_wees_for_time_range,
-    },
-    models::{Consumable, Entry, EntryData, MaybeString, Timeline, User},
-    views::{
-        event::{event_colour, event_time, event_urgency},
-        poos::{poo_bristol, poo_duration, poo_icon, poo_quantity},
-        wees::{wee_duration, wee_icon, wee_mls},
-    },
-    Route,
+    components::consumables::{ActiveDialog, ConsumableDialog, Operation},
+    functions::consumables::search_consumables,
+    models::{Consumable, Maybe, User},
 };
 
 #[component]
@@ -32,7 +19,7 @@ fn EntryRow(consumable: Consumable, on_click: Callback<Consumable>) -> Element {
             onclick: move |_| on_click(consumable_clone.clone()),
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2", {consumable.name} }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                if let MaybeString::Some(brand) = &consumable.brand {
+                if let Maybe::Some(brand) = &consumable.brand {
                     div { {brand.clone()} }
                 }
             }
@@ -40,24 +27,27 @@ fn EntryRow(consumable: Consumable, on_click: Callback<Consumable>) -> Element {
                 {consumable.unit.to_string()}
             }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                if let MaybeString::Some(comments) = &consumable.comments {
+                if let Maybe::Some(comments) = &consumable.comments {
                     div { {comments.to_string()} }
                 }
             }
-
+            td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
+                if let Maybe::Some(created) = &consumable.created {
+                    {created.with_timezone(&Local).to_string()}
+                }
+            }
+            td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
+                if let Maybe::Some(destroyed) = &consumable.destroyed {
+                    {destroyed.with_timezone(&Local).to_string()}
+                }
+            }
         }
     }
-}
-
-enum ActiveDialog {
-    Change(ConsumableOperation),
-    None,
 }
 
 #[component]
 pub fn ConsumableList() -> Element {
     let user: Signal<Arc<Option<User>>> = use_context();
-    let navigator = navigator();
 
     let user: &Option<User> = &user.read();
     let Some(_user) = user.as_ref() else {
@@ -67,23 +57,17 @@ pub fn ConsumableList() -> Element {
     };
 
     let mut query = use_signal(|| "".to_string());
-    let mut active_dialog = use_signal(|| ActiveDialog::None);
+    let mut dialog = use_signal(|| ActiveDialog::Idle);
 
     let mut list: Resource<Result<Vec<Consumable>, ServerFnError>> =
-        use_resource(move || async move {
-            if query().is_empty() {
-                Ok(vec![])
-            } else {
-                search_consumables(query()).await
-            }
-        });
+        use_resource(move || async move { search_consumables(query()).await });
 
     rsx! {
         div { class: "ml-2",
             div { class: "mb-2",
                 button {
                     class: "btn btn-primary",
-                    onclick: move |_| { active_dialog.set(ActiveDialog::Change(ConsumableOperation::Create {})) },
+                    onclick: move |_| { dialog.set(ActiveDialog::Change(Operation::Create {})) },
                     "Create"
                 }
             }
@@ -117,6 +101,8 @@ pub fn ConsumableList() -> Element {
                             th { "Brand" }
                             th { "Unit" }
                             th { "Comments" }
+                            th { "Created" }
+                            th { "Destroyed" }
                         }
                     }
                     tbody { class: "block sm:table-row-group",
@@ -124,7 +110,9 @@ pub fn ConsumableList() -> Element {
                             EntryRow {
                                 key: "{consumable.id.as_inner().to_string()}",
                                 consumable: consumable.clone(),
-                                on_click: move |consumable: Consumable| {},
+                                on_click: move |consumable: Consumable| {
+                                    dialog.set(ActiveDialog::Details(consumable));
+                                },
                             }
                         }
                     }
@@ -137,22 +125,10 @@ pub fn ConsumableList() -> Element {
             }
         }
 
-        match &*active_dialog.read() {
-            ActiveDialog::Change(op) => {
-                rsx! {
-                    ChangeConsumable {
-                        op: op.clone(),
-                        on_cancel: move || active_dialog.set(ActiveDialog::None),
-                        on_save: move |_wee| {
-                            active_dialog.set(ActiveDialog::None);
-                            list.restart();
-                        },
-                    }
-                }
-            }
-            ActiveDialog::None => {
-                rsx! {}
-            }
+        ConsumableDialog {
+            dialog,
+            on_change: move |_consumable| list.restart(),
+            on_delete: move |_consumable| list.restart(),
         }
     }
 }

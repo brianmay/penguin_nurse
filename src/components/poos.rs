@@ -1,9 +1,9 @@
-use chrono::{DateTime, TimeDelta, Utc};
+use chrono::{DateTime, Local, TimeDelta, Utc};
 use dioxus::prelude::*;
 use palette::Hsv;
-use std::sync::Arc;
 
 use crate::{
+    components::events::{event_colour, event_urgency},
     forms::{
         validate_bristol, validate_colour, validate_comments, validate_date_time,
         validate_duration, validate_poo_quantity, validate_urgency, CancelButton, Dialog,
@@ -17,7 +17,7 @@ use crate::{
 #[derive(Debug, Clone, PartialEq)]
 pub enum Operation {
     Create { user_id: UserId },
-    Update { poo: Arc<Poo> },
+    Update { poo: Poo },
 }
 
 #[derive(Debug, Clone)]
@@ -263,7 +263,7 @@ pub fn ChangePoo(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
 }
 
 #[component]
-pub fn DeletePoo(poo: Arc<Poo>, on_cancel: Callback, on_delete: Callback<Arc<Poo>>) -> Element {
+pub fn DeletePoo(poo: Poo, on_cancel: Callback, on_delete: Callback<Poo>) -> Element {
     let mut saving = use_signal(|| Saving::No);
 
     let disabled = use_memo(move || saving.read().is_saving());
@@ -328,6 +328,203 @@ pub fn DeletePoo(poo: Arc<Poo>, on_cancel: Callback, on_delete: Callback<Arc<Poo
                     disabled,
                     on_save: move |_| on_save(()),
                     title: "Delete",
+                }
+            }
+        }
+    }
+}
+
+const POO_SVG: Asset = asset!("/assets/poo.svg");
+
+#[component]
+pub fn poo_icon() -> Element {
+    rsx! {
+        img { class: "w-10 invert inline-block", alt: "Poo", src: POO_SVG }
+    }
+}
+
+pub fn div_rem(a: i64, b: i64) -> (i64, i64) {
+    (a / b, a % b)
+}
+
+#[component]
+pub fn poo_duration(duration: chrono::TimeDelta) -> Element {
+    let seconds = duration.num_seconds();
+    let (minutes, seconds) = div_rem(seconds, 60);
+    let (hours, minutes) = div_rem(minutes, 60);
+    let (days, hours) = div_rem(hours, 24);
+
+    let text = if duration.num_seconds() < 60 {
+        format!("{seconds} seconds")
+    } else if duration.num_minutes() < 60 {
+        format!("{minutes} minutes + {seconds} seconds")
+    } else if duration.num_hours() < 24 {
+        format!("{hours} hours + {minutes} minutes")
+    } else {
+        format!("{days} days + {hours} hours")
+    };
+
+    rsx! {
+        if duration.num_seconds() == 0 {
+            span { class: "text-error", {text} }
+        } else if duration.num_minutes() < 3 {
+            span { class: "text-success", {text} }
+        } else if duration.num_minutes() < 10 {
+            span { class: "text-warning", {text} }
+        } else {
+            span { class: "text-error", {text} }
+        }
+    }
+}
+
+#[component]
+pub fn poo_bristol(bristol: Bristol) -> Element {
+    let bristol_string = bristol.as_str();
+
+    match bristol {
+        Bristol::B0 => rsx! {
+            span { class: "text-error", {bristol_string} }
+        },
+        Bristol::B1 => rsx! {
+            span { class: "text-error", {bristol_string} }
+        },
+        Bristol::B2 => rsx! {
+            span { class: "text-success", {bristol_string} }
+        },
+        Bristol::B3 => rsx! {
+            span { class: "text-success", {bristol_string} }
+        },
+        Bristol::B4 => rsx! {
+            span { class: "text-success", {bristol_string} }
+        },
+        Bristol::B5 => rsx! {
+            span { class: "text-warning", {bristol_string} }
+        },
+
+        Bristol::B6 => rsx! {
+            span { class: "text-warning", {bristol_string} }
+        },
+        Bristol::B7 => rsx! {
+            span { class: "text-error", {bristol_string} }
+        },
+    }
+}
+
+#[component]
+pub fn poo_quantity(quantity: i32) -> Element {
+    rsx! {
+        if quantity == 0 {
+            span { class: "text-error", {quantity.to_string() + " out of 10"} }
+        } else if quantity < 2 {
+            span { class: "text-warning", {quantity.to_string() + " out of 10"} }
+        } else {
+            span { class: "text-success", {quantity.to_string() + " out of 10"} }
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ActiveDialog {
+    Change(Operation),
+    Delete(Poo),
+    Details(Poo),
+}
+
+#[component]
+pub fn PooDialog(
+    dialog: ActiveDialog,
+    on_close: Callback,
+    on_change: Callback<Poo>,
+    on_delete: Callback<Poo>,
+) -> Element {
+    match dialog.clone() {
+        ActiveDialog::Change(op) => {
+            rsx! {
+                ChangePoo { op, on_cancel: on_close, on_save: on_change }
+            }
+        }
+        ActiveDialog::Delete(poo) => {
+            rsx! {
+                DeletePoo { poo, on_cancel: on_close, on_delete }
+            }
+        }
+        ActiveDialog::Details(poo) => {
+            rsx! {
+                PooDetail { poo, dialog, on_close }
+            }
+        }
+    }
+}
+
+#[component]
+pub fn PooDetail(poo: Poo, dialog: ActiveDialog, on_close: Callback<()>) -> Element {
+    rsx! {
+        Dialog {
+            h3 { class: "text-lg font-bold",
+                "Poo "
+                {poo.id.to_string()}
+            }
+            div { class: "p-4",
+                table { class: "table table-striped",
+                    tbody {
+                        tr {
+                            td { "Event" }
+                            td { poo_icon {} }
+                        }
+                        tr {
+                            td { "ID" }
+                            td { {poo.id.as_inner().to_string()} }
+                        }
+                        tr {
+                            td { "Created" }
+                            td { {poo.created_at.with_timezone(&Local).to_string()} }
+                        }
+                        tr {
+                            td { "Updated" }
+                            td { {poo.updated_at.with_timezone(&Local).to_string()} }
+                        }
+                        tr {
+                            td { "Colour" }
+                            td {
+                                event_colour { colour: poo.colour }
+                            }
+                        }
+                        tr {
+                            td { "Urgency" }
+                            td {
+                                event_urgency { urgency: poo.urgency }
+                            }
+                        }
+                        tr {
+                            td { "Duration" }
+                            td {
+                                poo_duration { duration: poo.duration }
+                            }
+                        }
+                        tr {
+                            td { "Quantity" }
+                            td {
+                                poo_quantity { quantity: poo.quantity }
+                            }
+                        }
+                        tr {
+                            td { "Bristol" }
+                            td {
+                                poo_bristol { bristol: poo.bristol }
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            div { class: "p-4",
+                button {
+                    class: "btn btn-secondary me-2 mb-2",
+                    onclick: move |_| {
+                        on_close(());
+                    },
+                    "Close"
                 }
             }
         }

@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use super::entry::{Entry, EntryData, Event};
 use super::poos::Poo;
 use super::wees::Wee;
@@ -18,7 +16,6 @@ impl Timeline {
     }
 
     pub fn add_wee(&mut self, wee: Wee) {
-        let wee = Arc::new(wee);
         self.0.push(Entry {
             event: Event::Start,
             time: wee.time,
@@ -33,7 +30,6 @@ impl Timeline {
     }
 
     pub fn add_poo(&mut self, poo: Poo) {
-        let poo = Arc::new(poo);
         self.0.push(Entry {
             event: Event::Start,
             time: poo.time,

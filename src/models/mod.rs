@@ -25,6 +25,7 @@ mod timeline;
 pub use timeline::Timeline;
 
 mod common;
+pub use common::Maybe;
 pub use common::MaybeDateTime;
 pub use common::MaybeF64;
 pub use common::MaybeString;

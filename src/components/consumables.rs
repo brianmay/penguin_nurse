@@ -1,5 +1,5 @@
+use chrono::Local;
 use dioxus::prelude::*;
-use std::sync::Arc;
 
 use crate::{
     forms::{
@@ -14,10 +14,10 @@ use crate::{
     },
 };
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Operation {
     Create {},
-    Update { consumable: Arc<Consumable> },
+    Update { consumable: Consumable },
 }
 
 #[derive(Debug, Clone)]
@@ -284,9 +284,9 @@ pub fn ChangeConsumable(
 
 #[component]
 pub fn DeleteConsumable(
-    consumable: Arc<Consumable>,
+    consumable: Consumable,
     on_cancel: Callback,
-    on_delete: Callback<Arc<Consumable>>,
+    on_delete: Callback<Consumable>,
 ) -> Element {
     let mut saving = use_signal(|| Saving::No);
 
@@ -352,6 +352,147 @@ pub fn DeleteConsumable(
                     disabled,
                     on_save: move |_| on_save(()),
                     title: "Delete",
+                }
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum ActiveDialog {
+    Change(Operation),
+    Delete(Consumable),
+    Details(Consumable),
+    Idle,
+}
+
+#[component]
+pub fn ConsumableDialog(
+    dialog: Signal<ActiveDialog>,
+    on_change: Callback<Consumable>,
+    on_delete: Callback<Consumable>,
+) -> Element {
+    match dialog() {
+        ActiveDialog::Idle => rsx! {},
+        ActiveDialog::Change(op) => {
+            rsx! {
+                ChangeConsumable {
+                    op,
+                    on_cancel: move || dialog.set(ActiveDialog::Idle),
+                    on_save: move |consumable| {
+                        on_change(consumable);
+                        dialog.set(ActiveDialog::Idle);
+                    },
+                }
+            }
+        }
+        ActiveDialog::Delete(consumable) => {
+            rsx! {
+                DeleteConsumable {
+                    consumable,
+                    on_cancel: move || dialog.set(ActiveDialog::Idle),
+                    on_delete: move |consumable| {
+                        on_delete(consumable);
+                        dialog.set(ActiveDialog::Idle);
+                    },
+                }
+            }
+        }
+        ActiveDialog::Details(consumable) => {
+            rsx! {
+                ConsumableDetail { consumable, dialog }
+            }
+        }
+    }
+}
+
+#[component]
+pub fn ConsumableDetail(consumable: Consumable, dialog: Signal<ActiveDialog>) -> Element {
+    let consumable_clone_1 = consumable.clone();
+    let consumable_clone_2 = consumable.clone();
+
+    rsx! {
+        Dialog {
+            h3 { class: "text-lg font-bold",
+                "Consumable "
+                {consumable.name.clone()}
+            }
+
+            div { class: "p-4",
+                table { class: "table table-striped",
+                    tbody {
+                        tr {
+                            td { "Name" }
+                            td { {consumable.name} }
+                        }
+                        tr {
+                            td { "Brand" }
+                            td {
+                                if let MaybeString::Some(brand) = &consumable.brand {
+                                    {brand.clone()}
+                                }
+                            }
+                        }
+                        tr {
+                            td { "Unit" }
+                            td { {consumable.unit.to_string()} }
+                        }
+                        tr {
+                            td { "Comments" }
+                            td {
+                                if let MaybeString::Some(comments) = &consumable.comments {
+                                    {comments.to_string()}
+                                }
+                            }
+                        }
+                        tr {
+                            td { "Created" }
+                            td {
+                                if let MaybeDateTime::Some(created) = consumable.created {
+                                    {created.with_timezone(&Local).to_string()}
+                                } else {
+                                    "Not Created"
+                                }
+                            }
+                        }
+                        tr {
+                            td { "Destroyed" }
+                            td {
+                                if let MaybeDateTime::Some(destroyed) = consumable.destroyed {
+                                    {destroyed.with_timezone(&Local).to_string()}
+                                } else {
+                                    "Not destroyed"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            div { class: "p-4",
+                button {
+                    class: "btn btn-secondary me-2 mb-2",
+                    onclick: move |_| {
+                        dialog
+                            .set(
+                                ActiveDialog::Change(Operation::Update {
+                                    consumable: consumable_clone_1.clone(),
+                                }),
+                            )
+                    },
+                    "Change"
+                }
+                button {
+                    class: "btn btn-error me-2 mb-2",
+                    onclick: move |_| dialog.set(ActiveDialog::Delete(consumable_clone_2.clone())),
+                    "Delete"
+                }
+                button {
+                    class: "btn btn-secondary me-2 mb-2",
+                    onclick: move |_| {
+                        dialog.set(ActiveDialog::Idle);
+                    },
+                    "Close"
                 }
             }
         }

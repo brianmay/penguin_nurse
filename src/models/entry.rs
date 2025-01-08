@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use chrono::{DateTime, Utc};
 
 use super::{Poo, PooId, Wee, WeeId};
@@ -27,8 +25,8 @@ pub enum Event {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum EntryData {
-    Poo(Arc<Poo>),
-    Wee(Arc<Wee>),
+    Poo(Poo),
+    Wee(Wee),
 }
 
 #[derive(Debug, Clone, PartialEq)]
