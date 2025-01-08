@@ -5,12 +5,16 @@ use crate::{
     forms::{
         validate_barcode, validate_brand, validate_comments, validate_consumable_unit,
         validate_maybe_date_time, validate_name, CancelButton, Dialog, EditError, FieldValue,
-        InputBoolean, InputMaybeDateTime, InputSelect, InputString, InputTextArea, Saving,
-        SubmitButton, ValidationError,
+        InputBoolean, InputConsumable, InputMaybeDateTime, InputSelect, InputString, InputTextArea,
+        Saving, SubmitButton, ValidationError,
     },
-    functions::consumables::{create_consumable, delete_consumable, update_consumable},
+    functions::consumables::{
+        create_consumable, create_nested_consumable, delete_consumable, delete_nested_consumable,
+        get_child_consumables, update_consumable,
+    },
     models::{
-        Consumable, ConsumableUnit, MaybeDateTime, MaybeString, NewConsumable, UpdateConsumable,
+        Consumable, ConsumableUnit, Maybe, MaybeDateTime, MaybeString, NestedConsumableId,
+        NewConsumable, NewNestedConsumable, UpdateConsumable,
     },
 };
 
@@ -363,6 +367,7 @@ pub enum ActiveDialog {
     Change(Operation),
     Delete(Consumable),
     Details(Consumable),
+    Nested(Consumable),
     Idle,
 }
 
@@ -400,7 +405,15 @@ pub fn ConsumableDialog(
         }
         ActiveDialog::Details(consumable) => {
             rsx! {
-                ConsumableDetail {
+                ConsumableDetails {
+                    consumable,
+                    on_close: move || dialog.set(ActiveDialog::Idle),
+                }
+            }
+        }
+        ActiveDialog::Nested(consumable) => {
+            rsx! {
+                ConsumableNested {
                     consumable,
                     on_close: move || dialog.set(ActiveDialog::Idle),
                 }
@@ -410,7 +423,7 @@ pub fn ConsumableDialog(
 }
 
 #[component]
-pub fn ConsumableDetail(consumable: Consumable, on_close: Callback<()>) -> Element {
+pub fn ConsumableDetails(consumable: Consumable, on_close: Callback<()>) -> Element {
     rsx! {
         Dialog {
             h3 { class: "text-lg font-bold",
@@ -492,6 +505,195 @@ pub fn ConsumableDetail(consumable: Consumable, on_close: Callback<()>) -> Eleme
             div { class: "p-4",
                 button {
                     class: "btn btn-secondary m-1",
+                    onclick: move |_| {
+                        on_close(());
+                    },
+                    "Close"
+                }
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+enum State {
+    Idle,
+    Saving,
+    Finished(Result<(), ServerFnError>),
+}
+
+#[component]
+pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Element {
+    let mut nested_consumables =
+        use_resource(move || async move { get_child_consumables(consumable.id).await });
+
+    let consumable_clone = consumable.clone();
+    let mut state = use_signal(|| State::Idle);
+
+    let mut add_value = use_signal(|| None);
+    let add_consumable = use_callback(move |child: Consumable| {
+        let consumable = consumable_clone.clone();
+        spawn(async move {
+            state.set(State::Saving);
+            let updates = NewNestedConsumable {
+                id: NestedConsumableId::new(consumable.id, child.id),
+                quantity: Maybe::None,
+                liquid_mls: Maybe::None,
+                comments: Maybe::None,
+            };
+            let result = create_nested_consumable(updates).await.map(|_nested| ());
+            if result.is_ok() {
+                nested_consumables.restart();
+            }
+            state.set(State::Finished(result));
+        });
+    });
+
+    let consumable_clone = consumable.clone();
+    let remove_consumable = use_callback(move |child: Consumable| {
+        let consumable = consumable_clone.clone();
+        spawn(async move {
+            state.set(State::Saving);
+            let id = NestedConsumableId::new(consumable.id, child.id);
+            let result = delete_nested_consumable(id).await;
+            state.set(State::Finished(result));
+            nested_consumables.restart();
+        });
+    });
+
+    let mut selected_consumable = use_signal(|| None);
+
+    let disabled = use_memo(move || State::Saving == *state.read());
+
+    rsx! {
+        Dialog {
+            h3 { class: "text-lg font-bold",
+                "Consumable Ingredients "
+                {consumable.name.clone()}
+            }
+
+            match nested_consumables() {
+                Some(Ok(nested_consumables)) => {
+                    rsx! {
+                        div { class: "p-4",
+                            table { class: "table table-striped",
+                                thead {
+                                    tr {
+                                        th { "Name" }
+                                        th { "Brand" }
+                                        th { "Comments" }
+                                        th { "Created" }
+                                        th { "Destroyed" }
+                                    }
+                                }
+                                tbody {
+                                    for (nested , consumable) in nested_consumables {
+                                        tr {
+                                            onclick: move |_| {
+                                                selected_consumable.set(Some(consumable.clone()));
+                                            },
+                                            td { {consumable.name.clone()} }
+                                            td {
+                                                if let Maybe::Some(brand) = &consumable.brand {
+                                                    {brand.clone()}
+                                                }
+                                            }
+                                            td {
+                                                if let Maybe::Some(comments) = &nested.comments {
+                                                    {comments.to_string()}
+                                                }
+                                            }
+                                            td {
+                                                if let Maybe::Some(created) = consumable.created {
+                                                    {created.with_timezone(&Local).to_string()}
+                                                } else {
+                                                    "Not Created"
+                                                }
+                                            }
+                                            td {
+                                                if let Maybe::Some(destroyed) = consumable.destroyed {
+                                                    {destroyed.with_timezone(&Local).to_string()}
+                                                } else {
+                                                    "Not destroyed"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Some(Err(err)) => {
+                    rsx! {
+                        div { class: "p-4",
+                            "Error: "
+                            {err.to_string()}
+                        }
+                    }
+                }
+                None => {
+                    rsx! {
+                        div { class: "p-4", "Loading..." }
+                    }
+                }
+            }
+
+            match state() {
+                State::Saving => {
+                    rsx! {
+                        div { class: "alert alert-info", "Saving..." }
+                    }
+                }
+                State::Finished(Ok(())) => {
+                    rsx! {
+                        div { class: "alert alert-success", "Saved!" }
+                    }
+                }
+                State::Finished(Err(err)) => {
+                    rsx! {
+                        div { class: "alert alert-error",
+                            "Error: "
+                            {err.to_string()}
+                        }
+                    }
+                }
+                State::Idle => {
+                    rsx! {}
+                }
+            }
+            if let Some(selected) = selected_consumable() {
+                div { class: "p-4",
+                    p { "Form goes here" }
+                    button {
+                        class: "btn btn-secondary m-1",
+                        onclick: move |_| {
+                            remove_consumable(selected.clone());
+                        },
+                        "Delete"
+                    }
+                }
+            } else {
+                div { class: "p-4",
+                    InputConsumable {
+                        id: "consumable",
+                        label: "Add Consumable",
+                        value: add_value,
+                        on_change: move |value| {
+                            if let Some(value) = value {
+                                add_consumable(value);
+                                add_value.set(None);
+                            }
+                        },
+                        disabled,
+                    }
+                }
+            }
+
+
+            div { class: "p-4",
+                button {
+                    class: "btn btn-primary m-1",
                     onclick: move |_| {
                         on_close(());
                     },

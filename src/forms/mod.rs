@@ -9,8 +9,8 @@ pub use buttons::{CancelButton, SubmitButton};
 pub use dialog::Dialog;
 pub use errors::{EditError, ValidationError};
 pub use fields::{
-    InputBoolean, InputColour, InputDateTime, InputDuration, InputMaybeDateTime, InputNumber,
-    InputPassword, InputSelect, InputString, InputTextArea,
+    InputBoolean, InputColour, InputConsumable, InputDateTime, InputDuration, InputMaybeDateTime,
+    InputNumber, InputPassword, InputSelect, InputString, InputTextArea,
 };
 pub use saving::MyForm;
 pub use saving::Saving;
@@ -18,8 +18,9 @@ pub use validation::{
     validate_1st_password, validate_2nd_password, validate_barcode, validate_brand,
     validate_bristol, validate_colour, validate_colour_hue, validate_colour_saturation,
     validate_colour_value, validate_comments, validate_consumable_unit, validate_date_time,
-    validate_duration, validate_email, validate_full_name, validate_maybe_date_time, validate_millilitres,
-    validate_name, validate_password, validate_poo_quantity, validate_urgency, validate_username,
+    validate_duration, validate_email, validate_full_name, validate_maybe_date_time,
+    validate_millilitres, validate_name, validate_password, validate_poo_quantity,
+    validate_urgency, validate_username,
 };
 
 mod values;

@@ -16,6 +16,7 @@ fn EntryRow(consumable: Consumable, dialog: Signal<ActiveDialog>) -> Element {
     let consumable_clone_1 = consumable.clone();
     let consumable_clone_2 = consumable.clone();
     let consumable_clone_3 = consumable.clone();
+    let consumable_clone_4 = consumable.clone();
 
     rsx! {
         tr {
@@ -57,11 +58,16 @@ fn EntryRow(consumable: Consumable, dialog: Signal<ActiveDialog>) -> Element {
                     }
                     button {
                         class: "btn btn-primary m-1",
+                        onclick: move |_| { dialog.set(ActiveDialog::Nested(consumable_clone_2.clone())) },
+                        "Ingredients"
+                    }
+                    button {
+                        class: "btn btn-primary m-1",
                         onclick: move |_| {
                             dialog
                                 .set(
                                     ActiveDialog::Change(Operation::Update {
-                                        consumable: consumable_clone_2.clone(),
+                                        consumable: consumable_clone_3.clone(),
                                     }),
                                 )
                         },
@@ -69,7 +75,7 @@ fn EntryRow(consumable: Consumable, dialog: Signal<ActiveDialog>) -> Element {
                     }
                     button {
                         class: "btn btn-secondary m-1",
-                        onclick: move |_| { dialog.set(ActiveDialog::Delete(consumable_clone_3.clone())) },
+                        onclick: move |_| { dialog.set(ActiveDialog::Delete(consumable_clone_4.clone())) },
                         "Delete"
                     }
                 }

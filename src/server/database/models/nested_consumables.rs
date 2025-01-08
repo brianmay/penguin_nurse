@@ -69,22 +69,22 @@ pub async fn get_parent_consumables(
     Ok(nested_consumables)
 }
 
-pub async fn get_nested_consumable_by_id(
-    conn: &mut DatabaseConnection,
-    parent_id: i64,
-    consumable_id: i64,
-) -> Result<Option<NestedConsumable>, diesel::result::Error> {
-    use schema::nested_consumables::consumable_id as q_consumable_id;
-    use schema::nested_consumables::parent_id as q_parent_id;
-    use schema::nested_consumables::table;
+// pub async fn get_nested_consumable_by_id(
+//     conn: &mut DatabaseConnection,
+//     parent_id: i64,
+//     consumable_id: i64,
+// ) -> Result<Option<NestedConsumable>, diesel::result::Error> {
+//     use schema::nested_consumables::consumable_id as q_consumable_id;
+//     use schema::nested_consumables::parent_id as q_parent_id;
+//     use schema::nested_consumables::table;
 
-    table
-        .filter(q_parent_id.eq(parent_id))
-        .filter(q_consumable_id.eq(consumable_id))
-        .get_result(conn)
-        .await
-        .optional()
-}
+//     table
+//         .filter(q_parent_id.eq(parent_id))
+//         .filter(q_consumable_id.eq(consumable_id))
+//         .get_result(conn)
+//         .await
+//         .optional()
+// }
 
 #[derive(Insertable, Debug, Clone)]
 #[diesel(check_for_backend(diesel::pg::Pg))]

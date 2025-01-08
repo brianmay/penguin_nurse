@@ -4,10 +4,13 @@ use dioxus::{prelude::*, signals::Signal};
 use futures::{select, StreamExt};
 use gloo_timers::future::IntervalStream;
 use palette::{Hsv, IntoColor, Srgb};
+use std::ops::Deref;
+use tap::Pipe;
 
 use crate::{
     forms::{validate_colour_hue, validate_colour_saturation, validate_colour_value},
-    models::MaybeDateTime,
+    functions::consumables::search_consumables,
+    models::{Consumable, MaybeDateTime},
 };
 
 use super::errors::ValidationError;
@@ -688,6 +691,92 @@ pub fn InputColour(
             div { class: "text-red-500", "{err}" }
         } else {
             div { class: "text-green-500", "Looks good!" }
+        }
+    }
+}
+
+#[component]
+pub fn InputConsumable(
+    id: &'static str,
+    label: &'static str,
+    value: Signal<Option<Consumable>>,
+    disabled: Memo<bool>,
+    on_change: Callback<Option<Consumable>>,
+) -> Element {
+    let mut query = use_signal(|| "".to_string());
+
+    let list: Resource<Option<Result<Vec<Consumable>, ServerFnError>>> =
+        use_resource(move || async move {
+            let query = query();
+            if query.is_empty() {
+                None
+            } else {
+                search_consumables(query).await.pipe(Some)
+            }
+        });
+
+    rsx! {
+
+        div { class: "mb-5 w-20 mr-2 inline-block",
+            label {
+                r#for: id,
+                class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
+                "{label}"
+            }
+            div {
+                if let Some(consumable) = value() {
+                    div {
+                        class: "bg-green-500 rounded border-green-100 text-white p-2",
+                        onclick: move |_e| {
+                            value.set(None);
+                            on_change(None);
+                        },
+                        {consumable.name.clone()}
+                    }
+                } else {
+                    input {
+                        class: "form-control",
+                        r#type: "text",
+                        value: query(),
+                        oninput: move |e| query.set(e.value()),
+                        id,
+                        placeholder: "Search...",
+                    }
+                    match list.read().deref() {
+                        Some(Some(Err(err))) => rsx! {
+                            div { class: "alert alert-danger",
+                                "Error loading consumables: "
+                                {err.to_string()}
+                            }
+                        },
+                        Some(Some(Ok(list))) if list.is_empty() => rsx! {
+                            p { class: "alert alert-info", "No entries found." }
+                        },
+                        Some(Some(Ok(list))) => rsx! {
+                            ul { class: "menu dropdown-content bg-base-100 rounded-box z-[1] w-52 p-2 shadow",
+                                for consumable in list.iter().cloned() {
+                                    li {
+                                        a {
+                                            onclick: move |_e| {
+                                                value.set(Some(consumable.clone()));
+                                                on_change(Some(consumable.clone()));
+                                                query.set("".to_string());
+                                            },
+                                            {consumable.name.clone()}
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        Some(None) => rsx! {},
+                        None => {
+                            rsx! {
+                                p { class: "alert alert-info", "Loading..." }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
