@@ -383,7 +383,6 @@ pub enum ActiveDialog {
     Change(Operation),
     Delete(Wee),
     Details(Wee),
-    Idle,
 }
 
 #[component]
@@ -394,7 +393,6 @@ pub fn WeeDialog(
     on_delete: Callback<Wee>,
 ) -> Element {
     match dialog.clone() {
-        ActiveDialog::Idle => rsx! {},
         ActiveDialog::Change(op) => {
             rsx! {
                 ChangeWee { op, on_cancel: on_close, on_save: on_change }
@@ -413,14 +411,14 @@ pub fn WeeDialog(
         }
         ActiveDialog::Details(wee) => {
             rsx! {
-                WeeDetail { wee, dialog, on_close }
+                WeeDetail { wee, on_close }
             }
         }
     }
 }
 
 #[component]
-pub fn WeeDetail(wee: Wee, dialog: ActiveDialog, on_close: Callback<()>) -> Element {
+pub fn WeeDetail(wee: Wee, on_close: Callback<()>) -> Element {
     rsx! {
         Dialog {
             h3 { class: "text-lg font-bold",
@@ -476,7 +474,7 @@ pub fn WeeDetail(wee: Wee, dialog: ActiveDialog, on_close: Callback<()>) -> Elem
 
             div { class: "p-4",
                 button {
-                    class: "btn btn-secondary me-2 mb-2",
+                    class: "btn btn-secondary m-1",
                     onclick: move |_| {
                         on_close(());
                     },

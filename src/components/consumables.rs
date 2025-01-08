@@ -400,17 +400,17 @@ pub fn ConsumableDialog(
         }
         ActiveDialog::Details(consumable) => {
             rsx! {
-                ConsumableDetail { consumable, dialog }
+                ConsumableDetail {
+                    consumable,
+                    on_close: move || dialog.set(ActiveDialog::Idle),
+                }
             }
         }
     }
 }
 
 #[component]
-pub fn ConsumableDetail(consumable: Consumable, dialog: Signal<ActiveDialog>) -> Element {
-    let consumable_clone_1 = consumable.clone();
-    let consumable_clone_2 = consumable.clone();
-
+pub fn ConsumableDetail(consumable: Consumable, on_close: Callback<()>) -> Element {
     rsx! {
         Dialog {
             h3 { class: "text-lg font-bold",
@@ -432,6 +432,18 @@ pub fn ConsumableDetail(consumable: Consumable, dialog: Signal<ActiveDialog>) ->
                                     {brand.clone()}
                                 }
                             }
+                        }
+                        tr {
+                            td { "Barcode" }
+                            td {
+                                if let MaybeString::Some(barcode) = &consumable.barcode {
+                                    {barcode.clone()}
+                                }
+                            }
+                        }
+                        tr {
+                            td { "Is Organic" }
+                            td { {consumable.is_organic.to_string()} }
                         }
                         tr {
                             td { "Unit" }
@@ -465,32 +477,23 @@ pub fn ConsumableDetail(consumable: Consumable, dialog: Signal<ActiveDialog>) ->
                                 }
                             }
                         }
+                        tr {
+                            td { "Created At" }
+                            td { {consumable.created_at.with_timezone(&Local).to_string()} }
+                        }
+                        tr {
+                            td { "Updated At" }
+                            td { {consumable.updated_at.with_timezone(&Local).to_string()} }
+                        }
                     }
                 }
             }
 
             div { class: "p-4",
                 button {
-                    class: "btn btn-secondary me-2 mb-2",
+                    class: "btn btn-secondary m-1",
                     onclick: move |_| {
-                        dialog
-                            .set(
-                                ActiveDialog::Change(Operation::Update {
-                                    consumable: consumable_clone_1.clone(),
-                                }),
-                            )
-                    },
-                    "Change"
-                }
-                button {
-                    class: "btn btn-error me-2 mb-2",
-                    onclick: move |_| dialog.set(ActiveDialog::Delete(consumable_clone_2.clone())),
-                    "Delete"
-                }
-                button {
-                    class: "btn btn-secondary me-2 mb-2",
-                    onclick: move |_| {
-                        dialog.set(ActiveDialog::Idle);
+                        on_close(());
                     },
                     "Close"
                 }

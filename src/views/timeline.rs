@@ -18,11 +18,13 @@ use crate::{
 };
 
 #[component]
-fn EntryRow(entry: Entry, on_click: Callback<Entry>) -> Element {
+fn EntryRow(entry: Entry, dialog: Signal<ActiveDialog>) -> Element {
+    let mut show_buttons = use_signal(|| false);
+
     rsx! {
         tr {
             class: "hover:bg-gray-500 border-blue-300 m-2 p-2 border-2 h-96 w-48 sm:w-auto sm:border-none sm:h-auto inline-block sm:table-row",
-            onclick: move |_| on_click(entry.clone()),
+            onclick: move |_| show_buttons.set(!show_buttons()),
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 event_time { time: entry.time }
             }
@@ -70,6 +72,76 @@ fn EntryRow(entry: Entry, on_click: Callback<Entry>) -> Element {
                                 if let MaybeString::Some(comments) = &poo.comments {
                                     div { {comments.to_string()} }
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if show_buttons() {
+            td { colspan: 6, class: "block sm:table-cell",
+                match entry.data {
+                    EntryData::Wee(wee) => {
+                        let wee_clone_1 = wee.clone();
+                        let wee_clone_2 = wee.clone();
+                        rsx! {
+                            button {
+                                class: "btn btn-primary m-1",
+                                onclick: move |_| {
+                                    dialog.set(ActiveDialog::Wee(wees::ActiveDialog::Details(wee_clone_1.clone())))
+                                },
+                                "Details"
+                            }
+                            button {
+                                class: "btn btn-primary m-1",
+                                onclick: move |_| {
+                                    dialog
+                                        .set(
+                                            ActiveDialog::Wee(
+                                                wees::ActiveDialog::Change(wees::Operation::Update {
+                                                    wee: wee_clone_2.clone(),
+                                                }),
+                                            ),
+                                        )
+                                },
+                                "Edit"
+                            }
+                            button {
+                                class: "btn btn-secondary m-1",
+                                onclick: move |_| { dialog.set(ActiveDialog::Wee(wees::ActiveDialog::Delete(wee.clone()))) },
+                                "Delete"
+                            }
+                        }
+                    }
+                    EntryData::Poo(poo) => {
+                        let poo_clone_1 = poo.clone();
+                        let poo_clone_2 = poo.clone();
+                        rsx! {
+                            button {
+                                class: "btn btn-primary m-1",
+                                onclick: move |_| {
+                                    dialog.set(ActiveDialog::Poo(poos::ActiveDialog::Details(poo_clone_1.clone())))
+                                },
+                                "Details"
+                            }
+                            button {
+                                class: "btn btn-primary m-1",
+                                onclick: move |_| {
+                                    dialog
+                                        .set(
+                                            ActiveDialog::Poo(
+                                                poos::ActiveDialog::Change(poos::Operation::Update {
+                                                    poo: poo_clone_2.clone(),
+                                                }),
+                                            ),
+                                        )
+                                },
+                                "Edit"
+                            }
+                            button {
+                                class: "btn btn-secondary m-1",
+                                onclick: move |_| { dialog.set(ActiveDialog::Poo(poos::ActiveDialog::Delete(poo.clone()))) },
+                                "Delete"
                             }
                         }
                     }
@@ -207,26 +279,7 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                             EntryRow {
                                 key: "{entry.get_id().as_str()}",
                                 entry: entry.clone(),
-                                on_click: move |entry: Entry| {
-                                    match entry.data {
-                                        EntryData::Wee(wee) => {
-                                            dialog
-                                                .set(
-                                                    ActiveDialog::Wee(
-                                                        wees::ActiveDialog::Change(wees::Operation::Update { wee }),
-                                                    ),
-                                                )
-                                        }
-                                        EntryData::Poo(poo) => {
-                                            dialog
-                                                .set(
-                                                    ActiveDialog::Poo(
-                                                        poos::ActiveDialog::Change(poos::Operation::Update { poo }),
-                                                    ),
-                                                )
-                                        }
-                                    }
-                                },
+                                dialog,
                             }
                         }
                     }

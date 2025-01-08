@@ -450,14 +450,14 @@ pub fn PooDialog(
         }
         ActiveDialog::Details(poo) => {
             rsx! {
-                PooDetail { poo, dialog, on_close }
+                PooDetail { poo, on_close }
             }
         }
     }
 }
 
 #[component]
-pub fn PooDetail(poo: Poo, dialog: ActiveDialog, on_close: Callback<()>) -> Element {
+pub fn PooDetail(poo: Poo, on_close: Callback<()>) -> Element {
     rsx! {
         Dialog {
             h3 { class: "text-lg font-bold",
@@ -520,7 +520,7 @@ pub fn PooDetail(poo: Poo, dialog: ActiveDialog, on_close: Callback<()>) -> Elem
 
             div { class: "p-4",
                 button {
-                    class: "btn btn-secondary me-2 mb-2",
+                    class: "btn btn-secondary m-1",
                     onclick: move |_| {
                         on_close(());
                     },

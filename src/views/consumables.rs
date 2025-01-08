@@ -10,13 +10,17 @@ use crate::{
 };
 
 #[component]
-fn EntryRow(consumable: Consumable, on_click: Callback<Consumable>) -> Element {
-    let consumable_clone = consumable.clone();
+fn EntryRow(consumable: Consumable, dialog: Signal<ActiveDialog>) -> Element {
+    let mut show_buttons = use_signal(|| false);
+
+    let consumable_clone_1 = consumable.clone();
+    let consumable_clone_2 = consumable.clone();
+    let consumable_clone_3 = consumable.clone();
 
     rsx! {
         tr {
             class: "hover:bg-gray-500 border-blue-300 m-2 p-2 border-2 h-96 w-48 sm:w-auto sm:border-none sm:h-auto inline-block sm:table-row",
-            onclick: move |_| on_click(consumable_clone.clone()),
+            onclick: move |_| show_buttons.set(!show_buttons()),
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2", {consumable.name} }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 if let Maybe::Some(brand) = &consumable.brand {
@@ -39,6 +43,35 @@ fn EntryRow(consumable: Consumable, on_click: Callback<Consumable>) -> Element {
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 if let Maybe::Some(destroyed) = &consumable.destroyed {
                     {destroyed.with_timezone(&Local).to_string()}
+                }
+            }
+        }
+
+        if show_buttons() {
+            tr {
+                td { colspan: "6", class: "block sm:table-cell",
+                    button {
+                        class: "btn btn-primary m-1",
+                        onclick: move |_| { dialog.set(ActiveDialog::Details(consumable_clone_1.clone())) },
+                        "Details"
+                    }
+                    button {
+                        class: "btn btn-primary m-1",
+                        onclick: move |_| {
+                            dialog
+                                .set(
+                                    ActiveDialog::Change(Operation::Update {
+                                        consumable: consumable_clone_2.clone(),
+                                    }),
+                                )
+                        },
+                        "Edit"
+                    }
+                    button {
+                        class: "btn btn-secondary m-1",
+                        onclick: move |_| { dialog.set(ActiveDialog::Delete(consumable_clone_3.clone())) },
+                        "Delete"
+                    }
                 }
             }
         }
@@ -110,9 +143,7 @@ pub fn ConsumableList() -> Element {
                             EntryRow {
                                 key: "{consumable.id.as_inner().to_string()}",
                                 consumable: consumable.clone(),
-                                on_click: move |consumable: Consumable| {
-                                    dialog.set(ActiveDialog::Details(consumable));
-                                },
+                                dialog,
                             }
                         }
                     }
