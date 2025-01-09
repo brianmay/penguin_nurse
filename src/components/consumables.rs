@@ -5,9 +5,9 @@ use crate::{
     forms::{
         validate_barcode, validate_brand, validate_comments, validate_consumable_millilitres,
         validate_consumable_quantity, validate_consumable_unit, validate_maybe_date_time,
-        validate_name, CancelButton, Dialog, EditError, FieldValue, InputBoolean, InputConsumable,
-        InputMaybeDateTime, InputNumber, InputSelect, InputString, InputTextArea, Saving,
-        SubmitButton, ValidationError,
+        validate_name, CancelButton, CloseButton, DeleteButton, Dialog, EditError, FieldValue,
+        InputBoolean, InputConsumable, InputMaybeDateTime, InputNumber, InputSelect, InputString,
+        InputTextArea, Saving, SubmitButton, ValidationError,
     },
     functions::consumables::{
         create_consumable, create_nested_consumable, delete_consumable, delete_nested_consumable,
@@ -681,13 +681,12 @@ pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Eleme
                         nested_consumables.restart();
                     },
                 }
-                button {
-                    class: "btn btn-secondary m-1",
-                    onclick: move |_| {
+                DeleteButton {
+                    title: "Delete",
+                    on_delete: move |_| {
                         selected_consumable.set(None);
                         remove_consumable(sel_nested.clone());
                     },
-                    "Delete"
                 }
             }
         } else {
@@ -709,13 +708,7 @@ pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Eleme
 
 
         div { class: "p-4",
-            button {
-                class: "btn btn-primary m-1",
-                onclick: move |_| {
-                    on_close(());
-                },
-                "Close"
-            }
+            CloseButton { on_close, title: "Close" }
         }
     }
 }

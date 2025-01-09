@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Local, Utc};
 use dioxus::{prelude::*, signals::Signal};
 use futures::{select, StreamExt};
 use gloo_timers::future::IntervalStream;
@@ -240,6 +240,13 @@ pub fn InputDateTime(
                     value.set(e.value());
                 },
             }
+            button {
+                class: "btn btn-secondary",
+                onclick: move |_e| {
+                    value.set(Local::now().to_rfc3339());
+                },
+                "Now"
+            }
             if disabled() {
 
             }
@@ -283,6 +290,13 @@ pub fn InputMaybeDateTime(
                     changed.set(true);
                     value.set(e.value());
                 },
+            }
+            button {
+                class: "btn btn-secondary",
+                onclick: move |_e| {
+                    value.set(Local::now().to_rfc3339());
+                },
+                "Now"
             }
             if disabled() {
 
@@ -371,7 +385,7 @@ pub fn InputDuration<D: 'static + Clone + Eq + PartialEq>(
                 },
             }
             button {
-                class: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded",
+                class: "btn btn-secondary",
                 onclick: move |_e| {
                     stopwatch.send(TimerButton::Restart);
                 },
@@ -379,7 +393,7 @@ pub fn InputDuration<D: 'static + Clone + Eq + PartialEq>(
             }
             if stop_watch_running() {
                 button {
-                    class: "bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded",
+                    class: "btn btn-secondary",
                     onclick: move |_e| {
                         stopwatch.send(TimerButton::Stop);
                     },
@@ -765,7 +779,7 @@ pub fn InputConsumable(
                             p { class: "alert alert-info", "No entries found." }
                         },
                         Some(Some(Ok(list))) => rsx! {
-                            ul { class: "menu dropdown-content bg-base-100 rounded-box z-[1] w-52 p-2 shadow",
+                            ul { class: "menu dropdown-content bg-gray-800 rounded-box z-[1] w-52 p-2 shadow",
                                 for consumable in list.iter().cloned() {
                                     li {
                                         a {

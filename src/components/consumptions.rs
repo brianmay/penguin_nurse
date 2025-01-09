@@ -5,9 +5,9 @@ use crate::{
     components::events::event_time,
     forms::{
         validate_comments, validate_consumable_millilitres, validate_consumable_quantity,
-        validate_date_time, validate_duration, CancelButton, Dialog, EditError, FieldValue,
-        InputConsumable, InputDateTime, InputDuration, InputNumber, InputTextArea, Saving,
-        SubmitButton, ValidationError,
+        validate_date_time, validate_duration, CancelButton, CloseButton, DeleteButton, Dialog,
+        EditError, FieldValue, InputConsumable, InputDateTime, InputDuration, InputNumber,
+        InputTextArea, Saving, SubmitButton, ValidationError,
     },
     functions::consumptions::{
         create_consumption, create_consumption_consumable, delete_consumption,
@@ -611,13 +611,12 @@ pub fn ConsumableConsumption(consumption: Consumption, on_close: Callback<()>) -
                             consumption_consumables.restart();
                         },
                     }
-                    button {
-                        class: "btn btn-secondary m-1",
-                        onclick: move |_| {
+                    DeleteButton {
+                        title: "Delete",
+                        on_delete: move |_| {
                             selected_consumable.set(None);
                             remove_consumable(sel_consumption.clone());
                         },
-                        "Delete"
                     }
                 }
             } else {
@@ -637,15 +636,8 @@ pub fn ConsumableConsumption(consumption: Consumption, on_close: Callback<()>) -
                 }
             }
 
-
             div { class: "p-4",
-                button {
-                    class: "btn btn-primary m-1",
-                    onclick: move |_| {
-                        on_close(());
-                    },
-                    "Close"
-                }
+                CloseButton { on_close, title: "Close" }
             }
         }
     }
