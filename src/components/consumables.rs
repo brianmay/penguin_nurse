@@ -175,115 +175,113 @@ pub fn ChangeConsumable(
 
     rsx! {
 
-        Dialog {
-            h3 { class: "text-lg font-bold",
-                match &op {
-                    Operation::Create { .. } => "Create Consumable".to_string(),
-                    Operation::Update { consumable } => {
-                        format!("Edit Consumable {}", consumable.name)
+        h3 { class: "text-lg font-bold",
+            match &op {
+                Operation::Create { .. } => "Create Consumable".to_string(),
+                Operation::Update { consumable } => {
+                    format!("Edit Consumable {}", consumable.name)
+                }
+            }
+        }
+        p { class: "py-4", "Press ESC key or click the button below to close" }
+        match &*saving.read() {
+            Saving::Yes => {
+                rsx! {
+                    div { class: "alert alert-info", "Saving..." }
+                }
+            }
+            Saving::Finished(Ok(())) => {
+                rsx! {
+                    div { class: "alert alert-success", "Saved!" }
+                }
+            }
+            Saving::Finished(Err(err)) => {
+                rsx! {
+                    div { class: "alert alert-error",
+                        "Error: "
+                        {err.to_string()}
                     }
                 }
             }
-            p { class: "py-4", "Press ESC key or click the button below to close" }
-            match &*saving.read() {
-                Saving::Yes => {
-                    rsx! {
-                        div { class: "alert alert-info", "Saving..." }
-                    }
-                }
-                Saving::Finished(Ok(())) => {
-                    rsx! {
-                        div { class: "alert alert-success", "Saved!" }
-                    }
-                }
-                Saving::Finished(Err(err)) => {
-                    rsx! {
-                        div { class: "alert alert-error",
-                            "Error: "
-                            {err.to_string()}
-                        }
-                    }
-                }
-                _ => {
-                    rsx! {}
-                }
+            _ => {
+                rsx! {}
             }
-            form {
-                novalidate: true,
-                action: "javascript:void(0)",
-                method: "dialog",
-                onkeyup: move |event| {
-                    if event.key() == Key::Escape {
-                        on_cancel(());
-                    }
-                },
-                InputString {
-                    id: "name",
-                    label: "Name",
-                    value: name,
-                    validate: validate.name,
-                    disabled,
+        }
+        form {
+            novalidate: true,
+            action: "javascript:void(0)",
+            method: "dialog",
+            onkeyup: move |event| {
+                if event.key() == Key::Escape {
+                    on_cancel(());
                 }
-                InputString {
-                    id: "brand",
-                    label: "Brand",
-                    value: brand,
-                    validate: validate.brand,
-                    disabled,
-                }
-                InputString {
-                    id: "barcode",
-                    label: "Barcode",
-                    value: barcode,
-                    validate: validate.barcode,
-                    disabled,
-                }
-                InputBoolean {
-                    id: "is_organic",
-                    label: "Is Organic",
-                    value: is_organic,
-                    disabled,
-                }
-                InputSelect {
-                    id: "unit",
-                    label: "Unit",
-                    value: unit,
-                    validate: validate.unit,
-                    options: ConsumableUnit::options(),
-                    disabled,
-                }
-                InputTextArea {
-                    id: "comments",
-                    label: "Comments",
-                    value: comments,
-                    validate: validate.comments,
-                    disabled,
-                }
-                InputMaybeDateTime {
-                    id: "created",
-                    label: "Created",
-                    value: created,
-                    validate: validate.created,
-                    disabled,
-                }
-                InputMaybeDateTime {
-                    id: "destroyed",
-                    label: "Destroyed",
-                    value: destroyed,
-                    validate: validate.destroyed,
-                    disabled,
-                }
+            },
+            InputString {
+                id: "name",
+                label: "Name",
+                value: name,
+                validate: validate.name,
+                disabled,
+            }
+            InputString {
+                id: "brand",
+                label: "Brand",
+                value: brand,
+                validate: validate.brand,
+                disabled,
+            }
+            InputString {
+                id: "barcode",
+                label: "Barcode",
+                value: barcode,
+                validate: validate.barcode,
+                disabled,
+            }
+            InputBoolean {
+                id: "is_organic",
+                label: "Is Organic",
+                value: is_organic,
+                disabled,
+            }
+            InputSelect {
+                id: "unit",
+                label: "Unit",
+                value: unit,
+                validate: validate.unit,
+                options: ConsumableUnit::options(),
+                disabled,
+            }
+            InputTextArea {
+                id: "comments",
+                label: "Comments",
+                value: comments,
+                validate: validate.comments,
+                disabled,
+            }
+            InputMaybeDateTime {
+                id: "created",
+                label: "Created",
+                value: created,
+                validate: validate.created,
+                disabled,
+            }
+            InputMaybeDateTime {
+                id: "destroyed",
+                label: "Destroyed",
+                value: destroyed,
+                validate: validate.destroyed,
+                disabled,
+            }
 
-                SubmitButton {
-                    disabled: disabled_save,
-                    on_save: move |_| on_save(()),
-                    title: match &op {
-                        Operation::Create { .. } => "Create",
-                        Operation::Update { .. } => "Save",
-                    },
-                }
-                CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+            SubmitButton {
+                disabled: disabled_save,
+                on_save: move |_| on_save(()),
+                title: match &op {
+                    Operation::Create { .. } => "Create",
+                    Operation::Update { .. } => "Save",
+                },
             }
+            CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
         }
     }
 }
@@ -315,50 +313,48 @@ pub fn DeleteConsumable(
     });
 
     rsx! {
-        Dialog {
-            h3 { class: "text-lg font-bold",
-                "Delete consumable "
-                {consumable.id.to_string()}
-            }
-            p { class: "py-4", "Press ESC key or click the button below to close" }
-            match &*saving.read() {
-                Saving::Yes => {
-                    rsx! {
-                        div { class: "alert alert-info", "Deleting..." }
-                    }
-                }
-                Saving::Finished(Ok(())) => {
-                    rsx! {
-                        div { class: "alert alert-success", "Deleted!" }
-                    }
-                }
-                Saving::Finished(Err(err)) => {
-                    rsx! {
-                        div { class: "alert alert-error",
-                            "Error: "
-                            {err.to_string()}
-                        }
-                    }
-                }
-                _ => {
-                    rsx! {}
+        h3 { class: "text-lg font-bold",
+            "Delete consumable "
+            {consumable.id.to_string()}
+        }
+        p { class: "py-4", "Press ESC key or click the button below to close" }
+        match &*saving.read() {
+            Saving::Yes => {
+                rsx! {
+                    div { class: "alert alert-info", "Deleting..." }
                 }
             }
-            form {
-                novalidate: true,
-                action: "javascript:void(0)",
-                method: "dialog",
-                onkeyup: move |event| {
-                    if event.key() == Key::Escape {
-                        on_cancel(());
-                    }
-                },
-                CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                SubmitButton {
-                    disabled,
-                    on_save: move |_| on_save(()),
-                    title: "Delete",
+            Saving::Finished(Ok(())) => {
+                rsx! {
+                    div { class: "alert alert-success", "Deleted!" }
                 }
+            }
+            Saving::Finished(Err(err)) => {
+                rsx! {
+                    div { class: "alert alert-error",
+                        "Error: "
+                        {err.to_string()}
+                    }
+                }
+            }
+            _ => {
+                rsx! {}
+            }
+        }
+        form {
+            novalidate: true,
+            action: "javascript:void(0)",
+            method: "dialog",
+            onkeyup: move |event| {
+                if event.key() == Key::Escape {
+                    on_cancel(());
+                }
+            },
+            CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+            SubmitButton {
+                disabled,
+                on_save: move |_| on_save(()),
+                title: "Delete",
             }
         }
     }
@@ -383,41 +379,49 @@ pub fn ConsumableDialog(
         ActiveDialog::Idle => rsx! {},
         ActiveDialog::Change(op) => {
             rsx! {
-                ChangeConsumable {
-                    op,
-                    on_cancel: move || dialog.set(ActiveDialog::Idle),
-                    on_save: move |consumable| {
-                        on_change(consumable);
-                        dialog.set(ActiveDialog::Idle);
-                    },
+                Dialog {
+                    ChangeConsumable {
+                        op,
+                        on_cancel: move || dialog.set(ActiveDialog::Idle),
+                        on_save: move |consumable| {
+                            on_change(consumable);
+                            dialog.set(ActiveDialog::Idle);
+                        },
+                    }
                 }
             }
         }
         ActiveDialog::Delete(consumable) => {
             rsx! {
-                DeleteConsumable {
-                    consumable,
-                    on_cancel: move || dialog.set(ActiveDialog::Idle),
-                    on_delete: move |consumable| {
-                        on_delete(consumable);
-                        dialog.set(ActiveDialog::Idle);
-                    },
+                Dialog {
+                    DeleteConsumable {
+                        consumable,
+                        on_cancel: move || dialog.set(ActiveDialog::Idle),
+                        on_delete: move |consumable| {
+                            on_delete(consumable);
+                            dialog.set(ActiveDialog::Idle);
+                        },
+                    }
                 }
             }
         }
         ActiveDialog::Details(consumable) => {
             rsx! {
-                ConsumableDetails {
-                    consumable,
-                    on_close: move || dialog.set(ActiveDialog::Idle),
+                Dialog {
+                    ConsumableDetails {
+                        consumable,
+                        on_close: move || dialog.set(ActiveDialog::Idle),
+                    }
                 }
             }
         }
         ActiveDialog::Nested(consumable) => {
             rsx! {
-                ConsumableNested {
-                    consumable,
-                    on_close: move || dialog.set(ActiveDialog::Idle),
+                Dialog {
+                    ConsumableNested {
+                        consumable,
+                        on_close: move || dialog.set(ActiveDialog::Idle),
+                    }
                 }
             }
         }
@@ -427,91 +431,89 @@ pub fn ConsumableDialog(
 #[component]
 pub fn ConsumableDetails(consumable: Consumable, on_close: Callback<()>) -> Element {
     rsx! {
-        Dialog {
-            h3 { class: "text-lg font-bold",
-                "Consumable "
-                {consumable.name.clone()}
-            }
+        h3 { class: "text-lg font-bold",
+            "Consumable "
+            {consumable.name.clone()}
+        }
 
-            div { class: "p-4",
-                table { class: "table table-striped",
-                    tbody {
-                        tr {
-                            td { "Name" }
-                            td { {consumable.name} }
-                        }
-                        tr {
-                            td { "Brand" }
-                            td {
-                                if let MaybeString::Some(brand) = &consumable.brand {
-                                    {brand.clone()}
-                                }
+        div { class: "p-4",
+            table { class: "table table-striped",
+                tbody {
+                    tr {
+                        td { "Name" }
+                        td { {consumable.name} }
+                    }
+                    tr {
+                        td { "Brand" }
+                        td {
+                            if let MaybeString::Some(brand) = &consumable.brand {
+                                {brand.clone()}
                             }
                         }
-                        tr {
-                            td { "Barcode" }
-                            td {
-                                if let MaybeString::Some(barcode) = &consumable.barcode {
-                                    {barcode.clone()}
-                                }
+                    }
+                    tr {
+                        td { "Barcode" }
+                        td {
+                            if let MaybeString::Some(barcode) = &consumable.barcode {
+                                {barcode.clone()}
                             }
                         }
-                        tr {
-                            td { "Is Organic" }
-                            td { {consumable.is_organic.to_string()} }
-                        }
-                        tr {
-                            td { "Unit" }
-                            td { {consumable.unit.to_string()} }
-                        }
-                        tr {
-                            td { "Comments" }
-                            td {
-                                if let MaybeString::Some(comments) = &consumable.comments {
-                                    {comments.to_string()}
-                                }
+                    }
+                    tr {
+                        td { "Is Organic" }
+                        td { {consumable.is_organic.to_string()} }
+                    }
+                    tr {
+                        td { "Unit" }
+                        td { {consumable.unit.to_string()} }
+                    }
+                    tr {
+                        td { "Comments" }
+                        td {
+                            if let MaybeString::Some(comments) = &consumable.comments {
+                                {comments.to_string()}
                             }
                         }
-                        tr {
-                            td { "Created" }
-                            td {
-                                if let MaybeDateTime::Some(created) = consumable.created {
-                                    {created.with_timezone(&Local).to_string()}
-                                } else {
-                                    "Not Created"
-                                }
+                    }
+                    tr {
+                        td { "Created" }
+                        td {
+                            if let MaybeDateTime::Some(created) = consumable.created {
+                                {created.with_timezone(&Local).to_string()}
+                            } else {
+                                "Not Created"
                             }
                         }
-                        tr {
-                            td { "Destroyed" }
-                            td {
-                                if let MaybeDateTime::Some(destroyed) = consumable.destroyed {
-                                    {destroyed.with_timezone(&Local).to_string()}
-                                } else {
-                                    "Not destroyed"
-                                }
+                    }
+                    tr {
+                        td { "Destroyed" }
+                        td {
+                            if let MaybeDateTime::Some(destroyed) = consumable.destroyed {
+                                {destroyed.with_timezone(&Local).to_string()}
+                            } else {
+                                "Not destroyed"
                             }
                         }
-                        tr {
-                            td { "Created At" }
-                            td { {consumable.created_at.with_timezone(&Local).to_string()} }
-                        }
-                        tr {
-                            td { "Updated At" }
-                            td { {consumable.updated_at.with_timezone(&Local).to_string()} }
-                        }
+                    }
+                    tr {
+                        td { "Created At" }
+                        td { {consumable.created_at.with_timezone(&Local).to_string()} }
+                    }
+                    tr {
+                        td { "Updated At" }
+                        td { {consumable.updated_at.with_timezone(&Local).to_string()} }
                     }
                 }
             }
+        }
 
-            div { class: "p-4",
-                button {
-                    class: "btn btn-secondary m-1",
-                    onclick: move |_| {
-                        on_close(());
-                    },
-                    "Close"
-                }
+        div { class: "p-4",
+            button {
+                class: "btn btn-secondary m-1",
+                onclick: move |_| {
+                    on_close(());
+                },
+                "Close"
             }
         }
     }
@@ -526,6 +528,8 @@ enum State {
 
 #[component]
 pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Element {
+    let mut selected_consumable = use_signal(|| None);
+
     let mut nested_consumables =
         use_resource(move || async move { get_child_consumables(consumable.id).await });
 
@@ -543,10 +547,12 @@ pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Eleme
                 liquid_mls: Maybe::None,
                 comments: Maybe::None,
             };
-            let result = create_nested_consumable(updates).await.map(|_nested| ());
-            if result.is_ok() {
+            let result = create_nested_consumable(updates).await;
+            if let Ok(nested) = result.clone() {
+                selected_consumable.set(Some((nested, child.clone())));
                 nested_consumables.restart();
             }
+            let result = result.map(|_nested| ());
             state.set(State::Finished(result));
         });
     });
@@ -560,57 +566,53 @@ pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Eleme
         });
     });
 
-    let mut selected_consumable = use_signal(|| None);
-
     let disabled = use_memo(move || State::Saving == *state.read());
 
     rsx! {
-        Dialog {
-            h3 { class: "text-lg font-bold",
-                "Consumable Ingredients "
-                {consumable.name.clone()}
-            }
+        h3 { class: "text-lg font-bold",
+            "Consumable Ingredients "
+            {consumable.name.clone()}
+        }
 
-            match nested_consumables() {
-                Some(Ok(nested_consumables)) => {
-                    rsx! {
-                        div { class: "p-4",
-                            table { class: "table table-striped",
-                                thead {
-                                    tr {
-                                        th { "Name" }
-                                        th { "Brand" }
-                                        th { "Comments" }
-                                        th { "Quantity" }
-                                    }
+        match nested_consumables() {
+            Some(Ok(nested_consumables)) => {
+                rsx! {
+                    div { class: "p-4",
+                        table { class: "table table-striped",
+                            thead {
+                                tr {
+                                    th { "Name" }
+                                    th { "Brand" }
+                                    th { "Comments" }
+                                    th { "Quantity" }
                                 }
-                                tbody {
-                                    for (nested , consumable) in nested_consumables {
-                                        tr {
-                                            onclick: move |_| {
-                                                selected_consumable.set(Some((nested.clone(), consumable.clone())));
-                                            },
-                                            td { {consumable.name.clone()} }
-                                            td {
-                                                if let Maybe::Some(brand) = &consumable.brand {
-                                                    {brand.clone()}
-                                                }
+                            }
+                            tbody {
+                                for (nested , consumable) in nested_consumables {
+                                    tr {
+                                        onclick: move |_| {
+                                            selected_consumable.set(Some((nested.clone(), consumable.clone())));
+                                        },
+                                        td { {consumable.name.clone()} }
+                                        td {
+                                            if let Maybe::Some(brand) = &consumable.brand {
+                                                {brand.clone()}
                                             }
-                                            td {
-                                                if let Maybe::Some(comments) = &nested.comments {
-                                                    {comments.to_string()}
-                                                }
+                                        }
+                                        td {
+                                            if let Maybe::Some(comments) = &nested.comments {
+                                                {comments.to_string()}
                                             }
-                                            td {
-                                                if let Maybe::Some(quantity) = nested.quantity {
-                                                    {quantity.to_string()}
-                                                    {consumable.unit.to_string()}
-                                                }
+                                        }
+                                        td {
+                                            if let Maybe::Some(quantity) = nested.quantity {
+                                                {quantity.to_string()}
+                                                {consumable.unit.to_string()}
+                                            }
 
-                                                if let Maybe::Some(liquid_mls) = nested.liquid_mls {
-                                                    {liquid_mls.to_string()}
-                                                    "ml"
-                                                }
+                                            if let Maybe::Some(liquid_mls) = nested.liquid_mls {
+                                                {liquid_mls.to_string()}
+                                                "ml"
                                             }
                                         }
                                     }
@@ -619,96 +621,96 @@ pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Eleme
                         }
                     }
                 }
-                Some(Err(err)) => {
-                    rsx! {
-                        div { class: "p-4",
-                            "Error: "
-                            {err.to_string()}
-                        }
-                    }
-                }
-                None => {
-                    rsx! {
-                        div { class: "p-4", "Loading..." }
+            }
+            Some(Err(err)) => {
+                rsx! {
+                    div { class: "p-4",
+                        "Error: "
+                        {err.to_string()}
                     }
                 }
             }
-
-            match state() {
-                State::Saving => {
-                    rsx! {
-                        div { class: "alert alert-info", "Saving..." }
-                    }
-                }
-                State::Finished(Ok(())) => {
-                    rsx! {
-                        div { class: "alert alert-success", "Saved!" }
-                    }
-                }
-                State::Finished(Err(err)) => {
-                    rsx! {
-                        div { class: "alert alert-error",
-                            "Error: "
-                            {err.to_string()}
-                        }
-                    }
-                }
-                State::Idle => {
-                    rsx! {}
+            None => {
+                rsx! {
+                    div { class: "p-4", "Loading..." }
                 }
             }
-            if let Some((sel_nested, sel_consumable)) = selected_consumable() {
-                div { class: "p-4",
-                    p {
-                        "Selected: "
-                        {sel_consumable.name.clone()}
-                    }
-                    ConsumableNestedForm {
-                        nested: sel_nested.clone(),
-                        consumable: sel_consumable.clone(),
-                        on_cancel: move |_| {
-                            selected_consumable.set(None);
-                        },
-                        on_save: move |_nested| {
-                            selected_consumable.set(None);
-                            nested_consumables.restart();
-                        },
-                    }
-                    button {
-                        class: "btn btn-secondary m-1",
-                        onclick: move |_| {
-                            selected_consumable.set(None);
-                            remove_consumable(sel_nested.clone());
-                        },
-                        "Delete"
-                    }
+        }
+
+        match state() {
+            State::Saving => {
+                rsx! {
+                    div { class: "alert alert-info", "Saving..." }
                 }
-            } else {
-                div { class: "p-4",
-                    InputConsumable {
-                        id: "consumable",
-                        label: "Add Consumable",
-                        value: add_value,
-                        on_change: move |value| {
-                            if let Some(value) = value {
-                                add_consumable(value);
-                                add_value.set(None);
-                            }
-                        },
-                        disabled,
+            }
+            State::Finished(Ok(())) => {
+                rsx! {
+                    div { class: "alert alert-success", "Saved!" }
+                }
+            }
+            State::Finished(Err(err)) => {
+                rsx! {
+                    div { class: "alert alert-error",
+                        "Error: "
+                        {err.to_string()}
                     }
                 }
             }
-
-
+            State::Idle => {
+                rsx! {}
+            }
+        }
+        if let Some((sel_nested, sel_consumable)) = selected_consumable() {
             div { class: "p-4",
-                button {
-                    class: "btn btn-primary m-1",
-                    onclick: move |_| {
-                        on_close(());
-                    },
-                    "Close"
+                p {
+                    "Selected: "
+                    {sel_consumable.name.clone()}
                 }
+                ConsumableNestedForm {
+                    nested: sel_nested.clone(),
+                    consumable: sel_consumable.clone(),
+                    on_cancel: move |_| {
+                        selected_consumable.set(None);
+                    },
+                    on_save: move |_nested| {
+                        selected_consumable.set(None);
+                        nested_consumables.restart();
+                    },
+                }
+                button {
+                    class: "btn btn-secondary m-1",
+                    onclick: move |_| {
+                        selected_consumable.set(None);
+                        remove_consumable(sel_nested.clone());
+                    },
+                    "Delete"
+                }
+            }
+        } else {
+            div { class: "p-4",
+                InputConsumable {
+                    id: "consumable",
+                    label: "Add Consumable",
+                    value: add_value,
+                    on_change: move |value| {
+                        if let Some(value) = value {
+                            add_consumable(value);
+                            add_value.set(None);
+                        }
+                    },
+                    disabled,
+                }
+            }
+        }
+
+
+        div { class: "p-4",
+            button {
+                class: "btn btn-primary m-1",
+                onclick: move |_| {
+                    on_close(());
+                },
+                "Close"
             }
         }
     }

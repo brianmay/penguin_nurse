@@ -8,6 +8,7 @@ use std::ops::Deref;
 use tap::Pipe;
 
 use crate::{
+    components::consumables::{self, ChangeConsumable},
     forms::{validate_colour_hue, validate_colour_saturation, validate_colour_value},
     functions::consumables::search_consumables,
     models::{Consumable, MaybeDateTime},
@@ -704,6 +705,7 @@ pub fn InputConsumable(
     on_change: Callback<Option<Consumable>>,
 ) -> Element {
     let mut query = use_signal(|| "".to_string());
+    let mut create_form = use_signal(|| false);
 
     let list: Resource<Option<Result<Vec<Consumable>, ServerFnError>>> =
         use_resource(move || async move {
@@ -717,23 +719,33 @@ pub fn InputConsumable(
 
     rsx! {
 
-        div { class: "mb-5 w-20 mr-2 inline-block",
-            label {
-                r#for: id,
-                class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
-                "{label}"
-            }
-            div {
-                if let Some(consumable) = value() {
-                    div {
-                        class: "bg-green-500 rounded border-green-100 text-white p-2",
-                        onclick: move |_e| {
-                            value.set(None);
-                            on_change(None);
-                        },
-                        {consumable.name.clone()}
+        div {
+            if create_form() {
+                ChangeConsumable {
+                    op: consumables::Operation::Create {},
+                    on_cancel: move || create_form.set(false),
+                    on_save: move |consumable: Consumable| {
+                        value.set(Some(consumable.clone()));
+                        on_change(Some(consumable));
+                        create_form.set(false);
+                    },
+                }
+            } else if let Some(consumable) = value() {
+                div {
+                    class: "bg-green-500 rounded border-green-100 text-white p-2",
+                    onclick: move |_e| {
+                        value.set(None);
+                        on_change(None);
+                    },
+                    {consumable.name.clone()}
+                }
+            } else {
+                div { class: "mb-5 w-20 mr-2 inline-block",
+                    label {
+                        r#for: id,
+                        class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
+                        "{label}"
                     }
-                } else {
                     input {
                         class: "form-control",
                         r#type: "text",
@@ -768,7 +780,9 @@ pub fn InputConsumable(
                                 }
                             }
                         },
-                        Some(None) => rsx! {},
+                        Some(None) => rsx! {
+                            button { class: "btn btn-secondary", onclick: move |_e| create_form.set(true), "Create" }
+                        },
                         None => {
                             rsx! {
                                 p { class: "alert alert-info", "Loading..." }

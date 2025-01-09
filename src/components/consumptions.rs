@@ -457,6 +457,8 @@ enum State {
 
 #[component]
 pub fn ConsumableConsumption(consumption: Consumption, on_close: Callback<()>) -> Element {
+    let mut selected_consumable = use_signal(|| None);
+
     let mut consumption_consumables =
         use_resource(move || async move { get_child_consumables(consumption.id).await });
 
@@ -474,12 +476,12 @@ pub fn ConsumableConsumption(consumption: Consumption, on_close: Callback<()>) -
                 liquid_mls: Maybe::None,
                 comments: Maybe::None,
             };
-            let result = create_consumption_consumable(updates)
-                .await
-                .map(|_consumption| ());
-            if result.is_ok() {
+            let result = create_consumption_consumable(updates).await;
+            if let Ok(nested) = result.clone() {
+                selected_consumable.set(Some((nested, child.clone())));
                 consumption_consumables.restart();
             }
+            let result = result.map(|_nested| ());
             state.set(State::Finished(result));
         });
     });
@@ -492,8 +494,6 @@ pub fn ConsumableConsumption(consumption: Consumption, on_close: Callback<()>) -
             consumption_consumables.restart();
         });
     });
-
-    let mut selected_consumable = use_signal(|| None);
 
     let disabled = use_memo(move || State::Saving == *state.read());
 
