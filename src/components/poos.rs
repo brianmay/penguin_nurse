@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 use palette::Hsv;
 
 use crate::{
-    components::events::{event_colour, event_urgency},
+    components::events::{event_colour, event_time, event_urgency},
     forms::{
         validate_bristol, validate_colour, validate_comments, validate_date_time,
         validate_duration, validate_poo_quantity, validate_urgency, CancelButton, Dialog,
@@ -476,12 +476,16 @@ pub fn PooDetail(poo: Poo, on_close: Callback<()>) -> Element {
                             td { {poo.id.as_inner().to_string()} }
                         }
                         tr {
-                            td { "Created" }
-                            td { {poo.created_at.with_timezone(&Local).to_string()} }
+                            td { "Time" }
+                            td {
+                                event_time { time: poo.time }
+                            }
                         }
                         tr {
-                            td { "Updated" }
-                            td { {poo.updated_at.with_timezone(&Local).to_string()} }
+                            td { "Duration" }
+                            td {
+                                poo_duration { duration: poo.duration }
+                            }
                         }
                         tr {
                             td { "Colour" }
@@ -512,6 +516,14 @@ pub fn PooDetail(poo: Poo, on_close: Callback<()>) -> Element {
                             td {
                                 poo_bristol { bristol: poo.bristol }
                             }
+                        }
+                        tr {
+                            td { "Created" }
+                            td { {poo.created_at.with_timezone(&Local).to_string()} }
+                        }
+                        tr {
+                            td { "Updated" }
+                            td { {poo.updated_at.with_timezone(&Local).to_string()} }
                         }
                     }
                 }

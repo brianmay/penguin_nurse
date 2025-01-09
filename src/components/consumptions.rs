@@ -2,6 +2,7 @@ use chrono::{DateTime, Local, TimeDelta, Utc};
 use dioxus::prelude::*;
 
 use crate::{
+    components::events::event_time,
     forms::{
         validate_comments, validate_consumable_millilitres, validate_consumable_quantity,
         validate_date_time, validate_duration, CancelButton, Dialog, EditError, FieldValue,
@@ -413,11 +414,15 @@ pub fn ConsumptionDetails(consumption: Consumption, on_close: Callback<()>) -> E
                         }
                         tr {
                             td { "Time" }
-                            td { {consumption.time.with_timezone(&Local).to_string()} }
+                            td {
+                                event_time { time: consumption.time }
+                            }
                         }
                         tr {
                             td { "Duration" }
-                            td { {consumption.duration.to_string()} }
+                            td {
+                                consumption_duration { duration: consumption.duration }
+                            }
                         }
                         tr {
                             td { "Liquid Millilitres" }

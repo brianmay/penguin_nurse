@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 use palette::Hsv;
 
 use crate::{
-    components::events::{event_colour, event_urgency},
+    components::events::{event_colour, event_time, event_urgency},
     forms::{
         validate_colour, validate_comments, validate_date_time, validate_duration,
         validate_millilitres, validate_urgency, CancelButton, Dialog, EditError, FieldValue,
@@ -428,12 +428,16 @@ pub fn WeeDetail(wee: Wee, on_close: Callback<()>) -> Element {
                             td { {wee.id.as_inner().to_string()} }
                         }
                         tr {
-                            td { "Created" }
-                            td { {wee.created_at.with_timezone(&Local).to_string()} }
+                            td { "Time" }
+                            td {
+                                event_time { time: wee.time }
+                            }
                         }
                         tr {
-                            td { "Updated" }
-                            td { {wee.updated_at.with_timezone(&Local).to_string()} }
+                            td { "Duration" }
+                            td {
+                                wee_duration { duration: wee.duration }
+                            }
                         }
                         tr {
                             td { "Colour" }
@@ -458,6 +462,14 @@ pub fn WeeDetail(wee: Wee, on_close: Callback<()>) -> Element {
                             td {
                                 wee_mls { mls: wee.mls }
                             }
+                        }
+                        tr {
+                            td { "Created" }
+                            td { {wee.created_at.with_timezone(&Local).to_string()} }
+                        }
+                        tr {
+                            td { "Updated" }
+                            td { {wee.updated_at.with_timezone(&Local).to_string()} }
                         }
                     }
                 }

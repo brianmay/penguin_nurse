@@ -440,6 +440,10 @@ pub fn ConsumableDetails(consumable: Consumable, on_close: Callback<()>) -> Elem
             table { class: "table table-striped",
                 tbody {
                     tr {
+                        td { "ID" }
+                        td { {consumable.id.to_string()} }
+                    }
+                    tr {
                         td { "Name" }
                         td { {consumable.name} }
                     }
