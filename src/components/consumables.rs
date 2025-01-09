@@ -3,18 +3,20 @@ use dioxus::prelude::*;
 
 use crate::{
     forms::{
-        validate_barcode, validate_brand, validate_comments, validate_consumable_unit,
-        validate_maybe_date_time, validate_name, CancelButton, Dialog, EditError, FieldValue,
-        InputBoolean, InputConsumable, InputMaybeDateTime, InputSelect, InputString, InputTextArea,
-        Saving, SubmitButton, ValidationError,
+        validate_barcode, validate_brand, validate_comments, validate_consumable_millilitres,
+        validate_consumable_quantity, validate_consumable_unit, validate_maybe_date_time,
+        validate_name, CancelButton, Dialog, EditError, FieldValue, InputBoolean, InputConsumable,
+        InputMaybeDateTime, InputNumber, InputSelect, InputString, InputTextArea, Saving,
+        SubmitButton, ValidationError,
     },
     functions::consumables::{
         create_consumable, create_nested_consumable, delete_consumable, delete_nested_consumable,
-        get_child_consumables, update_consumable,
+        get_child_consumables, update_consumable, update_nested_consumable,
     },
     models::{
-        Consumable, ConsumableUnit, Maybe, MaybeDateTime, MaybeString, NestedConsumableId,
-        NewConsumable, NewNestedConsumable, UpdateConsumable,
+        Consumable, ConsumableUnit, Maybe, MaybeDateTime, MaybeF64, MaybeString, NestedConsumable,
+        NestedConsumableId, NewConsumable, NewNestedConsumable, UpdateConsumable,
+        UpdateNestedConsumable,
     },
 };
 
@@ -549,13 +551,10 @@ pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Eleme
         });
     });
 
-    let consumable_clone = consumable.clone();
-    let remove_consumable = use_callback(move |child: Consumable| {
-        let consumable = consumable_clone.clone();
+    let remove_consumable = use_callback(move |child: NestedConsumable| {
         spawn(async move {
             state.set(State::Saving);
-            let id = NestedConsumableId::new(consumable.id, child.id);
-            let result = delete_nested_consumable(id).await;
+            let result = delete_nested_consumable(child.id).await;
             state.set(State::Finished(result));
             nested_consumables.restart();
         });
@@ -582,15 +581,14 @@ pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Eleme
                                         th { "Name" }
                                         th { "Brand" }
                                         th { "Comments" }
-                                        th { "Created" }
-                                        th { "Destroyed" }
+                                        th { "Quantity" }
                                     }
                                 }
                                 tbody {
                                     for (nested , consumable) in nested_consumables {
                                         tr {
                                             onclick: move |_| {
-                                                selected_consumable.set(Some(consumable.clone()));
+                                                selected_consumable.set(Some((nested.clone(), consumable.clone())));
                                             },
                                             td { {consumable.name.clone()} }
                                             td {
@@ -604,17 +602,14 @@ pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Eleme
                                                 }
                                             }
                                             td {
-                                                if let Maybe::Some(created) = consumable.created {
-                                                    {created.with_timezone(&Local).to_string()}
-                                                } else {
-                                                    "Not Created"
+                                                if let Maybe::Some(quantity) = nested.quantity {
+                                                    {quantity.to_string()}
+                                                    {consumable.unit.to_string()}
                                                 }
-                                            }
-                                            td {
-                                                if let Maybe::Some(destroyed) = consumable.destroyed {
-                                                    {destroyed.with_timezone(&Local).to_string()}
-                                                } else {
-                                                    "Not destroyed"
+
+                                                if let Maybe::Some(liquid_mls) = nested.liquid_mls {
+                                                    {liquid_mls.to_string()}
+                                                    "ml"
                                                 }
                                             }
                                         }
@@ -662,13 +657,28 @@ pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Eleme
                     rsx! {}
                 }
             }
-            if let Some(selected) = selected_consumable() {
+            if let Some((sel_nested, sel_consumable)) = selected_consumable() {
                 div { class: "p-4",
-                    p { "Form goes here" }
+                    p {
+                        "Selected: "
+                        {sel_consumable.name.clone()}
+                    }
+                    ConsumableNestedForm {
+                        nested: sel_nested.clone(),
+                        consumable: sel_consumable.clone(),
+                        on_cancel: move |_| {
+                            selected_consumable.set(None);
+                        },
+                        on_save: move |_nested| {
+                            selected_consumable.set(None);
+                            nested_consumables.restart();
+                        },
+                    }
                     button {
                         class: "btn btn-secondary m-1",
                         onclick: move |_| {
-                            remove_consumable(selected.clone());
+                            selected_consumable.set(None);
+                            remove_consumable(sel_nested.clone());
                         },
                         "Delete"
                     }
@@ -700,6 +710,119 @@ pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Eleme
                     "Close"
                 }
             }
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct ValidateNested {
+    quantity: Memo<Result<MaybeF64, ValidationError>>,
+    liquid_mls: Memo<Result<MaybeF64, ValidationError>>,
+    comments: Memo<Result<MaybeString, ValidationError>>,
+}
+
+async fn do_save_nested(
+    nested: NestedConsumable,
+    validate: &ValidateNested,
+) -> Result<NestedConsumable, EditError> {
+    let quantity = validate.quantity.read().clone()?;
+    let liquid_mls = validate.liquid_mls.read().clone()?;
+    let comments = validate.comments.read().clone()?;
+
+    let updates = UpdateNestedConsumable {
+        quantity: Some(quantity),
+        liquid_mls: Some(liquid_mls),
+        comments: Some(comments),
+    };
+    update_nested_consumable(nested.id, updates)
+        .await
+        .map_err(EditError::Server)
+}
+
+#[component]
+fn ConsumableNestedForm(
+    nested: NestedConsumable,
+    consumable: Consumable,
+    on_cancel: Callback<()>,
+    on_save: Callback<NestedConsumable>,
+) -> Element {
+    let quantity = use_signal(|| nested.quantity.as_string());
+    let liquid_mls = use_signal(|| nested.liquid_mls.as_string());
+    let comments = use_signal(|| nested.comments.as_string());
+
+    let validate = ValidateNested {
+        quantity: use_memo(move || validate_consumable_quantity(&quantity())),
+        liquid_mls: use_memo(move || validate_consumable_millilitres(&liquid_mls())),
+        comments: use_memo(move || validate_comments(&comments())),
+    };
+
+    let mut saving = use_signal(|| Saving::No);
+
+    let disabled = use_memo(move || saving.read().is_saving());
+    let disabled_save = use_memo(move || {
+        validate.quantity.read().is_err()
+            || validate.liquid_mls.read().is_err()
+            || validate.comments.read().is_err()
+            || disabled()
+    });
+
+    let nested_clone = nested.clone();
+    let validate_clone = validate.clone();
+    let on_save = use_callback(move |()| {
+        let nested = nested_clone.clone();
+        let validate = validate_clone.clone();
+        spawn(async move {
+            saving.set(Saving::Yes);
+
+            let result = do_save_nested(nested, &validate).await;
+            match result {
+                Ok(nested) => {
+                    saving.set(Saving::Finished(Ok(())));
+                    on_save(nested);
+                }
+                Err(err) => saving.set(Saving::Finished(Err(err))),
+            }
+        });
+    });
+
+    rsx! {
+        form {
+            novalidate: true,
+            action: "javascript:void(0)",
+            method: "dialog",
+            onkeyup: move |event| {
+                if event.key() == Key::Escape {
+                    on_cancel(());
+                }
+            },
+            InputNumber {
+                id: "quantity",
+                label: format!("Quantity ({})", consumable.unit.to_string()),
+                value: quantity,
+                validate: validate.quantity,
+                disabled,
+            }
+            InputNumber {
+                id: "liquid_mls",
+                label: "Liquid Millilitres",
+                value: liquid_mls,
+                validate: validate.liquid_mls,
+                disabled,
+            }
+            InputTextArea {
+                id: "comments",
+                label: "Comments",
+                value: comments,
+                validate: validate.comments,
+                disabled,
+            }
+
+            SubmitButton {
+                disabled: disabled_save,
+                on_save: move |_| on_save(()),
+                title: "Save",
+            }
+            CancelButton { on_cancel: move |_| on_cancel(()), title: "Cancel" }
         }
     }
 }

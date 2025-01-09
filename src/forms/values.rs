@@ -2,7 +2,7 @@ use chrono::{DateTime, Local, TimeDelta, Utc};
 use palette::RgbHue;
 use thiserror::Error;
 
-use crate::models::{MaybeDateTime, MaybeString};
+use crate::models::Maybe;
 
 #[derive(Error, Debug)]
 pub enum FieldValueError {
@@ -34,43 +34,6 @@ impl FieldValue for RgbHue<f32> {
         match value.parse() {
             Ok(value) if (0.0..=360.0).contains(&value) => Ok(RgbHue::new(value)),
             _ => Err(FieldValueError::InvalidValue),
-        }
-    }
-}
-
-impl FieldValue for MaybeString {
-    fn as_string(&self) -> String {
-        match self {
-            MaybeString::Some(value) => value.clone(),
-            MaybeString::None => "".to_string(),
-        }
-    }
-
-    fn from_string(value: &str) -> Result<Self, FieldValueError> {
-        if value.is_empty() {
-            Ok(MaybeString::None)
-        } else {
-            Ok(MaybeString::Some(value.to_string()))
-        }
-    }
-}
-
-impl FieldValue for MaybeDateTime {
-    fn as_string(&self) -> String {
-        match self {
-            MaybeDateTime::Some(value) => value.with_timezone(&Local).to_rfc3339(),
-            MaybeDateTime::None => "".to_string(),
-        }
-    }
-
-    fn from_string(value: &str) -> Result<Self, FieldValueError> {
-        if value.is_empty() {
-            Ok(MaybeDateTime::None)
-        } else {
-            match DateTime::parse_from_rfc3339(value) {
-                Ok(time) => Ok(MaybeDateTime::Some(time.with_timezone(&Utc))),
-                Err(_) => Err(FieldValueError::InvalidValue),
-            }
         }
     }
 }
@@ -121,6 +84,22 @@ impl FieldValue for f64 {
         match value.parse() {
             Ok(value) => Ok(value),
             Err(_) => Err(FieldValueError::InvalidValue),
+        }
+    }
+}
+
+impl<T: FieldValue> FieldValue for Maybe<T> {
+    fn as_string(&self) -> String {
+        match self {
+            Maybe::Some(value) => value.as_string(),
+            Maybe::None => "".to_string(),
+        }
+    }
+    fn from_string(value: &str) -> Result<Self, FieldValueError> {
+        if value.is_empty() {
+            Ok(Maybe::None)
+        } else {
+            Ok(Maybe::Some(T::from_string(value)?))
         }
     }
 }

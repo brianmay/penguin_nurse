@@ -79,7 +79,7 @@ fn EntryRow(entry: Entry, dialog: Signal<ActiveDialog>) -> Element {
             }
         }
         if show_buttons() {
-            td { colspan: 6, class: "block sm:table-cell",
+            td { colspan: 4, class: "block sm:table-cell",
                 match entry.data {
                     EntryData::Wee(wee) => {
                         let wee_clone_1 = wee.clone();

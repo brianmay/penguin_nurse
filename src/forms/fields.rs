@@ -32,7 +32,7 @@ fn get_input_classes(is_valid: bool, changed: bool, is_disabled: bool) -> &'stat
 }
 
 #[component]
-pub fn InputString<D: 'static + Clone + Eq + PartialEq>(
+pub fn InputString<D: 'static + Clone + PartialEq>(
     id: &'static str,
     label: &'static str,
     value: Signal<String>,
@@ -76,9 +76,9 @@ pub fn InputString<D: 'static + Clone + Eq + PartialEq>(
 }
 
 #[component]
-pub fn InputNumber<D: 'static + Clone + Eq + PartialEq>(
+pub fn InputNumber<D: 'static + Clone + PartialEq>(
     id: &'static str,
-    label: &'static str,
+    label: String,
     value: Signal<String>,
     validate: Memo<Result<D, ValidationError>>,
     disabled: Memo<bool>,

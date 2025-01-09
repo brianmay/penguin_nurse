@@ -138,3 +138,28 @@ pub async fn delete_nested_consumable(id: models::NestedConsumableId) -> Result<
     .await
     .map_err(ServerFnError::from)
 }
+
+#[server]
+pub async fn update_nested_consumable(
+    id: models::NestedConsumableId,
+    consumable: models::UpdateNestedConsumable,
+) -> Result<models::NestedConsumable, ServerFnError> {
+    let _logged_in_user_id = get_user_id().await?;
+
+    let mut conn = get_database_connection().await?;
+    let updates =
+        crate::server::database::models::nested_consumables::UpdateNestedConsumable::from_front_end(
+            &consumable,
+        );
+    let (parent_id, consumable_id) = id.as_inner();
+
+    crate::server::database::models::nested_consumables::update_nested_consumable(
+        &mut conn,
+        parent_id.as_inner(),
+        consumable_id.as_inner(),
+        &updates,
+    )
+    .await
+    .map(|x| x.into())
+    .map_err(ServerFnError::from)
+}

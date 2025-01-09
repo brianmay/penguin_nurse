@@ -1,7 +1,7 @@
 use chrono::{TimeDelta, Utc};
 use palette::Hsv;
 
-use crate::models::{Bristol, ConsumableUnit, MaybeDateTime, MaybeString};
+use crate::models::{Bristol, ConsumableUnit, MaybeDateTime, MaybeF64, MaybeString};
 
 use super::{errors::ValidationError, FieldValue};
 
@@ -74,6 +74,14 @@ pub fn validate_duration(str: &str) -> Result<TimeDelta, ValidationError> {
 }
 
 pub fn validate_millilitres(str: &str) -> Result<i32, ValidationError> {
+    validate_field_value(str)
+}
+
+pub fn validate_consumable_quantity(str: &str) -> Result<MaybeF64, ValidationError> {
+    validate_field_value(str)
+}
+
+pub fn validate_consumable_millilitres(str: &str) -> Result<MaybeF64, ValidationError> {
     validate_field_value(str)
 }
 
