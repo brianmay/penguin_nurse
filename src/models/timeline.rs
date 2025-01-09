@@ -1,6 +1,7 @@
 use super::entry::{Entry, EntryData, Event};
 use super::poos::Poo;
 use super::wees::Wee;
+use super::Consumption;
 
 pub struct Timeline(Vec<Entry>);
 
@@ -34,6 +35,20 @@ impl Timeline {
             event: Event::Start,
             time: poo.time,
             data: EntryData::Poo(poo),
+        });
+    }
+
+    pub fn add_consumptions(&mut self, consumptions: Vec<Consumption>) {
+        for consumption in consumptions {
+            self.add_consumption(consumption);
+        }
+    }
+
+    pub fn add_consumption(&mut self, consumption: Consumption) {
+        self.0.push(Entry {
+            event: Event::Start,
+            time: consumption.time,
+            data: EntryData::Consumption(consumption),
         });
     }
 

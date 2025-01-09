@@ -6,14 +6,18 @@ use tap::Pipe;
 
 use crate::{
     components::{
+        consumptions::{self, consumption_duration, consumption_icon},
         events::{event_colour, event_time, event_urgency},
         poos::{self, poo_bristol, poo_duration, poo_icon, poo_quantity},
         timeline::{ActiveDialog, TimelineDialog},
         wees::{self, wee_duration, wee_icon, wee_mls},
     },
     dt::get_utc_times_for_date,
-    functions::{poos::get_poos_for_time_range, wees::get_wees_for_time_range},
-    models::{Entry, EntryData, MaybeString, Timeline, User},
+    functions::{
+        consumptions::get_consumptions_for_time_range, poos::get_poos_for_time_range,
+        wees::get_wees_for_time_range,
+    },
+    models::{Entry, EntryData, Maybe, Timeline, User},
     Route,
 };
 
@@ -44,7 +48,7 @@ fn EntryRow(entry: Entry, dialog: Signal<ActiveDialog>) -> Element {
                                 div {
                                     event_urgency { urgency: wee.urgency }
                                 }
-                                if let MaybeString::Some(comments) = &wee.comments {
+                                if let Maybe::Some(comments) = &wee.comments {
                                     div { {comments.to_string()} }
                                 }
                             }
@@ -69,9 +73,25 @@ fn EntryRow(entry: Entry, dialog: Signal<ActiveDialog>) -> Element {
                                 div {
                                     event_urgency { urgency: poo.urgency }
                                 }
-                                if let MaybeString::Some(comments) = &poo.comments {
+                                if let Maybe::Some(comments) = &poo.comments {
                                     div { {comments.to_string()} }
                                 }
+                            }
+                        }
+                    }
+                }
+                EntryData::Consumption(consumption) => {
+                    rsx! {
+                        td { class: "block sm:table-cell border-blue-300 sm:border-t-2", consumption_icon {} }
+                        td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
+                            consumption_duration { duration: consumption.duration }
+                        }
+                        td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
+                            if let Maybe::Some(liquid_mls) = &consumption.liquid_mls {
+                                div { {liquid_mls.to_string()} }
+                            }
+                            if let Maybe::Some(comments) = &consumption.comments {
+                                div { {comments.to_string()} }
                             }
                         }
                     }
@@ -145,6 +165,63 @@ fn EntryRow(entry: Entry, dialog: Signal<ActiveDialog>) -> Element {
                             }
                         }
                     }
+                    EntryData::Consumption(consumption) => {
+                        let consumption_clone_1 = consumption.clone();
+                        let consumption_clone_2 = consumption.clone();
+                        let consumption_clone_3 = consumption.clone();
+                        rsx! {
+                            button {
+                                class: "btn btn-primary m-1",
+                                onclick: move |_| {
+                                    dialog
+                                        .set(
+                                            ActiveDialog::Consumption(
+                                                consumptions::ActiveDialog::Details(consumption_clone_1.clone()),
+                                            ),
+                                        )
+                                },
+                                "Details"
+                            }
+                            button {
+                                class: "btn btn-primary m-1",
+                                onclick: move |_| {
+                                    dialog
+                                        .set(
+                                            ActiveDialog::Consumption(
+                                                consumptions::ActiveDialog::Consumption(consumption_clone_2.clone()),
+                                            ),
+                                        )
+                                },
+                                "Ingredients"
+                            }
+                            button {
+                                class: "btn btn-primary m-1",
+                                onclick: move |_| {
+                                    dialog
+                                        .set(
+                                            ActiveDialog::Consumption(
+                                                consumptions::ActiveDialog::Change(consumptions::Operation::Update {
+                                                    consumption: consumption_clone_3.clone(),
+                                                }),
+                                            ),
+                                        )
+                                },
+                                "Edit"
+                            }
+                            button {
+                                class: "btn btn-secondary m-1",
+                                onclick: move |_| {
+                                    dialog
+                                        .set(
+                                            ActiveDialog::Consumption(
+                                                consumptions::ActiveDialog::Delete(consumption.clone()),
+                                            ),
+                                        )
+                                },
+                                "Delete"
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -178,6 +255,9 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
             let poos = get_poos_for_time_range(user_id, start, end).await?;
             timeline.add_poos(poos);
 
+            let consumptions = get_consumptions_for_time_range(user_id, start, end).await?;
+            timeline.add_consumptions(consumptions);
+
             timeline.sort();
 
             Ok(timeline)
@@ -209,6 +289,20 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                             )
                     },
                     "Poo"
+                }
+                button {
+                    class: "btn btn-primary ml-2",
+                    onclick: move |_| {
+                        dialog
+                            .set(
+                                ActiveDialog::Consumption(
+                                    consumptions::ActiveDialog::Change(consumptions::Operation::Create {
+                                        user_id,
+                                    }),
+                                ),
+                            )
+                    },
+                    "Consumption"
                 }
             }
 

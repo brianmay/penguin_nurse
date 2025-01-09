@@ -84,6 +84,7 @@ pub async fn search_consumables(
 
     table
         .filter(q::name.ilike(format!("%{}%", search)))
+        .filter(q::destroyed.is_null())
         .order((q::created.desc(), q::destroyed.desc(), q::name.asc()))
         .limit(10)
         .get_results(conn)

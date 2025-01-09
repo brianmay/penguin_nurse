@@ -45,17 +45,17 @@ CREATE TABLE nested_consumables (
     FOREIGN KEY (consumable_id) references consumables(id) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY(parent_id, consumable_id)
 );
-CREATE TABLE consumptions_consumables (
-    consumptions_id BIGINT NOT NULL,
+CREATE TABLE consumption_consumables (
+    parent_id BIGINT NOT NULL,
     consumable_id BIGINT NOT NULL,
     quantity FLOAT,
     liquid_mls FLOAT,
     comments TEXT,
     created_at timestamptz NOT NULL DEFAULT NOW(),
     updated_at timestamptz NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (consumptions_id) REFERENCES consumptions(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (parent_id) REFERENCES consumptions(id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (consumable_id) references consumables(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    PRIMARY KEY(consumptions_id, consumable_id)
+    PRIMARY KEY(parent_id, consumable_id)
 );
 SELECT diesel_manage_updated_at('nested_consumables');
-SELECT diesel_manage_updated_at('consumptions_consumables');
+SELECT diesel_manage_updated_at('consumption_consumables');

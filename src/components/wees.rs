@@ -70,10 +70,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> 
 pub fn ChangeWee(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> Element {
     let time = use_signal(|| match &op {
         Operation::Create { .. } => Utc::now().with_timezone(&Local).to_rfc3339(),
-        Operation::Update { wee } => {
-            let local = wee.time.with_timezone(&Local);
-            local.to_rfc3339()
-        }
+        Operation::Update { wee } => wee.time.as_string(),
     });
     let duration = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
@@ -400,13 +397,7 @@ pub fn WeeDialog(
         }
         ActiveDialog::Delete(wee) => {
             rsx! {
-                DeleteWee {
-                    wee,
-                    on_cancel: move || on_close(()),
-                    on_delete: move |wee| {
-                        on_delete(wee);
-                    },
-                }
+                DeleteWee { wee, on_cancel: on_close, on_delete }
             }
         }
         ActiveDialog::Details(wee) => {

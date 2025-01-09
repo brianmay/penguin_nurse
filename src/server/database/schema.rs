@@ -26,11 +26,10 @@ diesel::table! {
 }
 
 diesel::table! {
-    consumptions (id) {
-        id -> Int8,
-        user_id -> Int8,
-        time -> Timestamptz,
-        duration -> Interval,
+    consumption_consumables (parent_id, consumable_id) {
+        parent_id -> Int8,
+        consumable_id -> Int8,
+        quantity -> Nullable<Float8>,
         liquid_mls -> Nullable<Float8>,
         comments -> Nullable<Text>,
         created_at -> Timestamptz,
@@ -39,10 +38,11 @@ diesel::table! {
 }
 
 diesel::table! {
-    consumptions_consumables (consumptions_id, consumable_id) {
-        consumptions_id -> Int8,
-        consumable_id -> Int8,
-        quantity -> Nullable<Float8>,
+    consumptions (id) {
+        id -> Int8,
+        user_id -> Int8,
+        time -> Timestamptz,
+        duration -> Interval,
         liquid_mls -> Nullable<Float8>,
         comments -> Nullable<Text>,
         created_at -> Timestamptz,
@@ -135,9 +135,9 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(consumption_consumables -> consumables (consumable_id));
+diesel::joinable!(consumption_consumables -> consumptions (parent_id));
 diesel::joinable!(consumptions -> users (user_id));
-diesel::joinable!(consumptions_consumables -> consumables (consumable_id));
-diesel::joinable!(consumptions_consumables -> consumptions (consumptions_id));
 diesel::joinable!(poos -> users (user_id));
 diesel::joinable!(user_groups -> groups (group_id));
 diesel::joinable!(user_groups -> users (user_id));
@@ -145,8 +145,8 @@ diesel::joinable!(wees -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     consumables,
+    consumption_consumables,
     consumptions,
-    consumptions_consumables,
     groups,
     nested_consumables,
     poos,

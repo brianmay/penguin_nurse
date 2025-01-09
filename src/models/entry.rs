@@ -1,18 +1,20 @@
 use chrono::{DateTime, Utc};
 
-use super::{Poo, PooId, Wee, WeeId};
+use super::{Consumption, ConsumptionId, Poo, PooId, Wee, WeeId};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum EntryId {
-    PooId(PooId),
-    WeeId(WeeId),
+    Poo(PooId),
+    Wee(WeeId),
+    Consumption(ConsumptionId),
 }
 
 impl EntryId {
     pub fn as_str(&self) -> String {
         match self {
-            EntryId::PooId(id) => format!("poo-{}", id.as_inner()),
-            EntryId::WeeId(id) => format!("wee-{}", id.as_inner()),
+            EntryId::Poo(id) => format!("poo-{}", id.as_inner()),
+            EntryId::Wee(id) => format!("wee-{}", id.as_inner()),
+            EntryId::Consumption(id) => format!("consumption-{}", id.as_inner()),
         }
     }
 }
@@ -27,6 +29,7 @@ pub enum Event {
 pub enum EntryData {
     Poo(Poo),
     Wee(Wee),
+    Consumption(Consumption),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -39,8 +42,9 @@ pub struct Entry {
 impl Entry {
     pub fn get_id(&self) -> EntryId {
         match &self.data {
-            EntryData::Poo(poo) => EntryId::PooId(poo.id),
-            EntryData::Wee(wee) => EntryId::WeeId(wee.id),
+            EntryData::Poo(poo) => EntryId::Poo(poo.id),
+            EntryData::Wee(wee) => EntryId::Wee(wee.id),
+            EntryData::Consumption(consumption) => EntryId::Consumption(consumption.id),
         }
     }
 }
