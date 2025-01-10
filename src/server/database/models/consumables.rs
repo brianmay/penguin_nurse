@@ -83,7 +83,11 @@ pub async fn search_consumables(
     use crate::server::database::schema::consumables::table;
 
     table
-        .filter(q::name.ilike(format!("%{}%", search)))
+        .filter(
+            q::name.ilike(format!("%{}%", search)).or(q::brand
+                .ilike(format!("%{}%", search))
+                .or(q::barcode.eq(search))),
+        )
         .filter(q::destroyed.is_null())
         .order((q::created.desc(), q::destroyed.desc(), q::name.asc()))
         .limit(10)

@@ -1,3 +1,4 @@
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE TYPE consumable_unit AS ENUM (
     'millilitres',
     'grams',
@@ -17,8 +18,10 @@ CREATE TABLE consumables (
     created_at timestamptz NOT NULL DEFAULT NOW(),
     updated_at timestamptz NOT NULL DEFAULT NOW()
 );
-CREATE index idx_consumable_barcode on consumables(barcode);
-CREATE index idx_created on consumables(created, destroyed, name);
+CREATE INDEX idx_consumable_search ON consumables USING GIN (name gin_trgm_ops, brand gin_trgm_ops);
+CREATE INDEX idx_consumable_barcode ON consumables(barcode, destroyed);
+CREATE INDEX idx_consumable_created ON consumables(created, destroyed);
+CREATE INDEX idx_consumable_destroyed ON consumables(destroyed);
 CREATE TABLE consumptions (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGSERIAL NOT NULL,
@@ -30,7 +33,7 @@ CREATE TABLE consumptions (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
-CREATE index idx_consumptions_user_id on consumptions(user_id, time);
+CREATE INDEX idx_consumptions_user_id on consumptions(user_id, time);
 SELECT diesel_manage_updated_at('consumables');
 SELECT diesel_manage_updated_at('consumptions');
 CREATE TABLE nested_consumables (
