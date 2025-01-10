@@ -1,6 +1,6 @@
 use std::{ops::Deref, sync::Arc};
 
-use chrono::{Local, NaiveDate};
+use chrono::{Local, NaiveDate, Utc};
 use dioxus::prelude::*;
 use tap::Pipe;
 
@@ -12,7 +12,7 @@ use crate::{
         timeline::{ActiveDialog, TimelineDialog},
         wees::{self, wee_duration, wee_icon, wee_mls},
     },
-    dt::get_utc_times_for_date,
+    dt::{get_date_for_dt, get_utc_times_for_date},
     functions::{
         consumptions::get_consumptions_for_time_range, poos::get_poos_for_time_range,
         wees::get_wees_for_time_range,
@@ -328,13 +328,15 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                 button {
                     class: "btn btn-primary inline-block ml-2",
                     onclick: move |_| {
-                        let new_date = Local::now().date_naive();
-                        navigator
-                            .push(Route::TimelineList {
-                                date: new_date,
-                            });
+                        let new_date = get_date_for_dt(Utc::now());
+                        if let Ok(new_date) = new_date {
+                            navigator
+                                .push(Route::TimelineList {
+                                    date: new_date,
+                                });
+                        }
                     },
-                    "today"
+                    "Today"
                 }
                 button {
                     class: "btn btn-primary inline-block ml-2",

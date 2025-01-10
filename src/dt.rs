@@ -1,4 +1,4 @@
-use chrono::{DateTime, Local, NaiveDate, TimeZone, Utc};
+use chrono::{DateTime, Local, NaiveDate, TimeZone, Timelike, Utc};
 use dioxus::prelude::{server_fn::error::NoCustomError, ServerFnError};
 use tracing::error;
 
@@ -49,13 +49,13 @@ pub fn get_utc_times_for_date(
     Ok((start, end))
 }
 
-// pub fn get_date_for_entry_dt(entry_date: DateTime<Utc>) -> Result<NaiveDate, ServerFnError> {
-//     let local_date_time = entry_date.with_timezone(&Local);
-//     let local_date = local_date_time.date_naive();
+pub fn get_date_for_dt(entry_date: DateTime<Utc>) -> Result<NaiveDate, ServerFnError> {
+    let local_date_time = entry_date.with_timezone(&Local);
+    let local_date = local_date_time.date_naive();
 
-//     if local_date_time.hour() < HOUR {
-//         Ok(local_date.pred_opt().unwrap_or(local_date))
-//     } else {
-//         Ok(local_date)
-//     }
-// }
+    if local_date_time.hour() < HOUR {
+        Ok(local_date.pred_opt().unwrap_or(local_date))
+    } else {
+        Ok(local_date)
+    }
+}
