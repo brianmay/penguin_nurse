@@ -610,13 +610,18 @@ pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Eleme
                                         }
                                         td {
                                             if let Maybe::Some(quantity) = nested.quantity {
-                                                {quantity.to_string()}
-                                                {consumable.unit.to_string()}
+                                                div {
+                                                    {quantity.to_string()}
+                                                    {consumable.unit.postfix()}
+                                                }
                                             }
 
                                             if let Maybe::Some(liquid_mls) = nested.liquid_mls {
-                                                {liquid_mls.to_string()}
-                                                "ml"
+                                                div {
+                                                    "Liquid: "
+                                                    {liquid_mls.to_string()}
+                                                    "ml"
+                                                }
                                             }
                                         }
                                     }

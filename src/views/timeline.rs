@@ -88,7 +88,11 @@ fn EntryRow(entry: Entry, dialog: Signal<ActiveDialog>) -> Element {
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             if let Maybe::Some(liquid_mls) = &consumption.liquid_mls {
-                                div { {liquid_mls.to_string()} }
+                                div {
+                                    "Liquid: "
+                                    {liquid_mls.to_string()}
+                                    "ml"
+                                }
                             }
                             if let Maybe::Some(comments) = &consumption.comments {
                                 div { {comments.to_string()} }

@@ -38,18 +38,27 @@ impl FieldValue for ConsumableUnit {
 impl ConsumableUnit {
     pub fn options() -> Vec<(&'static str, &'static str)> {
         vec![
-            ("millilitres", "Mls"),
+            ("millilitres", "ml"),
             ("grams", "G"),
             ("international_units", "IU"),
             ("number", "Number"),
         ]
+    }
+
+    pub fn postfix(&self) -> &'static str {
+        match self {
+            Self::Millilitres => "ml",
+            Self::Grams => "G",
+            Self::InternationalUnits => "IU",
+            Self::Number => "",
+        }
     }
 }
 
 impl Display for ConsumableUnit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Millilitres => write!(f, "Mls"),
+            Self::Millilitres => write!(f, "ml"),
             Self::Grams => write!(f, "G"),
             Self::InternationalUnits => write!(f, "IU"),
             Self::Number => write!(f, "Number"),

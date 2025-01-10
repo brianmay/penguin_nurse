@@ -205,7 +205,7 @@ pub fn ChangeWee(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
                 }
                 InputNumber {
                     id: "mls",
-                    label: "Mls",
+                    label: "Quantity",
                     value: mls,
                     validate: validate.mls,
                     disabled,
@@ -458,7 +458,7 @@ pub fn WeeDetail(wee: Wee, on_close: Callback<()>) -> Element {
                             }
                         }
                         tr {
-                            td { "Mls" }
+                            td { "Quantity" }
                             td {
                                 wee_mls { mls: wee.mls }
                             }
