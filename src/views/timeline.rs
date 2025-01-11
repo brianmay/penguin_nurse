@@ -17,18 +17,22 @@ use crate::{
         consumptions::get_consumptions_for_time_range, poos::get_poos_for_time_range,
         wees::get_wees_for_time_range,
     },
-    models::{Entry, EntryData, Maybe, Timeline, User},
+    models::{Entry, EntryData, EntryId, Maybe, Timeline, User},
     Route,
 };
 
 #[component]
-fn EntryRow(entry: Entry, dialog: Signal<ActiveDialog>) -> Element {
-    let mut show_buttons = use_signal(|| false);
+fn EntryRow(
+    entry: Entry,
+    dialog: Signal<ActiveDialog>,
+    selected: Signal<Option<EntryId>>,
+) -> Element {
+    let id = entry.get_id();
 
     rsx! {
         tr {
             class: "hover:bg-gray-500 border-blue-300 m-2 p-2 border-2 h-96 w-48 sm:w-auto sm:border-none sm:h-auto inline-block sm:table-row",
-            onclick: move |_| show_buttons.set(!show_buttons()),
+            onclick: move |_| selected.set(Some(id)),
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 event_time { time: entry.time }
             }
@@ -102,7 +106,7 @@ fn EntryRow(entry: Entry, dialog: Signal<ActiveDialog>) -> Element {
                 }
             }
         }
-        if show_buttons() {
+        if selected() == Some(id) {
             td { colspan: 4, class: "block sm:table-cell",
                 match entry.data {
                     EntryData::Wee(wee) => {
@@ -236,6 +240,7 @@ fn EntryRow(entry: Entry, dialog: Signal<ActiveDialog>) -> Element {
 pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
     let user: Signal<Arc<Option<User>>> = use_context();
     let navigator = navigator();
+    let selected: Signal<Option<EntryId>> = use_signal(|| None);
 
     let user: &Option<User> = &user.read();
     let Some(user) = user.as_ref() else {
@@ -379,6 +384,7 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                             EntryRow {
                                 key: "{entry.get_id().as_str()}",
                                 entry: entry.clone(),
+                                selected,
                                 dialog,
                             }
                         }

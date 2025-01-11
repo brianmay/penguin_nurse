@@ -6,13 +6,16 @@ use dioxus::prelude::*;
 use crate::{
     components::consumables::{ActiveDialog, ConsumableDialog, Operation},
     functions::consumables::search_consumables,
-    models::{Consumable, Maybe, User},
+    models::{Consumable, ConsumableId, Maybe, User},
 };
 
 #[component]
-fn EntryRow(consumable: Consumable, dialog: Signal<ActiveDialog>) -> Element {
-    let mut show_buttons = use_signal(|| false);
-
+fn EntryRow(
+    consumable: Consumable,
+    dialog: Signal<ActiveDialog>,
+    selected: Signal<Option<ConsumableId>>,
+) -> Element {
+    let id = consumable.id;
     let consumable_clone_1 = consumable.clone();
     let consumable_clone_2 = consumable.clone();
     let consumable_clone_3 = consumable.clone();
@@ -21,7 +24,7 @@ fn EntryRow(consumable: Consumable, dialog: Signal<ActiveDialog>) -> Element {
     rsx! {
         tr {
             class: "hover:bg-gray-500 border-blue-300 m-2 p-2 border-2 h-96 w-48 sm:w-auto sm:border-none sm:h-auto inline-block sm:table-row",
-            onclick: move |_| show_buttons.set(!show_buttons()),
+            onclick: move |_| { selected.set(Some(id)) },
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2", {consumable.name} }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 if let Maybe::Some(brand) = &consumable.brand {
@@ -48,7 +51,7 @@ fn EntryRow(consumable: Consumable, dialog: Signal<ActiveDialog>) -> Element {
             }
         }
 
-        if show_buttons() {
+        if selected() == Some(id) {
             tr {
                 td { colspan: "6", class: "block sm:table-cell",
                     button {
@@ -87,6 +90,7 @@ fn EntryRow(consumable: Consumable, dialog: Signal<ActiveDialog>) -> Element {
 #[component]
 pub fn ConsumableList() -> Element {
     let user: Signal<Arc<Option<User>>> = use_context();
+    let selected: Signal<Option<ConsumableId>> = use_signal(|| None);
 
     let user: &Option<User> = &user.read();
     let Some(_user) = user.as_ref() else {
@@ -149,6 +153,7 @@ pub fn ConsumableList() -> Element {
                             EntryRow {
                                 key: "{consumable.id.as_inner().to_string()}",
                                 consumable: consumable.clone(),
+                                selected,
                                 dialog,
                             }
                         }

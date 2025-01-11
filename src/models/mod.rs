@@ -20,6 +20,7 @@ pub use poos::UpdatePoo;
 mod entry;
 pub use entry::Entry;
 pub use entry::EntryData;
+pub use entry::EntryId;
 
 mod timeline;
 pub use timeline::Timeline;
