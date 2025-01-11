@@ -113,9 +113,9 @@ impl<'a> NewPoo<'a> {
     }
 }
 
-pub async fn create_poo<'a>(
+pub async fn create_poo(
     conn: &mut DatabaseConnection,
-    new_poo: NewPoo<'a>,
+    new_poo: NewPoo<'_>,
 ) -> Result<Poo, diesel::result::Error> {
     use crate::server::database::schema::poos::table;
 
@@ -157,10 +157,10 @@ impl<'a> UpdatePoo<'a> {
     }
 }
 
-pub async fn update_poo<'a>(
+pub async fn update_poo(
     conn: &mut DatabaseConnection,
     id: i64,
-    updates: UpdatePoo<'a>,
+    updates: UpdatePoo<'_>,
 ) -> Result<Poo, diesel::result::Error> {
     use crate::server::database::schema::poos::id as q_id;
     use crate::server::database::schema::poos::table;
