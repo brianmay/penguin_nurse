@@ -41,6 +41,7 @@ pub use consumables::UpdateConsumable;
 mod consumptions;
 pub use consumptions::Consumption;
 pub use consumptions::ConsumptionId;
+pub use consumptions::ConsumptionWithItems;
 pub use consumptions::NewConsumption;
 pub use consumptions::UpdateConsumption;
 

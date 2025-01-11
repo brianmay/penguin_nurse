@@ -88,17 +88,32 @@ fn EntryRow(
                     rsx! {
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2", consumption_icon {} }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            consumption_duration { duration: consumption.duration }
+                            consumption_duration { duration: consumption.consumption.duration }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            if let Maybe::Some(liquid_mls) = &consumption.liquid_mls {
+                            if let Maybe::Some(liquid_mls) = &consumption.consumption.liquid_mls {
                                 div {
                                     "Liquid: "
                                     {liquid_mls.to_string()}
                                     "ml"
                                 }
                             }
-                            if let Maybe::Some(comments) = &consumption.comments {
+                            if !consumption.items.is_empty() {
+                                p { "Ingredients:" }
+                                ul { class: "list-disc ml-4",
+                                    for item in &consumption.items {
+                                        li {
+                                            if let Maybe::Some(quantity) = &item.nested.quantity {
+                                                {quantity.to_string()}
+                                                {item.consumable.unit.to_string()}
+                                                " "
+                                            }
+                                            {item.consumable.name.clone()}
+                                        }
+                                    }
+                                }
+                            }
+                            if let Maybe::Some(comments) = &consumption.consumption.comments {
                                 div { {comments.to_string()} }
                             }
                         }
@@ -174,9 +189,10 @@ fn EntryRow(
                         }
                     }
                     EntryData::Consumption(consumption) => {
-                        let consumption_clone_1 = consumption.clone();
-                        let consumption_clone_2 = consumption.clone();
-                        let consumption_clone_3 = consumption.clone();
+                        let consumption_clone_1 = consumption.consumption.clone();
+                        let consumption_clone_2 = consumption.consumption.clone();
+                        let consumption_clone_3 = consumption.consumption.clone();
+                        let consumption = consumption.consumption;
                         rsx! {
                             button {
                                 class: "btn btn-primary m-1",

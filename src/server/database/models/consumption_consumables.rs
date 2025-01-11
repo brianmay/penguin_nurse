@@ -6,11 +6,14 @@ use crate::models;
 use crate::server::database::{connection::DatabaseConnection, schema};
 
 use super::consumables::Consumable;
+use super::consumptions::Consumption;
 
-#[allow(dead_code)]
-#[derive(Queryable, Selectable, Debug, Clone)]
+#[derive(Queryable, Selectable, Debug, Clone, Identifiable, Associations)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::consumption_consumables)]
+// #[diesel(belongs_to(Consumable, foreign_key = consumable_id))]
+#[diesel(belongs_to(Consumption, foreign_key = parent_id))]
+#[diesel(primary_key(parent_id, consumable_id))]
 pub struct ConsumptionConsumable {
     pub parent_id: i64,
     pub consumable_id: i64,

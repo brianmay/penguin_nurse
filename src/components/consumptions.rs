@@ -386,7 +386,7 @@ pub fn ConsumptionDialog(
         }
         ActiveDialog::Consumption(consumption) => {
             rsx! {
-                ConsumableConsumption { consumption, on_close }
+                ConsumableConsumption { consumption, on_close, on_change }
             }
         }
     }
@@ -461,8 +461,13 @@ enum State {
 }
 
 #[component]
-pub fn ConsumableConsumption(consumption: Consumption, on_close: Callback<()>) -> Element {
+pub fn ConsumableConsumption(
+    consumption: Consumption,
+    on_close: Callback<()>,
+    on_change: Callback<Consumption>,
+) -> Element {
     let mut selected_consumable = use_signal(|| None);
+    let mut has_changed = use_signal(|| false);
 
     let mut consumption_consumables =
         use_resource(move || async move { get_child_consumables(consumption.id).await });
@@ -488,6 +493,7 @@ pub fn ConsumableConsumption(consumption: Consumption, on_close: Callback<()>) -
             }
             let result = result.map(|_nested| ());
             state.set(State::Finished(result));
+            has_changed.set(true);
         });
     });
 
@@ -497,6 +503,7 @@ pub fn ConsumableConsumption(consumption: Consumption, on_close: Callback<()>) -
             let result = delete_consumption_consumable(child.id).await;
             state.set(State::Finished(result));
             consumption_consumables.restart();
+            has_changed.set(true);
         });
     });
 
@@ -642,7 +649,16 @@ pub fn ConsumableConsumption(consumption: Consumption, on_close: Callback<()>) -
             }
 
             div { class: "p-4",
-                CloseButton { on_close, title: "Close" }
+                CloseButton {
+                    on_close: move || {
+                        if has_changed() {
+                            on_change(consumption.clone());
+                        } else {
+                            on_close(());
+                        }
+                    },
+                    title: "Close",
+                }
             }
         }
     }

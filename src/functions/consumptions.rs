@@ -1,4 +1,4 @@
-use crate::models::{self, ConsumableId, ConsumptionId, UserId};
+use crate::models::{self, ConsumableId, ConsumptionId, ConsumptionWithItems, UserId};
 use dioxus::prelude::*;
 
 #[cfg(feature = "server")]
@@ -9,7 +9,24 @@ pub async fn get_consumptions_for_time_range(
     user_id: UserId,
     start: chrono::DateTime<chrono::Utc>,
     end: chrono::DateTime<chrono::Utc>,
-) -> Result<Vec<models::Consumption>, ServerFnError> {
+) -> Result<Vec<models::ConsumptionWithItems>, ServerFnError> {
+    pub fn items_to_front_end(
+        items: Vec<(
+            crate::server::database::models::consumption_consumables::ConsumptionConsumable,
+            crate::server::database::models::consumables::Consumable,
+        )>,
+    ) -> Vec<models::ConsumptionItem> {
+        items
+            .into_iter()
+            .map(|(consumption_consumable, consumable)| {
+                models::ConsumptionItem::new(
+                    models::ConsumptionConsumable::from(consumption_consumable),
+                    models::Consumable::from(consumable),
+                )
+            })
+            .collect()
+    }
+
     let logged_in_user_id = get_user_id().await?;
     if user_id != logged_in_user_id {
         return Err(ServerFnError::ServerError(
@@ -25,7 +42,13 @@ pub async fn get_consumptions_for_time_range(
         end,
     )
     .await
-    .map(|x| x.into_iter().map(|y| y.into()).collect())
+    .map(|x| {
+        x.into_iter()
+            .map(|(consumption, items)| {
+                ConsumptionWithItems::new(consumption.into(), items_to_front_end(items))
+            })
+            .collect()
+    })
     .map_err(ServerFnError::from)
 }
 

@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
-use super::{common::MaybeString, MaybeF64, UserId};
+use super::{common::MaybeString, ConsumptionItem, MaybeF64, UserId};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ConsumptionId(i64);
@@ -30,7 +30,6 @@ impl std::fmt::Display for ConsumptionId {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Consumption {
     pub id: ConsumptionId,
@@ -43,7 +42,18 @@ pub struct Consumption {
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
-#[allow(dead_code)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct ConsumptionWithItems {
+    pub consumption: Consumption,
+    pub items: Vec<ConsumptionItem>,
+}
+
+impl ConsumptionWithItems {
+    pub fn new(consumption: Consumption, items: Vec<ConsumptionItem>) -> Self {
+        Self { consumption, items }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewConsumption {
     pub user_id: UserId,
@@ -53,7 +63,6 @@ pub struct NewConsumption {
     pub comments: MaybeString,
 }
 
-#[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct UpdateConsumption {
     pub user_id: Option<UserId>,

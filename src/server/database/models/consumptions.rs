@@ -1,15 +1,17 @@
 use diesel::prelude::*;
-use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
+use diesel::{BelongingToDsl, ExpressionMethods, QueryDsl, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
 
 use chrono::Utc;
 use chrono::{DateTime, TimeDelta};
 
 use crate::models;
+use crate::server::database::models::consumables::Consumable;
+use crate::server::database::models::consumption_consumables::ConsumptionConsumable;
 use crate::server::database::{connection::DatabaseConnection, schema};
 
 #[allow(dead_code)]
-#[derive(Queryable, Selectable, Debug, Clone)]
+#[derive(Queryable, Selectable, Debug, Clone, Identifiable)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::consumptions)]
 pub struct Consumption {
@@ -38,22 +40,76 @@ impl From<Consumption> for crate::models::Consumption {
     }
 }
 
+// #[derive(Identifiable, Queryable, PartialEq, Debug)]
+// #[diesel(table_name = schema::consumptions)]
+// pub struct User {
+//     id: i64,
+//     name: String,
+// }
+
+// #[derive(Queryable, Selectable, Debug, Clone, Identifiable, Associations)]
+// #[diesel(check_for_backend(diesel::pg::Pg))]
+// #[diesel(belongs_to(Consumption, foreign_key = parent_id))]
+// #[diesel(table_name = schema::consumption_consumables)]
+// #[diesel(primary_key(parent_id, consumable_id))]
+// pub struct Post {
+//     pub parent_id: i64,
+//     pub consumable_id: i64,
+//     pub quantity: Option<f64>,
+//     pub liquid_mls: Option<f64>,
+//     pub comments: Option<String>,
+//     pub created_at: chrono::DateTime<chrono::Utc>,
+//     pub updated_at: chrono::DateTime<chrono::Utc>,
+// }
+
+// pub async fn meow(conn: &mut DatabaseConnection) {
+//     let user = Consumption {
+//         id: 1,
+//         user_id: 10,
+//         time: Utc::now(),
+//         duration: TimeDelta::seconds(1),
+//         liquid_mls: Some(1.0),
+//         comments: Some("meow".to_string()),
+//         created_at: Utc::now(),
+//         updated_at: Utc::now(),
+//     };
+//     // let users_post: Post = Post::belonging_to(&user).first(conn).await.unwrap();
+//     let nested = ConsumptionConsumable::belonging_to(&vec![user]);
+// }
+
 pub async fn get_consumptions_for_time_range(
     conn: &mut DatabaseConnection,
     user_id: i64,
     start: chrono::DateTime<chrono::Utc>,
     end: chrono::DateTime<chrono::Utc>,
-) -> Result<Vec<Consumption>, diesel::result::Error> {
-    use crate::server::database::schema::consumptions::table;
-    use crate::server::database::schema::consumptions::time as q_time;
-    use crate::server::database::schema::consumptions::user_id as q_user_id;
+) -> Result<Vec<(Consumption, Vec<(ConsumptionConsumable, Consumable)>)>, diesel::result::Error> {
+    let consumptions: Vec<Consumption> = {
+        use crate::server::database::schema::consumptions::table;
+        use crate::server::database::schema::consumptions::time as q_time;
+        use crate::server::database::schema::consumptions::user_id as q_user_id;
 
-    table
-        .filter(q_user_id.eq(user_id))
-        .filter(q_time.ge(start))
-        .filter(q_time.lt(end))
-        .load(conn)
-        .await
+        table
+            .filter(q_user_id.eq(user_id))
+            .filter(q_time.ge(start))
+            .filter(q_time.lt(end))
+            .load(conn)
+            .await?
+    };
+
+    let nested: Vec<(ConsumptionConsumable, Consumable)> =
+        ConsumptionConsumable::belonging_to(&consumptions)
+            .inner_join(schema::consumables::table)
+            .load(conn)
+            .await?;
+
+    let result: Vec<_> = nested
+        .grouped_by(&consumptions)
+        .into_iter()
+        .zip(consumptions)
+        .map(|(a, b)| (b, a))
+        .collect();
+
+    Ok(result)
 }
 
 pub async fn get_consumption_by_id(

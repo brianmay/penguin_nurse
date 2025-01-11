@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 
-use super::{Consumption, ConsumptionId, Poo, PooId, Wee, WeeId};
+use super::{ConsumptionId, ConsumptionWithItems, Poo, PooId, Wee, WeeId};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum EntryId {
@@ -29,7 +29,7 @@ pub enum Event {
 pub enum EntryData {
     Poo(Poo),
     Wee(Wee),
-    Consumption(Consumption),
+    Consumption(ConsumptionWithItems),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -44,7 +44,7 @@ impl Entry {
         match &self.data {
             EntryData::Poo(poo) => EntryId::Poo(poo.id),
             EntryData::Wee(wee) => EntryId::Wee(wee.id),
-            EntryData::Consumption(consumption) => EntryId::Consumption(consumption.id),
+            EntryData::Consumption(consumption) => EntryId::Consumption(consumption.consumption.id),
         }
     }
 }
