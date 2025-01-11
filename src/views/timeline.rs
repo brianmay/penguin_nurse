@@ -105,7 +105,7 @@ fn EntryRow(
                                         li {
                                             if let Maybe::Some(quantity) = &item.nested.quantity {
                                                 {quantity.to_string()}
-                                                {item.consumable.unit.to_string()}
+                                                {item.consumable.unit.postfix()}
                                                 " "
                                             }
                                             {item.consumable.name.clone()}
