@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::{consumables::ConsumableId, ConsumptionId, MaybeF64, MaybeString};
+use super::{consumables::ConsumableId, Consumable, ConsumptionId, MaybeF64, MaybeString};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ConsumptionConsumableId(ConsumptionId, ConsumableId);
@@ -28,7 +28,6 @@ impl ConsumptionConsumableId {
 //     }
 // }
 
-#[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ConsumptionConsumable {
     pub id: ConsumptionConsumableId,
@@ -39,7 +38,18 @@ pub struct ConsumptionConsumable {
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
-#[allow(dead_code)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct ConsumptionItem {
+    pub nested: ConsumptionConsumable,
+    pub consumable: Consumable,
+}
+
+impl ConsumptionItem {
+    pub fn new(nested: ConsumptionConsumable, consumable: Consumable) -> Self {
+        Self { nested, consumable }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewConsumptionConsumable {
     pub id: ConsumptionConsumableId,
@@ -48,7 +58,6 @@ pub struct NewConsumptionConsumable {
     pub comments: MaybeString,
 }
 
-#[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct UpdateConsumptionConsumable {
     pub quantity: Option<MaybeF64>,

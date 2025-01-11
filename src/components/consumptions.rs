@@ -523,30 +523,30 @@ pub fn ConsumableConsumption(consumption: Consumption, on_close: Callback<()>) -
                                     }
                                 }
                                 tbody {
-                                    for (nested , consumable) in consumption_consumables {
+                                    for item in consumption_consumables {
                                         tr {
                                             onclick: move |_| {
-                                                selected_consumable.set(Some((nested.clone(), consumable.clone())));
+                                                selected_consumable.set(Some((item.nested.clone(), item.consumable.clone())));
                                             },
-                                            td { {consumable.name.clone()} }
+                                            td { {item.consumable.name.clone()} }
                                             td {
-                                                if let Maybe::Some(brand) = &consumable.brand {
+                                                if let Maybe::Some(brand) = &item.consumable.brand {
                                                     {brand.clone()}
                                                 }
                                             }
                                             td {
-                                                if let Maybe::Some(comments) = &nested.comments {
+                                                if let Maybe::Some(comments) = &item.nested.comments {
                                                     {comments.to_string()}
                                                 }
                                             }
                                             td {
-                                                if let Maybe::Some(quantity) = nested.quantity {
+                                                if let Maybe::Some(quantity) = item.nested.quantity {
                                                     div {
                                                         {quantity.to_string()}
-                                                        {consumable.unit.postfix()}
+                                                        {item.consumable.unit.postfix()}
                                                     }
                                                 }
-                                                if let Maybe::Some(liquid_mls) = nested.liquid_mls {
+                                                if let Maybe::Some(liquid_mls) = item.nested.liquid_mls {
                                                     div {
                                                         "Liquid: "
                                                         {liquid_mls.to_string()}

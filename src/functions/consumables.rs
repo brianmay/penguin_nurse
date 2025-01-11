@@ -16,14 +16,18 @@ pub async fn search_consumables(query: String) -> Result<Vec<models::Consumable>
 #[server]
 pub async fn get_child_consumables(
     parent_id: ConsumableId,
-) -> Result<Vec<(models::NestedConsumable, models::Consumable)>, ServerFnError> {
+) -> Result<Vec<models::ConsumableItem>, ServerFnError> {
     let mut conn = get_database_connection().await?;
     crate::server::database::models::nested_consumables::get_child_consumables(
         &mut conn,
         parent_id.as_inner(),
     )
     .await
-    .map(|x| x.into_iter().map(|(a, b)| (a.into(), b.into())).collect())
+    .map(|x| {
+        x.into_iter()
+            .map(|(a, b)| models::ConsumableItem::new(a.into(), b.into()))
+            .collect()
+    })
     .map_err(ServerFnError::from)
 }
 

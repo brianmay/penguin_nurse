@@ -32,14 +32,18 @@ pub async fn get_consumptions_for_time_range(
 #[server]
 pub async fn get_child_consumables(
     parent_id: ConsumptionId,
-) -> Result<Vec<(models::ConsumptionConsumable, models::Consumable)>, ServerFnError> {
+) -> Result<Vec<models::ConsumptionItem>, ServerFnError> {
     let mut conn = get_database_connection().await?;
     crate::server::database::models::consumption_consumables::get_child_consumables(
         &mut conn,
         parent_id.as_inner(),
     )
     .await
-    .map(|x| x.into_iter().map(|(a, b)| (a.into(), b.into())).collect())
+    .map(|x| {
+        x.into_iter()
+            .map(|(a, b)| models::ConsumptionItem::new(a.into(), b.into()))
+            .collect()
+    })
     .map_err(ServerFnError::from)
 }
 

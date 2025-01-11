@@ -45,6 +45,7 @@ pub use consumptions::NewConsumption;
 pub use consumptions::UpdateConsumption;
 
 mod nested_consumables;
+pub use nested_consumables::ConsumableItem;
 pub use nested_consumables::NestedConsumable;
 pub use nested_consumables::NestedConsumableId;
 pub use nested_consumables::NewNestedConsumable;
@@ -53,5 +54,6 @@ pub use nested_consumables::UpdateNestedConsumable;
 mod consumption_consumables;
 pub use consumption_consumables::ConsumptionConsumable;
 pub use consumption_consumables::ConsumptionConsumableId;
+pub use consumption_consumables::ConsumptionItem;
 pub use consumption_consumables::NewConsumptionConsumable;
 pub use consumption_consumables::UpdateConsumptionConsumable;

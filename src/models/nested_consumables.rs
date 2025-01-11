@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::{consumables::ConsumableId, MaybeF64, MaybeString};
+use super::{Consumable, ConsumableId, MaybeF64, MaybeString};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct NestedConsumableId(ConsumableId, ConsumableId);
@@ -37,6 +37,19 @@ pub struct NestedConsumable {
     pub comments: MaybeString,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[allow(dead_code)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct ConsumableItem {
+    pub nested: NestedConsumable,
+    pub consumable: Consumable,
+}
+
+impl ConsumableItem {
+    pub fn new(nested: NestedConsumable, consumable: Consumable) -> Self {
+        Self { nested, consumable }
+    }
 }
 
 #[allow(dead_code)]
