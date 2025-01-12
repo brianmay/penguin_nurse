@@ -14,6 +14,14 @@ impl ConsumptionConsumableId {
     }
 }
 
+impl ConsumptionConsumableId {
+    pub fn parent_id(&self) -> ConsumptionId {
+        self.0
+    }
+    pub fn child_id(&self) -> ConsumableId {
+        self.1
+    }
+}
 // impl FromStr for ConsumptionConsumableId {
 //     type Err = std::num::ParseIntError;
 

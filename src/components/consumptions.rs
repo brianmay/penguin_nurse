@@ -15,8 +15,8 @@ use crate::{
         update_consumption_consumable,
     },
     models::{
-        Consumable, Consumption, ConsumptionConsumable, ConsumptionConsumableId, Maybe, MaybeF64,
-        MaybeString, NewConsumption, NewConsumptionConsumable, UpdateConsumption,
+        Consumable, Consumption, ConsumptionConsumable, ConsumptionConsumableId, ConsumptionItem,
+        Maybe, MaybeF64, MaybeString, NewConsumption, NewConsumptionConsumable, UpdateConsumption,
         UpdateConsumptionConsumable, UserId,
     },
 };
@@ -478,6 +478,13 @@ pub fn ConsumableConsumption(
     let mut add_value = use_signal(|| None);
     let add_consumable = use_callback(move |child: Consumable| {
         let consumable = consumable_clone.clone();
+        if let Some(Ok(list)) = consumption_consumables.read().as_ref() {
+            if let Some(existing) = list.iter().find(|cc| cc.consumable.id == child.id) {
+                selected_consumable.set(Some(existing.clone()));
+                return;
+            }
+        }
+
         spawn(async move {
             state.set(State::Saving);
             let updates = NewConsumptionConsumable {
@@ -488,7 +495,7 @@ pub fn ConsumableConsumption(
             };
             let result = create_consumption_consumable(updates).await;
             if let Ok(nested) = result.clone() {
-                selected_consumable.set(Some((nested, child.clone())));
+                selected_consumable.set(Some(ConsumptionItem::new(nested, child.clone())));
                 consumption_consumables.restart();
             }
             let result = result.map(|_nested| ());
@@ -533,7 +540,7 @@ pub fn ConsumableConsumption(
                                     for item in consumption_consumables {
                                         tr {
                                             onclick: move |_| {
-                                                selected_consumable.set(Some((item.nested.clone(), item.consumable.clone())));
+                                                selected_consumable.set(Some(item.clone()));
                                             },
                                             td { {item.consumable.name.clone()} }
                                             td {
@@ -606,15 +613,15 @@ pub fn ConsumableConsumption(
                     rsx! {}
                 }
             }
-            if let Some((sel_consumption, sel_consumable)) = selected_consumable() {
+            if let Some(sel) = selected_consumable() {
                 div { class: "p-4",
                     p {
                         "Selected: "
-                        {sel_consumable.name.clone()}
+                        {sel.consumable.name.clone()}
                     }
                     ConsumableConsumptionForm {
-                        consumption: sel_consumption.clone(),
-                        consumable: sel_consumable.clone(),
+                        consumption: sel.nested.clone(),
+                        consumable: sel.consumable.clone(),
                         on_cancel: move |_| {
                             selected_consumable.set(None);
                         },
@@ -628,7 +635,7 @@ pub fn ConsumableConsumption(
                         title: "Delete",
                         on_delete: move |_| {
                             selected_consumable.set(None);
-                            remove_consumable(sel_consumption.clone());
+                            remove_consumable(sel.nested.clone());
                             has_changed.set(true);
                         },
                     }

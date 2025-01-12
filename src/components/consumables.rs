@@ -14,8 +14,8 @@ use crate::{
         get_child_consumables, update_consumable, update_nested_consumable,
     },
     models::{
-        Consumable, ConsumableUnit, Maybe, MaybeDateTime, MaybeF64, MaybeString, NestedConsumable,
-        NestedConsumableId, NewConsumable, NewNestedConsumable, UpdateConsumable,
+        Consumable, ConsumableItem, ConsumableUnit, Maybe, MaybeDateTime, MaybeF64, MaybeString,
+        NestedConsumable, NestedConsumableId, NewConsumable, NewNestedConsumable, UpdateConsumable,
         UpdateNestedConsumable,
     },
 };
@@ -543,6 +543,16 @@ pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Eleme
     let mut add_value = use_signal(|| None);
     let add_consumable = use_callback(move |child: Consumable| {
         let consumable = consumable_clone.clone();
+        if let Some(Ok(nested_consumables)) = nested_consumables() {
+            if let Some(existing) = nested_consumables
+                .iter()
+                .find(|item| item.consumable.id == child.id)
+            {
+                selected_consumable.set(Some(existing.clone()));
+                return;
+            }
+        }
+
         spawn(async move {
             state.set(State::Saving);
             let updates = NewNestedConsumable {
@@ -553,7 +563,7 @@ pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Eleme
             };
             let result = create_nested_consumable(updates).await;
             if let Ok(nested) = result.clone() {
-                selected_consumable.set(Some((nested, child.clone())));
+                selected_consumable.set(Some(ConsumableItem::new(nested, child.clone())));
                 nested_consumables.restart();
             }
             let result = result.map(|_nested| ());
@@ -595,7 +605,7 @@ pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Eleme
                                 for item in nested_consumables {
                                     tr {
                                         onclick: move |_| {
-                                            selected_consumable.set(Some((item.nested.clone(), item.consumable.clone())));
+                                            selected_consumable.set(Some(item.clone()));
                                         },
                                         td { {item.consumable.name.clone()} }
                                         td {
@@ -615,7 +625,7 @@ pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Eleme
                                                     {consumable.unit.postfix()}
                                                 }
                                             }
-
+                    
                                             if let Maybe::Some(liquid_mls) = item.nested.liquid_mls {
                                                 div {
                                                     "Liquid: "
@@ -669,15 +679,15 @@ pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Eleme
                 rsx! {}
             }
         }
-        if let Some((sel_nested, sel_consumable)) = selected_consumable() {
+        if let Some(sel) = selected_consumable() {
             div { class: "p-4",
                 p {
                     "Selected: "
-                    {sel_consumable.name.clone()}
+                    {sel.consumable.name.clone()}
                 }
                 ConsumableNestedForm {
-                    nested: sel_nested.clone(),
-                    consumable: sel_consumable.clone(),
+                    nested: sel.nested.clone(),
+                    consumable: sel.consumable.clone(),
                     on_cancel: move |_| {
                         selected_consumable.set(None);
                     },
@@ -690,7 +700,7 @@ pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Eleme
                     title: "Delete",
                     on_delete: move |_| {
                         selected_consumable.set(None);
-                        remove_consumable(sel_nested.clone());
+                        remove_consumable(sel.nested.clone());
                     },
                 }
             }
