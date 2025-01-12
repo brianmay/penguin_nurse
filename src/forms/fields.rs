@@ -11,7 +11,7 @@ use crate::{
     components::consumables::{self, ChangeConsumable},
     forms::{validate_colour_hue, validate_colour_saturation, validate_colour_value},
     functions::consumables::search_consumables,
-    models::{Consumable, MaybeDateTime},
+    models::{Consumable, Maybe, MaybeDateTime},
 };
 
 use super::errors::ValidationError;
@@ -788,7 +788,8 @@ pub fn InputConsumable(
                                                 on_change(Some(consumable.clone()));
                                                 query.set("".to_string());
                                             },
-                                            {consumable.name.clone()}
+                                            {consumable.name.clone() }
+                                            if let Maybe::Some(dt) = consumable.created { { dt.with_timezone(&Local).format(" %Y-%m-%d").to_string() } }
                                         }
                                     }
                                 }
