@@ -40,43 +40,6 @@ impl From<Consumption> for crate::models::Consumption {
     }
 }
 
-// #[derive(Identifiable, Queryable, PartialEq, Debug)]
-// #[diesel(table_name = schema::consumptions)]
-// pub struct User {
-//     id: i64,
-//     name: String,
-// }
-
-// #[derive(Queryable, Selectable, Debug, Clone, Identifiable, Associations)]
-// #[diesel(check_for_backend(diesel::pg::Pg))]
-// #[diesel(belongs_to(Consumption, foreign_key = parent_id))]
-// #[diesel(table_name = schema::consumption_consumables)]
-// #[diesel(primary_key(parent_id, consumable_id))]
-// pub struct Post {
-//     pub parent_id: i64,
-//     pub consumable_id: i64,
-//     pub quantity: Option<f64>,
-//     pub liquid_mls: Option<f64>,
-//     pub comments: Option<String>,
-//     pub created_at: chrono::DateTime<chrono::Utc>,
-//     pub updated_at: chrono::DateTime<chrono::Utc>,
-// }
-
-// pub async fn meow(conn: &mut DatabaseConnection) {
-//     let user = Consumption {
-//         id: 1,
-//         user_id: 10,
-//         time: Utc::now(),
-//         duration: TimeDelta::seconds(1),
-//         liquid_mls: Some(1.0),
-//         comments: Some("meow".to_string()),
-//         created_at: Utc::now(),
-//         updated_at: Utc::now(),
-//     };
-//     // let users_post: Post = Post::belonging_to(&user).first(conn).await.unwrap();
-//     let nested = ConsumptionConsumable::belonging_to(&vec![user]);
-// }
-
 pub async fn get_consumptions_for_time_range(
     conn: &mut DatabaseConnection,
     user_id: i64,
