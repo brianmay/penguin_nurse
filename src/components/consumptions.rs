@@ -621,6 +621,7 @@ pub fn ConsumableConsumption(
                         on_save: move |_consumption| {
                             selected_consumable.set(None);
                             consumption_consumables.restart();
+                            has_changed.set(true);
                         },
                     }
                     DeleteButton {
@@ -628,6 +629,7 @@ pub fn ConsumableConsumption(
                         on_delete: move |_| {
                             selected_consumable.set(None);
                             remove_consumable(sel_consumption.clone());
+                            has_changed.set(true);
                         },
                     }
                 }
