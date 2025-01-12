@@ -91,6 +91,7 @@ fn EntryRow(
 pub fn ConsumableList() -> Element {
     let user: Signal<Arc<Option<User>>> = use_context();
     let selected: Signal<Option<ConsumableId>> = use_signal(|| None);
+    let mut show_destroyed = use_signal(|| false);
 
     let user: &Option<User> = &user.read();
     let Some(_user) = user.as_ref() else {
@@ -103,7 +104,7 @@ pub fn ConsumableList() -> Element {
     let mut dialog = use_signal(|| ActiveDialog::Idle);
 
     let mut list: Resource<Result<Vec<Consumable>, ServerFnError>> =
-        use_resource(move || async move { search_consumables(query()).await });
+        use_resource(move || async move { search_consumables(query(), show_destroyed()).await });
 
     rsx! {
         div { class: "ml-2",
@@ -122,6 +123,22 @@ pub fn ConsumableList() -> Element {
                     value: query(),
                     oninput: move |e| query.set(e.value()),
                     placeholder: "Search...",
+                }
+            }
+
+            div {
+                label {
+                    r#for: "show_destroyed",
+                    class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
+                    "Show destroyed"
+                }
+                input {
+                    r#type: "checkbox",
+                    class: "checkbox",
+                    checked: show_destroyed(),
+                    oninput: move |e| {
+                        show_destroyed.set(e.checked());
+                    },
                 }
             }
         }

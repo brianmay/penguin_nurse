@@ -4,6 +4,7 @@ use diesel_async::RunQueryDsl;
 
 use chrono::DateTime;
 use chrono::Utc;
+use tap::Pipe;
 
 use crate::models;
 use crate::server::database::{connection::DatabaseConnection, schema};
@@ -78,6 +79,7 @@ impl From<Consumable> for crate::models::Consumable {
 pub async fn search_consumables(
     conn: &mut DatabaseConnection,
     search: &str,
+    include_destroyed: bool,
 ) -> Result<Vec<Consumable>, diesel::result::Error> {
     use crate::server::database::schema::consumables::dsl as q;
     use crate::server::database::schema::consumables::table;
@@ -88,9 +90,16 @@ pub async fn search_consumables(
                 .ilike(format!("%{}%", search))
                 .or(q::barcode.eq(search))),
         )
-        .filter(q::destroyed.is_null())
         .order((q::created.desc(), q::destroyed.desc(), q::name.asc()))
         .limit(10)
+        .into_boxed()
+        .pipe(|x| {
+            if include_destroyed {
+                x
+            } else {
+                x.filter(q::destroyed.is_null())
+            }
+        })
         .get_results(conn)
         .await
 }

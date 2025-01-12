@@ -727,7 +727,7 @@ pub fn InputConsumable(
             if query.is_empty() {
                 None
             } else {
-                search_consumables(query).await.pipe(Some)
+                search_consumables(query, false).await.pipe(Some)
             }
         });
 

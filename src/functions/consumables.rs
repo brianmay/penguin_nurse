@@ -5,12 +5,19 @@ use dioxus::prelude::*;
 use super::common::{get_database_connection, get_user_id};
 
 #[server]
-pub async fn search_consumables(query: String) -> Result<Vec<models::Consumable>, ServerFnError> {
+pub async fn search_consumables(
+    query: String,
+    include_destroyed: bool,
+) -> Result<Vec<models::Consumable>, ServerFnError> {
     let mut conn = get_database_connection().await?;
-    crate::server::database::models::consumables::search_consumables(&mut conn, &query)
-        .await
-        .map(|x| x.into_iter().map(|y| y.into()).collect())
-        .map_err(ServerFnError::from)
+    crate::server::database::models::consumables::search_consumables(
+        &mut conn,
+        &query,
+        include_destroyed,
+    )
+    .await
+    .map(|x| x.into_iter().map(|y| y.into()).collect())
+    .map_err(ServerFnError::from)
 }
 
 #[server]
