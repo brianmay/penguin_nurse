@@ -500,21 +500,14 @@ pub fn InputBoolean(
 }
 
 #[component]
-pub fn ColourButton(colour: Hsv, name: String, on_click: Callback<Hsv>) -> Element {
-    #[allow(clippy::let_and_return)]
-    let class = if colour.value < 0.5 {
-        let class = "text-white";
-        class
-    } else {
-        let class = "text-black";
-        class
-    };
-
+pub fn ColourButton(colour: Hsv, name: String, on_click: Callback<Hsv>, selected: bool) -> Element {
     let rgb: Srgb = colour.into_color();
 
     rsx! {
         button {
-            class: "p-5 m-1 inline-block border-2 border-white {class}",
+            class: "p-5 m-1 inline-block",
+            class: if selected { "border-4 border-green-400" } else { "border-2 border-white" },
+            class: if colour.value < 0.5 { "text-white" } else { "text-black" },
             style: format!(
                 "background-color: rgb({}, {}, {})",
                 rgb.red * 255.0,
@@ -547,7 +540,8 @@ pub fn InputColour(
     let validate_saturation = use_memo(move || validate_colour_saturation(&value().1));
     let validate_value = use_memo(move || validate_colour_value(&value().2));
 
-    let colour: Option<Srgb> = validate().ok().map(|x| x.into_color());
+    let colour: Option<Hsv> = validate().ok();
+    let rgb_colour: Option<Srgb> = colour.map(|x| x.into_color());
 
     rsx! {
         label {
@@ -668,7 +662,7 @@ pub fn InputColour(
             }
 
 
-            if let Some(colour) = colour {
+            if let Some(colour) = rgb_colour {
                 div {
                     class: "w-20 h-20 m-1 inline-block border-2 border-white",
                     style: format!(
@@ -682,10 +676,10 @@ pub fn InputColour(
         }
 
         div {
-            for (name , colour) in colours {
+            for (button_name , button_colour) in colours {
                 ColourButton {
-                    colour,
-                    name,
+                    colour: button_colour,
+                    name: button_name,
                     on_click: move |c: Hsv| {
                         value
                             .set((
@@ -694,6 +688,7 @@ pub fn InputColour(
                                 c.value.to_string(),
                             ))
                     },
+                    selected: Some(button_colour) == colour,
                 }
             }
         }
@@ -788,8 +783,10 @@ pub fn InputConsumable(
                                                 on_change(Some(consumable.clone()));
                                                 query.set("".to_string());
                                             },
-                                            {consumable.name.clone() }
-                                            if let Maybe::Some(dt) = consumable.created { { dt.with_timezone(&Local).format(" %Y-%m-%d").to_string() } }
+                                            {consumable.name.clone()}
+                                            if let Maybe::Some(dt) = consumable.created {
+                                                {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
+                                            }
                                         }
                                     }
                                 }
