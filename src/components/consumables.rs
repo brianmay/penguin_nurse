@@ -686,28 +686,30 @@ pub fn ConsumableNested(
             }
         }
         if let Some(sel) = selected_consumable() {
-            div { class: "p-4",
-                p {
-                    "Selected: "
-                    {sel.consumable.name.clone()}
-                }
-                ConsumableNestedForm {
-                    nested: sel.nested.clone(),
-                    consumable: sel.consumable.clone(),
-                    on_cancel: move |_| {
-                        selected_consumable.set(None);
-                    },
-                    on_save: move |_nested| {
-                        selected_consumable.set(None);
-                        nested_consumables.restart();
-                    },
-                }
-                DeleteButton {
-                    title: "Delete",
-                    on_delete: move |_| {
-                        selected_consumable.set(None);
-                        remove_consumable(sel.nested.clone());
-                    },
+            div { class: "card bg-gray-800 shadow-xl",
+                div { class: "card-body",
+                    h2 {
+                        "Selected: "
+                        {sel.consumable.name.clone()}
+                    }
+                    ConsumableNestedForm {
+                        nested: sel.nested.clone(),
+                        consumable: sel.consumable.clone(),
+                        on_cancel: move |_| {
+                            selected_consumable.set(None);
+                        },
+                        on_save: move |_nested| {
+                            selected_consumable.set(None);
+                            nested_consumables.restart();
+                        },
+                    }
+                    DeleteButton {
+                        title: "Delete",
+                        on_delete: move |_| {
+                            selected_consumable.set(None);
+                            remove_consumable(sel.nested.clone());
+                        },
+                    }
                 }
             }
         } else {
