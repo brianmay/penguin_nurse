@@ -5,9 +5,9 @@ use crate::{
     forms::{
         validate_barcode, validate_brand, validate_comments, validate_consumable_millilitres,
         validate_consumable_quantity, validate_consumable_unit, validate_maybe_date_time,
-        validate_name, CancelButton, CloseButton, DeleteButton, Dialog, EditError, FieldValue,
-        InputBoolean, InputConsumable, InputMaybeDateTime, InputNumber, InputSelect, InputString,
-        InputTextArea, Saving, SubmitButton, ValidationError,
+        validate_name, CancelButton, CloseButton, DeleteButton, Dialog, EditButton, EditError,
+        FieldValue, InputBoolean, InputConsumable, InputMaybeDateTime, InputNumber, InputSelect,
+        InputString, InputTextArea, Saving, SubmitButton, ValidationError,
     },
     functions::consumables::{
         create_consumable, create_nested_consumable, delete_consumable, delete_nested_consumable,
@@ -383,9 +383,9 @@ pub fn ConsumableDialog(
                     ChangeConsumable {
                         op,
                         on_cancel: move || dialog.set(ActiveDialog::Idle),
-                        on_save: move |consumable| {
-                            on_change(consumable);
-                            dialog.set(ActiveDialog::Idle);
+                        on_save: move |consumable: Consumable| {
+                            on_change(consumable.clone());
+                            dialog.set(ActiveDialog::Nested(consumable));
                         },
                     }
                 }
@@ -421,6 +421,7 @@ pub fn ConsumableDialog(
                     ConsumableNested {
                         consumable,
                         on_close: move || dialog.set(ActiveDialog::Idle),
+                        on_edit: move |consumable| dialog.set(ActiveDialog::Change(Operation::Update { consumable })),
                     }
                 }
             }
@@ -531,13 +532,18 @@ enum State {
 }
 
 #[component]
-pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Element {
+pub fn ConsumableNested(
+    consumable: Consumable,
+    on_close: Callback<()>,
+    on_edit: Callback<Consumable>,
+) -> Element {
     let mut selected_consumable = use_signal(|| None);
 
     let mut nested_consumables =
         use_resource(move || async move { get_child_consumables(consumable.id).await });
 
     let consumable_clone = consumable.clone();
+    let consumable_clone_2 = consumable.clone();
     let mut state = use_signal(|| State::Idle);
 
     let mut add_value = use_signal(|| None);
@@ -718,12 +724,12 @@ pub fn ConsumableNested(consumable: Consumable, on_close: Callback<()>) -> Eleme
                     },
                     disabled,
                 }
+                EditButton {
+                    title: "Edit Consumable",
+                    on_edit: move |_| on_edit(consumable_clone_2.clone()),
+                }
+                CloseButton { on_close, title: "Close" }
             }
-        }
-
-
-        div { class: "p-4",
-            CloseButton { on_close, title: "Close" }
         }
     }
 }

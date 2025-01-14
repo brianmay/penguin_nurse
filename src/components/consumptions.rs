@@ -6,8 +6,8 @@ use crate::{
     forms::{
         validate_comments, validate_consumable_millilitres, validate_consumable_quantity,
         validate_date_time, validate_duration, CancelButton, CloseButton, DeleteButton, Dialog,
-        EditError, FieldValue, InputConsumable, InputDateTime, InputDuration, InputNumber,
-        InputTextArea, Saving, SubmitButton, ValidationError,
+        EditButton, EditError, FieldValue, InputConsumable, InputDateTime, InputDuration,
+        InputNumber, InputTextArea, Saving, SubmitButton, ValidationError,
     },
     functions::consumptions::{
         create_consumption, create_consumption_consumable, delete_consumption,
@@ -347,12 +347,13 @@ pub enum ActiveDialog {
     Delete(Consumption),
     Details(Consumption),
     Consumption(Consumption),
+    Idle,
 }
 
 #[component]
 pub fn ConsumptionDialog(
     dialog: ActiveDialog,
-    on_close: Callback,
+    select_dialog: Callback<ActiveDialog>,
     on_change: Callback<Consumption>,
     on_delete: Callback<Consumption>,
 ) -> Element {
@@ -361,9 +362,10 @@ pub fn ConsumptionDialog(
             rsx! {
                 ChangeConsumption {
                     op,
-                    on_cancel: on_close,
-                    on_save: move |consumption| {
-                        on_change(consumption);
+                    on_cancel: move || select_dialog(ActiveDialog::Idle),
+                    on_save: move |consumption: Consumption| {
+                        on_change(consumption.clone());
+                        select_dialog(ActiveDialog::Consumption(consumption));
                     },
                 }
             }
@@ -372,22 +374,38 @@ pub fn ConsumptionDialog(
             rsx! {
                 DeleteConsumption {
                     consumption,
-                    on_cancel: on_close,
+                    on_cancel: move || select_dialog(ActiveDialog::Idle),
                     on_delete: move |consumption| {
                         on_delete(consumption);
+                        select_dialog(ActiveDialog::Idle);
                     },
                 }
             }
         }
         ActiveDialog::Details(consumption) => {
             rsx! {
-                ConsumptionDetails { consumption, on_close }
+                ConsumptionDetails {
+                    consumption,
+                    on_close: move || select_dialog(ActiveDialog::Idle),
+                }
             }
         }
         ActiveDialog::Consumption(consumption) => {
             rsx! {
-                ConsumableConsumption { consumption, on_close, on_change }
+                ConsumableConsumption {
+                    consumption,
+                    on_close: move || select_dialog(ActiveDialog::Idle),
+                    on_edit: move |consumption| {
+                        select_dialog(ActiveDialog::Change(Operation::Update { consumption }));
+                    },
+                    on_change: move |consumption: Consumption| {
+                        on_change(consumption.clone());
+                    },
+                }
             }
+        }
+        ActiveDialog::Idle => {
+            rsx! {}
         }
     }
 }
@@ -464,6 +482,7 @@ enum State {
 pub fn ConsumableConsumption(
     consumption: Consumption,
     on_close: Callback<()>,
+    on_edit: Callback<Consumption>,
     on_change: Callback<Consumption>,
 ) -> Element {
     let mut selected_consumable = use_signal(|| None);
@@ -472,12 +491,14 @@ pub fn ConsumableConsumption(
     let mut consumption_consumables =
         use_resource(move || async move { get_child_consumables(consumption.id).await });
 
-    let consumable_clone = consumption.clone();
+    let consumption_clone = consumption.clone();
+    let consumption_clone_2 = consumption.clone();
+
     let mut state = use_signal(|| State::Idle);
 
     let mut add_value = use_signal(|| None);
     let add_consumable = use_callback(move |child: Consumable| {
-        let consumable = consumable_clone.clone();
+        let consumable = consumption_clone.clone();
         if let Some(Ok(list)) = consumption_consumables.read().as_ref() {
             if let Some(existing) = list.iter().find(|cc| cc.consumable.id == child.id) {
                 selected_consumable.set(Some(existing.clone()));
@@ -614,30 +635,32 @@ pub fn ConsumableConsumption(
                 }
             }
             if let Some(sel) = selected_consumable() {
-                div { class: "p-4",
-                    p {
-                        "Selected: "
-                        {sel.consumable.name.clone()}
-                    }
-                    ConsumableConsumptionForm {
-                        consumption: sel.nested.clone(),
-                        consumable: sel.consumable.clone(),
-                        on_cancel: move |_| {
-                            selected_consumable.set(None);
-                        },
-                        on_save: move |_consumption| {
-                            selected_consumable.set(None);
-                            consumption_consumables.restart();
-                            has_changed.set(true);
-                        },
-                    }
-                    DeleteButton {
-                        title: "Delete",
-                        on_delete: move |_| {
-                            selected_consumable.set(None);
-                            remove_consumable(sel.nested.clone());
-                            has_changed.set(true);
-                        },
+                div { class: "card bg-gray-800 shadow-xl",
+                    div { class: "card-body",
+                        h2 { class: "card-title",
+                            "Selected: "
+                            {sel.consumable.name.clone()}
+                        }
+                        ConsumableConsumptionForm {
+                            consumption: sel.nested.clone(),
+                            consumable: sel.consumable.clone(),
+                            on_cancel: move |_| {
+                                selected_consumable.set(None);
+                            },
+                            on_save: move |_consumption| {
+                                selected_consumable.set(None);
+                                consumption_consumables.restart();
+                                has_changed.set(true);
+                            },
+                        }
+                        DeleteButton {
+                            title: "Delete",
+                            on_delete: move |_| {
+                                selected_consumable.set(None);
+                                remove_consumable(sel.nested.clone());
+                                has_changed.set(true);
+                            },
+                        }
                     }
                 }
             } else {
@@ -654,19 +677,24 @@ pub fn ConsumableConsumption(
                         },
                         disabled,
                     }
-                }
-            }
-
-            div { class: "p-4",
-                CloseButton {
-                    on_close: move || {
-                        if has_changed() {
-                            on_change(consumption.clone());
-                        } else {
+                    EditButton {
+                        title: "Edit",
+                        on_edit: move || {
+                            if has_changed() {
+                                on_change(consumption.clone());
+                            }
+                            on_edit(consumption.clone());
+                        },
+                    }
+                    CloseButton {
+                        on_close: move || {
+                            if has_changed() {
+                                on_change(consumption_clone_2.clone());
+                            }
                             on_close(());
-                        }
-                    },
-                    title: "Close",
+                        },
+                        title: "Close",
+                    }
                 }
             }
         }

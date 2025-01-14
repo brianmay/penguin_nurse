@@ -51,14 +51,12 @@ pub fn TimelineDialog(dialog: Signal<ActiveDialog>, on_change: Callback<()>) -> 
             rsx! {
                 ConsumptionDialog {
                     dialog: consumption_dialog,
-                    on_close: move || dialog.set(ActiveDialog::Idle),
+                    select_dialog: move |new_dialog| dialog.set(ActiveDialog::Consumption(new_dialog)),
                     on_change: move |_wee| {
                         on_change(());
-                        dialog.set(ActiveDialog::Idle);
                     },
                     on_delete: move |_wee| {
                         on_change(());
-                        dialog.set(ActiveDialog::Idle);
                     },
                 }
             }

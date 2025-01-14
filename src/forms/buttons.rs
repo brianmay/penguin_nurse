@@ -13,11 +13,23 @@ pub fn CancelButton(title: String, on_cancel: Callback<()>) -> Element {
 }
 
 #[component]
+pub fn EditButton(title: String, on_edit: Callback<()>) -> Element {
+    rsx! {
+        button {
+            r#type: "button",
+            class: "w-full btn btn-secondary my-2",
+            onclick: move |_e| on_edit(()),
+            {title}
+        }
+    }
+}
+
+#[component]
 pub fn DeleteButton(title: String, on_delete: Callback<()>) -> Element {
     rsx! {
         button {
             r#type: "button",
-            class: "w-full btn btn-error my-2",
+            class: "w-full btn btn-secondary my-2",
             onclick: move |_e| on_delete(()),
             {title}
         }
