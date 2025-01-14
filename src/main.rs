@@ -36,7 +36,8 @@ enum Route {
     UserDetail { user_id: UserId },
     #[route("/consumables")]
     ConsumableList {},
-
+    #[route("/:..segments")]
+    NotFound { segments: Vec<String> },
 }
 
 const MEDICAL_SVG: Asset = asset!("/assets/medical.svg");
@@ -89,5 +90,20 @@ fn App() -> Element {
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
 
         Router::<Route> {}
+    }
+}
+
+#[component]
+pub fn NotFound(segments: Vec<String>) -> Element {
+    let segments = segments.join("/");
+    rsx! {
+        div {
+            main { role: "main", class: "container",
+                h1 { "404 Not Found" }
+                p { "The page you are looking for does not exist." }
+                p { "Segments: {segments}" }
+                p { "Please ask a friendly penguin for help." }
+            }
+        }
     }
 }
