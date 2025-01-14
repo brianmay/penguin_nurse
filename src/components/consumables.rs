@@ -588,6 +588,14 @@ pub fn ConsumableNested(
 
     let disabled = use_memo(move || State::Saving == *state.read());
 
+    let is_selected = |item: &ConsumableItem| {
+        if let Some(selected) = selected_consumable() {
+            selected.consumable.id == item.consumable.id
+        } else {
+            false
+        }
+    };
+
     rsx! {
         h3 { class: "text-lg font-bold",
             "Consumable Ingredients "
@@ -598,52 +606,44 @@ pub fn ConsumableNested(
             Some(Ok(nested_consumables)) => {
                 rsx! {
                     div { class: "p-4",
-                        table { class: "table table-striped",
-                            thead {
-                                tr {
-                                    th { "Name" }
-                                    th { "Brand" }
-                                    th { "Comments" }
-                                    th { "Quantity" }
-                                }
-                            }
-                            tbody {
-                                for item in nested_consumables {
-                                    tr {
-                                        onclick: move |_| {
-                                            selected_consumable.set(Some(item.clone()));
-                                        },
-                                        td { {item.consumable.name.clone()} }
-                                        td {
-                                            if let Maybe::Some(brand) = &item.consumable.brand {
-                                                {brand.clone()}
-                                            }
-                                        }
-                                        td {
-                                            if let Maybe::Some(comments) = &item.nested.comments {
-                                                {comments.to_string()}
-                                            }
-                                        }
-                                        td {
-                                            if let Maybe::Some(quantity) = item.nested.quantity {
-                                                div {
-                                                    {quantity.to_string()}
-                                                    {consumable.unit.postfix()}
-                                                }
-                                            }
                     
-                                            if let Maybe::Some(liquid_mls) = item.nested.liquid_mls {
-                                                div {
-                                                    "Liquid: "
-                                                    {liquid_mls.to_string()}
-                                                    "ml"
-                                                }
-                                            }
+                        ul {
+                            for item in nested_consumables {
+                                li {
+                                    class: "p-4 mb-1 bg-gray-700 border-2 rounded-lg",
+                                    class: if is_selected(&item) { "border-gray-50 text-gray-50" } else { "border-gray-500" },
+                                    onclick: move |_| {
+                                        selected_consumable.set(Some(item.clone()));
+                                    },
+                                    if let Maybe::Some(quantity) = item.nested.quantity {
+                                        span {
+                                            {quantity.to_string()}
+                                            {item.consumable.unit.postfix()}
+                                            " "
                                         }
                                     }
+                                    {item.consumable.name.clone()}
+                                    if let Maybe::Some(brand) = &item.consumable.brand {
+                                        ", "
+                                        {brand.clone()}
+                                    }
+                                    if let Maybe::Some(comments) = &item.nested.comments {
+                                        " ("
+                                        {comments.to_string()}
+                                        ")"
+                                    }
+                                    if let Maybe::Some(liquid_mls) = item.nested.liquid_mls {
+                                        span {
+                                            " Liquid: "
+                                            {liquid_mls.to_string()}
+                                            "ml"
+                                        }
+                                    }
+                                
                                 }
                             }
                         }
+                    
                     }
                 }
             }

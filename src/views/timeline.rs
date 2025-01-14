@@ -103,12 +103,31 @@ fn EntryRow(
                                 ul { class: "list-disc ml-4",
                                     for item in &consumption.items {
                                         li {
-                                            if let Maybe::Some(quantity) = &item.nested.quantity {
-                                                {quantity.to_string()}
-                                                {item.consumable.unit.postfix()}
-                                                " "
+                                            if let Maybe::Some(quantity) = item.nested.quantity {
+                                                span {
+                                                    {quantity.to_string()}
+                                                    {item.consumable.unit.postfix()}
+                                                    " "
+                                                }
                                             }
                                             {item.consumable.name.clone()}
+                                            if let Maybe::Some(brand) = &item.consumable.brand {
+                                                ", "
+                                                {brand.clone()}
+                                            }
+                                            if let Maybe::Some(comments) = &item.nested.comments {
+                                                " ("
+                                                {comments.to_string()}
+                                                ")"
+                                            }
+                                            if let Maybe::Some(liquid_mls) = item.nested.liquid_mls {
+                                                span {
+                                                    " Liquid: "
+                                                    {liquid_mls.to_string()}
+                                                    "ml"
+                                                }
+                                            }
+                                        
                                         }
                                     }
                                 }
