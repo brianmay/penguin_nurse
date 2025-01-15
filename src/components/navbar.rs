@@ -1,6 +1,4 @@
-use std::sync::Arc;
-
-use crate::{models::User, Route, UserLoadError};
+use crate::{use_user, Route};
 use chrono::Local;
 use dioxus::prelude::*;
 
@@ -26,8 +24,9 @@ pub fn MenuItem(route: Route, title: String) -> Element {
 #[component]
 pub fn Navbar() -> Element {
     let mut show_menu = use_signal(|| false);
-    let user: Signal<Arc<Option<User>>> = use_context();
-    let user_load_error: UserLoadError = use_context();
+    let user_result = use_user();
+    let user = user_result.as_ref().ok().and_then(|x| x.as_ref());
+
     let date = Local::now().date_naive();
 
     let menu_class = if show_menu() { "" } else { "hidden" };
@@ -80,7 +79,7 @@ pub fn Navbar() -> Element {
                             route: Route::ConsumableList {},
                             title: "Consumables",
                         }
-                        if let Some(user) = user().as_ref() {
+                        if let Some(user) = user {
                             if user.is_admin {
                                 MenuItem { route: Route::UserList {}, title: "Users" }
                             }
@@ -93,7 +92,7 @@ pub fn Navbar() -> Element {
             }
         }
 
-        if let Err(err) = user_load_error.0() {
+        if let Err(err) = user_result {
             div { class: "alert alert-error", {err.to_string()} }
         }
 

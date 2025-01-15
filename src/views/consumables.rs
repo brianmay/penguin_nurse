@@ -1,4 +1,4 @@
-use std::{ops::Deref, sync::Arc};
+use std::ops::Deref;
 
 use chrono::Local;
 use dioxus::prelude::*;
@@ -6,7 +6,7 @@ use dioxus::prelude::*;
 use crate::{
     components::consumables::{ActiveDialog, ConsumableDialog, Operation},
     functions::consumables::search_consumables,
-    models::{Consumable, ConsumableId, Maybe, User},
+    models::{Consumable, ConsumableId, Maybe},
 };
 
 #[component]
@@ -89,16 +89,8 @@ fn EntryRow(
 
 #[component]
 pub fn ConsumableList() -> Element {
-    let user: Signal<Arc<Option<User>>> = use_context();
     let selected: Signal<Option<ConsumableId>> = use_signal(|| None);
     let mut show_destroyed = use_signal(|| false);
-
-    let user: &Option<User> = &user.read();
-    let Some(_user) = user.as_ref() else {
-        return rsx! {
-            p { class: "alert alert-danger", "You are not logged in." }
-        };
-    };
 
     let mut query = use_signal(|| "".to_string());
     let mut dialog = use_signal(|| ActiveDialog::Idle);

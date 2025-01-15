@@ -1,12 +1,10 @@
-use std::sync::Arc;
-
 use crate::{
     forms::{
         validate_password, validate_username, CancelButton, InputPassword, InputString, MyForm,
         SubmitButton,
     },
     models::User,
-    Route, UserLoadError,
+    reload_user, use_user, Route,
 };
 use dioxus::prelude::*;
 use tap::Pipe;
@@ -45,8 +43,7 @@ pub fn Login() -> Element {
     let validate_password = use_memo(move || validate_password(&password()));
 
     let mut result: Signal<Option<Result<(), ServerFnError>>> = use_signal(|| None);
-    let mut user: Signal<Arc<Option<User>>> = use_context();
-    let user_load_error: UserLoadError = use_context();
+    let user_load_error = use_user();
 
     // disable form while waiting for response
     let disabled = use_memo(move || result().is_some());
@@ -57,8 +54,8 @@ pub fn Login() -> Element {
     let on_save = use_callback(move |()| async move {
         let maybe_new_user = login_with_password(username(), password()).await;
         match maybe_new_user {
-            Ok(new_user) => {
-                user.set(Arc::new(Some(new_user)));
+            Ok(_new_user) => {
+                reload_user();
                 result.set(None);
                 let navigator = navigator();
                 navigator.push(Route::Home {});
@@ -71,10 +68,10 @@ pub fn Login() -> Element {
 
     rsx! {
         LoginWindow {
-            if let Err(err) = user_load_error.0() {
+            if let Err(err) = &user_load_error {
                 div { class: "bg-red-500 text-white p-2 text-center", {err.to_string()} }
             }
-            if let Some(user_obj) = &*user() {
+            if let Ok(Some(user_obj)) = user_load_error {
                 div {
                     h1 { "Welcome back, " }
                     h2 { {&*user_obj.username} }
@@ -107,7 +104,7 @@ pub fn Login() -> Element {
                                     SubmitButton {
                                         disabled: Memo::new(|| false),
                                         on_save: move |_| {
-                                            user.set(Arc::new(None));
+                                            reload_user();
                                             result.set(None);
                                         },
                                         title: "Retry",
@@ -208,8 +205,7 @@ pub fn Login() -> Element {
 #[component]
 pub fn Logout() -> Element {
     let mut result: Signal<Option<Result<(), ServerFnError>>> = use_signal(|| None);
-    let mut user: Signal<Arc<Option<User>>> = use_context();
-    let user_load_error: UserLoadError = use_context();
+    let user_load_error = use_user();
 
     let on_save = use_callback(move |()| async move {
         let results = do_logout().await;
@@ -218,15 +214,15 @@ pub fn Logout() -> Element {
             navigator.push(Route::Home {});
         }
         result.set(Some(results));
-        user.set(Arc::new(None));
+        reload_user();
     });
 
     rsx! {
         LoginWindow {
-            if let Err(err) = user_load_error.0() {
+            if let Err(err) = &user_load_error {
                 div { class: "bg-red-500 text-white p-2 text-center", {err.to_string()} }
             }
-            if let Some(_user_object) = &*user() {
+            if let Ok(Some(_user_object)) = user_load_error {
                 match result() {
                     Some(Ok(())) => {
                         rsx! {

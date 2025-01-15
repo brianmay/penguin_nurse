@@ -1,4 +1,4 @@
-use std::{ops::Deref, sync::Arc};
+use std::ops::Deref;
 
 use chrono::{NaiveDate, Utc};
 use dioxus::prelude::*;
@@ -17,8 +17,8 @@ use crate::{
         consumptions::get_consumptions_for_time_range, poos::get_poos_for_time_range,
         wees::get_wees_for_time_range,
     },
-    models::{Entry, EntryData, EntryId, Maybe, Timeline, User},
-    Route,
+    models::{Entry, EntryData, EntryId, Maybe, Timeline},
+    use_user, Route,
 };
 
 #[component]
@@ -273,11 +273,10 @@ fn EntryRow(
 
 #[component]
 pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
-    let user: Signal<Arc<Option<User>>> = use_context();
     let navigator = navigator();
     let selected: Signal<Option<EntryId>> = use_signal(|| None);
+    let user = use_user().ok().flatten();
 
-    let user: &Option<User> = &user.read();
     let Some(user) = user.as_ref() else {
         return rsx! {
             p { class: "alert alert-danger", "You are not logged in." }

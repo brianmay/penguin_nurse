@@ -54,35 +54,29 @@ async fn main() {
     server::init(App).await;
 }
 
-#[derive(Debug, Clone)]
-struct UserLoadError(Signal<Result<(), ServerFnError>>);
+fn reload_user() {
+    let mut user_resource: Resource<Result<Option<Arc<User>>, ServerFnError>> = use_context();
+    user_resource.restart();
+}
+
+fn use_user() -> Result<Option<Arc<User>>, ServerFnError> {
+    let user_resource: Resource<Result<Option<Arc<User>>, ServerFnError>> = use_context();
+    let user_result: &Option<Result<Option<Arc<User>>, ServerFnError>> = &user_resource.read();
+    let user_result = user_result.as_ref().map_or_else(
+        || Err(ServerFnError::ServerError("Mo user resource".to_string())),
+        |x| x.clone(),
+    );
+    user_result
+}
 
 #[component]
 fn App() -> Element {
-    let mut user: Signal<Arc<Option<User>>> = use_signal(|| Arc::new(None));
-    let mut result: Signal<Result<(), ServerFnError>> = use_signal(|| Ok(()));
-
-    use_context_provider(|| user);
-    use_context_provider(|| UserLoadError(result));
-
-    use_future(move || async move {
+    let user_resource = use_server_future(move || async move {
         let data = get_user().await;
+        data.map(|x| x.map(Arc::new))
+    })?;
 
-        let the_error = match &data {
-            Ok(Some(_user)) => Ok(()),
-            Ok(None) => Ok(()),
-            Err(err) => Err(err.clone()),
-        };
-
-        let the_user = match data {
-            Ok(Some(user)) => Some(user),
-            Ok(None) => None,
-            Err(_err) => None,
-        };
-
-        result.set(the_error);
-        user.set(Arc::new(the_user));
-    });
+    use_context_provider(|| user_resource);
 
     rsx! {
         // Global app resources
