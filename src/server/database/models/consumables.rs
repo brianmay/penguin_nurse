@@ -79,6 +79,7 @@ impl From<Consumable> for crate::models::Consumable {
 pub async fn search_consumables(
     conn: &mut DatabaseConnection,
     search: &str,
+    include_only_created: bool,
     include_destroyed: bool,
 ) -> Result<Vec<Consumable>, diesel::result::Error> {
     use crate::server::database::schema::consumables::dsl as q;
@@ -93,6 +94,13 @@ pub async fn search_consumables(
         .order((q::created.desc(), q::destroyed.desc(), q::name.asc()))
         .limit(10)
         .into_boxed()
+        .pipe(|x| {
+            if include_only_created {
+                x.filter(q::created.is_not_null())
+            } else {
+                x
+            }
+        })
         .pipe(|x| {
             if include_destroyed {
                 x

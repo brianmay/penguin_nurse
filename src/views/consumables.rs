@@ -90,13 +90,16 @@ fn EntryRow(
 #[component]
 pub fn ConsumableList() -> Element {
     let selected: Signal<Option<ConsumableId>> = use_signal(|| None);
+    let mut show_only_created = use_signal(|| false);
     let mut show_destroyed = use_signal(|| false);
 
     let mut query = use_signal(|| "".to_string());
     let mut dialog = use_signal(|| ActiveDialog::Idle);
 
     let mut list: Resource<Result<Vec<Consumable>, ServerFnError>> =
-        use_resource(move || async move { search_consumables(query(), show_destroyed()).await });
+        use_resource(move || async move {
+            search_consumables(query(), show_only_created(), show_destroyed()).await
+        });
 
     rsx! {
         div { class: "ml-2",
@@ -115,6 +118,22 @@ pub fn ConsumableList() -> Element {
                     value: query(),
                     oninput: move |e| query.set(e.value()),
                     placeholder: "Search...",
+                }
+            }
+
+            div {
+                label {
+                    r#for: "show_only_created",
+                    class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
+                    "Show only created"
+                }
+                input {
+                    r#type: "checkbox",
+                    class: "checkbox",
+                    checked: show_only_created(),
+                    oninput: move |e| {
+                        show_only_created.set(e.checked());
+                    },
                 }
             }
 

@@ -7,12 +7,14 @@ use super::common::{get_database_connection, get_user_id};
 #[server]
 pub async fn search_consumables(
     query: String,
+    include_only_created: bool,
     include_destroyed: bool,
 ) -> Result<Vec<models::Consumable>, ServerFnError> {
     let mut conn = get_database_connection().await?;
     crate::server::database::models::consumables::search_consumables(
         &mut conn,
         &query,
+        include_only_created,
         include_destroyed,
     )
     .await
