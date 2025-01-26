@@ -556,7 +556,6 @@ pub fn ConsumableConsumption(
                 Some(Ok(consumption_consumables)) => {
                     rsx! {
                         div { class: "p-4",
-                        
                             ul {
                                 for item in consumption_consumables {
                                     li {
@@ -589,11 +588,9 @@ pub fn ConsumableConsumption(
                                                 "ml"
                                             }
                                         }
-                                    
                                     }
                                 }
                             }
-                        
                         }
                     }
                 }
@@ -729,14 +726,21 @@ async fn do_save_consumption(
 
 #[component]
 fn ConsumableConsumptionForm(
-    consumption: ConsumptionConsumable,
-    consumable: Consumable,
+    consumption: ReadOnlySignal<ConsumptionConsumable>,
+    consumable: ReadOnlySignal<Consumable>,
     on_cancel: Callback<()>,
     on_save: Callback<ConsumptionConsumable>,
 ) -> Element {
-    let quantity = use_signal(|| consumption.quantity.as_string());
-    let liquid_mls = use_signal(|| consumption.liquid_mls.as_string());
-    let comments = use_signal(|| consumption.comments.as_string());
+    let mut quantity = use_signal(|| consumption.read().quantity.as_string());
+    let mut liquid_mls = use_signal(|| consumption.read().liquid_mls.as_string());
+    let mut comments = use_signal(|| consumption.read().comments.as_string());
+
+    use_effect(move || {
+        let nested = consumption.read();
+        quantity.set(nested.quantity.as_string());
+        liquid_mls.set(nested.liquid_mls.as_string());
+        comments.set(nested.comments.as_string());
+    });
 
     let validate = ValidateConsumption {
         quantity: use_memo(move || validate_consumable_quantity(&quantity())),
@@ -754,15 +758,13 @@ fn ConsumableConsumptionForm(
             || disabled()
     });
 
-    let consumption_clone = consumption.clone();
     let validate_clone = validate.clone();
     let on_save = use_callback(move |()| {
-        let consumption = consumption_clone.clone();
         let validate = validate_clone.clone();
         spawn(async move {
             saving.set(Saving::Yes);
 
-            let result = do_save_consumption(consumption, &validate).await;
+            let result = do_save_consumption(consumption(), &validate).await;
             match result {
                 Ok(consumption) => {
                     saving.set(Saving::Finished(Ok(())));
@@ -785,7 +787,7 @@ fn ConsumableConsumptionForm(
             },
             InputNumber {
                 id: "quantity",
-                label: format!("Quantity ({})", consumable.unit.to_string()),
+                label: format!("Quantity ({})", consumable.read().unit.to_string()),
                 value: quantity,
                 validate: validate.quantity,
                 disabled,

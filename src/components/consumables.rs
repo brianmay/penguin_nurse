@@ -606,7 +606,6 @@ pub fn ConsumableNested(
             Some(Ok(nested_consumables)) => {
                 rsx! {
                     div { class: "p-4",
-                    
                         ul {
                             for item in nested_consumables {
                                 li {
@@ -639,11 +638,9 @@ pub fn ConsumableNested(
                                             "ml"
                                         }
                                     }
-                                
                                 }
                             }
                         }
-                    
                     }
                 }
             }
@@ -763,14 +760,21 @@ async fn do_save_nested(
 
 #[component]
 fn ConsumableNestedForm(
-    nested: NestedConsumable,
-    consumable: Consumable,
+    nested: ReadOnlySignal<NestedConsumable>,
+    consumable: ReadOnlySignal<Consumable>,
     on_cancel: Callback<()>,
     on_save: Callback<NestedConsumable>,
 ) -> Element {
-    let quantity = use_signal(|| nested.quantity.as_string());
-    let liquid_mls = use_signal(|| nested.liquid_mls.as_string());
-    let comments = use_signal(|| nested.comments.as_string());
+    let mut quantity = use_signal(|| nested.read().quantity.as_string());
+    let mut liquid_mls = use_signal(|| nested.read().liquid_mls.as_string());
+    let mut comments = use_signal(|| nested.read().comments.as_string());
+
+    use_effect(move || {
+        let nested = nested.read();
+        quantity.set(nested.quantity.as_string());
+        liquid_mls.set(nested.liquid_mls.as_string());
+        comments.set(nested.comments.as_string());
+    });
 
     let validate = ValidateNested {
         quantity: use_memo(move || validate_consumable_quantity(&quantity())),
@@ -788,15 +792,13 @@ fn ConsumableNestedForm(
             || disabled()
     });
 
-    let nested_clone = nested.clone();
     let validate_clone = validate.clone();
     let on_save = use_callback(move |()| {
-        let nested = nested_clone.clone();
         let validate = validate_clone.clone();
         spawn(async move {
             saving.set(Saving::Yes);
 
-            let result = do_save_nested(nested, &validate).await;
+            let result = do_save_nested(nested(), &validate).await;
             match result {
                 Ok(nested) => {
                     saving.set(Saving::Finished(Ok(())));
@@ -819,7 +821,7 @@ fn ConsumableNestedForm(
             },
             InputNumber {
                 id: "quantity",
-                label: format!("Quantity ({})", consumable.unit.to_string()),
+                label: format!("Quantity ({})", consumable.read().unit.to_string()),
                 value: quantity,
                 validate: validate.quantity,
                 disabled,
