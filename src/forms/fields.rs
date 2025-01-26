@@ -784,6 +784,10 @@ pub fn InputConsumable(
                                                 query.set("".to_string());
                                             },
                                             {consumable.name.clone()}
+                                            if let Maybe::Some(brand) = &consumable.brand {
+                                                ", "
+                                                {brand.clone()}
+                                            }
                                             if let Maybe::Some(dt) = consumable.created {
                                                 {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
                                             }
