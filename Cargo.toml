@@ -38,6 +38,7 @@ arc-swap = { version = "1.7.1", optional = true }
 url = { version = "2.5.4", optional = true }
 futures = "0.3.31"
 gloo-timers = { version = "0.3.0", features = ["futures"] }
+classes = "1.0.0"
 
 [features]
 default = []

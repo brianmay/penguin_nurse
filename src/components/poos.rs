@@ -1,4 +1,5 @@
 use chrono::{DateTime, Local, TimeDelta, Utc};
+use classes::classes;
 use dioxus::prelude::*;
 use palette::Hsv;
 
@@ -364,16 +365,18 @@ pub fn poo_duration(duration: chrono::TimeDelta) -> Element {
         format!("{days} days + {hours} hours")
     };
 
+    let classes = if duration.num_seconds() == 0 {
+        classes!["text-error"]
+    } else if duration.num_minutes() < 3 {
+        classes!["text-success"]
+    } else if duration.num_minutes() < 10 {
+        classes!["text-warning"]
+    } else {
+        classes!["text-error"]
+    };
+
     rsx! {
-        if duration.num_seconds() == 0 {
-            span { class: "text-error", {text} }
-        } else if duration.num_minutes() < 3 {
-            span { class: "text-success", {text} }
-        } else if duration.num_minutes() < 10 {
-            span { class: "text-warning", {text} }
-        } else {
-            span { class: "text-error", {text} }
-        }
+        span { class: classes, {text} }
     }
 }
 
@@ -381,45 +384,34 @@ pub fn poo_duration(duration: chrono::TimeDelta) -> Element {
 pub fn poo_bristol(bristol: Bristol) -> Element {
     let bristol_string = bristol.as_str();
 
-    match bristol {
-        Bristol::B0 => rsx! {
-            span { class: "text-error", {bristol_string} }
-        },
-        Bristol::B1 => rsx! {
-            span { class: "text-error", {bristol_string} }
-        },
-        Bristol::B2 => rsx! {
-            span { class: "text-success", {bristol_string} }
-        },
-        Bristol::B3 => rsx! {
-            span { class: "text-success", {bristol_string} }
-        },
-        Bristol::B4 => rsx! {
-            span { class: "text-success", {bristol_string} }
-        },
-        Bristol::B5 => rsx! {
-            span { class: "text-warning", {bristol_string} }
-        },
+    let classes = match bristol {
+        Bristol::B0 => classes!["text-error"],
+        Bristol::B1 => classes!["text-error"],
+        Bristol::B2 => classes!["text-success"],
+        Bristol::B3 => classes!["text-success"],
+        Bristol::B4 => classes!["text-success"],
+        Bristol::B5 => classes!["text-warning"],
+        Bristol::B6 => classes!["text-warning"],
+        Bristol::B7 => classes!["text-error"],
+    };
 
-        Bristol::B6 => rsx! {
-            span { class: "text-warning", {bristol_string} }
-        },
-        Bristol::B7 => rsx! {
-            span { class: "text-error", {bristol_string} }
-        },
+    rsx! {
+        span { class: classes, {bristol_string} }
     }
 }
 
 #[component]
 pub fn poo_quantity(quantity: i32) -> Element {
+    let classes = if quantity == 0 {
+        classes!["text-error"]
+    } else if quantity < 2 {
+        classes!["text-warning"]
+    } else {
+        classes!["text-success"]
+    };
+
     rsx! {
-        if quantity == 0 {
-            span { class: "text-error", {quantity.to_string() + " out of 10"} }
-        } else if quantity < 2 {
-            span { class: "text-warning", {quantity.to_string() + " out of 10"} }
-        } else {
-            span { class: "text-success", {quantity.to_string() + " out of 10"} }
-        }
+        span { class: classes, {quantity.to_string() + " out of 10"} }
     }
 }
 

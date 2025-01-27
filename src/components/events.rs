@@ -1,4 +1,5 @@
 use chrono::{Local, Timelike, Utc};
+use classes::classes;
 use dioxus::prelude::*;
 use palette::IntoColor;
 
@@ -7,39 +8,43 @@ pub fn event_time(time: chrono::DateTime<Utc>) -> Element {
     let time = time.with_timezone(&Local);
     let string = time.format("%H:%M:%S").to_string();
 
-    if time.hour() < 7 {
-        return rsx! {
-            span { class: "text-error", {string} }
-        };
+    let classes = if time.hour() < 7 {
+        classes!["text-error"]
     } else if time.hour() < 21 {
-        return rsx! {
-            span { class: "text-success", {string} }
-        };
+        classes!["text-success"]
     } else {
-        return rsx! {
-            span { class: "text-warning", {string} }
-        };
+        classes!["text-warning"]
+    };
+
+    rsx! {
+        span { class: classes, {string} }
     }
 }
 
 #[component]
 pub fn event_urgency(urgency: i32) -> Element {
+    let text = match urgency {
+        0 => "No urgency",
+        1 => "Low urgency",
+        2 => "Medium urgency",
+        3 => "High urgency",
+        4 => "Very high urgency",
+        5 => "Critical urgency",
+        _ => "Unknown urgency",
+    };
+
+    let classes = match urgency {
+        0 => classes!["text-success"],
+        1 => classes!["text-success"],
+        2 => classes!["text-success"],
+        3 => classes!["text-success"],
+        4 => classes!["text-warning"],
+        5 => classes!["text-error"],
+        _ => classes!["text-error"],
+    };
+
     rsx! {
-        if urgency == 0 {
-            span { class: "text-success", {"No urgency"} }
-        } else if urgency == 1 {
-            span { class: "text-success", {"Low urgency"} }
-        } else if urgency == 2 {
-            span { class: "text-success", {"Medium-Low urgency"} }
-        } else if urgency == 3 {
-            span { class: "text-success", {"Medium urgency"} }
-        } else if urgency == 4 {
-            span { class: "text-warning", {"Medium-High urgency"} }
-        } else if urgency == 5 {
-            span { class: "text-error", {"High urgency"} }
-        } else {
-            span { class: "text-error", {"Unknown urgency"} }
-        }
+        span { class: classes, {text} }
     }
 }
 

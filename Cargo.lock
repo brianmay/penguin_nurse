@@ -598,6 +598,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "classes"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5603d514e43c7439b594a021fa63bf6bfde2b47b6af966023624fd777d4dd8b3"
+
+[[package]]
 name = "cocoa"
 version = "0.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3780,6 +3786,7 @@ dependencies = [
  "axum-login",
  "base64",
  "chrono",
+ "classes",
  "diesel",
  "diesel-async",
  "diesel-derive-enum",

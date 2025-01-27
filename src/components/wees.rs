@@ -1,4 +1,5 @@
 use chrono::{DateTime, Local, TimeDelta, Utc};
+use classes::classes;
 use dioxus::prelude::*;
 use palette::Hsv;
 
@@ -347,31 +348,35 @@ pub fn wee_duration(duration: chrono::TimeDelta) -> Element {
         format!("{days} days + {hours} hours")
     };
 
+    let classes = if duration.num_seconds() == 0 {
+        classes!["text-error"]
+    } else if duration.num_seconds() < 30 {
+        classes!["text-success"]
+    } else if duration.num_minutes() < 3 {
+        classes!["text-warning"]
+    } else {
+        classes!["text-error"]
+    };
+
     rsx! {
-        if duration.num_seconds() == 0 {
-            span { class: "text-error", {text} }
-        } else if duration.num_seconds() < 30 {
-            span { class: "text-success", {text} }
-        } else if duration.num_minutes() < 3 {
-            span { class: "text-warning", {text} }
-        } else {
-            span { class: "text-error", {text} }
-        }
+        span { class: classes, {text} }
     }
 }
 
 #[component]
 pub fn wee_mls(mls: i32) -> Element {
+    let classes = if mls == 0 {
+        classes!["text-error"]
+    } else if mls < 100 {
+        classes!["text-warning"]
+    } else if mls < 500 {
+        classes!["text-success"]
+    } else {
+        classes!["text-error"]
+    };
+
     rsx! {
-        if mls == 0 {
-            span { class: "text-error", {mls.to_string() + " ml"} }
-        } else if mls < 100 {
-            span { class: "text-warning", {mls.to_string() + " ml"} }
-        } else if mls < 500 {
-            span { class: "text-success", {mls.to_string() + " ml"} }
-        } else {
-            span { class: "text-error", {mls.to_string() + " ml"} }
-        }
+        span { class: classes, {mls.to_string() + " ml"} }
     }
 }
 
