@@ -1,12 +1,12 @@
-use chrono::{DateTime, Local, TimeDelta, Utc};
+use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use classes::classes;
 use dioxus::prelude::*;
 use palette::Hsv;
 
 use crate::{
-    components::events::{event_colour, event_time, event_urgency},
+    components::events::{event_colour, event_date_time, event_urgency},
     forms::{
-        validate_colour, validate_comments, validate_date_time, validate_duration,
+        validate_colour, validate_comments, validate_duration, validate_fixed_offset_date_time,
         validate_millilitres, validate_urgency, CancelButton, Dialog, EditError, FieldValue,
         InputColour, InputDateTime, InputDuration, InputNumber, InputTextArea, Saving,
         SubmitButton, ValidationError,
@@ -23,7 +23,7 @@ pub enum Operation {
 
 #[derive(Debug, Clone)]
 struct Validate {
-    time: Memo<Result<DateTime<Utc>, ValidationError>>,
+    time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
     duration: Memo<Result<TimeDelta, ValidationError>>,
     urgency: Memo<Result<i32, ValidationError>>,
     mls: Memo<Result<i32, ValidationError>>,
@@ -70,7 +70,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> 
 #[component]
 pub fn ChangeWee(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).to_rfc3339(),
+        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_string(),
         Operation::Update { wee } => wee.time.as_string(),
     });
     let duration = use_signal(|| match &op {
@@ -99,7 +99,7 @@ pub fn ChangeWee(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
     });
 
     let validate = Validate {
-        time: use_memo(move || validate_date_time(&time())),
+        time: use_memo(move || validate_fixed_offset_date_time(&time())),
         duration: use_memo(move || validate_duration(&duration())),
         urgency: use_memo(move || validate_urgency(&urgency())),
         mls: use_memo(move || validate_millilitres(&mls())),
@@ -435,7 +435,7 @@ pub fn WeeDetail(wee: Wee, on_close: Callback<()>) -> Element {
                         tr {
                             td { "Time" }
                             td {
-                                event_time { time: wee.time }
+                                event_date_time { time: wee.time }
                             }
                         }
                         tr {

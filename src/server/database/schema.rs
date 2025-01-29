@@ -47,6 +47,7 @@ diesel::table! {
         comments -> Nullable<Text>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        utc_offset -> Int4,
     }
 }
 
@@ -86,6 +87,7 @@ diesel::table! {
         comments -> Nullable<Text>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        utc_offset -> Int4,
     }
 }
 
@@ -132,6 +134,7 @@ diesel::table! {
         comments -> Nullable<Text>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        utc_offset -> Int4,
     }
 }
 

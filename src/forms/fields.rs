@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use chrono::{DateTime, Local, Utc};
+use chrono::{DateTime, FixedOffset, Local, Utc};
 use dioxus::{prelude::*, signals::Signal};
 use futures::{select, StreamExt};
 use gloo_timers::future::IntervalStream;
@@ -215,7 +215,7 @@ pub fn InputDateTime(
     id: &'static str,
     label: &'static str,
     value: Signal<String>,
-    validate: Memo<Result<DateTime<Utc>, ValidationError>>,
+    validate: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
     let mut changed = use_signal(|| false);

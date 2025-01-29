@@ -23,14 +23,18 @@ pub struct Consumption {
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub utc_offset: i32,
 }
 
 impl From<Consumption> for crate::models::Consumption {
     fn from(consumption: Consumption) -> Self {
+        let timezone = chrono::FixedOffset::east(consumption.utc_offset);
+        let time = consumption.time.with_timezone(&timezone);
+
         Self {
             id: models::ConsumptionId::new(consumption.id),
             user_id: models::UserId::new(consumption.user_id),
-            time: consumption.time,
+            time,
             duration: consumption.duration,
             liquid_mls: consumption.liquid_mls.into(),
             comments: consumption.comments.into(),
@@ -98,6 +102,7 @@ pub async fn get_consumption_by_id(
 pub struct NewConsumption<'a> {
     pub user_id: i64,
     pub time: DateTime<Utc>,
+    pub utc_offset: i32,
     pub duration: TimeDelta,
     pub liquid_mls: Option<f64>,
     pub comments: Option<&'a str>,
@@ -107,7 +112,8 @@ impl<'a> NewConsumption<'a> {
     pub fn from_front_end(consumption: &'a crate::models::NewConsumption) -> Self {
         Self {
             user_id: consumption.user_id.as_inner(),
-            time: consumption.time,
+            time: consumption.time.with_timezone(&Utc),
+            utc_offset: consumption.time.offset().local_minus_utc(),
             duration: consumption.duration,
             liquid_mls: consumption.liquid_mls.into(),
             comments: consumption.comments.as_deref(),
@@ -131,6 +137,7 @@ pub async fn create_consumption(
 #[diesel(table_name = schema::consumptions)]
 pub struct UpdateConsumption<'a> {
     pub time: Option<DateTime<Utc>>,
+    pub utc_offset: Option<i32>,
     pub duration: Option<TimeDelta>,
     pub liquid_mls: Option<Option<f64>>,
     pub comments: Option<Option<&'a str>>,
@@ -139,7 +146,8 @@ pub struct UpdateConsumption<'a> {
 impl<'a> UpdateConsumption<'a> {
     pub fn from_front_end(consumption: &'a crate::models::UpdateConsumption) -> Self {
         Self {
-            time: consumption.time,
+            time: consumption.time.map(|time| time.with_timezone(&Utc)),
+            utc_offset: consumption.time.map(|time| time.offset().local_minus_utc()),
             duration: consumption.duration,
             liquid_mls: consumption.liquid_mls.map(|x| x.into()),
             comments: consumption.comments.as_ref().map(|x| x.as_deref()),

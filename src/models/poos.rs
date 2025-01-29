@@ -159,7 +159,7 @@ impl Bristol {
 pub struct Poo {
     pub id: PooId,
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::Utc>,
+    pub time: chrono::DateTime<chrono::FixedOffset>,
     pub duration: chrono::Duration,
     pub urgency: i32,
     pub quantity: i32,
@@ -174,7 +174,7 @@ pub struct Poo {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewPoo {
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::Utc>,
+    pub time: chrono::DateTime<chrono::FixedOffset>,
     pub duration: chrono::Duration,
     pub urgency: i32,
     pub quantity: i32,
@@ -187,7 +187,7 @@ pub struct NewPoo {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct UpdatePoo {
     pub user_id: Option<UserId>,
-    pub time: Option<chrono::DateTime<chrono::Utc>>,
+    pub time: Option<chrono::DateTime<chrono::FixedOffset>>,
     pub duration: Option<chrono::Duration>,
     pub urgency: Option<i32>,
     pub quantity: Option<i32>,

@@ -1,4 +1,4 @@
-use chrono::{TimeDelta, Utc};
+use chrono::{FixedOffset, TimeDelta};
 use palette::Hsv;
 
 use crate::models::{Bristol, ConsumableUnit, MaybeDateTime, MaybeF64, MaybeString};
@@ -61,7 +61,13 @@ pub fn validate_comments(str: &str) -> Result<MaybeString, ValidationError> {
     validate_field_value(str)
 }
 
-pub fn validate_date_time(str: &str) -> Result<chrono::DateTime<Utc>, ValidationError> {
+// pub fn validate_utc_date_time(str: &str) -> Result<chrono::DateTime<Utc>, ValidationError> {
+//     validate_field_value(str)
+// }
+
+pub fn validate_fixed_offset_date_time(
+    str: &str,
+) -> Result<chrono::DateTime<FixedOffset>, ValidationError> {
     validate_field_value(str)
 }
 

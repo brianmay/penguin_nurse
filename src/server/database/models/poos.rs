@@ -1,3 +1,4 @@
+use chrono::Utc;
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 
@@ -24,14 +25,18 @@ pub struct Poo {
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub utc_offset: i32,
 }
 
 impl From<Poo> for crate::models::Poo {
     fn from(poo: Poo) -> Self {
+        let timezone = chrono::FixedOffset::east(poo.utc_offset);
+        let time = poo.time.with_timezone(&timezone);
+
         Self {
             id: PooId::new(poo.id),
             user_id: UserId::new(poo.user_id),
-            time: poo.time,
+            time,
             duration: poo.duration,
             urgency: poo.urgency,
             quantity: poo.quantity,
@@ -86,6 +91,7 @@ pub async fn get_poo_by_id(
 pub struct NewPoo<'a> {
     user_id: i64,
     time: chrono::DateTime<chrono::Utc>,
+    utc_offset: i32,
     duration: chrono::Duration,
     urgency: i32,
     quantity: i32,
@@ -100,7 +106,8 @@ impl<'a> NewPoo<'a> {
     pub fn from_front_end(poo: &'a crate::models::NewPoo) -> Self {
         Self {
             user_id: poo.user_id.as_inner(),
-            time: poo.time,
+            time: poo.time.with_timezone(&Utc),
+            utc_offset: poo.time.offset().local_minus_utc(),
             duration: poo.duration,
             urgency: poo.urgency,
             quantity: poo.quantity,
@@ -131,6 +138,7 @@ pub async fn create_poo(
 #[diesel(table_name = schema::poos)]
 pub struct UpdatePoo<'a> {
     pub time: Option<chrono::DateTime<chrono::Utc>>,
+    pub utc_offset: Option<i32>,
     pub duration: Option<chrono::Duration>,
     pub urgency: Option<i32>,
     pub quantity: Option<i32>,
@@ -144,7 +152,8 @@ pub struct UpdatePoo<'a> {
 impl<'a> UpdatePoo<'a> {
     pub fn from_front_end(poo: &'a crate::models::UpdatePoo) -> Self {
         Self {
-            time: poo.time,
+            time: poo.time.map(|time| time.with_timezone(&Utc)),
+            utc_offset: poo.time.map(|time| time.offset().local_minus_utc()),
             duration: poo.duration,
             urgency: poo.urgency,
             quantity: poo.quantity,

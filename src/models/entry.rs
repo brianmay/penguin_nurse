@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, FixedOffset};
 
 use super::{ConsumptionId, ConsumptionWithItems, Poo, PooId, Wee, WeeId};
 
@@ -35,7 +35,7 @@ pub enum EntryData {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Entry {
     pub event: Event,
-    pub time: DateTime<Utc>,
+    pub time: DateTime<FixedOffset>,
     pub data: EntryData,
 }
 

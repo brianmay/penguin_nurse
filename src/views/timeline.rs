@@ -127,7 +127,6 @@ fn EntryRow(
                                                     "ml"
                                                 }
                                             }
-                                        
                                         }
                                     }
                                 }

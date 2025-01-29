@@ -1,5 +1,6 @@
 use crate::models::{UserId, WeeId};
 use crate::server::database::{connection::DatabaseConnection, schema};
+use chrono::Utc;
 use diesel::prelude::*;
 use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
@@ -21,14 +22,18 @@ pub struct Wee {
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub utc_offset: i32,
 }
 
 impl From<Wee> for crate::models::Wee {
     fn from(wee: Wee) -> Self {
+        let timezone = chrono::FixedOffset::east(wee.utc_offset);
+        let time = wee.time.with_timezone(&timezone);
+
         Self {
             id: WeeId::new(wee.id),
             user_id: UserId::new(wee.user_id),
-            time: wee.time,
+            time,
             duration: wee.duration,
             urgency: wee.urgency,
             mls: wee.mls,
@@ -82,6 +87,7 @@ pub async fn get_wee_by_id(
 pub struct NewWee<'a> {
     user_id: i64,
     time: chrono::DateTime<chrono::Utc>,
+    utc_offset: i32,
     duration: chrono::Duration,
     urgency: i32,
     mls: i32,
@@ -95,7 +101,8 @@ impl<'a> NewWee<'a> {
     pub fn from_front_end(wee: &'a crate::models::NewWee) -> Self {
         Self {
             user_id: wee.user_id.as_inner(),
-            time: wee.time,
+            time: wee.time.with_timezone(&Utc),
+            utc_offset: wee.time.offset().local_minus_utc(),
             duration: wee.duration,
             urgency: wee.urgency,
             mls: wee.mls,
@@ -123,6 +130,7 @@ pub async fn create_wee(
 #[diesel(table_name = schema::wees)]
 pub struct UpdateWee<'a> {
     time: Option<chrono::DateTime<chrono::Utc>>,
+    utc_offset: Option<i32>,
     duration: Option<chrono::Duration>,
     urgency: Option<i32>,
     mls: Option<i32>,
@@ -135,7 +143,8 @@ pub struct UpdateWee<'a> {
 impl<'a> UpdateWee<'a> {
     pub fn from_front_end(wee: &'a crate::models::UpdateWee) -> Self {
         Self {
-            time: wee.time,
+            time: wee.time.map(|time| time.with_timezone(&Utc)),
+            utc_offset: wee.time.map(|time| time.offset().local_minus_utc()),
             duration: wee.duration,
             urgency: wee.urgency,
             mls: wee.mls,

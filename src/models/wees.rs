@@ -35,7 +35,7 @@ impl std::fmt::Display for WeeId {
 pub struct Wee {
     pub id: WeeId,
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::Utc>,
+    pub time: chrono::DateTime<chrono::FixedOffset>,
     pub duration: chrono::Duration,
     pub urgency: i32,
     pub mls: i32,
@@ -49,7 +49,7 @@ pub struct Wee {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewWee {
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::Utc>,
+    pub time: chrono::DateTime<chrono::FixedOffset>,
     pub duration: chrono::Duration,
     pub urgency: i32,
     pub mls: i32,
@@ -61,7 +61,7 @@ pub struct NewWee {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct UpdateWee {
     pub user_id: Option<UserId>,
-    pub time: Option<chrono::DateTime<chrono::Utc>>,
+    pub time: Option<chrono::DateTime<chrono::FixedOffset>>,
     pub duration: Option<chrono::Duration>,
     pub urgency: Option<i32>,
     pub mls: Option<i32>,

@@ -1,13 +1,13 @@
-use chrono::{DateTime, Local, TimeDelta, Utc};
+use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use dioxus::prelude::*;
 
 use crate::{
-    components::events::event_time,
+    components::events::event_date_time,
     forms::{
         validate_comments, validate_consumable_millilitres, validate_consumable_quantity,
-        validate_date_time, validate_duration, CancelButton, CloseButton, DeleteButton, Dialog,
-        EditButton, EditError, FieldValue, InputConsumable, InputDateTime, InputDuration,
-        InputNumber, InputTextArea, Saving, SubmitButton, ValidationError,
+        validate_duration, validate_fixed_offset_date_time, CancelButton, CloseButton,
+        DeleteButton, Dialog, EditButton, EditError, FieldValue, InputConsumable, InputDateTime,
+        InputDuration, InputNumber, InputTextArea, Saving, SubmitButton, ValidationError,
     },
     functions::consumptions::{
         create_consumption, create_consumption_consumable, delete_consumption,
@@ -29,7 +29,7 @@ pub enum Operation {
 
 #[derive(Debug, Clone)]
 struct Validate {
-    time: Memo<Result<DateTime<Utc>, ValidationError>>,
+    time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
     duration: Memo<Result<TimeDelta, ValidationError>>,
     liquid_mls: Memo<Result<MaybeF64, ValidationError>>,
     comments: Memo<Result<MaybeString, ValidationError>>,
@@ -74,7 +74,7 @@ pub fn ChangeConsumption(
     on_save: Callback<Consumption>,
 ) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).to_rfc3339(),
+        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_string(),
         Operation::Update { consumption } => consumption.time.as_string(),
     });
 
@@ -94,7 +94,7 @@ pub fn ChangeConsumption(
     });
 
     let validate = Validate {
-        time: use_memo(move || validate_date_time(&time())),
+        time: use_memo(move || validate_fixed_offset_date_time(&time())),
         duration: use_memo(move || validate_duration(&duration())),
         liquid_mls: use_memo(move || validate_consumable_millilitres(&liquid_mls())),
         comments: use_memo(move || validate_comments(&comments())),
@@ -433,7 +433,7 @@ pub fn ConsumptionDetails(consumption: Consumption, on_close: Callback<()>) -> E
                         tr {
                             td { "Time" }
                             td {
-                                event_time { time: consumption.time }
+                                event_date_time { time: consumption.time }
                             }
                         }
                         tr {

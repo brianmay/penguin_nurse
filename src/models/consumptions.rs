@@ -34,7 +34,7 @@ impl std::fmt::Display for ConsumptionId {
 pub struct Consumption {
     pub id: ConsumptionId,
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::Utc>,
+    pub time: chrono::DateTime<chrono::FixedOffset>,
     pub duration: chrono::TimeDelta,
     pub liquid_mls: MaybeF64,
     pub comments: MaybeString,
@@ -57,7 +57,7 @@ impl ConsumptionWithItems {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewConsumption {
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::Utc>,
+    pub time: chrono::DateTime<chrono::FixedOffset>,
     pub duration: chrono::TimeDelta,
     pub liquid_mls: MaybeF64,
     pub comments: MaybeString,
@@ -66,7 +66,7 @@ pub struct NewConsumption {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct UpdateConsumption {
     pub user_id: Option<UserId>,
-    pub time: Option<chrono::DateTime<chrono::Utc>>,
+    pub time: Option<chrono::DateTime<chrono::FixedOffset>>,
     pub duration: Option<chrono::TimeDelta>,
     pub liquid_mls: Option<MaybeF64>,
     pub comments: Option<MaybeString>,

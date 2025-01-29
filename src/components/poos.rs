@@ -1,15 +1,15 @@
-use chrono::{DateTime, Local, TimeDelta, Utc};
+use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use classes::classes;
 use dioxus::prelude::*;
 use palette::Hsv;
 
 use crate::{
-    components::events::{event_colour, event_time, event_urgency},
+    components::events::{event_colour, event_date_time, event_urgency},
     forms::{
-        validate_bristol, validate_colour, validate_comments, validate_date_time,
-        validate_duration, validate_poo_quantity, validate_urgency, CancelButton, Dialog,
-        EditError, FieldValue, InputColour, InputDateTime, InputDuration, InputNumber, InputSelect,
-        InputTextArea, Saving, SubmitButton, ValidationError,
+        validate_bristol, validate_colour, validate_comments, validate_duration,
+        validate_fixed_offset_date_time, validate_poo_quantity, validate_urgency, CancelButton,
+        Dialog, EditError, FieldValue, InputColour, InputDateTime, InputDuration, InputNumber,
+        InputSelect, InputTextArea, Saving, SubmitButton, ValidationError,
     },
     functions::poos::{create_poo, delete_poo, update_poo},
     models::{Bristol, MaybeString, NewPoo, Poo, UpdatePoo, UserId},
@@ -23,7 +23,7 @@ pub enum Operation {
 
 #[derive(Debug, Clone)]
 struct Validate {
-    time: Memo<Result<DateTime<Utc>, ValidationError>>,
+    time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
     duration: Memo<Result<TimeDelta, ValidationError>>,
     urgency: Memo<Result<i32, ValidationError>>,
     quantity: Memo<Result<i32, ValidationError>>,
@@ -74,7 +74,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Poo, EditError> 
 #[component]
 pub fn ChangePoo(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().as_string(),
+        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_string(),
         Operation::Update { poo } => poo.time.as_string(),
     });
     let duration = use_signal(|| match &op {
@@ -107,7 +107,7 @@ pub fn ChangePoo(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
     });
 
     let validate = Validate {
-        time: use_memo(move || validate_date_time(&time())),
+        time: use_memo(move || validate_fixed_offset_date_time(&time())),
         duration: use_memo(move || validate_duration(&duration())),
         urgency: use_memo(move || validate_urgency(&urgency())),
         quantity: use_memo(move || validate_poo_quantity(&quantity())),
@@ -470,7 +470,7 @@ pub fn PooDetail(poo: Poo, on_close: Callback<()>) -> Element {
                         tr {
                             td { "Time" }
                             td {
-                                event_time { time: poo.time }
+                                event_date_time { time: poo.time }
                             }
                         }
                         tr {

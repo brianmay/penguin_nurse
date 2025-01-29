@@ -1,4 +1,4 @@
-use chrono::{DateTime, Local, TimeDelta, Utc};
+use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use palette::RgbHue;
 use thiserror::Error;
 
@@ -46,6 +46,19 @@ impl FieldValue for DateTime<Utc> {
     fn from_string(value: &str) -> Result<Self, FieldValueError> {
         match DateTime::parse_from_rfc3339(value) {
             Ok(time) => Ok(time.with_timezone(&Utc)),
+            Err(_) => Err(FieldValueError::InvalidValue),
+        }
+    }
+}
+
+impl FieldValue for DateTime<FixedOffset> {
+    fn as_string(&self) -> String {
+        self.to_rfc3339()
+    }
+
+    fn from_string(value: &str) -> Result<Self, FieldValueError> {
+        match DateTime::parse_from_rfc3339(value) {
+            Ok(time) => Ok(time),
             Err(_) => Err(FieldValueError::InvalidValue),
         }
     }
