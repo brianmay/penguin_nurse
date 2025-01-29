@@ -26,9 +26,12 @@ pub struct Consumption {
     pub utc_offset: i32,
 }
 
+const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
+
 impl From<Consumption> for crate::models::Consumption {
     fn from(consumption: Consumption) -> Self {
-        let timezone = chrono::FixedOffset::east(consumption.utc_offset);
+        let timezone =
+            chrono::FixedOffset::east_opt(consumption.utc_offset).unwrap_or(DEFAULT_TIMEZONE);
         let time = consumption.time.with_timezone(&timezone);
 
         Self {

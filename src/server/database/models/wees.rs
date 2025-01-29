@@ -25,9 +25,11 @@ pub struct Wee {
     pub utc_offset: i32,
 }
 
+const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
+
 impl From<Wee> for crate::models::Wee {
     fn from(wee: Wee) -> Self {
-        let timezone = chrono::FixedOffset::east(wee.utc_offset);
+        let timezone = chrono::FixedOffset::east_opt(wee.utc_offset).unwrap_or(DEFAULT_TIMEZONE);
         let time = wee.time.with_timezone(&timezone);
 
         Self {
