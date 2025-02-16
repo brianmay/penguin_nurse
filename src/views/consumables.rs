@@ -7,6 +7,7 @@ use crate::{
     components::consumables::{ActiveDialog, ConsumableDialog, Operation},
     functions::consumables::search_consumables,
     models::{Consumable, ConsumableId, Maybe},
+    use_user,
 };
 
 #[component]
@@ -89,6 +90,14 @@ fn EntryRow(
 
 #[component]
 pub fn ConsumableList() -> Element {
+    let user = use_user().ok().flatten();
+
+    let Some(_user) = user.as_ref() else {
+        return rsx! {
+            p { class: "alert alert-danger", "You are not logged in." }
+        };
+    };
+
     let selected: Signal<Option<ConsumableId>> = use_signal(|| None);
     let mut show_only_created = use_signal(|| false);
     let mut show_destroyed = use_signal(|| false);

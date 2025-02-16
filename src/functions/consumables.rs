@@ -10,6 +10,8 @@ pub async fn search_consumables(
     include_only_created: bool,
     include_destroyed: bool,
 ) -> Result<Vec<models::Consumable>, ServerFnError> {
+    let _logged_in_user_id = get_user_id().await?;
+
     let mut conn = get_database_connection().await?;
     crate::server::database::models::consumables::search_consumables(
         &mut conn,
@@ -26,6 +28,8 @@ pub async fn search_consumables(
 pub async fn get_child_consumables(
     parent_id: ConsumableId,
 ) -> Result<Vec<models::ConsumableItem>, ServerFnError> {
+    let _logged_in_user_id = get_user_id().await?;
+
     let mut conn = get_database_connection().await?;
     crate::server::database::models::nested_consumables::get_child_consumables(
         &mut conn,
@@ -44,6 +48,8 @@ pub async fn get_child_consumables(
 pub async fn get_parent_consumables(
     consumable_id: ConsumableId,
 ) -> Result<Vec<(models::NestedConsumable, models::Consumable)>, ServerFnError> {
+    let _logged_in_user_id = get_user_id().await?;
+
     let mut conn = get_database_connection().await?;
     crate::server::database::models::nested_consumables::get_parent_consumables(
         &mut conn,
