@@ -4,7 +4,6 @@
   inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
   inputs.nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
-  inputs.nixpkgs-375874.url = "github:NixOS/nixpkgs?ref=pull/375874/head";
   inputs.rust-overlay.url = "github:oxalica/rust-overlay";
   inputs.devenv.url = "github:cachix/devenv";
   inputs.crane.url = "github:ipetkov/crane";
@@ -15,7 +14,6 @@
       self,
       nixpkgs,
       nixpkgs-unstable,
-      nixpkgs-375874,
       flake-utils,
       rust-overlay,
       devenv,
@@ -30,7 +28,6 @@
           overlays = [ (import rust-overlay) ];
         };
         pkgs-unstable = nixpkgs-unstable.legacyPackages.${system};
-        pkgs-375874 = nixpkgs-375874.legacyPackages.${system};
         wasm-bindgen-cli = pkgs.wasm-bindgen-cli.override (old: {
           version = "0.2.99";
           hash = "sha256-1AN2E9t/lZhbXdVznhTcniy+7ZzlaEp/gwLEAucs6EA=";
@@ -54,7 +51,7 @@
         #     # outputHash = pkgs.lib.fakeHash;
         #   });
         # });
-        dioxus-cli = pkgs-375874.dioxus-cli;
+        dioxus-cli = pkgs-unstable.dioxus-cli;
 
         rustPlatform = pkgs.rust-bin.stable.latest.default.override {
           targets = [ "wasm32-unknown-unknown" ];
