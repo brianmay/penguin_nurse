@@ -63,20 +63,20 @@ in
   };
 
   config = mkIf cfg.enable {
-    users.users.penguin_nurse = {
+    users.users.penguin-nurse = {
       isSystemUser = true;
-      description = "Penguin Nurse user";
-      group = "penguin_nurse";
+      description = "Robotica user";
+      group = "penguin-nurse";
       createHome = true;
       home = "${cfg.data_dir}";
     };
 
-    users.groups.penguin_nurse = { };
+    users.groups.penguin-nurse = { };
 
     systemd.services.penguin-nurse = {
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
-        User = "penguin_nurse";
+        User = "penguin-nurse";
         ExecStart = "${penguin-nurse}/bin/server";
         EnvironmentFile = cfg.secretsFile;
       };
