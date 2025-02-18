@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use chrono::{NaiveDate, Utc};
+use chrono::{Local, NaiveDate, Utc};
 use dioxus::prelude::*;
 use tap::Pipe;
 
@@ -114,6 +114,9 @@ fn EntryRow(
                                             if let Maybe::Some(brand) = &item.consumable.brand {
                                                 ", "
                                                 {brand.clone()}
+                                            }
+                                            if let Maybe::Some(dt) = &item.consumable.created {
+                                                {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
                                             }
                                             if let Maybe::Some(comments) = &item.nested.comments {
                                                 " ("
