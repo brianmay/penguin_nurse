@@ -66,14 +66,60 @@ impl FieldValue for DateTime<FixedOffset> {
 
 impl FieldValue for TimeDelta {
     fn as_string(&self) -> String {
-        self.num_seconds().to_string()
+        let (negative, total_seconds) = {
+            let seconds = self.num_seconds();
+            if seconds < 0 {
+                (true, -seconds)
+            } else {
+                (false, seconds)
+            }
+        };
+        tracing::error!("total_seconds: {}", total_seconds);
+        let sign = if negative { "-" } else { "" };
+        let seconds = total_seconds % 60;
+        let minutes = (total_seconds / 60) % 60;
+        let hours = (total_seconds / 60) / 60;
+        format!("{sign}{hours:0>2}:{minutes:0>2}:{seconds:0>2}")
     }
 
     fn from_string(value: &str) -> Result<Self, FieldValueError> {
-        match value.parse() {
-            Ok(duration) if duration >= 0 => Ok(TimeDelta::seconds(duration)),
-            _ => Err(FieldValueError::InvalidValue),
+        let (negative, value) = if let Some(stripped) = value.strip_prefix('-') {
+            (-1, stripped)
+        } else {
+            (1, value)
+        };
+        let split = value.split(':').collect::<Vec<&str>>();
+
+        if split.len() != 3 {
+            return Err(FieldValueError::InvalidValue);
         }
+
+        let hours = split[0]
+            .parse::<i64>()
+            .map_err(|_| FieldValueError::InvalidValue)?;
+
+        let minutes = split[1]
+            .parse::<i64>()
+            .map_err(|_| FieldValueError::InvalidValue)?;
+
+        let seconds = split[2]
+            .parse::<i64>()
+            .map_err(|_| FieldValueError::InvalidValue)?;
+
+        if negative == -1 {
+            return Err(FieldValueError::InvalidValue);
+        }
+        if hours < 0 || minutes < 0 || seconds < 0 {
+            return Err(FieldValueError::InvalidValue);
+        }
+        if hours > 23 || minutes > 59 || seconds > 59 {
+            return Err(FieldValueError::InvalidValue);
+        }
+
+        Ok(
+            (TimeDelta::hours(hours) + TimeDelta::minutes(minutes) + TimeDelta::seconds(seconds))
+                * negative,
+        )
     }
 }
 

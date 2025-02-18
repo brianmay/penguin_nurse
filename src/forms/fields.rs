@@ -13,6 +13,7 @@ use crate::{
 };
 
 use super::errors::ValidationError;
+use super::FieldValue;
 
 fn get_input_classes(is_valid: bool, changed: bool, is_disabled: bool) -> &'static str {
     if is_disabled {
@@ -349,7 +350,7 @@ pub fn InputDuration(
                     class: "btn btn-secondary",
                     onclick: move |_e| {
                         let now: DateTime<FixedOffset> = Utc::now().into();
-                        value.set((now - start_time).num_seconds().to_string());
+                        value.set((now - start_time).as_string());
                     },
                     "Stop"
                 }
