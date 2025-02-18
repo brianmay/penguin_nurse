@@ -5,7 +5,7 @@ use dioxus::prelude::*;
 const NURSE_SVG: Asset = asset!("/assets/nurse.svg");
 
 #[component]
-pub fn MenuItem(route: Route, title: String) -> Element {
+pub fn MenuItem(route: Route, title: String, mut show_menu: Signal<bool>) -> Element {
     let current: Route = use_route();
 
     let class = if current == route {
@@ -16,7 +16,13 @@ pub fn MenuItem(route: Route, title: String) -> Element {
 
     rsx! {
         li {
-            Link { to: route, "aria-current": "page", class, {title} }
+            Link {
+                to: route,
+                "aria-current": "page",
+                class,
+                onclick: move |_| show_menu.set(false),
+                {title}
+            }
         }
     }
 }
@@ -74,18 +80,32 @@ pub fn Navbar() -> Element {
                         MenuItem {
                             route: Route::TimelineList { date },
                             title: "Today",
+                            show_menu,
                         }
                         MenuItem {
                             route: Route::ConsumableList {},
                             title: "Consumables",
+                            show_menu,
                         }
                         if let Some(user) = user {
                             if user.is_admin {
-                                MenuItem { route: Route::UserList {}, title: "Users" }
+                                MenuItem {
+                                    route: Route::UserList {},
+                                    title: "Users",
+                                    show_menu,
+                                }
                             }
-                            MenuItem { route: Route::Logout {}, title: "Logout" }
+                            MenuItem {
+                                route: Route::Logout {},
+                                title: "Logout",
+                                show_menu,
+                            }
                         } else {
-                            MenuItem { route: Route::Login {}, title: "Login" }
+                            MenuItem {
+                                route: Route::Login {},
+                                title: "Login",
+                                show_menu,
+                            }
                         }
                     }
                 }
