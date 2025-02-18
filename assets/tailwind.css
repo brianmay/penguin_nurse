@@ -2480,10 +2480,6 @@ html {
   position: static;
 }
 
-.fixed {
-  position: fixed;
-}
-
 .z-\[1\] {
   z-index: 1;
 }
@@ -2603,6 +2599,10 @@ html {
   height: 1rem;
 }
 
+.h-40 {
+  height: 10rem;
+}
+
 .h-5 {
   height: 1.25rem;
 }
@@ -2637,6 +2637,10 @@ html {
 
 .w-4 {
   width: 1rem;
+}
+
+.w-40 {
+  width: 10rem;
 }
 
 .w-48 {

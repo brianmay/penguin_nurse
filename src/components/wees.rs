@@ -218,10 +218,9 @@ pub fn ChangeWee(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
                     value: colour,
                     validate: validate.colour,
                     colours: vec![
-                        ("light".to_string(), Hsv::new(60.0, 0.2, 1.0)),
-                        ("normal".to_string(), Hsv::new(60.0, 1.0, 1.0)),
-                        ("dark".to_string(), Hsv::new(44.0, 1.0, 1.0)),
-                        ("red".to_string(), Hsv::new(0.0, 1.0, 1.0)),
+                        ("light".to_string(), Hsv::new(45.0, 1.0, 0.8)),
+                        ("normal".to_string(), Hsv::new(40.0, 1.0, 0.8)),
+                        ("dark".to_string(), Hsv::new(35.0, 1.0, 0.8)),
                     ],
                     disabled,
                 }

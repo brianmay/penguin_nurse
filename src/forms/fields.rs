@@ -619,7 +619,7 @@ pub fn InputColour(
 
             if let Some(colour) = rgb_colour {
                 div {
-                    class: "w-20 h-20 m-1 inline-block border-2 border-white",
+                    class: "w-40 h-40 m-1 inline-block border-2 border-white",
                     style: format!(
                         "background-color: rgb({}, {}, {})",
                         colour.red * 255.0,
