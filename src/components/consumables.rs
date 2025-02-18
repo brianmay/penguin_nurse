@@ -626,6 +626,9 @@ pub fn ConsumableNested(
                                         ", "
                                         {brand.clone()}
                                     }
+                                    if let Maybe::Some(dt) = &item.consumable.created {
+                                        {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
+                                    }
                                     if let Maybe::Some(comments) = &item.nested.comments {
                                         " ("
                                         {comments.to_string()}
