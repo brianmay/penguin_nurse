@@ -61,10 +61,7 @@ pub fn InputString<D: 'static + Clone + PartialEq>(
                     value.set(e.value());
                 },
             }
-            if disabled() {
-
-            }
-            if !changed() {
+            if disabled() || !changed() {
 
             } else if let Err(err) = validate() {
                 div { class: "text-red-500", "{err}" }
@@ -108,10 +105,7 @@ pub fn InputNumber<D: 'static + Clone + PartialEq>(
                     value.set(e.value());
                 },
             }
-            if disabled() {
-
-            }
-            if !changed() {
+            if disabled() || !changed() {
 
             } else if let Err(err) = validate() {
                 div { class: "text-red-500", "{err}" }
@@ -152,10 +146,7 @@ pub fn InputPassword<D: 'static + Clone + Eq + PartialEq>(
                     value.set(e.value());
                 },
             }
-            if disabled() {
-
-            }
-            if !changed() {
+            if disabled() || !changed() {
 
             } else if let Err(err) = validate() {
                 div { class: "text-red-500", "{err}" }
@@ -195,10 +186,7 @@ pub fn InputTextArea<D: 'static + Clone + Eq + PartialEq>(
                     value.set(e.value());
                 },
             }
-            if disabled() {
-
-            }
-            if !changed() {
+            if disabled() || !changed() {
 
             } else if let Err(err) = validate() {
                 div { class: "text-red-500", "{err}" }
@@ -246,10 +234,7 @@ pub fn InputDateTime(
                 },
                 "Now"
             }
-            if disabled() {
-
-            }
-            if !changed() {
+            if disabled() || !changed() {
 
             } else if let Err(err) = validate() {
                 div { class: "text-red-500", "{err}" }
@@ -297,10 +282,7 @@ pub fn InputMaybeDateTime(
                 },
                 "Now"
             }
-            if disabled() {
-
-            }
-            if !changed() {
+            if disabled() || !changed() {
 
             } else if let Err(err) = validate() {
                 div { class: "text-red-500", "{err}" }
@@ -355,10 +337,7 @@ pub fn InputDuration(
                     "Stop"
                 }
             }
-            if disabled() {
-
-            }
-            if !changed() {
+            if disabled() || !changed() {
 
             } else if let Err(err) = validate() {
                 div { class: "text-red-500", "{err}" }
@@ -398,10 +377,7 @@ pub fn InputSelect<D: 'static + Clone + Eq + PartialEq>(
                     option { value: id, label, selected: id == value() }
                 }
             }
-            if disabled() {
-
-            }
-            if !changed() {
+            if disabled() || !changed() {
 
             } else if let Err(err) = validate() {
                 div { class: "text-red-500", "{err}" }
@@ -440,16 +416,6 @@ pub fn InputBoolean(
                     value.set(e.checked());
                 },
             }
-            if disabled() {
-
-            }
-                // if !changed() {
-
-        // } else if let Err(err) = validate() {
-        //     div { class: "text-red-500", "{err}" }
-        // } else {
-        //     div { class: "text-green-500", "Looks good!" }
-        // }
         }
     }
 }
@@ -567,10 +533,7 @@ pub fn InputColour(
                         changed.set(true);
                     },
                 }
-                if disabled() {
-
-                }
-                if !changed() {
+                if disabled() || !changed() {
 
                 } else if let Err(err) = validate_saturation() {
                     div { class: "text-red-500", "{err}" }
@@ -647,10 +610,7 @@ pub fn InputColour(
                 }
             }
         }
-        if disabled() {
-
-        }
-        if !changed() {
+        if disabled() || !changed() {
 
         } else if let Err(err) = validate() {
             div { class: "text-red-500", "{err}" }
