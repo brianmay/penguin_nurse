@@ -35,6 +35,7 @@ mod consumables;
 pub use consumables::Consumable;
 pub use consumables::ConsumableId;
 pub use consumables::ConsumableUnit;
+pub use consumables::ConsumableWithItems;
 pub use consumables::NewConsumable;
 pub use consumables::UpdateConsumable;
 

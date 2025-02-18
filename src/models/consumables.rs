@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::forms::{FieldValue, FieldValueError};
 
-use super::common::{MaybeDateTime, MaybeString};
+use super::{
+    common::{MaybeDateTime, MaybeString},
+    ConsumableItem,
+};
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ConsumableUnit {
@@ -92,7 +95,6 @@ impl std::fmt::Display for ConsumableId {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct Consumable {
     pub id: ConsumableId,
@@ -108,7 +110,18 @@ pub struct Consumable {
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
-#[allow(dead_code)]
+impl ConsumableWithItems {
+    pub fn new(consumable: Consumable, items: Vec<ConsumableItem>) -> Self {
+        Self { consumable, items }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct ConsumableWithItems {
+    pub consumable: Consumable,
+    pub items: Vec<ConsumableItem>,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewConsumable {
     pub name: String,
@@ -121,7 +134,6 @@ pub struct NewConsumable {
     pub destroyed: MaybeDateTime,
 }
 
-#[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct UpdateConsumable {
     pub name: Option<String>,

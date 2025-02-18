@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use diesel::prelude::*;
 use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
@@ -8,6 +10,8 @@ use tap::Pipe;
 
 use crate::models;
 use crate::server::database::{connection::DatabaseConnection, schema};
+
+use super::nested_consumables::NestedConsumable;
 
 #[derive(diesel_derive_enum::DbEnum, Debug, Copy, Clone)]
 #[ExistingTypePath = "schema::sql_types::ConsumableUnit"]
@@ -74,6 +78,43 @@ impl From<Consumable> for crate::models::Consumable {
             comments: consumable.comments.into(),
         }
     }
+}
+
+pub async fn search_consumables_with_nested(
+    conn: &mut DatabaseConnection,
+    search: &str,
+    include_only_created: bool,
+    include_destroyed: bool,
+) -> Result<Vec<(Consumable, Vec<(NestedConsumable, Consumable)>)>, diesel::result::Error> {
+    use crate::server::database::schema::consumables::dsl as q;
+    use crate::server::database::schema::consumables::table;
+    use crate::server::database::schema::nested_consumables::dsl as q_nested;
+    use crate::server::database::schema::nested_consumables::table as nested_table;
+
+    let consumables =
+        search_consumables(conn, search, include_only_created, include_destroyed).await?;
+
+    let nested: Vec<(NestedConsumable, Consumable)> = nested_table
+        .filter(q_nested::parent_id.eq_any(consumables.iter().map(|x| x.id)))
+        .inner_join(table.on(q::id.eq(q_nested::consumable_id)))
+        .load(conn)
+        .await?;
+
+    let id_indices: HashMap<_, _> = consumables
+        .iter()
+        .enumerate()
+        .map(|(i, p)| (p.id, i))
+        .collect();
+
+    let mut result: Vec<_> = consumables.into_iter().map(|c| (c, Vec::new())).collect();
+
+    for child in nested {
+        if let Some(index) = child.0.parent_id.pipe(|i| id_indices.get(&i)) {
+            result[*index].1.push(child);
+        }
+    }
+
+    Ok(result)
 }
 
 pub async fn search_consumables(

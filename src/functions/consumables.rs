@@ -5,6 +5,50 @@ use dioxus::prelude::*;
 use super::common::{get_database_connection, get_user_id};
 
 #[server]
+pub async fn search_consumables_with_nested(
+    query: String,
+    include_only_created: bool,
+    include_destroyed: bool,
+) -> Result<Vec<models::ConsumableWithItems>, ServerFnError> {
+    pub fn items_to_front_end(
+        items: Vec<(
+            crate::server::database::models::nested_consumables::NestedConsumable,
+            crate::server::database::models::consumables::Consumable,
+        )>,
+    ) -> Vec<models::ConsumableItem> {
+        items
+            .into_iter()
+            .map(|(consumption_consumable, consumable)| {
+                models::ConsumableItem::new(
+                    models::NestedConsumable::from(consumption_consumable),
+                    models::Consumable::from(consumable),
+                )
+            })
+            .collect()
+    }
+
+    let _logged_in_user_id = get_user_id().await?;
+
+    let mut conn = get_database_connection().await?;
+    crate::server::database::models::consumables::search_consumables_with_nested(
+        &mut conn,
+        &query,
+        include_only_created,
+        include_destroyed,
+    )
+    .await
+    // .map(|x| x.into_iter().map(|y| y.into()).collect())
+    .map(|x| {
+        x.into_iter()
+            .map(|(consumption, items)| {
+                models::ConsumableWithItems::new(consumption.into(), items_to_front_end(items))
+            })
+            .collect()
+    })
+    .map_err(ServerFnError::from)
+}
+
+#[server]
 pub async fn search_consumables(
     query: String,
     include_only_created: bool,
