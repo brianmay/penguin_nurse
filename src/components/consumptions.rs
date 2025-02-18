@@ -187,6 +187,7 @@ pub fn ChangeConsumption(
                     id: "duration",
                     label: "Duration",
                     value: duration,
+                    start_time: validate.time,
                     validate: validate.duration,
                     disabled,
                 }

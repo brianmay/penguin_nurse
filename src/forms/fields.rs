@@ -1,8 +1,6 @@
 #![allow(non_snake_case)]
-use chrono::{DateTime, FixedOffset, Local, Utc};
+use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use dioxus::{prelude::*, signals::Signal};
-use futures::{select, StreamExt};
-use gloo_timers::future::IntervalStream;
 use palette::{Hsv, IntoColor, Srgb};
 use std::ops::Deref;
 use tap::Pipe;
@@ -312,54 +310,16 @@ pub fn InputMaybeDateTime(
     }
 }
 
-enum TimerButton {
-    Restart,
-    Stop,
-}
-
 #[component]
-pub fn InputDuration<D: 'static + Clone + Eq + PartialEq>(
+pub fn InputDuration(
     id: &'static str,
     label: &'static str,
     value: Signal<String>,
-    validate: Memo<Result<D, ValidationError>>,
+    start_time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
+    validate: Memo<Result<TimeDelta, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
     let mut changed = use_signal(|| false);
-
-    let mut stop_watch_running = use_signal(|| false);
-
-    let stopwatch = use_coroutine(move |mut rx: UnboundedReceiver<TimerButton>| async move {
-        let mut start = Utc::now();
-        let mut interval = IntervalStream::new(1000).fuse();
-        let mut running = false;
-
-        loop {
-            stop_watch_running.set(running);
-
-            select! {
-                maybe_button = rx.next() => {
-                    match maybe_button {
-                        Some(TimerButton::Restart) => {
-                            start = Utc::now();
-                            running = true;
-                        }
-                        Some(TimerButton::Stop) => {
-                            running = false;
-                        }
-                        None => break,
-                    }
-                }
-                _ = interval.next() => {
-                }
-            }
-
-            if running {
-                let duration = Utc::now() - start;
-                value.set(duration.num_seconds().to_string());
-            }
-        }
-    });
 
     rsx! {
         div { class: "mb-5",
@@ -384,18 +344,12 @@ pub fn InputDuration<D: 'static + Clone + Eq + PartialEq>(
                     value.set(e.value());
                 },
             }
-            button {
-                class: "btn btn-secondary",
-                onclick: move |_e| {
-                    stopwatch.send(TimerButton::Restart);
-                },
-                "Start"
-            }
-            if stop_watch_running() {
+            if let Ok(start_time) = start_time() {
                 button {
                     class: "btn btn-secondary",
                     onclick: move |_e| {
-                        stopwatch.send(TimerButton::Stop);
+                        let now: DateTime<FixedOffset> = Utc::now().into();
+                        value.set((now - start_time).num_seconds().to_string());
                     },
                     "Stop"
                 }

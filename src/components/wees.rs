@@ -194,6 +194,7 @@ pub fn ChangeWee(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
                     id: "duration",
                     label: "Duration",
                     value: duration,
+                    start_time: validate.time,
                     validate: validate.duration,
                     disabled,
                 }

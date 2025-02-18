@@ -203,6 +203,7 @@ pub fn ChangePoo(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
                     id: "duration",
                     label: "Duration",
                     value: duration,
+                    start_time: validate.time,
                     validate: validate.duration,
                     disabled,
                 }
