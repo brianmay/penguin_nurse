@@ -2555,6 +2555,10 @@ html {
   margin-top: 1rem;
 }
 
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
 .block {
   display: block;
 }
@@ -2661,6 +2665,15 @@ html {
 
 .w-screen {
   width: 100vw;
+}
+
+.w-fit {
+  width: -moz-fit-content;
+  width: fit-content;
+}
+
+.w-dvw {
+  width: 100dvw;
 }
 
 .list-disc {
@@ -2852,6 +2865,10 @@ html {
 
 .p-6 {
   padding: 1.5rem;
+}
+
+.p-0 {
+  padding: 0px;
 }
 
 .px-3 {
@@ -3132,6 +3149,22 @@ html {
 }
 
 @media (min-width: 640px) {
+  .sm\:ml-0 {
+    margin-left: 0px;
+  }
+
+  .sm\:mr-0 {
+    margin-right: 0px;
+  }
+
+  .sm\:ml-2 {
+    margin-left: 0.5rem;
+  }
+
+  .sm\:mr-2 {
+    margin-right: 0.5rem;
+  }
+
   .sm\:table {
     display: table;
   }

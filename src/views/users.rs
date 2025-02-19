@@ -22,7 +22,7 @@ pub fn UserItem(user: ReadOnlySignal<User>, on_click: Callback<User>) -> Element
 
     rsx! {
         tr {
-            class: "hover:bg-gray-500 border-blue-300 m-2 p-2 border-2 h-96 w-48 sm:w-auto sm:border-none sm:h-auto inline-block sm:table-row",
+            class: "hover:bg-gray-500 border-blue-300 mt-2 mb-2 p-2 border-2 w-full sm:w-auto sm:border-none inline-block sm:table-row",
             onclick: move |_| {
                 on_click(user_clone_0.clone());
             },
@@ -207,27 +207,29 @@ pub fn UserList() -> Element {
                     if users.is_empty() {
                         p { {"No users found."} }
                     } else {
-                        table { class: "block sm:table",
-                            thead { class: "hidden sm:table-header-group",
-                                tr {
-                                    th { "ID" }
-                                    th { "Username" }
-                                    th { "Name" }
-                                    th { "Email" }
-                                    th { "Role" }
+                        div { class: "ml-2 mr-2 sm:ml-0 sm:mr-0",
+                            table { class: "block sm:table",
+                                thead { class: "hidden sm:table-header-group",
+                                    tr {
+                                        th { "ID" }
+                                        th { "Username" }
+                                        th { "Name" }
+                                        th { "Email" }
+                                        th { "Role" }
+                                    }
                                 }
-                            }
-                            tbody { class: "block sm:table-row-group",
-                                for user in users {
-                                    UserItem {
-                                        key: user.id,
-                                        user,
-                                        on_click: move |user: User| {
-                                            navigator
-                                                .push(Route::UserDetail {
-                                                    user_id: user.id,
-                                                });
-                                        },
+                                tbody { class: "block sm:table-row-group",
+                                    for user in users {
+                                        UserItem {
+                                            key: user.id,
+                                            user,
+                                            on_click: move |user: User| {
+                                                navigator
+                                                    .push(Route::UserDetail {
+                                                        user_id: user.id,
+                                                    });
+                                            },
+                                        }
                                     }
                                 }
                             }
@@ -250,7 +252,7 @@ pub fn UserList() -> Element {
             }
         }
 
-        div { class: "p-4",
+        div { class: "ml-2 mr-2",
             button {
                 class: "btn btn-secondary",
                 onclick: move |_| dialog.set(ActiveDialog::Create),

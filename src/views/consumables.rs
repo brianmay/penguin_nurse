@@ -27,7 +27,7 @@ fn EntryRow(
 
     rsx! {
         tr {
-            class: "hover:bg-gray-500 border-blue-300 m-2 p-2 border-2 h-96 w-48 sm:w-auto sm:border-none sm:h-auto inline-block sm:table-row",
+            class: "hover:bg-gray-500 border-blue-300 mt-2 mb-2 p-2 border-2 w-full sm:w-auto sm:border-none inline-block sm:table-row",
             onclick: move |_| { selected.set(Some(id)) },
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2", {consumable.name} }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
@@ -151,7 +151,7 @@ pub fn ConsumableList() -> Element {
         });
 
     rsx! {
-        div { class: "ml-2",
+        div { class: "ml-2 mr-2",
             div { class: "mb-2",
                 button {
                     class: "btn btn-primary",
@@ -214,25 +214,27 @@ pub fn ConsumableList() -> Element {
                 p { class: "alert alert-info", "No entries found." }
             },
             Some(Ok(list)) => rsx! {
-                table { class: "block sm:table",
-                    thead { class: "hidden sm:table-header-group",
-                        tr {
-                            th { "Name" }
-                            th { "Brand" }
-                            th { "Unit" }
-                            th { "Ingredients" }
-                            th { "Comments" }
-                            th { "Created" }
-                            th { "Destroyed" }
+                div { class: "ml-2 mr-2 sm:ml-0 sm:mr-0",
+                    table { class: "block sm:table",
+                        thead { class: "hidden sm:table-header-group",
+                            tr {
+                                th { "Name" }
+                                th { "Brand" }
+                                th { "Unit" }
+                                th { "Ingredients" }
+                                th { "Comments" }
+                                th { "Created" }
+                                th { "Destroyed" }
+                            }
                         }
-                    }
-                    tbody { class: "block sm:table-row-group",
-                        for consumable in list.iter() {
-                            EntryRow {
-                                key: "{consumable.consumable.id.as_inner().to_string()}",
-                                consumable_with_items: consumable.clone(),
-                                selected,
-                                dialog,
+                        tbody { class: "block sm:table-row-group",
+                            for consumable in list.iter() {
+                                EntryRow {
+                                    key: "{consumable.consumable.id.as_inner().to_string()}",
+                                    consumable_with_items: consumable.clone(),
+                                    selected,
+                                    dialog,
+                                }
                             }
                         }
                     }

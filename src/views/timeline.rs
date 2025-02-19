@@ -31,7 +31,7 @@ fn EntryRow(
 
     rsx! {
         tr {
-            class: "hover:bg-gray-500 border-blue-300 m-2 p-2 border-2 h-96 w-48 sm:w-auto sm:border-none sm:h-auto inline-block sm:table-row",
+            class: "hover:bg-gray-500 border-blue-300 mt-2 mb-2 p-2 border-2 w-full sm:w-auto sm:border-none inline-block sm:table-row",
             onclick: move |_| selected.set(Some(id)),
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 event_time { time: entry.time }
@@ -309,7 +309,7 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
         });
 
     rsx! {
-        div { class: "ml-2",
+        div { class: "ml-2 mr-2",
             div { class: "mb-2",
                 button {
                     class: "btn btn-primary",
@@ -406,22 +406,24 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                 p { class: "alert alert-info", "No entries found for this date." }
             },
             Some(Ok(timeline)) => rsx! {
-                table { class: "block sm:table",
-                    thead { class: "hidden sm:table-header-group",
-                        tr {
-                            th { "When" }
-                            th { "What" }
-                            th { "How Long" }
-                            th { "Details" }
+                div { class: "ml-2 mr-2 sm:ml-0 sm:mr-0",
+                    table { class: "block sm:table",
+                        thead { class: "hidden sm:table-header-group",
+                            tr {
+                                th { "When" }
+                                th { "What" }
+                                th { "How Long" }
+                                th { "Details" }
+                            }
                         }
-                    }
-                    tbody { class: "block sm:table-row-group",
-                        for entry in timeline.iter() {
-                            EntryRow {
-                                key: "{entry.get_id().as_str()}",
-                                entry: entry.clone(),
-                                selected,
-                                dialog,
+                        tbody { class: "block sm:table-row-group",
+                            for entry in timeline.iter() {
+                                EntryRow {
+                                    key: "{entry.get_id().as_str()}",
+                                    entry: entry.clone(),
+                                    selected,
+                                    dialog,
+                                }
                             }
                         }
                     }
