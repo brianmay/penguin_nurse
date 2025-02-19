@@ -312,7 +312,7 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
         div { class: "ml-2 mr-2",
             div { class: "mb-2",
                 button {
-                    class: "btn btn-primary",
+                    class: "btn btn-primary mr-2",
                     onclick: move |_| {
                         dialog
                             .set(
@@ -324,7 +324,7 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                     "Wee"
                 }
                 button {
-                    class: "btn btn-primary ml-2",
+                    class: "btn btn-primary mr-2",
                     onclick: move |_| {
                         dialog
                             .set(
@@ -336,7 +336,7 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                     "Poo"
                 }
                 button {
-                    class: "btn btn-primary ml-2",
+                    class: "btn btn-primary",
                     onclick: move |_| {
                         dialog
                             .set(
@@ -365,9 +365,8 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                     },
                     "<"
                 }
-                p { class: "inline-block", {date.to_string()} }
                 button {
-                    class: "btn btn-primary inline-block ml-2",
+                    class: "btn btn-primary inline-block mr-2",
                     onclick: move |_| {
                         let new_date = get_date_for_dt(Utc::now());
                         if let Ok(new_date) = new_date {
@@ -380,7 +379,7 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                     "Today"
                 }
                 button {
-                    class: "btn btn-primary inline-block ml-2",
+                    class: "btn btn-primary inline-block mr-2",
                     onclick: move |_| {
                         let new_date = date().succ_opt();
                         if let Some(new_date) = new_date {
@@ -392,6 +391,7 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                     },
                     ">"
                 }
+                p { class: "inline-block", {date.to_string()} }
             }
         }
 
