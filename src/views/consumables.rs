@@ -4,7 +4,10 @@ use chrono::Local;
 use dioxus::prelude::*;
 
 use crate::{
-    components::consumables::{ActiveDialog, ConsumableDialog, Operation},
+    components::{
+        buttons::{ChangeButton, CreateButton, NavButton},
+        consumables::{ActiveDialog, ConsumableDialog, Operation},
+    },
     functions::consumables::search_consumables_with_nested,
     models::{ConsumableId, ConsumableWithItems, Maybe},
     use_user,
@@ -98,19 +101,14 @@ fn EntryRow(
         if selected() == Some(id) {
             tr {
                 td { colspan: "6", class: "block sm:table-cell",
-                    button {
-                        class: "btn btn-primary m-1",
-                        onclick: move |_| { dialog.set(ActiveDialog::Details(consumable_clone_1.clone())) },
+                    NavButton { on_click: move |_| { dialog.set(ActiveDialog::Details(consumable_clone_1.clone())) },
                         "Details"
                     }
-                    button {
-                        class: "btn btn-primary m-1",
-                        onclick: move |_| { dialog.set(ActiveDialog::Nested(consumable_clone_2.clone())) },
+                    ChangeButton { on_click: move |_| { dialog.set(ActiveDialog::Nested(consumable_clone_2.clone())) },
                         "Ingredients"
                     }
-                    button {
-                        class: "btn btn-primary m-1",
-                        onclick: move |_| {
+                    ChangeButton {
+                        on_click: move |_| {
                             dialog
                                 .set(
                                     ActiveDialog::Change(Operation::Update {
@@ -120,9 +118,7 @@ fn EntryRow(
                         },
                         "Edit"
                     }
-                    button {
-                        class: "btn btn-secondary m-1",
-                        onclick: move |_| { dialog.set(ActiveDialog::Delete(consumable_clone_4.clone())) },
+                    ChangeButton { on_click: move |_| { dialog.set(ActiveDialog::Delete(consumable_clone_4.clone())) },
                         "Delete"
                     }
                 }
@@ -156,9 +152,7 @@ pub fn ConsumableList() -> Element {
     rsx! {
         div { class: "ml-2 mr-2",
             div { class: "mb-2",
-                button {
-                    class: "btn btn-primary",
-                    onclick: move |_| { dialog.set(ActiveDialog::Change(Operation::Create {})) },
+                CreateButton { on_click: move |_| { dialog.set(ActiveDialog::Change(Operation::Create {})) },
                     "Create"
                 }
             }

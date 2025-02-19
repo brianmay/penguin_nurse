@@ -2,12 +2,14 @@ use chrono::Local;
 use dioxus::prelude::*;
 
 use crate::{
+    components::buttons::DeleteButton,
     forms::{
         validate_barcode, validate_brand, validate_comments, validate_consumable_millilitres,
         validate_consumable_quantity, validate_consumable_unit, validate_maybe_date_time,
-        validate_name, CancelButton, CloseButton, DeleteButton, Dialog, EditButton, EditError,
-        FieldValue, InputBoolean, InputConsumable, InputMaybeDateTime, InputNumber, InputSelect,
-        InputString, InputTextArea, Saving, SubmitButton, ValidationError,
+        validate_name, Dialog, EditError, FieldValue, FormCancelButton, FormCloseButton,
+        FormDeleteButton, FormEditButton, FormSubmitButton, InputBoolean, InputConsumable,
+        InputMaybeDateTime, InputNumber, InputSelect, InputString, InputTextArea, Saving,
+        ValidationError,
     },
     functions::consumables::{
         create_consumable, create_nested_consumable, delete_consumable, delete_nested_consumable,
@@ -273,7 +275,7 @@ pub fn ChangeConsumable(
                 disabled,
             }
 
-            SubmitButton {
+            FormSubmitButton {
                 disabled: disabled_save,
                 on_save: move |_| on_save(()),
                 title: match &op {
@@ -281,7 +283,7 @@ pub fn ChangeConsumable(
                     Operation::Update { .. } => "Save",
                 },
             }
-            CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+            FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
         }
     }
 }
@@ -350,8 +352,8 @@ pub fn DeleteConsumable(
                     on_cancel(());
                 }
             },
-            CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-            SubmitButton {
+            FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+            FormSubmitButton {
                 disabled,
                 on_save: move |_| on_save(()),
                 title: "Delete",
@@ -513,9 +515,8 @@ pub fn ConsumableDetails(consumable: Consumable, on_close: Callback<()>) -> Elem
         }
 
         div { class: "p-4",
-            button {
-                class: "btn btn-secondary m-1",
-                onclick: move |_| {
+            DeleteButton {
+                on_click: move |_| {
                     on_close(());
                 },
                 "Close"
@@ -703,7 +704,7 @@ pub fn ConsumableNested(
                             nested_consumables.restart();
                         },
                     }
-                    DeleteButton {
+                    FormDeleteButton {
                         title: "Delete",
                         on_delete: move |_| {
                             selected_consumable.set(None);
@@ -726,11 +727,11 @@ pub fn ConsumableNested(
                     },
                     disabled,
                 }
-                EditButton {
+                FormEditButton {
                     title: "Edit Consumable",
                     on_edit: move |_| on_edit(consumable_clone_2.clone()),
                 }
-                CloseButton { on_close, title: "Close" }
+                FormCloseButton { on_close, title: "Close" }
             }
         }
     }
@@ -844,12 +845,12 @@ fn ConsumableNestedForm(
                 disabled,
             }
 
-            SubmitButton {
+            FormSubmitButton {
                 disabled: disabled_save,
                 on_save: move |_| on_save(()),
                 title: "Save",
             }
-            CancelButton { on_cancel: move |_| on_cancel(()), title: "Cancel" }
+            FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Cancel" }
         }
     }
 }

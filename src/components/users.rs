@@ -5,8 +5,8 @@ use dioxus::prelude::*;
 use crate::{
     forms::{
         validate_1st_password, validate_2nd_password, validate_email, validate_full_name,
-        validate_username, CancelButton, Dialog, EditError, FieldValue, InputBoolean,
-        InputPassword, InputString, Saving, SubmitButton, ValidationError,
+        validate_username, Dialog, EditError, FieldValue, FormCancelButton, FormSubmitButton,
+        InputBoolean, InputPassword, InputString, Saving, ValidationError,
     },
     functions::users::{create_user, delete_user, update_user},
     models::{MaybeString, NewUser, UpdateUser, User},
@@ -224,8 +224,8 @@ pub fn CreateUser(on_cancel: Callback, on_save: Callback<User>) -> Element {
                     value: is_admin,
                     disabled,
                 }
-                CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                SubmitButton {
+                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                FormSubmitButton {
                     disabled: disabled_save,
                     on_save: move |_| on_save(()),
                     title: "Create",
@@ -349,8 +349,8 @@ pub fn ChangeUser(user: User, on_cancel: Callback, on_save: Callback<User>) -> E
                     value: is_admin,
                     disabled,
                 }
-                CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                SubmitButton {
+                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                FormSubmitButton {
                     disabled: disabled_save,
                     on_save: move |_| on_save(()),
                     title: "Save",
@@ -452,8 +452,8 @@ pub fn ChangePassword(user: User, on_cancel: Callback, on_save: Callback<User>) 
                     validate: validate.password_confirm,
                     disabled,
                 }
-                CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                SubmitButton {
+                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                FormSubmitButton {
                     disabled: disabled_save,
                     on_save: move |_| on_save(()),
                     title: "Save",
@@ -526,8 +526,8 @@ pub fn DeleteUser(user: User, on_cancel: Callback, on_delete: Callback<User>) ->
                         on_cancel(());
                     }
                 },
-                CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                SubmitButton {
+                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                FormSubmitButton {
                     disabled,
                     on_save: move |_| on_save(()),
                     title: "Delete",

@@ -7,9 +7,9 @@ use crate::{
     components::events::{event_colour, event_date_time, event_urgency},
     forms::{
         validate_bristol, validate_colour, validate_comments, validate_duration,
-        validate_fixed_offset_date_time, validate_poo_quantity, validate_urgency, CancelButton,
+        validate_fixed_offset_date_time, validate_poo_quantity, validate_urgency, FormCancelButton,
         Dialog, EditError, FieldValue, InputColour, InputDateTime, InputDuration, InputNumber,
-        InputSelect, InputTextArea, Saving, SubmitButton, ValidationError,
+        InputSelect, InputTextArea, Saving, FormSubmitButton, ValidationError,
     },
     functions::poos::{create_poo, delete_poo, update_poo},
     models::{Bristol, MaybeString, NewPoo, Poo, UpdatePoo, UserId},
@@ -250,7 +250,7 @@ pub fn ChangePoo(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
                     disabled,
                 }
 
-                SubmitButton {
+                FormSubmitButton {
                     disabled: disabled_save,
                     on_save: move |_| on_save(()),
                     title: match &op {
@@ -258,7 +258,7 @@ pub fn ChangePoo(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
                         Operation::Update { .. } => "Save",
                     },
                 }
-                CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
             }
         }
     }
@@ -325,8 +325,8 @@ pub fn DeletePoo(poo: Poo, on_cancel: Callback, on_delete: Callback<Poo>) -> Ele
                         on_cancel(());
                     }
                 },
-                CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                SubmitButton {
+                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                FormSubmitButton {
                     disabled,
                     on_save: move |_| on_save(()),
                     title: "Delete",

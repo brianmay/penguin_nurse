@@ -1,7 +1,7 @@
 use chrono::Utc;
 use dioxus::prelude::*;
 
-use crate::{dt::get_date_for_dt, use_user, Route};
+use crate::{components::buttons::NavButton, dt::get_date_for_dt, use_user, Route};
 
 #[component]
 pub fn Home() -> Element {
@@ -16,9 +16,8 @@ pub fn Home() -> Element {
 
             if let Some(user) = user {
                 p { class: "text-green-300", "Welcome, {user.full_name}!" }
-                button {
-                    class: "btn btn-primary",
-                    onclick: move |_| {
+                NavButton {
+                    on_click: move |_| {
                         let new_date = get_date_for_dt(Utc::now());
                         if let Ok(new_date) = new_date {
                             navigator
@@ -31,9 +30,8 @@ pub fn Home() -> Element {
                 }
             } else {
                 p { class: "text-red-600", "Please log in to continue." }
-                button {
-                    class: "btn btn-primary",
-                    onclick: move |_| {
+                NavButton {
+                    on_click: move |_| {
                         navigator.push(Route::Login {});
                     },
                     "Login"

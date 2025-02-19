@@ -1,7 +1,7 @@
 use dioxus::{prelude::*, signals::Memo};
 
 #[component]
-pub fn CancelButton(title: String, on_cancel: Callback<()>) -> Element {
+pub fn FormCancelButton(title: String, on_cancel: Callback<()>) -> Element {
     rsx! {
         button {
             r#type: "button",
@@ -13,7 +13,7 @@ pub fn CancelButton(title: String, on_cancel: Callback<()>) -> Element {
 }
 
 #[component]
-pub fn EditButton(title: String, on_edit: Callback<()>) -> Element {
+pub fn FormEditButton(title: String, on_edit: Callback<()>) -> Element {
     rsx! {
         button {
             r#type: "button",
@@ -25,7 +25,7 @@ pub fn EditButton(title: String, on_edit: Callback<()>) -> Element {
 }
 
 #[component]
-pub fn DeleteButton(title: String, on_delete: Callback<()>) -> Element {
+pub fn FormDeleteButton(title: String, on_delete: Callback<()>) -> Element {
     rsx! {
         button {
             r#type: "button",
@@ -37,7 +37,7 @@ pub fn DeleteButton(title: String, on_delete: Callback<()>) -> Element {
 }
 
 #[component]
-pub fn SubmitButton(disabled: Memo<bool>, title: String, on_save: Callback<()>) -> Element {
+pub fn FormSubmitButton(disabled: Memo<bool>, title: String, on_save: Callback<()>) -> Element {
     let disabled = disabled();
     rsx! {
         button {
@@ -51,7 +51,7 @@ pub fn SubmitButton(disabled: Memo<bool>, title: String, on_save: Callback<()>) 
 }
 
 #[component]
-pub fn CloseButton(title: String, on_close: Callback<()>) -> Element {
+pub fn FormCloseButton(title: String, on_close: Callback<()>) -> Element {
     rsx! {
         button {
             r#type: "button",

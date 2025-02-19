@@ -6,7 +6,10 @@ use std::ops::Deref;
 use tap::Pipe;
 
 use crate::{
-    components::consumables::{self, ChangeConsumable},
+    components::{
+        buttons::{ActionButton, CreateButton},
+        consumables::{self, ChangeConsumable},
+    },
     forms::{validate_colour_hue, validate_colour_saturation, validate_colour_value},
     functions::consumables::search_consumables,
     models::{Consumable, Maybe, MaybeDateTime},
@@ -227,9 +230,8 @@ pub fn InputDateTime(
                     value.set(e.value());
                 },
             }
-            button {
-                class: "btn btn-secondary",
-                onclick: move |_e| {
+            ActionButton {
+                on_click: move |_e| {
                     value.set(Local::now().to_rfc3339());
                 },
                 "Now"
@@ -275,9 +277,8 @@ pub fn InputMaybeDateTime(
                     value.set(e.value());
                 },
             }
-            button {
-                class: "btn btn-secondary",
-                onclick: move |_e| {
+            ActionButton {
+                on_click: move |_e| {
                     value.set(Local::now().to_rfc3339());
                 },
                 "Now"
@@ -328,9 +329,8 @@ pub fn InputDuration(
                 },
             }
             if let Ok(start_time) = start_time() {
-                button {
-                    class: "btn btn-secondary",
-                    onclick: move |_e| {
+                ActionButton {
+                    on_click: move |_e| {
                         let now: DateTime<FixedOffset> = Utc::now().into();
                         value.set((now - start_time).as_string());
                     },
@@ -664,7 +664,7 @@ pub fn InputConsumable(
                     {consumable.name.clone()}
                 }
             } else {
-                div { class: "mb-5 w-20 mr-2 inline-block",
+                div { class: "mb-5 mr-2 inline-block",
                     label {
                         r#for: id,
                         class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
@@ -712,7 +712,7 @@ pub fn InputConsumable(
                             }
                         },
                         Some(None) => rsx! {
-                            button { class: "btn btn-secondary", onclick: move |_e| create_form.set(true), "Create" }
+                            CreateButton { on_click: move |_e| create_form.set(true), "Create" }
                         },
                         None => {
                             rsx! {

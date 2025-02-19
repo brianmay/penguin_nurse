@@ -6,6 +6,7 @@ use tap::Pipe;
 
 use crate::{
     components::{
+        buttons::{ChangeButton, CreateButton, DeleteButton, NavButton},
         consumptions::{self, consumption_duration, consumption_icon},
         events::{event_colour, event_time, event_urgency},
         poos::{self, poo_bristol, poo_duration, poo_icon, poo_quantity},
@@ -149,16 +150,14 @@ fn EntryRow(
                         let wee_clone_1 = wee.clone();
                         let wee_clone_2 = wee.clone();
                         rsx! {
-                            button {
-                                class: "btn btn-primary m-1",
-                                onclick: move |_| {
+                            NavButton {
+                                on_click: move |_| {
                                     dialog.set(ActiveDialog::Wee(wees::ActiveDialog::Details(wee_clone_1.clone())))
                                 },
                                 "Details"
                             }
-                            button {
-                                class: "btn btn-primary m-1",
-                                onclick: move |_| {
+                            ChangeButton {
+                                on_click: move |_| {
                                     dialog
                                         .set(
                                             ActiveDialog::Wee(
@@ -170,9 +169,7 @@ fn EntryRow(
                                 },
                                 "Edit"
                             }
-                            button {
-                                class: "btn btn-secondary m-1",
-                                onclick: move |_| { dialog.set(ActiveDialog::Wee(wees::ActiveDialog::Delete(wee.clone()))) },
+                            DeleteButton { on_click: move |_| { dialog.set(ActiveDialog::Wee(wees::ActiveDialog::Delete(wee.clone()))) },
                                 "Delete"
                             }
                         }
@@ -181,16 +178,14 @@ fn EntryRow(
                         let poo_clone_1 = poo.clone();
                         let poo_clone_2 = poo.clone();
                         rsx! {
-                            button {
-                                class: "btn btn-primary m-1",
-                                onclick: move |_| {
+                            NavButton {
+                                on_click: move |_| {
                                     dialog.set(ActiveDialog::Poo(poos::ActiveDialog::Details(poo_clone_1.clone())))
                                 },
                                 "Details"
                             }
-                            button {
-                                class: "btn btn-primary m-1",
-                                onclick: move |_| {
+                            ChangeButton {
+                                on_click: move |_| {
                                     dialog
                                         .set(
                                             ActiveDialog::Poo(
@@ -202,9 +197,7 @@ fn EntryRow(
                                 },
                                 "Edit"
                             }
-                            button {
-                                class: "btn btn-secondary m-1",
-                                onclick: move |_| { dialog.set(ActiveDialog::Poo(poos::ActiveDialog::Delete(poo.clone()))) },
+                            DeleteButton { on_click: move |_| { dialog.set(ActiveDialog::Poo(poos::ActiveDialog::Delete(poo.clone()))) },
                                 "Delete"
                             }
                         }
@@ -215,9 +208,8 @@ fn EntryRow(
                         let consumption_clone_3 = consumption.consumption.clone();
                         let consumption = consumption.consumption;
                         rsx! {
-                            button {
-                                class: "btn btn-primary m-1",
-                                onclick: move |_| {
+                            NavButton {
+                                on_click: move |_| {
                                     dialog
                                         .set(
                                             ActiveDialog::Consumption(
@@ -227,9 +219,8 @@ fn EntryRow(
                                 },
                                 "Details"
                             }
-                            button {
-                                class: "btn btn-primary m-1",
-                                onclick: move |_| {
+                            ChangeButton {
+                                on_click: move |_| {
                                     dialog
                                         .set(
                                             ActiveDialog::Consumption(
@@ -239,9 +230,8 @@ fn EntryRow(
                                 },
                                 "Ingredients"
                             }
-                            button {
-                                class: "btn btn-primary m-1",
-                                onclick: move |_| {
+                            ChangeButton {
+                                on_click: move |_| {
                                     dialog
                                         .set(
                                             ActiveDialog::Consumption(
@@ -253,9 +243,8 @@ fn EntryRow(
                                 },
                                 "Edit"
                             }
-                            button {
-                                class: "btn btn-secondary m-1",
-                                onclick: move |_| {
+                            DeleteButton {
+                                on_click: move |_| {
                                     dialog
                                         .set(
                                             ActiveDialog::Consumption(
@@ -311,9 +300,8 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
     rsx! {
         div { class: "ml-2 mr-2",
             div { class: "mb-2",
-                button {
-                    class: "btn btn-primary mr-2",
-                    onclick: move |_| {
+                CreateButton {
+                    on_click: move |_| {
                         dialog
                             .set(
                                 ActiveDialog::Wee(
@@ -323,9 +311,8 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                     },
                     "Wee"
                 }
-                button {
-                    class: "btn btn-primary mr-2",
-                    onclick: move |_| {
+                CreateButton {
+                    on_click: move |_| {
                         dialog
                             .set(
                                 ActiveDialog::Poo(
@@ -335,9 +322,8 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                     },
                     "Poo"
                 }
-                button {
-                    class: "btn btn-primary",
-                    onclick: move |_| {
+                CreateButton {
+                    on_click: move |_| {
                         dialog
                             .set(
                                 ActiveDialog::Consumption(
@@ -352,9 +338,8 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
             }
 
             div { class: "mb-2",
-                button {
-                    class: "btn btn-primary inline-block mr-2",
-                    onclick: move |_| {
+                NavButton {
+                    on_click: move |_| {
                         let new_date = date().pred_opt();
                         if let Some(new_date) = new_date {
                             navigator
@@ -365,9 +350,8 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                     },
                     "<"
                 }
-                button {
-                    class: "btn btn-primary inline-block mr-2",
-                    onclick: move |_| {
+                NavButton {
+                    on_click: move |_| {
                         let new_date = get_date_for_dt(Utc::now());
                         if let Ok(new_date) = new_date {
                             navigator
@@ -378,9 +362,8 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                     },
                     "Today"
                 }
-                button {
-                    class: "btn btn-primary inline-block mr-2",
-                    onclick: move |_| {
+                NavButton {
+                    on_click: move |_| {
                         let new_date = date().succ_opt();
                         if let Some(new_date) = new_date {
                             navigator

@@ -1,6 +1,7 @@
 use chrono::Local;
 use dioxus::prelude::*;
 
+use crate::components::buttons::{ChangeButton, DeleteButton, NavButton};
 use crate::components::users::{ChangePassword, ChangeUser, CreateUser, DeleteUser};
 use crate::functions::users::{get_user, get_users};
 use crate::models::{User, UserId};
@@ -143,27 +144,20 @@ pub fn UserDetail(user_id: UserId) -> Element {
                 }
 
                 div { class: "p-4",
-                    button {
-                        class: "btn btn-secondary me-2 mb-2",
-                        onclick: move |_| dialog.set(ActiveDialog::Change(user_clone_1.clone())),
+                    ChangeButton { on_click: move |_| dialog.set(ActiveDialog::Change(user_clone_1.clone())),
                         "Change"
                     }
 
-                    button {
-                        class: "btn btn-secondary me-2 mb-2",
-                        onclick: move |_| dialog.set(ActiveDialog::ChangePassword(user_clone_2.clone())),
+                    ChangeButton { on_click: move |_| dialog.set(ActiveDialog::ChangePassword(user_clone_2.clone())),
                         "Password"
                     }
-                    button {
-                        class: "btn btn-error me-2 mb-2",
-                        onclick: move |_| dialog.set(ActiveDialog::Delete(user_clone_3.clone())),
+                    DeleteButton { on_click: move |_| dialog.set(ActiveDialog::Delete(user_clone_3.clone())),
                         "Delete"
                     }
                 }
                 div { class: "p-4",
-                    button {
-                        class: "btn btn-secondary me-2 mb-2",
-                        onclick: move |_| {
+                    NavButton {
+                        on_click: move |_| {
                             navigator().push(Route::UserList {});
                         },
                         "User List"

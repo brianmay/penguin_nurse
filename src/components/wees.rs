@@ -7,9 +7,9 @@ use crate::{
     components::events::{event_colour, event_date_time, event_urgency},
     forms::{
         validate_colour, validate_comments, validate_duration, validate_fixed_offset_date_time,
-        validate_millilitres, validate_urgency, CancelButton, Dialog, EditError, FieldValue,
+        validate_millilitres, validate_urgency, FormCancelButton, Dialog, EditError, FieldValue,
         InputColour, InputDateTime, InputDuration, InputNumber, InputTextArea, Saving,
-        SubmitButton, ValidationError,
+        FormSubmitButton, ValidationError,
     },
     functions::wees::{create_wee, delete_wee, update_wee},
     models::{MaybeString, NewWee, UpdateWee, UserId, Wee},
@@ -232,7 +232,7 @@ pub fn ChangeWee(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
                     disabled,
                 }
 
-                SubmitButton {
+                FormSubmitButton {
                     disabled: disabled_save,
                     on_save: move |_| on_save(()),
                     title: match &op {
@@ -240,7 +240,7 @@ pub fn ChangeWee(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
                         Operation::Update { .. } => "Save",
                     },
                 }
-                CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
             }
         }
     }
@@ -307,8 +307,8 @@ pub fn DeleteWee(wee: Wee, on_cancel: Callback, on_delete: Callback<Wee>) -> Ele
                         on_cancel(());
                     }
                 },
-                CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                SubmitButton {
+                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                FormSubmitButton {
                     disabled,
                     on_save: move |_| on_save(()),
                     title: "Delete",

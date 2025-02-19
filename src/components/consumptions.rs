@@ -5,9 +5,10 @@ use crate::{
     components::events::event_date_time,
     forms::{
         validate_comments, validate_consumable_millilitres, validate_consumable_quantity,
-        validate_duration, validate_fixed_offset_date_time, CancelButton, CloseButton,
-        DeleteButton, Dialog, EditButton, EditError, FieldValue, InputConsumable, InputDateTime,
-        InputDuration, InputNumber, InputTextArea, Saving, SubmitButton, ValidationError,
+        validate_duration, validate_fixed_offset_date_time, FormCloseButton, Dialog, EditError,
+        FieldValue, FormCancelButton, FormDeleteButton, FormEditButton, InputConsumable,
+        InputDateTime, InputDuration, InputNumber, InputTextArea, Saving, FormSubmitButton,
+        ValidationError,
     },
     functions::consumptions::{
         create_consumption, create_consumption_consumable, delete_consumption,
@@ -205,7 +206,7 @@ pub fn ChangeConsumption(
                     validate: validate.comments,
                     disabled,
                 }
-                SubmitButton {
+                FormSubmitButton {
                     disabled: disabled_save,
                     on_save: move |_| on_save(()),
                     title: match &op {
@@ -213,7 +214,7 @@ pub fn ChangeConsumption(
                         Operation::Update { .. } => "Save",
                     },
                 }
-                CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
             }
         }
     }
@@ -284,8 +285,8 @@ pub fn DeleteConsumption(
                         on_cancel(());
                     }
                 },
-                CancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                SubmitButton {
+                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                FormSubmitButton {
                     disabled,
                     on_save: move |_| on_save(()),
                     title: "Delete",
@@ -663,7 +664,7 @@ pub fn ConsumableConsumption(
                                 has_changed.set(true);
                             },
                         }
-                        DeleteButton {
+                        FormDeleteButton {
                             title: "Delete",
                             on_delete: move |_| {
                                 selected_consumable.set(None);
@@ -687,7 +688,7 @@ pub fn ConsumableConsumption(
                         },
                         disabled,
                     }
-                    EditButton {
+                    FormEditButton {
                         title: "Edit",
                         on_edit: move || {
                             if has_changed() {
@@ -696,7 +697,7 @@ pub fn ConsumableConsumption(
                             on_edit(consumption.clone());
                         },
                     }
-                    CloseButton {
+                    FormCloseButton {
                         on_close: move || {
                             if has_changed() {
                                 on_change(consumption_clone_2.clone());
@@ -819,12 +820,12 @@ fn ConsumableConsumptionForm(
                 disabled,
             }
 
-            SubmitButton {
+            FormSubmitButton {
                 disabled: disabled_save,
                 on_save: move |_| on_save(()),
                 title: "Save",
             }
-            CancelButton { on_cancel: move |_| on_cancel(()), title: "Cancel" }
+            FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Cancel" }
         }
     }
 }

@@ -1,3 +1,4 @@
+pub mod buttons;
 pub mod consumables;
 pub mod consumptions;
 pub mod events;

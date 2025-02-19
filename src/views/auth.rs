@@ -1,7 +1,7 @@
 use crate::{
     forms::{
-        validate_password, validate_username, CancelButton, InputPassword, InputString, MyForm,
-        SubmitButton,
+        validate_password, validate_username, FormCancelButton, InputPassword, InputString, MyForm,
+        FormSubmitButton,
     },
     models::User,
     reload_user, use_user, Route,
@@ -76,7 +76,7 @@ pub fn Login() -> Element {
                     h1 { "Welcome back, " }
                     h2 { {&*user_obj.username} }
                     form { novalidate: true, action: "javascript:void(0);",
-                        SubmitButton {
+                        FormSubmitButton {
                             disabled: Memo::new(|| false),
                             on_save: move |_| {
                                 let navigator = navigator();
@@ -101,7 +101,7 @@ pub fn Login() -> Element {
                                 h1 { "Login failed!" }
                                 h2 { {err.to_string()} }
                                 form { novalidate: true, action: "javascript:void(0);",
-                                    SubmitButton {
+                                    FormSubmitButton {
                                         disabled: Memo::new(|| false),
                                         on_save: move |_| {
                                             reload_user();
@@ -159,7 +159,7 @@ pub fn Login() -> Element {
                                             "Forgot password?"
                                         }
                                     }
-                                    SubmitButton {
+                                    FormSubmitButton {
                                         disabled: disabled_save,
                                         title: "Sign in",
                                         on_save: move |_e| async move { on_save(()).await },
@@ -229,7 +229,7 @@ pub fn Logout() -> Element {
                             div {
                                 h1 { "Logout success!" }
                                 form { novalidate: true, action: "javascript:void(0);",
-                                    SubmitButton {
+                                    FormSubmitButton {
                                         disabled: Memo::new(|| false),
                                         title: "Home",
                                         on_save: move |_| {
@@ -254,14 +254,14 @@ pub fn Logout() -> Element {
                             div {
                                 h1 { "Are you sure you want to logout?" }
                                 form { novalidate: true, action: "javascript:void(0);",
-                                    CancelButton {
+                                    FormCancelButton {
                                         on_cancel: move |_| {
                                             let navigator = navigator();
                                             navigator.push(Route::Home {});
                                         },
                                         title: "Cancel",
                                     }
-                                    SubmitButton {
+                                    FormSubmitButton {
                                         disabled: Memo::new(|| false),
                                         title: "Logout",
                                         on_save: move |_e| async move { on_save(()).await },
@@ -275,7 +275,7 @@ pub fn Logout() -> Element {
                 div {
                     h1 { "You are not logged in!" }
                     form { novalidate: true, action: "javascript:void(0);",
-                        CancelButton {
+                        FormCancelButton {
                             on_cancel: move |_| {
                                 let navigator = navigator();
                                 navigator.push(Route::Home {});
