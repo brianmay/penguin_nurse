@@ -1,5 +1,5 @@
-use crate::{use_user, Route};
-use chrono::Local;
+use crate::{dt::get_date_for_dt, use_user, Route};
+use chrono::Utc;
 use dioxus::prelude::*;
 
 const NURSE_SVG: Asset = asset!("/assets/nurse.svg");
@@ -33,7 +33,7 @@ pub fn Navbar() -> Element {
     let user_result = use_user();
     let user = user_result.as_ref().ok().and_then(|x| x.as_ref());
 
-    let date = Local::now().date_naive();
+    let date = get_date_for_dt(Utc::now());
 
     let menu_class = if show_menu() { "" } else { "hidden" };
 
@@ -77,10 +77,12 @@ pub fn Navbar() -> Element {
                     id: "navbar-multi-level",
                     class: "{menu_class} w-full md:block md:w-auto",
                     ul { class: "flex flex-col font-medium p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700",
-                        MenuItem {
-                            route: Route::TimelineList { date },
-                            title: "Today",
-                            show_menu,
+                        if let Ok(date) = date {
+                            MenuItem {
+                                route: Route::TimelineList { date },
+                                title: "Today",
+                                show_menu,
+                            }
                         }
                         MenuItem {
                             route: Route::ConsumableList {},
