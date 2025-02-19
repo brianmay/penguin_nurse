@@ -36,6 +36,7 @@ fn EntryRow(
                 }
             }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
+                span { class: "sm:hidden", "Unit: " }
                 {consumable.unit.to_string()}
             }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
@@ -82,11 +83,13 @@ fn EntryRow(
             }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 if let Maybe::Some(created) = &consumable.created {
+                    span { class: "sm:hidden", "Created: " }
                     {created.with_timezone(&Local).to_string()}
                 }
             }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 if let Maybe::Some(destroyed) = &consumable.destroyed {
+                    span { class: "sm:hidden", "Destroyed: " }
                     {destroyed.with_timezone(&Local).to_string()}
                 }
             }

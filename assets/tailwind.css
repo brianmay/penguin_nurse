@@ -3185,6 +3185,10 @@ html {
     display: table-row;
   }
 
+  .sm\:hidden {
+    display: none;
+  }
+
   .sm\:h-auto {
     height: auto;
   }
