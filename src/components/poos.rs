@@ -7,9 +7,9 @@ use crate::{
     components::events::{event_colour, event_date_time, event_urgency},
     forms::{
         validate_bristol, validate_colour, validate_comments, validate_duration,
-        validate_fixed_offset_date_time, validate_poo_quantity, validate_urgency, FormCancelButton,
-        Dialog, EditError, FieldValue, InputColour, InputDateTime, InputDuration, InputNumber,
-        InputSelect, InputTextArea, Saving, FormSubmitButton, ValidationError,
+        validate_fixed_offset_date_time, validate_poo_quantity, validate_urgency, Dialog,
+        EditError, FieldValue, FormCancelButton, FormSubmitButton, InputColour, InputDateTime,
+        InputDuration, InputNumber, InputSelect, InputTextArea, Saving, ValidationError,
     },
     functions::poos::{create_poo, delete_poo, update_poo},
     models::{Bristol, MaybeString, NewPoo, Poo, UpdatePoo, UserId},
@@ -151,115 +151,112 @@ pub fn ChangePoo(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
     });
 
     rsx! {
+        h3 { class: "text-lg font-bold",
+            match &op {
+                Operation::Create { .. } => "Create Poo".to_string(),
+                Operation::Update { poo } => format!("Edit Poo {}", poo.id),
+            }
+        }
+        p { class: "py-4", "Press ESC key or click the button below to close" }
+        match &*saving.read() {
+            Saving::Yes => {
+                rsx! {
+                    div { class: "alert alert-info", "Saving..." }
+                }
+            }
+            Saving::Finished(Ok(())) => {
+                rsx! {
+                    div { class: "alert alert-success", "Saved!" }
+                }
+            }
+            Saving::Finished(Err(err)) => {
+                rsx! {
+                    div { class: "alert alert-error",
+                        "Error: "
+                        {err.to_string()}
+                    }
+                }
+            }
+            _ => {
+                rsx! {}
+            }
+        }
+        form {
+            novalidate: true,
+            action: "javascript:void(0)",
+            method: "dialog",
+            onkeyup: move |event| {
+                if event.key() == Key::Escape {
+                    on_cancel(());
+                }
+            },
+            InputDateTime {
+                id: "time",
+                label: "Time",
+                value: time,
+                validate: validate.time,
+                disabled,
+            }
+            InputDuration {
+                id: "duration",
+                label: "Duration",
+                value: duration,
+                start_time: validate.time,
+                validate: validate.duration,
+                disabled,
+            }
+            InputNumber {
+                id: "urgency",
+                label: "Urgency",
+                value: urgency,
+                validate: validate.urgency,
+                disabled,
+            }
+            InputNumber {
+                id: "quantity",
+                label: "Quantity",
+                value: quantity,
+                validate: validate.quantity,
+                disabled,
+            }
+            InputSelect {
+                id: "bristol",
+                label: "Bristol",
+                value: bristol,
+                validate: validate.bristol,
+                options: Bristol::options(),
+                disabled,
+            }
+            InputColour {
+                id: "colour",
+                label: "Colour",
+                value: colour,
+                validate: validate.colour,
+                colours: vec![
+                    ("light".to_string(), Hsv::new(25.0, 1.0, 0.8)),
+                    ("normal".to_string(), Hsv::new(25.0, 1.0, 0.5)),
+                    ("dark".to_string(), Hsv::new(25.0, 1.0, 0.2)),
+                    ("red".to_string(), Hsv::new(0.0, 1.0, 1.0)),
+                ],
+                disabled,
+            }
+            InputTextArea {
+                id: "comments",
+                label: "Comments",
+                value: comments,
+                validate: validate.comments,
+                disabled,
+            }
 
-        Dialog {
-            h3 { class: "text-lg font-bold",
-                match &op {
-                    Operation::Create { .. } => "Create Poo".to_string(),
-                    Operation::Update { poo } => format!("Edit Poo {}", poo.id),
-                }
-            }
-            p { class: "py-4", "Press ESC key or click the button below to close" }
-            match &*saving.read() {
-                Saving::Yes => {
-                    rsx! {
-                        div { class: "alert alert-info", "Saving..." }
-                    }
-                }
-                Saving::Finished(Ok(())) => {
-                    rsx! {
-                        div { class: "alert alert-success", "Saved!" }
-                    }
-                }
-                Saving::Finished(Err(err)) => {
-                    rsx! {
-                        div { class: "alert alert-error",
-                            "Error: "
-                            {err.to_string()}
-                        }
-                    }
-                }
-                _ => {
-                    rsx! {}
-                }
-            }
-            form {
-                novalidate: true,
-                action: "javascript:void(0)",
-                method: "dialog",
-                onkeyup: move |event| {
-                    if event.key() == Key::Escape {
-                        on_cancel(());
-                    }
+            FormSubmitButton {
+                disabled: disabled_save,
+                on_save: move |_| on_save(()),
+                title: match &op {
+                    Operation::Create { .. } => "Create",
+                    Operation::Update { .. } => "Save",
                 },
-                InputDateTime {
-                    id: "time",
-                    label: "Time",
-                    value: time,
-                    validate: validate.time,
-                    disabled,
-                }
-                InputDuration {
-                    id: "duration",
-                    label: "Duration",
-                    value: duration,
-                    start_time: validate.time,
-                    validate: validate.duration,
-                    disabled,
-                }
-                InputNumber {
-                    id: "urgency",
-                    label: "Urgency",
-                    value: urgency,
-                    validate: validate.urgency,
-                    disabled,
-                }
-                InputNumber {
-                    id: "quantity",
-                    label: "Quantity",
-                    value: quantity,
-                    validate: validate.quantity,
-                    disabled,
-                }
-                InputSelect {
-                    id: "bristol",
-                    label: "Bristol",
-                    value: bristol,
-                    validate: validate.bristol,
-                    options: Bristol::options(),
-                    disabled,
-                }
-                InputColour {
-                    id: "colour",
-                    label: "Colour",
-                    value: colour,
-                    validate: validate.colour,
-                    colours: vec![
-                        ("light".to_string(), Hsv::new(25.0, 1.0, 0.8)),
-                        ("normal".to_string(), Hsv::new(25.0, 1.0, 0.5)),
-                        ("dark".to_string(), Hsv::new(25.0, 1.0, 0.2)),
-                        ("red".to_string(), Hsv::new(0.0, 1.0, 1.0)),
-                    ],
-                    disabled,
-                }
-                InputTextArea {
-                    id: "comments",
-                    label: "Comments",
-                    value: comments,
-                    validate: validate.comments,
-                    disabled,
-                }
-
-                FormSubmitButton {
-                    disabled: disabled_save,
-                    on_save: move |_| on_save(()),
-                    title: match &op {
-                        Operation::Create { .. } => "Create",
-                        Operation::Update { .. } => "Save",
-                    },
-                }
-                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
             }
+            FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
         }
     }
 }
@@ -287,50 +284,48 @@ pub fn DeletePoo(poo: Poo, on_cancel: Callback, on_delete: Callback<Poo>) -> Ele
     });
 
     rsx! {
-        Dialog {
-            h3 { class: "text-lg font-bold",
-                "Delete poo "
-                {poo.id.to_string()}
-            }
-            p { class: "py-4", "Press ESC key or click the button below to close" }
-            match &*saving.read() {
-                Saving::Yes => {
-                    rsx! {
-                        div { class: "alert alert-info", "Deleting..." }
-                    }
-                }
-                Saving::Finished(Ok(())) => {
-                    rsx! {
-                        div { class: "alert alert-success", "Deleted!" }
-                    }
-                }
-                Saving::Finished(Err(err)) => {
-                    rsx! {
-                        div { class: "alert alert-error",
-                            "Error: "
-                            {err.to_string()}
-                        }
-                    }
-                }
-                _ => {
-                    rsx! {}
+        h3 { class: "text-lg font-bold",
+            "Delete poo "
+            {poo.id.to_string()}
+        }
+        p { class: "py-4", "Press ESC key or click the button below to close" }
+        match &*saving.read() {
+            Saving::Yes => {
+                rsx! {
+                    div { class: "alert alert-info", "Deleting..." }
                 }
             }
-            form {
-                novalidate: true,
-                action: "javascript:void(0)",
-                method: "dialog",
-                onkeyup: move |event| {
-                    if event.key() == Key::Escape {
-                        on_cancel(());
-                    }
-                },
-                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                FormSubmitButton {
-                    disabled,
-                    on_save: move |_| on_save(()),
-                    title: "Delete",
+            Saving::Finished(Ok(())) => {
+                rsx! {
+                    div { class: "alert alert-success", "Deleted!" }
                 }
+            }
+            Saving::Finished(Err(err)) => {
+                rsx! {
+                    div { class: "alert alert-error",
+                        "Error: "
+                        {err.to_string()}
+                    }
+                }
+            }
+            _ => {
+                rsx! {}
+            }
+        }
+        form {
+            novalidate: true,
+            action: "javascript:void(0)",
+            method: "dialog",
+            onkeyup: move |event| {
+                if event.key() == Key::Escape {
+                    on_cancel(());
+                }
+            },
+            FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+            FormSubmitButton {
+                disabled,
+                on_save: move |_| on_save(()),
+                title: "Delete",
             }
         }
     }
@@ -428,6 +423,7 @@ pub enum ActiveDialog {
     Change(Operation),
     Delete(Poo),
     Details(Poo),
+    Idle,
 }
 
 #[component]
@@ -440,18 +436,27 @@ pub fn PooDialog(
     match dialog.clone() {
         ActiveDialog::Change(op) => {
             rsx! {
-                ChangePoo { op, on_cancel: on_close, on_save: on_change }
+                Dialog {
+                    ChangePoo { op, on_cancel: on_close, on_save: on_change }
+                }
             }
         }
         ActiveDialog::Delete(poo) => {
             rsx! {
-                DeletePoo { poo, on_cancel: on_close, on_delete }
+                Dialog {
+                    DeletePoo { poo, on_cancel: on_close, on_delete }
+                }
             }
         }
         ActiveDialog::Details(poo) => {
             rsx! {
-                PooDetail { poo, on_close }
+                Dialog {
+                    PooDetail { poo, on_close }
+                }
             }
+        }
+        ActiveDialog::Idle => {
+            rsx! {}
         }
     }
 }
@@ -459,85 +464,83 @@ pub fn PooDialog(
 #[component]
 pub fn PooDetail(poo: Poo, on_close: Callback<()>) -> Element {
     rsx! {
-        Dialog {
-            h3 { class: "text-lg font-bold",
-                "Poo "
-                {poo.id.to_string()}
-            }
-            div { class: "p-4",
-                table { class: "table table-striped",
-                    tbody {
-                        tr {
-                            td { "Event" }
-                            td { poo_icon {} }
+        h3 { class: "text-lg font-bold",
+            "Poo "
+            {poo.id.to_string()}
+        }
+        div { class: "p-4",
+            table { class: "table table-striped",
+                tbody {
+                    tr {
+                        td { "Event" }
+                        td { poo_icon {} }
+                    }
+                    tr {
+                        td { "ID" }
+                        td { {poo.id.as_inner().to_string()} }
+                    }
+                    tr {
+                        td { "Time" }
+                        td {
+                            event_date_time { time: poo.time }
                         }
-                        tr {
-                            td { "ID" }
-                            td { {poo.id.as_inner().to_string()} }
+                    }
+                    tr {
+                        td { "Duration" }
+                        td {
+                            poo_duration { duration: poo.duration }
                         }
-                        tr {
-                            td { "Time" }
-                            td {
-                                event_date_time { time: poo.time }
-                            }
+                    }
+                    tr {
+                        td { "Colour" }
+                        td {
+                            event_colour { colour: poo.colour }
                         }
-                        tr {
-                            td { "Duration" }
-                            td {
-                                poo_duration { duration: poo.duration }
-                            }
+                    }
+                    tr {
+                        td { "Urgency" }
+                        td {
+                            event_urgency { urgency: poo.urgency }
                         }
-                        tr {
-                            td { "Colour" }
-                            td {
-                                event_colour { colour: poo.colour }
-                            }
+                    }
+                    tr {
+                        td { "Duration" }
+                        td {
+                            poo_duration { duration: poo.duration }
                         }
-                        tr {
-                            td { "Urgency" }
-                            td {
-                                event_urgency { urgency: poo.urgency }
-                            }
+                    }
+                    tr {
+                        td { "Quantity" }
+                        td {
+                            poo_quantity { quantity: poo.quantity }
                         }
-                        tr {
-                            td { "Duration" }
-                            td {
-                                poo_duration { duration: poo.duration }
-                            }
+                    }
+                    tr {
+                        td { "Bristol" }
+                        td {
+                            poo_bristol { bristol: poo.bristol }
                         }
-                        tr {
-                            td { "Quantity" }
-                            td {
-                                poo_quantity { quantity: poo.quantity }
-                            }
-                        }
-                        tr {
-                            td { "Bristol" }
-                            td {
-                                poo_bristol { bristol: poo.bristol }
-                            }
-                        }
-                        tr {
-                            td { "Created" }
-                            td { {poo.created_at.with_timezone(&Local).to_string()} }
-                        }
-                        tr {
-                            td { "Updated" }
-                            td { {poo.updated_at.with_timezone(&Local).to_string()} }
-                        }
+                    }
+                    tr {
+                        td { "Created" }
+                        td { {poo.created_at.with_timezone(&Local).to_string()} }
+                    }
+                    tr {
+                        td { "Updated" }
+                        td { {poo.updated_at.with_timezone(&Local).to_string()} }
                     }
                 }
             }
+        }
 
 
-            div { class: "p-4",
-                button {
-                    class: "btn btn-secondary m-1",
-                    onclick: move |_| {
-                        on_close(());
-                    },
-                    "Close"
-                }
+        div { class: "p-4",
+            button {
+                class: "btn btn-secondary m-1",
+                onclick: move |_| {
+                    on_close(());
+                },
+                "Close"
             }
         }
     }

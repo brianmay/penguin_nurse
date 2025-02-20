@@ -7,9 +7,9 @@ use crate::{
     components::events::{event_colour, event_date_time, event_urgency},
     forms::{
         validate_colour, validate_comments, validate_duration, validate_fixed_offset_date_time,
-        validate_millilitres, validate_urgency, FormCancelButton, Dialog, EditError, FieldValue,
-        InputColour, InputDateTime, InputDuration, InputNumber, InputTextArea, Saving,
-        FormSubmitButton, ValidationError,
+        validate_millilitres, validate_urgency, Dialog, EditError, FieldValue, FormCancelButton,
+        FormSubmitButton, InputColour, InputDateTime, InputDuration, InputNumber, InputTextArea,
+        Saving, ValidationError,
     },
     functions::wees::{create_wee, delete_wee, update_wee},
     models::{MaybeString, NewWee, UpdateWee, UserId, Wee},
@@ -142,106 +142,103 @@ pub fn ChangeWee(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
     });
 
     rsx! {
+        h3 { class: "text-lg font-bold",
+            match &op {
+                Operation::Create { .. } => "Create Wee".to_string(),
+                Operation::Update { wee } => format!("Edit Wee {}", wee.id),
+            }
+        }
+        p { class: "py-4", "Press ESC key or click the button below to close" }
+        match &*saving.read() {
+            Saving::Yes => {
+                rsx! {
+                    div { class: "alert alert-info", "Saving..." }
+                }
+            }
+            Saving::Finished(Ok(())) => {
+                rsx! {
+                    div { class: "alert alert-success", "Saved!" }
+                }
+            }
+            Saving::Finished(Err(err)) => {
+                rsx! {
+                    div { class: "alert alert-error",
+                        "Error: "
+                        {err.to_string()}
+                    }
+                }
+            }
+            _ => {
+                rsx! {}
+            }
+        }
+        form {
+            novalidate: true,
+            action: "javascript:void(0)",
+            method: "dialog",
+            onkeyup: move |event| {
+                if event.key() == Key::Escape {
+                    on_cancel(());
+                }
+            },
+            InputDateTime {
+                id: "time",
+                label: "Time",
+                value: time,
+                validate: validate.time,
+                disabled,
+            }
+            InputDuration {
+                id: "duration",
+                label: "Duration",
+                value: duration,
+                start_time: validate.time,
+                validate: validate.duration,
+                disabled,
+            }
+            InputNumber {
+                id: "urgency",
+                label: "Urgency",
+                value: urgency,
+                validate: validate.urgency,
+                disabled,
+            }
+            InputNumber {
+                id: "mls",
+                label: "Quantity",
+                value: mls,
+                validate: validate.mls,
+                disabled,
+            }
+            InputColour {
+                id: "colour",
+                label: "Colour",
+                value: colour,
+                validate: validate.colour,
+                colours: vec![
+                    ("light".to_string(), Hsv::new(45.0, 1.0, 0.8)),
+                    ("normal".to_string(), Hsv::new(40.0, 1.0, 0.8)),
+                    ("dark".to_string(), Hsv::new(35.0, 1.0, 0.8)),
+                ],
+                disabled,
+            }
+            InputTextArea {
+                id: "comments",
+                label: "Comments",
+                value: comments,
+                validate: validate.comments,
+                disabled,
+            }
 
-        Dialog {
-            h3 { class: "text-lg font-bold",
-                match &op {
-                    Operation::Create { .. } => "Create Wee".to_string(),
-                    Operation::Update { wee } => format!("Edit Wee {}", wee.id),
-                }
-            }
-            p { class: "py-4", "Press ESC key or click the button below to close" }
-            match &*saving.read() {
-                Saving::Yes => {
-                    rsx! {
-                        div { class: "alert alert-info", "Saving..." }
-                    }
-                }
-                Saving::Finished(Ok(())) => {
-                    rsx! {
-                        div { class: "alert alert-success", "Saved!" }
-                    }
-                }
-                Saving::Finished(Err(err)) => {
-                    rsx! {
-                        div { class: "alert alert-error",
-                            "Error: "
-                            {err.to_string()}
-                        }
-                    }
-                }
-                _ => {
-                    rsx! {}
-                }
-            }
-            form {
-                novalidate: true,
-                action: "javascript:void(0)",
-                method: "dialog",
-                onkeyup: move |event| {
-                    if event.key() == Key::Escape {
-                        on_cancel(());
-                    }
+            FormSubmitButton {
+                disabled: disabled_save,
+                on_save: move |_| on_save(()),
+                title: match &op {
+                    Operation::Create { .. } => "Create",
+                    Operation::Update { .. } => "Save",
                 },
-                InputDateTime {
-                    id: "time",
-                    label: "Time",
-                    value: time,
-                    validate: validate.time,
-                    disabled,
-                }
-                InputDuration {
-                    id: "duration",
-                    label: "Duration",
-                    value: duration,
-                    start_time: validate.time,
-                    validate: validate.duration,
-                    disabled,
-                }
-                InputNumber {
-                    id: "urgency",
-                    label: "Urgency",
-                    value: urgency,
-                    validate: validate.urgency,
-                    disabled,
-                }
-                InputNumber {
-                    id: "mls",
-                    label: "Quantity",
-                    value: mls,
-                    validate: validate.mls,
-                    disabled,
-                }
-                InputColour {
-                    id: "colour",
-                    label: "Colour",
-                    value: colour,
-                    validate: validate.colour,
-                    colours: vec![
-                        ("light".to_string(), Hsv::new(45.0, 1.0, 0.8)),
-                        ("normal".to_string(), Hsv::new(40.0, 1.0, 0.8)),
-                        ("dark".to_string(), Hsv::new(35.0, 1.0, 0.8)),
-                    ],
-                    disabled,
-                }
-                InputTextArea {
-                    id: "comments",
-                    label: "Comments",
-                    value: comments,
-                    validate: validate.comments,
-                    disabled,
-                }
-
-                FormSubmitButton {
-                    disabled: disabled_save,
-                    on_save: move |_| on_save(()),
-                    title: match &op {
-                        Operation::Create { .. } => "Create",
-                        Operation::Update { .. } => "Save",
-                    },
-                }
-                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
             }
+            FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
         }
     }
 }
@@ -269,50 +266,48 @@ pub fn DeleteWee(wee: Wee, on_cancel: Callback, on_delete: Callback<Wee>) -> Ele
     });
 
     rsx! {
-        Dialog {
-            h3 { class: "text-lg font-bold",
-                "Delete wee "
-                {wee.id.to_string()}
-            }
-            p { class: "py-4", "Press ESC key or click the button below to close" }
-            match &*saving.read() {
-                Saving::Yes => {
-                    rsx! {
-                        div { class: "alert alert-info", "Deleting..." }
-                    }
-                }
-                Saving::Finished(Ok(())) => {
-                    rsx! {
-                        div { class: "alert alert-success", "Deleted!" }
-                    }
-                }
-                Saving::Finished(Err(err)) => {
-                    rsx! {
-                        div { class: "alert alert-error",
-                            "Error: "
-                            {err.to_string()}
-                        }
-                    }
-                }
-                _ => {
-                    rsx! {}
+        h3 { class: "text-lg font-bold",
+            "Delete wee "
+            {wee.id.to_string()}
+        }
+        p { class: "py-4", "Press ESC key or click the button below to close" }
+        match &*saving.read() {
+            Saving::Yes => {
+                rsx! {
+                    div { class: "alert alert-info", "Deleting..." }
                 }
             }
-            form {
-                novalidate: true,
-                action: "javascript:void(0)",
-                method: "dialog",
-                onkeyup: move |event| {
-                    if event.key() == Key::Escape {
-                        on_cancel(());
-                    }
-                },
-                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                FormSubmitButton {
-                    disabled,
-                    on_save: move |_| on_save(()),
-                    title: "Delete",
+            Saving::Finished(Ok(())) => {
+                rsx! {
+                    div { class: "alert alert-success", "Deleted!" }
                 }
+            }
+            Saving::Finished(Err(err)) => {
+                rsx! {
+                    div { class: "alert alert-error",
+                        "Error: "
+                        {err.to_string()}
+                    }
+                }
+            }
+            _ => {
+                rsx! {}
+            }
+        }
+        form {
+            novalidate: true,
+            action: "javascript:void(0)",
+            method: "dialog",
+            onkeyup: move |event| {
+                if event.key() == Key::Escape {
+                    on_cancel(());
+                }
+            },
+            FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+            FormSubmitButton {
+                disabled,
+                on_save: move |_| on_save(()),
+                title: "Delete",
             }
         }
     }
@@ -392,6 +387,7 @@ pub enum ActiveDialog {
     Change(Operation),
     Delete(Wee),
     Details(Wee),
+    Idle,
 }
 
 #[component]
@@ -404,18 +400,27 @@ pub fn WeeDialog(
     match dialog.clone() {
         ActiveDialog::Change(op) => {
             rsx! {
-                ChangeWee { op, on_cancel: on_close, on_save: on_change }
+                Dialog {
+                    ChangeWee { op, on_cancel: on_close, on_save: on_change }
+                }
             }
         }
         ActiveDialog::Delete(wee) => {
             rsx! {
-                DeleteWee { wee, on_cancel: on_close, on_delete }
+                Dialog {
+                    DeleteWee { wee, on_cancel: on_close, on_delete }
+                }
             }
         }
         ActiveDialog::Details(wee) => {
             rsx! {
-                WeeDetail { wee, on_close }
+                Dialog {
+                    WeeDetail { wee, on_close }
+                }
             }
+        }
+        ActiveDialog::Idle => {
+            rsx! {}
         }
     }
 }
@@ -423,78 +428,76 @@ pub fn WeeDialog(
 #[component]
 pub fn WeeDetail(wee: Wee, on_close: Callback<()>) -> Element {
     rsx! {
-        Dialog {
-            h3 { class: "text-lg font-bold",
-                "Wee "
-                {wee.id.to_string()}
-            }
-            div { class: "p-4",
-                table { class: "table table-striped",
-                    tbody {
-                        tr {
-                            td { "Event" }
-                            td { wee_icon {} }
+        h3 { class: "text-lg font-bold",
+            "Wee "
+            {wee.id.to_string()}
+        }
+        div { class: "p-4",
+            table { class: "table table-striped",
+                tbody {
+                    tr {
+                        td { "Event" }
+                        td { wee_icon {} }
+                    }
+                    tr {
+                        td { "ID" }
+                        td { {wee.id.as_inner().to_string()} }
+                    }
+                    tr {
+                        td { "Time" }
+                        td {
+                            event_date_time { time: wee.time }
                         }
-                        tr {
-                            td { "ID" }
-                            td { {wee.id.as_inner().to_string()} }
+                    }
+                    tr {
+                        td { "Duration" }
+                        td {
+                            wee_duration { duration: wee.duration }
                         }
-                        tr {
-                            td { "Time" }
-                            td {
-                                event_date_time { time: wee.time }
-                            }
+                    }
+                    tr {
+                        td { "Colour" }
+                        td {
+                            event_colour { colour: wee.colour }
                         }
-                        tr {
-                            td { "Duration" }
-                            td {
-                                wee_duration { duration: wee.duration }
-                            }
+                    }
+                    tr {
+                        td { "Urgency" }
+                        td {
+                            event_urgency { urgency: wee.urgency }
                         }
-                        tr {
-                            td { "Colour" }
-                            td {
-                                event_colour { colour: wee.colour }
-                            }
+                    }
+                    tr {
+                        td { "Duration" }
+                        td {
+                            wee_duration { duration: wee.duration }
                         }
-                        tr {
-                            td { "Urgency" }
-                            td {
-                                event_urgency { urgency: wee.urgency }
-                            }
+                    }
+                    tr {
+                        td { "Quantity" }
+                        td {
+                            wee_mls { mls: wee.mls }
                         }
-                        tr {
-                            td { "Duration" }
-                            td {
-                                wee_duration { duration: wee.duration }
-                            }
-                        }
-                        tr {
-                            td { "Quantity" }
-                            td {
-                                wee_mls { mls: wee.mls }
-                            }
-                        }
-                        tr {
-                            td { "Created" }
-                            td { {wee.created_at.with_timezone(&Local).to_string()} }
-                        }
-                        tr {
-                            td { "Updated" }
-                            td { {wee.updated_at.with_timezone(&Local).to_string()} }
-                        }
+                    }
+                    tr {
+                        td { "Created" }
+                        td { {wee.created_at.with_timezone(&Local).to_string()} }
+                    }
+                    tr {
+                        td { "Updated" }
+                        td { {wee.updated_at.with_timezone(&Local).to_string()} }
                     }
                 }
             }
+        }
 
-            div { class: "p-4",
-                button {
-                    class: "btn btn-secondary m-1",
-                    onclick: move |_| {
-                        on_close(());
-                    },
-                    "Close"
-                }
+        div { class: "p-4",
+            button {
+                class: "btn btn-secondary m-1",
+                onclick: move |_| {
+                    on_close(());
+                },
+                "Close"
             }
         }
     }

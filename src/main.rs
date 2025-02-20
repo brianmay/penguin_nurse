@@ -4,8 +4,11 @@ use chrono::NaiveDate;
 use dioxus::prelude::*;
 
 use components::navbar::Navbar;
-use models::{User, UserId};
-use views::{get_user, ConsumableList, Home, Login, Logout, TimelineList, UserDetail, UserList};
+use models::{ConsumableId, ConsumptionId, PooId, User, UserId, WeeId};
+use views::{
+    get_user, ConsumableDetail, ConsumableList, ConsumptionDetail, Home, Login, Logout, PooDetail,
+    TimelineList, UserDetail, UserList, WeeDetail,
+};
 
 mod components;
 mod dt;
@@ -38,6 +41,14 @@ enum Route {
     ConsumableList {},
     #[route("/:..segments")]
     NotFound { segments: Vec<String> },
+    #[route("/wees/:wee_id")]
+    WeeDetail { wee_id: WeeId },
+    #[route("/poos/:poo_id")]
+    PooDetail { poo_id: PooId },
+    #[route("/consumptions/:consumption_id")]
+    ConsumptionDetail { consumption_id: ConsumptionId },
+    #[route("/consumables/:consumable_id")]
+    ConsumableDetail { consumable_id: ConsumableId },
 }
 
 const MEDICAL_SVG: Asset = asset!("/assets/medical.svg");

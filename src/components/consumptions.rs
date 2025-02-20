@@ -2,12 +2,12 @@ use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use dioxus::prelude::*;
 
 use crate::{
-    components::events::event_date_time,
+    components::{buttons::ActionButton, events::event_date_time},
     forms::{
         validate_comments, validate_consumable_millilitres, validate_consumable_quantity,
-        validate_duration, validate_fixed_offset_date_time, FormCloseButton, Dialog, EditError,
-        FieldValue, FormCancelButton, FormDeleteButton, FormEditButton, InputConsumable,
-        InputDateTime, InputDuration, InputNumber, InputTextArea, Saving, FormSubmitButton,
+        validate_duration, validate_fixed_offset_date_time, Dialog, EditError, FieldValue,
+        FormCancelButton, FormCloseButton, FormDeleteButton, FormEditButton, FormSubmitButton,
+        InputConsumable, InputDateTime, InputDuration, InputNumber, InputTextArea, Saving,
         ValidationError,
     },
     functions::consumptions::{
@@ -134,88 +134,85 @@ pub fn ChangeConsumption(
     });
 
     rsx! {
-
-        Dialog {
-            h3 { class: "text-lg font-bold",
-                match &op {
-                    Operation::Create { .. } => "Create Consumption".to_string(),
-                    Operation::Update { consumption } => {
-                        format!("Edit consumption {}", consumption.id)
+        h3 { class: "text-lg font-bold",
+            match &op {
+                Operation::Create { .. } => "Create Consumption".to_string(),
+                Operation::Update { consumption } => {
+                    format!("Edit consumption {}", consumption.id)
+                }
+            }
+        }
+        p { class: "py-4", "Press ESC key or click the button below to close" }
+        match &*saving.read() {
+            Saving::Yes => {
+                rsx! {
+                    div { class: "alert alert-info", "Saving..." }
+                }
+            }
+            Saving::Finished(Ok(())) => {
+                rsx! {
+                    div { class: "alert alert-success", "Saved!" }
+                }
+            }
+            Saving::Finished(Err(err)) => {
+                rsx! {
+                    div { class: "alert alert-error",
+                        "Error: "
+                        {err.to_string()}
                     }
                 }
             }
-            p { class: "py-4", "Press ESC key or click the button below to close" }
-            match &*saving.read() {
-                Saving::Yes => {
-                    rsx! {
-                        div { class: "alert alert-info", "Saving..." }
-                    }
-                }
-                Saving::Finished(Ok(())) => {
-                    rsx! {
-                        div { class: "alert alert-success", "Saved!" }
-                    }
-                }
-                Saving::Finished(Err(err)) => {
-                    rsx! {
-                        div { class: "alert alert-error",
-                            "Error: "
-                            {err.to_string()}
-                        }
-                    }
-                }
-                _ => {
-                    rsx! {}
-                }
+            _ => {
+                rsx! {}
             }
-            form {
-                novalidate: true,
-                action: "javascript:void(0)",
-                method: "dialog",
-                onkeyup: move |event| {
-                    if event.key() == Key::Escape {
-                        on_cancel(());
-                    }
+        }
+        form {
+            novalidate: true,
+            action: "javascript:void(0)",
+            method: "dialog",
+            onkeyup: move |event| {
+                if event.key() == Key::Escape {
+                    on_cancel(());
+                }
+            },
+            InputDateTime {
+                id: "time",
+                label: "Time",
+                value: time,
+                validate: validate.time,
+                disabled,
+            }
+            InputDuration {
+                id: "duration",
+                label: "Duration",
+                value: duration,
+                start_time: validate.time,
+                validate: validate.duration,
+                disabled,
+            }
+            InputNumber {
+                id: "liquid_mls",
+                label: "Liquid Millilitres",
+                value: liquid_mls,
+                validate: validate.liquid_mls,
+                disabled,
+            }
+            InputTextArea {
+                id: "comments",
+                label: "Comments",
+                value: comments,
+                validate: validate.comments,
+                disabled,
+            }
+            FormSubmitButton {
+                disabled: disabled_save,
+                on_save: move |_| on_save(()),
+                title: match &op {
+                    Operation::Create { .. } => "Create",
+                    Operation::Update { .. } => "Save",
                 },
-                InputDateTime {
-                    id: "time",
-                    label: "Time",
-                    value: time,
-                    validate: validate.time,
-                    disabled,
-                }
-                InputDuration {
-                    id: "duration",
-                    label: "Duration",
-                    value: duration,
-                    start_time: validate.time,
-                    validate: validate.duration,
-                    disabled,
-                }
-                InputNumber {
-                    id: "liquid_mls",
-                    label: "Liquid Millilitres",
-                    value: liquid_mls,
-                    validate: validate.liquid_mls,
-                    disabled,
-                }
-                InputTextArea {
-                    id: "comments",
-                    label: "Comments",
-                    value: comments,
-                    validate: validate.comments,
-                    disabled,
-                }
-                FormSubmitButton {
-                    disabled: disabled_save,
-                    on_save: move |_| on_save(()),
-                    title: match &op {
-                        Operation::Create { .. } => "Create",
-                        Operation::Update { .. } => "Save",
-                    },
-                }
-                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
             }
+            FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
         }
     }
 }
@@ -247,50 +244,48 @@ pub fn DeleteConsumption(
     });
 
     rsx! {
-        Dialog {
-            h3 { class: "text-lg font-bold",
-                "Delete consumption "
-                {consumption.id.to_string()}
-            }
-            p { class: "py-4", "Press ESC key or click the button below to close" }
-            match &*saving.read() {
-                Saving::Yes => {
-                    rsx! {
-                        div { class: "alert alert-info", "Deleting..." }
-                    }
-                }
-                Saving::Finished(Ok(())) => {
-                    rsx! {
-                        div { class: "alert alert-success", "Deleted!" }
-                    }
-                }
-                Saving::Finished(Err(err)) => {
-                    rsx! {
-                        div { class: "alert alert-error",
-                            "Error: "
-                            {err.to_string()}
-                        }
-                    }
-                }
-                _ => {
-                    rsx! {}
+        h3 { class: "text-lg font-bold",
+            "Delete consumption "
+            {consumption.id.to_string()}
+        }
+        p { class: "py-4", "Press ESC key or click the button below to close" }
+        match &*saving.read() {
+            Saving::Yes => {
+                rsx! {
+                    div { class: "alert alert-info", "Deleting..." }
                 }
             }
-            form {
-                novalidate: true,
-                action: "javascript:void(0)",
-                method: "dialog",
-                onkeyup: move |event| {
-                    if event.key() == Key::Escape {
-                        on_cancel(());
-                    }
-                },
-                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
-                FormSubmitButton {
-                    disabled,
-                    on_save: move |_| on_save(()),
-                    title: "Delete",
+            Saving::Finished(Ok(())) => {
+                rsx! {
+                    div { class: "alert alert-success", "Deleted!" }
                 }
+            }
+            Saving::Finished(Err(err)) => {
+                rsx! {
+                    div { class: "alert alert-error",
+                        "Error: "
+                        {err.to_string()}
+                    }
+                }
+            }
+            _ => {
+                rsx! {}
+            }
+        }
+        form {
+            novalidate: true,
+            action: "javascript:void(0)",
+            method: "dialog",
+            onkeyup: move |event| {
+                if event.key() == Key::Escape {
+                    on_cancel(());
+                }
+            },
+            FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+            FormSubmitButton {
+                disabled,
+                on_save: move |_| on_save(()),
+                title: "Delete",
             }
         }
     }
@@ -370,47 +365,60 @@ pub fn ConsumptionDialog(
     match dialog {
         ActiveDialog::Change(op) => {
             rsx! {
-                ChangeConsumption {
-                    op,
-                    on_cancel: move || select_dialog(ActiveDialog::Idle),
-                    on_save: move |consumption: Consumption| {
-                        on_change(consumption.clone());
-                        select_dialog(ActiveDialog::Consumption(consumption));
-                    },
+                Dialog {
+                    ChangeConsumption {
+                        op,
+                        on_cancel: move || select_dialog(ActiveDialog::Idle),
+                        on_save: move |consumption: Consumption| {
+                            on_change(consumption.clone());
+                            select_dialog(ActiveDialog::Consumption(consumption));
+                        },
+                    }
                 }
             }
         }
         ActiveDialog::Delete(consumption) => {
             rsx! {
-                DeleteConsumption {
-                    consumption,
-                    on_cancel: move || select_dialog(ActiveDialog::Idle),
-                    on_delete: move |consumption| {
-                        on_delete(consumption);
-                        select_dialog(ActiveDialog::Idle);
-                    },
+                Dialog {
+                    DeleteConsumption {
+                        consumption,
+                        on_cancel: move || select_dialog(ActiveDialog::Idle),
+                        on_delete: move |consumption| {
+                            on_delete(consumption);
+                            select_dialog(ActiveDialog::Idle);
+                        },
+                    }
                 }
             }
         }
         ActiveDialog::Details(consumption) => {
             rsx! {
-                ConsumptionDetails {
-                    consumption,
-                    on_close: move || select_dialog(ActiveDialog::Idle),
+                Dialog {
+                    ConsumptionDetail { consumption }
+                    div { class: "p-4",
+                        ActionButton {
+                            on_click: move |_| {
+                                select_dialog(ActiveDialog::Idle);
+                            },
+                            "Close"
+                        }
+                    }
                 }
             }
         }
         ActiveDialog::Consumption(consumption) => {
             rsx! {
-                ConsumableConsumption {
-                    consumption,
-                    on_close: move || select_dialog(ActiveDialog::Idle),
-                    on_edit: move |consumption| {
-                        select_dialog(ActiveDialog::Change(Operation::Update { consumption }));
-                    },
-                    on_change: move |consumption: Consumption| {
-                        on_change(consumption.clone());
-                    },
+                Dialog {
+                    ConsumableConsumption {
+                        consumption,
+                        on_close: move || select_dialog(ActiveDialog::Idle),
+                        on_edit: move |consumption| {
+                            select_dialog(ActiveDialog::Change(Operation::Update { consumption }));
+                        },
+                        on_change: move |consumption: Consumption| {
+                            on_change(consumption.clone());
+                        },
+                    }
                 }
             }
         }
@@ -421,60 +429,48 @@ pub fn ConsumptionDialog(
 }
 
 #[component]
-pub fn ConsumptionDetails(consumption: Consumption, on_close: Callback<()>) -> Element {
+pub fn ConsumptionDetail(consumption: Consumption) -> Element {
     rsx! {
-        Dialog {
-            h3 { class: "text-lg font-bold",
-                "Consumable "
-                {consumption.id.to_string()}
-            }
+        h3 { class: "text-lg font-bold",
+            "Consumable "
+            {consumption.id.to_string()}
+        }
 
-            div { class: "p-4",
-                table { class: "table table-striped",
-                    tbody {
-                        tr {
-                            td { "Event" }
-                            td { consumption_icon {} }
-                        }
-                        tr {
-                            td { "ID" }
-                            td { {consumption.id.to_string()} }
-                        }
-                        tr {
-                            td { "Time" }
-                            td {
-                                event_date_time { time: consumption.time }
-                            }
-                        }
-                        tr {
-                            td { "Duration" }
-                            td {
-                                consumption_duration { duration: consumption.duration }
-                            }
-                        }
-                        tr {
-                            td { "Liquid Millilitres" }
-                            td { {consumption.liquid_mls.as_string()} }
-                        }
-                        tr {
-                            td { "Created At" }
-                            td { {consumption.created_at.with_timezone(&Local).to_string()} }
-                        }
-                        tr {
-                            td { "Updated At" }
-                            td { {consumption.updated_at.with_timezone(&Local).to_string()} }
+        div { class: "p-4",
+            table { class: "table table-striped",
+                tbody {
+                    tr {
+                        td { "Event" }
+                        td { consumption_icon {} }
+                    }
+                    tr {
+                        td { "ID" }
+                        td { {consumption.id.to_string()} }
+                    }
+                    tr {
+                        td { "Time" }
+                        td {
+                            event_date_time { time: consumption.time }
                         }
                     }
-                }
-            }
-
-            div { class: "p-4",
-                button {
-                    class: "btn btn-secondary m-1",
-                    onclick: move |_| {
-                        on_close(());
-                    },
-                    "Close"
+                    tr {
+                        td { "Duration" }
+                        td {
+                            consumption_duration { duration: consumption.duration }
+                        }
+                    }
+                    tr {
+                        td { "Liquid Millilitres" }
+                        td { {consumption.liquid_mls.as_string()} }
+                    }
+                    tr {
+                        td { "Created At" }
+                        td { {consumption.created_at.with_timezone(&Local).to_string()} }
+                    }
+                    tr {
+                        td { "Updated At" }
+                        td { {consumption.updated_at.with_timezone(&Local).to_string()} }
+                    }
                 }
             }
         }
@@ -556,156 +552,129 @@ pub fn ConsumableConsumption(
     };
 
     rsx! {
-        Dialog {
-            h3 { class: "text-lg font-bold",
-                "Consumable Ingredients "
-                {consumption.id.to_string()}
-            }
+        h3 { class: "text-lg font-bold",
+            "Consumable Ingredients "
+            {consumption.id.to_string()}
+        }
 
-            match consumption_consumables() {
-                Some(Ok(consumption_consumables)) => {
-                    rsx! {
-                        div { class: "p-4",
-                            ul {
-                                for item in consumption_consumables {
-                                    li {
-                                        class: "p-4 mb-1 bg-gray-700 border-2 rounded-lg",
-                                        class: if is_selected(&item) { "border-gray-50 text-gray-50" } else { "border-gray-500" },
-                                        onclick: move |_| {
-                                            selected_consumable.set(Some(item.clone()));
-                                        },
-                                        if let Maybe::Some(quantity) = item.nested.quantity {
-                                            span {
-                                                {quantity.to_string()}
-                                                {item.consumable.unit.postfix()}
-                                                " "
-                                            }
-                                        }
-                                        {item.consumable.name.clone()}
-                                        if let Maybe::Some(brand) = &item.consumable.brand {
-                                            ", "
-                                            {brand.clone()}
-                                        }
-                                        if let Maybe::Some(dt) = &item.consumable.created {
-                                            {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
-                                        }
-                                        if let Maybe::Some(comments) = &item.nested.comments {
-                                            " ("
-                                            {comments.to_string()}
-                                            ")"
-                                        }
-                                        if let Maybe::Some(liquid_mls) = item.nested.liquid_mls {
-                                            span {
-                                                " Liquid: "
-                                                {liquid_mls.to_string()}
-                                                "ml"
-                                            }
-                                        }
-                                    }
+        match consumption_consumables() {
+            Some(Ok(consumption_consumables)) => {
+                rsx! {
+                    div { class: "p-4",
+                        ul {
+                            for item in consumption_consumables {
+                    
+                                li {
+                                    class: "p-4 mb-1 bg-gray-700 border-2 rounded-lg",
+                                    class: if is_selected(&item) { "border-gray-50 text-gray-50" } else { "border-gray-500" },
+                                    onclick: move |_| {
+                                        selected_consumable.set(Some(item.clone()));
+                                    },
+                                    ConsumptionItemSummary { key: item.id, item: item.clone() }
                                 }
                             }
                         }
                     }
                 }
-                Some(Err(err)) => {
-                    rsx! {
-                        div { class: "p-4",
-                            "Error: "
-                            {err.to_string()}
-                        }
-                    }
-                }
-                None => {
-                    rsx! {
-                        div { class: "p-4", "Loading..." }
+            }
+            Some(Err(err)) => {
+                rsx! {
+                    div { class: "p-4",
+                        "Error: "
+                        {err.to_string()}
                     }
                 }
             }
+            None => {
+                rsx! {
+                    div { class: "p-4", "Loading..." }
+                }
+            }
+        }
 
-            match state() {
-                State::Saving => {
-                    rsx! {
-                        div { class: "alert alert-info", "Saving..." }
-                    }
-                }
-                State::Finished(Ok(())) => {
-                    rsx! {
-                        div { class: "alert alert-success", "Saved!" }
-                    }
-                }
-                State::Finished(Err(err)) => {
-                    rsx! {
-                        div { class: "alert alert-error",
-                            "Error: "
-                            {err.to_string()}
-                        }
-                    }
-                }
-                State::Idle => {
-                    rsx! {}
+        match state() {
+            State::Saving => {
+                rsx! {
+                    div { class: "alert alert-info", "Saving..." }
                 }
             }
-            if let Some(sel) = selected_consumable() {
-                div { class: "card bg-gray-800 shadow-xl",
-                    div { class: "card-body",
-                        h2 { class: "card-title",
-                            "Selected: "
-                            {sel.consumable.name.clone()}
-                        }
-                        ConsumableConsumptionForm {
-                            consumption: sel.nested.clone(),
-                            consumable: sel.consumable.clone(),
-                            on_cancel: move |_| {
-                                selected_consumable.set(None);
-                            },
-                            on_save: move |_consumption| {
-                                selected_consumable.set(None);
-                                consumption_consumables.restart();
-                                has_changed.set(true);
-                            },
-                        }
-                        FormDeleteButton {
-                            title: "Delete",
-                            on_delete: move |_| {
-                                selected_consumable.set(None);
-                                remove_consumable(sel.nested.clone());
-                                has_changed.set(true);
-                            },
-                        }
+            State::Finished(Ok(())) => {
+                rsx! {
+                    div { class: "alert alert-success", "Saved!" }
+                }
+            }
+            State::Finished(Err(err)) => {
+                rsx! {
+                    div { class: "alert alert-error",
+                        "Error: "
+                        {err.to_string()}
                     }
                 }
-            } else {
-                div { class: "p-4",
-                    InputConsumable {
-                        id: "consumable",
-                        label: "Add Consumable",
-                        value: add_value,
-                        on_change: move |value| {
-                            if let Some(value) = value {
-                                add_consumable(value);
-                                add_value.set(None);
-                            }
-                        },
-                        disabled,
+            }
+            State::Idle => {
+                rsx! {}
+            }
+        }
+        if let Some(sel) = selected_consumable() {
+            div { class: "card bg-gray-800 shadow-xl",
+                div { class: "card-body",
+                    h2 { class: "card-title",
+                        "Selected: "
+                        {sel.consumable.name.clone()}
                     }
-                    FormEditButton {
-                        title: "Edit",
-                        on_edit: move || {
-                            if has_changed() {
-                                on_change(consumption.clone());
-                            }
-                            on_edit(consumption.clone());
+                    ConsumableConsumptionForm {
+                        consumption: sel.nested.clone(),
+                        consumable: sel.consumable.clone(),
+                        on_cancel: move |_| {
+                            selected_consumable.set(None);
+                        },
+                        on_save: move |_consumption| {
+                            selected_consumable.set(None);
+                            consumption_consumables.restart();
+                            has_changed.set(true);
                         },
                     }
-                    FormCloseButton {
-                        on_close: move || {
-                            if has_changed() {
-                                on_change(consumption_clone_2.clone());
-                            }
-                            on_close(());
+                    FormDeleteButton {
+                        title: "Delete",
+                        on_delete: move |_| {
+                            selected_consumable.set(None);
+                            remove_consumable(sel.nested.clone());
+                            has_changed.set(true);
                         },
-                        title: "Close",
                     }
+                }
+            }
+        } else {
+            div { class: "p-4",
+                InputConsumable {
+                    id: "consumable",
+                    label: "Add Consumable",
+                    value: add_value,
+                    on_change: move |value| {
+                        if let Some(value) = value {
+                            add_consumable(value);
+                            add_value.set(None);
+                        }
+                    },
+                    disabled,
+                }
+                FormEditButton {
+                    title: "Edit",
+                    on_edit: move || {
+                        if has_changed() {
+                            on_change(consumption.clone());
+                        }
+                        on_edit(consumption.clone());
+                    },
+                }
+                FormCloseButton {
+                    on_close: move || {
+                        if has_changed() {
+                            on_change(consumption_clone_2.clone());
+                        }
+                        on_close(());
+                    },
+                    title: "Close",
                 }
             }
         }
@@ -826,6 +795,56 @@ fn ConsumableConsumptionForm(
                 title: "Save",
             }
             FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Cancel" }
+        }
+    }
+}
+
+#[component]
+pub fn ConsumptionItemSummary(item: ConsumptionItem) -> Element {
+    rsx! {
+        span {
+            if let Maybe::Some(quantity) = item.nested.quantity {
+                span {
+                    {quantity.to_string()}
+                    {item.consumable.unit.postfix()}
+                    " "
+                }
+            }
+            {item.consumable.name.clone()}
+            if let Maybe::Some(brand) = &item.consumable.brand {
+                ", "
+                {brand.clone()}
+            }
+            if let Maybe::Some(dt) = &item.consumable.created {
+                {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
+            }
+            if let Maybe::Some(comments) = &item.nested.comments {
+                " ("
+                {comments.to_string()}
+                ")"
+            }
+            if let Maybe::Some(liquid_mls) = item.nested.liquid_mls {
+                span {
+                    " Liquid: "
+                    {liquid_mls.to_string()}
+                    "ml"
+                }
+            }
+        }
+    }
+}
+
+#[component]
+pub fn ConsumptionItemList(list: Vec<ConsumptionItem>) -> Element {
+    rsx! {
+        if !list.is_empty() {
+            ul { class: "list-disc ml-4",
+                for item in &list {
+                    li {
+                        ConsumptionItemSummary { key: item.id, item: item.clone() }
+                    }
+                }
+            }
         }
     }
 }

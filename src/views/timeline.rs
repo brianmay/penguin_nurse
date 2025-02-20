@@ -1,13 +1,13 @@
 use std::ops::Deref;
 
-use chrono::{Local, NaiveDate, Utc};
+use chrono::{NaiveDate, Utc};
 use dioxus::prelude::*;
 use tap::Pipe;
 
 use crate::{
     components::{
         buttons::{ChangeButton, CreateButton, DeleteButton, NavButton},
-        consumptions::{self, consumption_duration, consumption_icon},
+        consumptions::{self, consumption_duration, consumption_icon, ConsumptionItemList},
         events::{event_colour, event_time, event_urgency},
         poos::{self, poo_bristol, poo_duration, poo_icon, poo_quantity},
         timeline::{ActiveDialog, TimelineDialog},
@@ -100,40 +100,7 @@ fn EntryRow(
                                 }
                             }
                             if !consumption.items.is_empty() {
-                                p { "Ingredients:" }
-                                ul { class: "list-disc ml-4",
-                                    for item in &consumption.items {
-                                        li {
-                                            if let Maybe::Some(quantity) = item.nested.quantity {
-                                                span {
-                                                    {quantity.to_string()}
-                                                    {item.consumable.unit.postfix()}
-                                                    " "
-                                                }
-                                            }
-                                            {item.consumable.name.clone()}
-                                            if let Maybe::Some(brand) = &item.consumable.brand {
-                                                ", "
-                                                {brand.clone()}
-                                            }
-                                            if let Maybe::Some(dt) = &item.consumable.created {
-                                                {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
-                                            }
-                                            if let Maybe::Some(comments) = &item.nested.comments {
-                                                " ("
-                                                {comments.to_string()}
-                                                ")"
-                                            }
-                                            if let Maybe::Some(liquid_mls) = item.nested.liquid_mls {
-                                                span {
-                                                    " Liquid: "
-                                                    {liquid_mls.to_string()}
-                                                    "ml"
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+                                ConsumptionItemList { list: consumption.items.clone() }
                             }
                             if let Maybe::Some(comments) = &consumption.consumption.comments {
                                 div { {comments.to_string()} }
@@ -147,12 +114,11 @@ fn EntryRow(
             td { colspan: 4, class: "block sm:table-cell",
                 match entry.data {
                     EntryData::Wee(wee) => {
-                        let wee_clone_1 = wee.clone();
                         let wee_clone_2 = wee.clone();
                         rsx! {
                             NavButton {
                                 on_click: move |_| {
-                                    dialog.set(ActiveDialog::Wee(wees::ActiveDialog::Details(wee_clone_1.clone())))
+                                    navigator().push(Route::WeeDetail { wee_id: wee.id });
                                 },
                                 "Details"
                             }
@@ -175,12 +141,11 @@ fn EntryRow(
                         }
                     }
                     EntryData::Poo(poo) => {
-                        let poo_clone_1 = poo.clone();
                         let poo_clone_2 = poo.clone();
                         rsx! {
                             NavButton {
                                 on_click: move |_| {
-                                    dialog.set(ActiveDialog::Poo(poos::ActiveDialog::Details(poo_clone_1.clone())))
+                                    navigator().push(Route::PooDetail { poo_id: poo.id });
                                 },
                                 "Details"
                             }
@@ -203,19 +168,16 @@ fn EntryRow(
                         }
                     }
                     EntryData::Consumption(consumption) => {
-                        let consumption_clone_1 = consumption.consumption.clone();
                         let consumption_clone_2 = consumption.consumption.clone();
                         let consumption_clone_3 = consumption.consumption.clone();
                         let consumption = consumption.consumption;
                         rsx! {
                             NavButton {
                                 on_click: move |_| {
-                                    dialog
-                                        .set(
-                                            ActiveDialog::Consumption(
-                                                consumptions::ActiveDialog::Details(consumption_clone_1.clone()),
-                                            ),
-                                        )
+                                    navigator()
+                                        .push(Route::ConsumptionDetail {
+                                            consumption_id: consumption.id,
+                                        });
                                 },
                                 "Details"
                             }

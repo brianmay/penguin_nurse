@@ -5,12 +5,14 @@ use dioxus::prelude::*;
 
 use crate::{
     components::{
-        buttons::{ChangeButton, CreateButton, NavButton},
-        consumables::{ActiveDialog, ConsumableDialog, Operation},
+        buttons::{ChangeButton, CreateButton, DeleteButton, NavButton},
+        consumables::{self, ActiveDialog, ConsumableDialog, ConsumableItemList, Operation},
     },
-    functions::consumables::search_consumables_with_nested,
+    functions::consumables::{
+        get_child_consumables, get_consumable_by_id, search_consumables_with_nested,
+    },
     models::{ConsumableId, ConsumableWithItems, Maybe},
-    use_user,
+    use_user, Route,
 };
 
 #[component]
@@ -23,7 +25,6 @@ fn EntryRow(
     let items = consumable_with_items.items;
 
     let id = consumable.id;
-    let consumable_clone_1 = consumable.clone();
     let consumable_clone_2 = consumable.clone();
     let consumable_clone_3 = consumable.clone();
     let consumable_clone_4 = consumable.clone();
@@ -43,41 +44,7 @@ fn EntryRow(
                 {consumable.unit.to_string()}
             }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                if !items.is_empty() {
-                    ul { class: "list-disc ml-4",
-                        for item in &items {
-                            li {
-                                if let Maybe::Some(quantity) = item.nested.quantity {
-                                    span {
-                                        {quantity.to_string()}
-                                        {item.consumable.unit.postfix()}
-                                        " "
-                                    }
-                                }
-                                {item.consumable.name.clone()}
-                                if let Maybe::Some(brand) = &item.consumable.brand {
-                                    ", "
-                                    {brand.clone()}
-                                }
-                                if let Maybe::Some(dt) = &item.consumable.created {
-                                    {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
-                                }
-                                if let Maybe::Some(comments) = &item.nested.comments {
-                                    " ("
-                                    {comments.to_string()}
-                                    ")"
-                                }
-                                if let Maybe::Some(liquid_mls) = item.nested.liquid_mls {
-                                    span {
-                                        " Liquid: "
-                                        {liquid_mls.to_string()}
-                                        "ml"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                ConsumableItemList { list: items }
             }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 if let Maybe::Some(comments) = &consumable.comments {
@@ -101,7 +68,13 @@ fn EntryRow(
         if selected() == Some(id) {
             tr {
                 td { colspan: "6", class: "block sm:table-cell",
-                    NavButton { on_click: move |_| { dialog.set(ActiveDialog::Details(consumable_clone_1.clone())) },
+                    NavButton {
+                        on_click: move |_| {
+                            navigator()
+                                .push(Route::ConsumableDetail {
+                                    consumable_id: id,
+                                });
+                        },
                         "Details"
                     }
                     ChangeButton { on_click: move |_| { dialog.set(ActiveDialog::Nested(consumable_clone_2.clone())) },
@@ -248,6 +221,81 @@ pub fn ConsumableList() -> Element {
             dialog,
             on_change: move |_consumable| list.restart(),
             on_delete: move |_consumable| list.restart(),
+        }
+    }
+}
+
+#[component]
+pub fn ConsumableDetail(consumable_id: ConsumableId) -> Element {
+    let mut maybe_consumable =
+        use_resource(move || async move { get_consumable_by_id(consumable_id).await });
+
+    let mut maybe_items =
+        use_resource(move || async move { get_child_consumables(consumable_id).await });
+
+    let mut active_dialog: Signal<ActiveDialog> = use_signal(|| ActiveDialog::Idle);
+
+    match (maybe_consumable(), maybe_items()) {
+        (Some(Ok(Some(consumable))), Some(Ok(items))) => {
+            let consumable_clone_2 = consumable.clone();
+            let consumable_clone_3 = consumable.clone();
+            let consumable_clone_4 = consumable.clone();
+
+            rsx! {
+                consumables::ConsumableDetail { consumable }
+                ConsumableItemList { list: items }
+                ConsumableDialog {
+                    dialog: active_dialog,
+                    on_change: move |_consumption| {
+                        active_dialog.set(ActiveDialog::Idle);
+                        maybe_items.restart();
+                        maybe_consumable.restart();
+                    },
+                    on_delete: move |_consumption| {
+                        active_dialog.set(ActiveDialog::Idle);
+                        maybe_items.restart();
+                        maybe_consumable.restart();
+                    },
+                }
+                ChangeButton { on_click: move |_| { active_dialog.set(ActiveDialog::Nested(consumable_clone_2.clone())) },
+                    "Ingredients"
+                }
+                ChangeButton {
+                    on_click: move |_| {
+                        active_dialog
+                            .set(
+                                consumables::ActiveDialog::Change(consumables::Operation::Update {
+                                    consumable: consumable_clone_3.clone(),
+                                }),
+                            )
+                    },
+                    "Edit"
+                }
+                DeleteButton {
+                    on_click: move |_| {
+                        active_dialog.set(consumables::ActiveDialog::Delete(consumable_clone_4.clone()))
+                    },
+                    "Delete"
+                }
+            }
+        }
+        (Some(Ok(None)), _) => {
+            rsx! {
+                div { class: "alert alert-error", "Consumption not found." }
+            }
+        }
+        (Some(Err(err)), _) | (_, Some(Err(err))) => {
+            rsx! {
+                div { class: "alert alert-error",
+                    "Error: "
+                    {err.to_string()}
+                }
+            }
+        }
+        (None, _) | (_, None) => {
+            rsx! {
+                div { class: "alert alert-info", "Loading..." }
+            }
         }
     }
 }

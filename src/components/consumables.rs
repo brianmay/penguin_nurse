@@ -2,7 +2,7 @@ use chrono::Local;
 use dioxus::prelude::*;
 
 use crate::{
-    components::buttons::DeleteButton,
+    components::buttons::ActionButton,
     forms::{
         validate_barcode, validate_brand, validate_comments, validate_consumable_millilitres,
         validate_consumable_quantity, validate_consumable_unit, validate_maybe_date_time,
@@ -410,9 +410,14 @@ pub fn ConsumableDialog(
         ActiveDialog::Details(consumable) => {
             rsx! {
                 Dialog {
-                    ConsumableDetails {
-                        consumable,
-                        on_close: move || dialog.set(ActiveDialog::Idle),
+                    ConsumableDetail { consumable }
+                    div { class: "p-4",
+                        ActionButton {
+                            on_click: move |_| {
+                                dialog.set(ActiveDialog::Idle);
+                            },
+                            "Close"
+                        }
                     }
                 }
             }
@@ -432,7 +437,7 @@ pub fn ConsumableDialog(
 }
 
 #[component]
-pub fn ConsumableDetails(consumable: Consumable, on_close: Callback<()>) -> Element {
+pub fn ConsumableDetail(consumable: Consumable) -> Element {
     rsx! {
         h3 { class: "text-lg font-bold",
             "Consumable "
@@ -511,15 +516,6 @@ pub fn ConsumableDetails(consumable: Consumable, on_close: Callback<()>) -> Elem
                         td { {consumable.updated_at.with_timezone(&Local).to_string()} }
                     }
                 }
-            }
-        }
-
-        div { class: "p-4",
-            DeleteButton {
-                on_click: move |_| {
-                    on_close(());
-                },
-                "Close"
             }
         }
     }
@@ -615,33 +611,7 @@ pub fn ConsumableNested(
                                     onclick: move |_| {
                                         selected_consumable.set(Some(item.clone()));
                                     },
-                                    if let Maybe::Some(quantity) = item.nested.quantity {
-                                        span {
-                                            {quantity.to_string()}
-                                            {item.consumable.unit.postfix()}
-                                            " "
-                                        }
-                                    }
-                                    {item.consumable.name.clone()}
-                                    if let Maybe::Some(brand) = &item.consumable.brand {
-                                        ", "
-                                        {brand.clone()}
-                                    }
-                                    if let Maybe::Some(dt) = &item.consumable.created {
-                                        {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
-                                    }
-                                    if let Maybe::Some(comments) = &item.nested.comments {
-                                        " ("
-                                        {comments.to_string()}
-                                        ")"
-                                    }
-                                    if let Maybe::Some(liquid_mls) = item.nested.liquid_mls {
-                                        span {
-                                            " Liquid: "
-                                            {liquid_mls.to_string()}
-                                            "ml"
-                                        }
-                                    }
+                                    ConsumableItemSummary { item: item.clone() }
                                 }
                             }
                         }
@@ -851,6 +821,56 @@ fn ConsumableNestedForm(
                 title: "Save",
             }
             FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Cancel" }
+        }
+    }
+}
+
+#[component]
+pub fn ConsumableItemSummary(item: ConsumableItem) -> Element {
+    rsx! {
+        span {
+            if let Maybe::Some(quantity) = item.nested.quantity {
+                span {
+                    {quantity.to_string()}
+                    {item.consumable.unit.postfix()}
+                    " "
+                }
+            }
+            {item.consumable.name.clone()}
+            if let Maybe::Some(brand) = &item.consumable.brand {
+                ", "
+                {brand.clone()}
+            }
+            if let Maybe::Some(dt) = &item.consumable.created {
+                {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
+            }
+            if let Maybe::Some(comments) = &item.nested.comments {
+                " ("
+                {comments.to_string()}
+                ")"
+            }
+            if let Maybe::Some(liquid_mls) = item.nested.liquid_mls {
+                span {
+                    " Liquid: "
+                    {liquid_mls.to_string()}
+                    "ml"
+                }
+            }
+        }
+    }
+}
+
+#[component]
+pub fn ConsumableItemList(list: Vec<ConsumableItem>) -> Element {
+    rsx! {
+        if !list.is_empty() {
+            ul { class: "list-disc ml-4",
+                for item in &list {
+                    li {
+                        ConsumableItemSummary { key: item.id, item: item.clone() }
+                    }
+                }
+            }
         }
     }
 }
