@@ -414,6 +414,7 @@ pub fn ConsumableDialog(
                         on_edit: move |consumable: Consumable| {
                             dialog.set(ActiveDialog::Change(Operation::Update { consumable }))
                         },
+                        on_change,
                     }
                 }
             }
@@ -518,6 +519,7 @@ pub fn ConsumableNested(
     consumable: Consumable,
     on_close: Callback<()>,
     on_edit: Callback<Consumable>,
+    on_change: Callback<Consumable>,
 ) -> Element {
     let mut selected_consumable = use_signal(|| None);
 
@@ -526,6 +528,9 @@ pub fn ConsumableNested(
 
     let consumable_clone = consumable.clone();
     let consumable_clone_2 = consumable.clone();
+    let consumable_clone_3 = consumable.clone();
+    let consumable_clone_4 = consumable.clone();
+    let consumable_clone_5 = consumable.clone();
     let mut state = use_signal(|| State::Idle);
 
     let mut add_value = use_signal(|| None);
@@ -541,6 +546,7 @@ pub fn ConsumableNested(
             }
         }
 
+        let consumable_clone = consumable_clone_4.clone();
         spawn(async move {
             state.set(State::Saving);
             let updates = NewNestedConsumable {
@@ -556,15 +562,18 @@ pub fn ConsumableNested(
             }
             let result = result.map(|_nested| ());
             state.set(State::Finished(result));
+            on_change(consumable_clone.clone());
         });
     });
 
     let remove_consumable = use_callback(move |child: NestedConsumable| {
+        let consumable = consumable_clone_5.clone();
         spawn(async move {
             state.set(State::Saving);
             let result = delete_nested_consumable(child.id).await;
             state.set(State::Finished(result));
             nested_consumables.restart();
+            on_change(consumable);
         });
     });
 
@@ -657,6 +666,7 @@ pub fn ConsumableNested(
                         on_save: move |_nested| {
                             selected_consumable.set(None);
                             nested_consumables.restart();
+                            on_change(consumable_clone_3.clone());
                         },
                     }
                     FormDeleteButton {
