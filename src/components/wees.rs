@@ -386,7 +386,6 @@ pub fn wee_mls(mls: i32) -> Element {
 pub enum ActiveDialog {
     Change(Operation),
     Delete(Wee),
-    Details(Wee),
     Idle,
 }
 
@@ -409,13 +408,6 @@ pub fn WeeDialog(
             rsx! {
                 Dialog {
                     DeleteWee { wee, on_cancel: on_close, on_delete }
-                }
-            }
-        }
-        ActiveDialog::Details(wee) => {
-            rsx! {
-                Dialog {
-                    WeeDetail { wee, on_close }
                 }
             }
         }

@@ -422,7 +422,6 @@ pub fn poo_quantity(quantity: i32) -> Element {
 pub enum ActiveDialog {
     Change(Operation),
     Delete(Poo),
-    Details(Poo),
     Idle,
 }
 
@@ -445,13 +444,6 @@ pub fn PooDialog(
             rsx! {
                 Dialog {
                     DeletePoo { poo, on_cancel: on_close, on_delete }
-                }
-            }
-        }
-        ActiveDialog::Details(poo) => {
-            rsx! {
-                Dialog {
-                    PooDetail { poo, on_close }
                 }
             }
         }

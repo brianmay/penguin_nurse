@@ -2,7 +2,7 @@ use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use dioxus::prelude::*;
 
 use crate::{
-    components::{buttons::ActionButton, events::event_date_time},
+    components::events::event_date_time,
     forms::{
         validate_comments, validate_consumable_millilitres, validate_consumable_quantity,
         validate_duration, validate_fixed_offset_date_time, Dialog, EditError, FieldValue,
@@ -350,7 +350,6 @@ pub fn consumption_duration(duration: chrono::TimeDelta) -> Element {
 pub enum ActiveDialog {
     Change(Operation),
     Delete(Consumption),
-    Details(Consumption),
     Consumption(Consumption),
     Idle,
 }
@@ -387,21 +386,6 @@ pub fn ConsumptionDialog(
                             on_delete(consumption);
                             select_dialog(ActiveDialog::Idle);
                         },
-                    }
-                }
-            }
-        }
-        ActiveDialog::Details(consumption) => {
-            rsx! {
-                Dialog {
-                    ConsumptionDetail { consumption }
-                    div { class: "p-4",
-                        ActionButton {
-                            on_click: move |_| {
-                                select_dialog(ActiveDialog::Idle);
-                            },
-                            "Close"
-                        }
                     }
                 }
             }

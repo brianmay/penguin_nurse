@@ -2,7 +2,6 @@ use chrono::Local;
 use dioxus::prelude::*;
 
 use crate::{
-    components::buttons::ActionButton,
     forms::{
         validate_barcode, validate_brand, validate_comments, validate_consumable_millilitres,
         validate_consumable_quantity, validate_consumable_unit, validate_maybe_date_time,
@@ -366,7 +365,6 @@ pub fn DeleteConsumable(
 pub enum ActiveDialog {
     Change(Operation),
     Delete(Consumable),
-    Details(Consumable),
     Nested(Consumable),
     Idle,
 }
@@ -407,28 +405,15 @@ pub fn ConsumableDialog(
                 }
             }
         }
-        ActiveDialog::Details(consumable) => {
-            rsx! {
-                Dialog {
-                    ConsumableDetail { consumable }
-                    div { class: "p-4",
-                        ActionButton {
-                            on_click: move |_| {
-                                dialog.set(ActiveDialog::Idle);
-                            },
-                            "Close"
-                        }
-                    }
-                }
-            }
-        }
         ActiveDialog::Nested(consumable) => {
             rsx! {
                 Dialog {
                     ConsumableNested {
                         consumable,
                         on_close: move || dialog.set(ActiveDialog::Idle),
-                        on_edit: move |consumable| dialog.set(ActiveDialog::Change(Operation::Update { consumable })),
+                        on_edit: move |consumable: Consumable| {
+                            dialog.set(ActiveDialog::Change(Operation::Update { consumable }))
+                        },
                     }
                 }
             }
