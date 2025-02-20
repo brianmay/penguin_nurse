@@ -476,13 +476,13 @@ pub fn ConsumableConsumption(
     on_change: Callback<Consumption>,
 ) -> Element {
     let mut selected_consumable = use_signal(|| None);
-    let mut has_changed = use_signal(|| false);
 
     let mut consumption_consumables =
         use_resource(move || async move { get_child_consumables(consumption.id).await });
 
     let consumption_clone = consumption.clone();
-    let consumption_clone_2 = consumption.clone();
+    let consumption_clone_3 = consumption.clone();
+    let consumption_clone_4 = consumption.clone();
 
     let mut state = use_signal(|| State::Idle);
 
@@ -496,6 +496,7 @@ pub fn ConsumableConsumption(
             }
         }
 
+        let consumption_clone = consumption_clone_3.clone();
         spawn(async move {
             state.set(State::Saving);
             let updates = NewConsumptionConsumable {
@@ -511,17 +512,18 @@ pub fn ConsumableConsumption(
             }
             let result = result.map(|_nested| ());
             state.set(State::Finished(result));
-            has_changed.set(true);
+            on_change(consumption_clone.clone());
         });
     });
 
     let remove_consumable = use_callback(move |child: ConsumptionConsumable| {
+        let consumption_clone = consumption_clone_4.clone();
         spawn(async move {
             state.set(State::Saving);
             let result = delete_consumption_consumable(child.id).await;
             state.set(State::Finished(result));
             consumption_consumables.restart();
-            has_changed.set(true);
+            on_change(consumption_clone.clone());
         });
     });
 
@@ -615,7 +617,7 @@ pub fn ConsumableConsumption(
                         on_save: move |_consumption| {
                             selected_consumable.set(None);
                             consumption_consumables.restart();
-                            has_changed.set(true);
+                            on_change(consumption.clone());
                         },
                     }
                     FormDeleteButton {
@@ -623,7 +625,6 @@ pub fn ConsumableConsumption(
                         on_delete: move |_| {
                             selected_consumable.set(None);
                             remove_consumable(sel.nested.clone());
-                            has_changed.set(true);
                         },
                     }
                 }
@@ -645,17 +646,11 @@ pub fn ConsumableConsumption(
                 FormEditButton {
                     title: "Edit",
                     on_edit: move || {
-                        if has_changed() {
-                            on_change(consumption.clone());
-                        }
                         on_edit(consumption.clone());
                     },
                 }
                 FormCloseButton {
                     on_close: move || {
-                        if has_changed() {
-                            on_change(consumption_clone_2.clone());
-                        }
                         on_close(());
                     },
                     title: "Close",
