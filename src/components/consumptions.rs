@@ -2,7 +2,7 @@ use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use dioxus::prelude::*;
 
 use crate::{
-    components::events::event_date_time,
+    components::{events::event_date_time, times::time_delta_to_string},
     forms::{
         validate_comments, validate_consumable_millilitres, validate_consumable_quantity,
         validate_duration, validate_fixed_offset_date_time, Dialog, EditError, FieldValue,
@@ -305,34 +305,9 @@ pub fn consumption_icon() -> Element {
     }
 }
 
-pub fn div_rem(a: i64, b: i64) -> (i64, i64) {
-    (a / b, a % b)
-}
-
 #[component]
 pub fn consumption_duration(duration: chrono::TimeDelta) -> Element {
-    let seconds = duration.num_seconds();
-    let (negative, seconds) = if seconds < 0 {
-        (true, -seconds)
-    } else {
-        (false, seconds)
-    };
-
-    let (minutes, seconds) = div_rem(seconds, 60);
-    let (hours, minutes) = div_rem(minutes, 60);
-    let (days, hours) = div_rem(hours, 24);
-
-    let negative_string = if negative { "negative " } else { "" };
-
-    let text = if duration.num_seconds().abs() < 60 {
-        format!("{negative_string}{seconds} seconds")
-    } else if duration.num_minutes().abs() < 60 {
-        format!("{negative_string}{minutes} minutes + {seconds} seconds")
-    } else if duration.num_hours().abs() < 24 {
-        format!("{negative_string}{hours} hours + {minutes} minutes")
-    } else {
-        format!("{negative_string}{days} days + {hours} hours")
-    };
+    let text = time_delta_to_string(duration);
 
     rsx! {
         if duration.num_minutes() < 5 {
