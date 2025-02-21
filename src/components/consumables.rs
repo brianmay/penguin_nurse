@@ -19,6 +19,7 @@ use crate::{
         NestedConsumable, NestedConsumableId, NewConsumable, NewNestedConsumable, UpdateConsumable,
         UpdateNestedConsumable,
     },
+    Route,
 };
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -423,7 +424,7 @@ pub fn ConsumableDialog(
 }
 
 #[component]
-pub fn ConsumableDetail(consumable: Consumable) -> Element {
+pub fn ConsumableDetail(consumable: Consumable, list: Vec<ConsumableItem>) -> Element {
     rsx! {
         h3 { class: "text-lg font-bold",
             "Consumable "
@@ -500,6 +501,14 @@ pub fn ConsumableDetail(consumable: Consumable) -> Element {
                     tr {
                         td { "Updated At" }
                         td { {consumable.updated_at.with_timezone(&Local).to_string()} }
+                    }
+                    if !list.is_empty() {
+                        tr {
+                            td { "Ingredients" }
+                            td {
+                                ConsumableItemList { list, show_links: true }
+                            }
+                        }
                     }
                 }
             }
@@ -821,9 +830,13 @@ fn ConsumableNestedForm(
 }
 
 #[component]
-pub fn ConsumableItemSummary(item: ConsumableItem) -> Element {
+pub fn ConsumableItemSummary(item: ConsumableItem, show_links: Option<bool>) -> Element {
+    let show_links = show_links.unwrap_or(false);
+
     rsx! {
         span {
+
+
             if let Maybe::Some(quantity) = item.nested.quantity {
                 span {
                     {quantity.to_string()}
@@ -831,7 +844,17 @@ pub fn ConsumableItemSummary(item: ConsumableItem) -> Element {
                     " "
                 }
             }
-            {item.consumable.name.clone()}
+            if show_links {
+                Link {
+                    to: Route::ConsumableDetail {
+                        consumable_id: item.consumable.id,
+                    },
+                    class: "text-blue-500 hover:underline",
+                    {item.consumable.name.clone()}
+                }
+            } else {
+                {item.consumable.name.clone()}
+            }
             if let Maybe::Some(brand) = &item.consumable.brand {
                 ", "
                 {brand.clone()}
@@ -856,13 +879,17 @@ pub fn ConsumableItemSummary(item: ConsumableItem) -> Element {
 }
 
 #[component]
-pub fn ConsumableItemList(list: Vec<ConsumableItem>) -> Element {
+pub fn ConsumableItemList(list: Vec<ConsumableItem>, show_links: Option<bool>) -> Element {
     rsx! {
         if !list.is_empty() {
             ul { class: "list-disc ml-4",
                 for item in &list {
                     li {
-                        ConsumableItemSummary { key: item.id, item: item.clone() }
+                        ConsumableItemSummary {
+                            key: item.id,
+                            item: item.clone(),
+                            show_links,
+                        }
                     }
                 }
             }

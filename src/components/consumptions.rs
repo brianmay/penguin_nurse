@@ -20,6 +20,7 @@ use crate::{
         Maybe, MaybeF64, MaybeString, NewConsumption, NewConsumptionConsumable, UpdateConsumption,
         UpdateConsumptionConsumable, UserId,
     },
+    Route,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -413,7 +414,7 @@ pub fn ConsumptionDialog(
 }
 
 #[component]
-pub fn ConsumptionDetail(consumption: Consumption) -> Element {
+pub fn ConsumptionDetail(consumption: Consumption, list: Vec<ConsumptionItem>) -> Element {
     rsx! {
         h3 { class: "text-lg font-bold",
             "Consumable "
@@ -454,6 +455,14 @@ pub fn ConsumptionDetail(consumption: Consumption) -> Element {
                     tr {
                         td { "Updated At" }
                         td { {consumption.updated_at.with_timezone(&Local).to_string()} }
+                    }
+                    if !list.is_empty() {
+                        tr {
+                            td { "Ingredients" }
+                            td {
+                                ConsumptionItemList { list, show_links: true }
+                            }
+                        }
                     }
                 }
             }
@@ -779,7 +788,9 @@ fn ConsumableConsumptionForm(
 }
 
 #[component]
-pub fn ConsumptionItemSummary(item: ConsumptionItem) -> Element {
+pub fn ConsumptionItemSummary(item: ConsumptionItem, show_links: Option<bool>) -> Element {
+    let show_links: bool = show_links.unwrap_or(false);
+
     rsx! {
         span {
             if let Maybe::Some(quantity) = item.nested.quantity {
@@ -789,7 +800,17 @@ pub fn ConsumptionItemSummary(item: ConsumptionItem) -> Element {
                     " "
                 }
             }
-            {item.consumable.name.clone()}
+            if show_links {
+                Link {
+                    to: Route::ConsumableDetail {
+                        consumable_id: item.consumable.id,
+                    },
+                    class: "text-blue-500 hover:underline",
+                    {item.consumable.name.clone()}
+                }
+            } else {
+                {item.consumable.name.clone()}
+            }
             if let Maybe::Some(brand) = &item.consumable.brand {
                 ", "
                 {brand.clone()}
@@ -814,13 +835,17 @@ pub fn ConsumptionItemSummary(item: ConsumptionItem) -> Element {
 }
 
 #[component]
-pub fn ConsumptionItemList(list: Vec<ConsumptionItem>) -> Element {
+pub fn ConsumptionItemList(list: Vec<ConsumptionItem>, show_links: Option<bool>) -> Element {
     rsx! {
         if !list.is_empty() {
             ul { class: "list-disc ml-4",
                 for item in &list {
                     li {
-                        ConsumptionItemSummary { key: item.id, item: item.clone() }
+                        ConsumptionItemSummary {
+                            key: item.id,
+                            item: item.clone(),
+                            show_links,
+                        }
                     }
                 }
             }

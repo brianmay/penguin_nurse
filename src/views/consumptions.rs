@@ -3,19 +3,19 @@ use dioxus::prelude::*;
 use crate::{
     components::{
         buttons::{ChangeButton, DeleteButton},
-        consumptions::{self, ActiveDialog, ConsumptionDialog, ConsumptionItemList},
+        consumptions::{self, ActiveDialog, ConsumptionDialog},
     },
     functions::consumptions::{get_child_consumables, get_consumption_by_id},
     models::ConsumptionId,
 };
 
 #[component]
-pub fn ConsumptionDetail(consumption_id: ConsumptionId) -> Element {
+pub fn ConsumptionDetail(consumption_id: ReadOnlySignal<ConsumptionId>) -> Element {
     let mut maybe_consumption =
-        use_resource(move || async move { get_consumption_by_id(consumption_id).await });
+        use_resource(move || async move { get_consumption_by_id(consumption_id()).await });
 
     let mut maybe_items =
-        use_resource(move || async move { get_child_consumables(consumption_id).await });
+        use_resource(move || async move { get_child_consumables(consumption_id()).await });
 
     let mut active_dialog: Signal<ActiveDialog> = use_signal(|| ActiveDialog::Idle);
 
@@ -26,8 +26,7 @@ pub fn ConsumptionDetail(consumption_id: ConsumptionId) -> Element {
             let consumption_clone_4 = consumption.clone();
 
             rsx! {
-                consumptions::ConsumptionDetail { consumption }
-                ConsumptionItemList { list: items }
+                consumptions::ConsumptionDetail { consumption, list: items }
                 ConsumptionDialog {
                     dialog: active_dialog(),
                     on_change: move |_consumption| {

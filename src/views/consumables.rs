@@ -226,12 +226,12 @@ pub fn ConsumableList() -> Element {
 }
 
 #[component]
-pub fn ConsumableDetail(consumable_id: ConsumableId) -> Element {
+pub fn ConsumableDetail(consumable_id: ReadOnlySignal<ConsumableId>) -> Element {
     let mut maybe_consumable =
-        use_resource(move || async move { get_consumable_by_id(consumable_id).await });
+        use_resource(move || async move { get_consumable_by_id(consumable_id()).await });
 
     let mut maybe_items =
-        use_resource(move || async move { get_child_consumables(consumable_id).await });
+        use_resource(move || async move { get_child_consumables(consumable_id()).await });
 
     let mut active_dialog: Signal<ActiveDialog> = use_signal(|| ActiveDialog::Idle);
 
@@ -242,8 +242,7 @@ pub fn ConsumableDetail(consumable_id: ConsumableId) -> Element {
             let consumable_clone_4 = consumable.clone();
 
             rsx! {
-                consumables::ConsumableDetail { consumable }
-                ConsumableItemList { list: items }
+                consumables::ConsumableDetail { consumable, list: items }
                 ConsumableDialog {
                     dialog: active_dialog,
                     on_change: move |_consumption| {
