@@ -139,7 +139,7 @@ pub fn ChangeConsumption(
             match &op {
                 Operation::Create { .. } => "Create Consumption".to_string(),
                 Operation::Update { consumption } => {
-                    format!("Edit consumption {}", consumption.id)
+                    format!("Edit consumption {}", consumption.time.with_timezone(&Local))
                 }
             }
         }
@@ -417,8 +417,8 @@ pub fn ConsumptionDialog(
 pub fn ConsumptionDetail(consumption: Consumption, list: Vec<ConsumptionItem>) -> Element {
     rsx! {
         h3 { class: "text-lg font-bold",
-            "Consumable "
-            {consumption.id.to_string()}
+            "Consumption "
+            {consumption.time.with_timezone(&Local).to_string()}
         }
 
         div { class: "p-4",
@@ -548,8 +548,8 @@ pub fn ConsumableConsumption(
 
     rsx! {
         h3 { class: "text-lg font-bold",
-            "Consumable Ingredients "
-            {consumption.id.to_string()}
+            "Ingredients for "
+            {consumption.time.with_timezone(&Local).to_string()}
         }
 
         match consumption_consumables() {

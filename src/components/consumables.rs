@@ -180,9 +180,7 @@ pub fn ChangeConsumable(
         h3 { class: "text-lg font-bold",
             match &op {
                 Operation::Create { .. } => "Create Consumable".to_string(),
-                Operation::Update { consumable } => {
-                    format!("Edit Consumable {}", consumable.name)
-                }
+                Operation::Update { consumable } => format!("Edit {}", consumable.name),
             }
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
@@ -426,10 +424,7 @@ pub fn ConsumableDialog(
 #[component]
 pub fn ConsumableDetail(consumable: Consumable, list: Vec<ConsumableItem>) -> Element {
     rsx! {
-        h3 { class: "text-lg font-bold",
-            "Consumable "
-            {consumable.name.clone()}
-        }
+        h3 { class: "text-lg font-bold", {consumable.name.clone()} }
 
         div { class: "p-4",
             table { class: "table table-striped",
@@ -598,7 +593,7 @@ pub fn ConsumableNested(
 
     rsx! {
         h3 { class: "text-lg font-bold",
-            "Consumable Ingredients "
+            "Ingredients for "
             {consumable.name.clone()}
         }
 
