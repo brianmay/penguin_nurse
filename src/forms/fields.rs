@@ -656,7 +656,7 @@ pub fn InputConsumable(
                 }
             } else if let Some(consumable) = value() {
                 div {
-                    class: "bg-green-500 rounded border-green-100 text-white p-2",
+                    class: "bg-green-500 rounded-sm border-green-100 text-white p-2",
                     onclick: move |_e| {
                         value.set(None);
                         on_change(None);
@@ -689,7 +689,7 @@ pub fn InputConsumable(
                             p { class: "alert alert-info", "No entries found." }
                         },
                         Some(Some(Ok(list))) => rsx! {
-                            ul { class: "menu dropdown-content bg-gray-800 rounded-box z-[1] w-52 p-2 shadow",
+                            ul { class: "menu dropdown-content bg-gray-800 rounded-box z-1 w-52 p-2 shadow-sm",
                                 for consumable in list.iter().cloned() {
                                     li {
                                         a {

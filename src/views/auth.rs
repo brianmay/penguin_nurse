@@ -25,7 +25,7 @@ pub fn LoginWindow(children: Element) -> Element {
                         "Penguin Nurse"
                     }
                 }
-                div { class: "w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700",
+                div { class: "w-full bg-white rounded-lg shadow-sm dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700",
                     div { class: "p-6 space-y-4 md:space-y-6 sm:p-8", {children} }
                 }
             }
@@ -142,7 +142,7 @@ pub fn Login() -> Element {
                                                     r#type: "checkbox",
                                                     required: "",
                                                     "aria-describedby": "remember",
-                                                    class: "w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800",
+                                                    class: "w-4 h-4 border border-gray-300 rounded-sm bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800",
                                                 }
                                             }
                                             div { class: "ml-3 text-sm",

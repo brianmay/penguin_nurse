@@ -314,7 +314,8 @@
                 pkgs.diesel-cli
                 pkgs.diesel-cli-ext
                 postgres
-                pkgs-unstable.tailwindcss_3
+                pkgs-unstable.tailwindcss_4
+                pkgs.watchman
               ];
               enterShell = ''
                 # export DIOXUS_ASSET_ROOT="dist"
