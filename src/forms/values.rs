@@ -74,7 +74,6 @@ impl FieldValue for TimeDelta {
                 (false, seconds)
             }
         };
-        tracing::error!("total_seconds: {}", total_seconds);
         let sign = if negative { "-" } else { "" };
         let seconds = total_seconds % 60;
         let minutes = (total_seconds / 60) % 60;
