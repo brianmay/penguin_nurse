@@ -48,6 +48,7 @@ pub struct ConsumptionWithItems {
     pub items: Vec<ConsumptionItem>,
 }
 
+#[cfg(feature = "server")]
 impl ConsumptionWithItems {
     pub fn new(consumption: Consumption, items: Vec<ConsumptionItem>) -> Self {
         Self { consumption, items }

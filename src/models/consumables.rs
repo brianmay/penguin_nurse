@@ -110,6 +110,7 @@ pub struct Consumable {
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
+#[cfg(feature = "server")]
 impl ConsumableWithItems {
     pub fn new(consumable: Consumable, items: Vec<ConsumableItem>) -> Self {
         Self { consumable, items }

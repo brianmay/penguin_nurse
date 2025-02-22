@@ -1,14 +1,18 @@
 use crate::{
     forms::{
-        validate_password, validate_username, FormCancelButton, InputPassword, InputString, MyForm,
-        FormSubmitButton,
+        validate_password, validate_username, FormCancelButton, FormSubmitButton, InputPassword,
+        InputString, MyForm,
     },
     models::User,
     reload_user, use_user, Route,
 };
 use dioxus::prelude::*;
-use tap::Pipe;
+
+#[cfg(feature = "server")]
 use tracing::error;
+
+#[cfg(feature = "server")]
+use tap::Pipe;
 
 const NURSE_SVG: Asset = asset!("/assets/nurse.svg");
 

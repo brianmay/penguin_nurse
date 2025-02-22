@@ -1,4 +1,6 @@
 use dioxus::prelude::*;
+
+#[cfg(feature = "server")]
 use server_fn::error::NoCustomError;
 
 use crate::models::{self, UserId};
