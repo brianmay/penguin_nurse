@@ -1,11 +1,11 @@
 use chrono::Local;
 use dioxus::prelude::*;
 
+use crate::Route;
 use crate::components::buttons::{ChangeButton, DeleteButton, NavButton};
 use crate::components::users::{ChangePassword, ChangeUser, CreateUser, DeleteUser};
 use crate::functions::users::{get_user, get_users};
 use crate::models::{User, UserId};
-use crate::Route;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ActiveDialog {
@@ -215,7 +215,7 @@ pub fn UserList() -> Element {
                                 tbody { class: "block sm:table-row-group",
                                     for user in users {
                                         UserItem {
-                                            key: user.id,
+                                            key: "{user.id}",
                                             user,
                                             on_click: move |user: User| {
                                                 navigator
