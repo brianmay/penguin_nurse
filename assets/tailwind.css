@@ -748,6 +748,109 @@
       }
     }
   }
+  .btn\! {
+    display: inline-flex !important;
+    flex-shrink: 0 !important;
+    cursor: pointer !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: calc(0.25rem * 1.5) !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    text-decoration-line: none !important;
+    outline-offset: 2px !important;
+    webkit-user-select: none !important;
+    user-select: none !important;
+    padding-inline: var(--btn-p) !important;
+    color: var(--btn-fg) !important;
+    height: var(--size) !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    outline-color: var(--btn-color, var(--color-base-content)) !important;
+    transition-property: color, background-color, border-color, box-shadow !important;
+    transition-timing-function: cubic-bezier(0, 0, 0.2, 1) !important;
+    transition-duration: 0.2s !important;
+    border-start-start-radius: var(--join-ss, var(--radius-field)) !important;
+    border-start-end-radius: var(--join-se, var(--radius-field)) !important;
+    border-end-start-radius: var(--join-es, var(--radius-field)) !important;
+    border-end-end-radius: var(--join-ee, var(--radius-field)) !important;
+    background-color: var(--btn-bg) !important;
+    background-size: auto, calc(var(--noise) * 100%) !important;
+    background-image: none, var(--btn-noise) !important;
+    border-width: var(--border) !important;
+    border-style: solid !important;
+    border-color: var(--btn-border) !important;
+    text-shadow: 0 0.5px oklch(100% 0 0 / calc(var(--depth) * 0.15)) !important;
+    box-shadow: 0 0.5px 0 0.5px oklch(100% 0 0 / calc(var(--depth) * 6%)) inset, var(--btn-shadow) !important;
+    --size: calc(var(--size-field, 0.25rem) * 10) !important;
+    --btn-bg: var(--btn-color, var(--color-base-200)) !important;
+    --btn-fg: var(--color-base-content) !important;
+    --btn-p: 1rem !important;
+    --btn-border: color-mix(in oklab, var(--btn-bg), #000 calc(var(--depth) * 5%)) !important;
+    --btn-shadow: 0 3px 2px -2px color-mix(in oklab, var(--btn-bg) calc(var(--depth) * 30%), #0000),
+    0 4px 3px -2px color-mix(in oklab, var(--btn-bg) calc(var(--depth) * 30%), #0000) !important;
+    --btn-noise: var(--fx-noise) !important;
+    @media (hover: hover) {
+      &:hover {
+        --btn-bg: color-mix(in oklab, var(--btn-color, var(--color-base-200)), #000 7%) !important;
+      }
+    }
+    &.btn-active {
+      --btn-bg: color-mix(in oklab, var(--btn-color, var(--color-base-200)), #000 7%) !important;
+      --btn-shadow: 0 0 0 0 oklch(0% 0 0/0), 0 0 0 0 oklch(0% 0 0/0) !important;
+      isolation: isolate !important;
+    }
+    &:focus-visible {
+      outline-width: 2px !important;
+      outline-style: solid !important;
+    }
+    &:active:not(.btn-active) {
+      translate: 0 0.5px !important;
+      --btn-bg: color-mix(in oklab, var(--btn-color, var(--color-base-200)), #000 5%) !important;
+      --btn-border: color-mix(in oklab, var(--btn-color, var(--color-base-200)), #000 7%) !important;
+      --btn-shadow: 0 0 0 0 oklch(0% 0 0/0), 0 0 0 0 oklch(0% 0 0/0) !important;
+    }
+    &:is(:disabled, [disabled], .btn-disabled) {
+      &:not(.btn-link, .btn-ghost) {
+        background-color: color-mix(in oklab, var(--color-base-content) 10%, transparent) !important;
+        box-shadow: none !important;
+      }
+      pointer-events: none !important;
+      --btn-border: #0000 !important;
+      --btn-noise: none !important;
+      --btn-fg: color-mix(in oklch, var(--color-base-content) 20%, #0000) !important;
+      @media (hover: hover) {
+        &:hover {
+          pointer-events: none !important;
+          background-color: color-mix(in oklab, var(--color-neutral) 20%, transparent) !important;
+          --btn-border: #0000 !important;
+          --btn-fg: color-mix(in oklch, var(--color-base-content) 20%, #0000) !important;
+        }
+      }
+    }
+    &:is(input[type="checkbox"], input[type="radio"]) {
+      appearance: none !important;
+      &::after {
+        content: attr(aria-label) !important;
+      }
+      &:checked {
+        --btn-color: var(--color-primary) !important;
+        --btn-bg: var(--color-primary) !important;
+        --btn-fg: var(--color-primary-content) !important;
+        --btn-border: var(--color-primary) !important;
+        &:focus-visible {
+          outline-color: var(--color-primary) !important;
+        }
+        @media (hover: hover) {
+          &:hover {
+            --btn-bg: color-mix(in oklab, var(--color-primary) 90%, #000) !important;
+            --btn-border: color-mix(in oklab, var(--color-primary) 90%, #000) !important;
+          }
+        }
+      }
+    }
+  }
   .drawer-side {
     pointer-events: none;
     visibility: hidden;
@@ -1281,6 +1384,26 @@
       padding-bottom: 1rem;
       transition: padding 0.2sease-out,
       background-color 0.2sease-out;
+    }
+  }
+  .validator {
+    &:user-valid, &:has(:user-valid) {
+      &, &:focus, &:checked, &[aria-checked="true"], &:focus-within {
+        --input-color: var(--color-success);
+      }
+    }
+    &:user-invalid, &:has(:user-invalid) {
+      &, &:focus, &:checked, &[aria-checked="true"], &:focus-within {
+        --input-color: var(--color-error);
+      }
+      & ~ .validator-hint {
+        visibility: visible;
+        display: block;
+        color: var(--color-error);
+      }
+    }
+    & ~ .validator-hint {
+      visibility: hidden;
     }
   }
   .collapse {
@@ -2647,6 +2770,9 @@
   .z-7 {
     z-index: 7;
   }
+  .z-9 {
+    z-index: 9;
+  }
   .tab-content {
     order: var(--tabcontent-order);
     display: none;
@@ -2720,8 +2846,8 @@
   .m-1 {
     margin: calc(var(--spacing) * 1);
   }
-  .m-3 {
-    margin: calc(var(--spacing) * 3);
+  .m-2 {
+    margin: calc(var(--spacing) * 2);
   }
   .m-5 {
     margin: calc(var(--spacing) * 5);
@@ -2845,6 +2971,11 @@
       margin-inline-start: calc(var(--border, 1px) * -1);
       margin-block-start: 0;
     }
+  }
+  .validator-hint {
+    margin-top: calc(0.25rem * 2);
+    font-size: var(--text-xs);
+    line-height: var(--tw-leading, var(--text-xs--line-height));
   }
   .mt-2 {
     margin-top: calc(var(--spacing) * 2);
@@ -3092,18 +3223,6 @@
       cursor: pointer;
     }
   }
-  .stat {
-    display: inline-grid;
-    width: 100%;
-    column-gap: calc(0.25rem * 4);
-    padding-inline: calc(0.25rem * 6);
-    padding-block: calc(0.25rem * 4);
-    grid-template-columns: repeat(1, 1fr);
-    &:not(:last-child) {
-      border-inline-end: var(--border) dashed color-mix(in oklab, currentColor 10%, #0000);
-      border-block-end: none;
-    }
-  }
   .card-title {
     display: flex;
     align-items: center;
@@ -3188,17 +3307,14 @@
   .h-2 {
     height: calc(var(--spacing) * 2);
   }
+  .h-3 {
+    height: calc(var(--spacing) * 3);
+  }
   .h-4 {
     height: calc(var(--spacing) * 4);
   }
   .h-5 {
     height: calc(var(--spacing) * 5);
-  }
-  .h-6 {
-    height: calc(var(--spacing) * 6);
-  }
-  .h-7 {
-    height: calc(var(--spacing) * 7);
   }
   .h-8 {
     height: calc(var(--spacing) * 8);
@@ -3223,6 +3339,9 @@
   }
   .max-h-none {
     max-height: none;
+  }
+  .w-3 {
+    width: calc(var(--spacing) * 3);
   }
   .w-4 {
     width: calc(var(--spacing) * 4);
@@ -3474,6 +3593,9 @@
   .py-8 {
     padding-block: calc(var(--spacing) * 8);
   }
+  .pr-0 {
+    padding-right: calc(var(--spacing) * 0);
+  }
   .text-center {
     text-align: center;
   }
@@ -3575,6 +3697,10 @@
   .uppercase {
     text-transform: uppercase;
   }
+  .ordinal {
+    --tw-ordinal: ordinal;
+    font-variant-numeric: var(--tw-ordinal,) var(--tw-slashed-zero,) var(--tw-numeric-figure,) var(--tw-numeric-spacing,) var(--tw-numeric-fraction,);
+  }
   .btn-link {
     text-decoration-line: underline;
     outline-color: currentColor;
@@ -3647,6 +3773,15 @@
   .ease-out {
     --tw-ease: var(--ease-out);
     transition-timing-function: var(--ease-out);
+  }
+  .\[b\:��au�b�L\18 \5 �\13 ��4\5 \11 \e \] {
+    b: ��au�b�L���4;
+  }
+  .\[o\:s�u�\|�\16 \4 �\1b p7\.\2 5\.\2 �\] {
+    o: s�u�|��p7.5.�;
+  }
+  .\[o\:s�u�\|�\16 \4 �\1b p�\.\2 �\.\2 �\] {
+    o: s�u�|��p�.�.�;
   }
   .\[t7\:_�\~�B\>�\] {
     t7:  �~�B>�;
@@ -4543,6 +4678,26 @@ video {
   inherits: false;
 }
 @property --tw-tracking {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-ordinal {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-slashed-zero {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-numeric-figure {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-numeric-spacing {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-numeric-fraction {
   syntax: "*";
   inherits: false;
 }
