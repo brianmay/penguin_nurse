@@ -5,7 +5,7 @@ use thiserror::Error;
 
 use crate::forms::{FieldValue, FieldValueError};
 
-use super::{common::MaybeString, UserId};
+use super::{UserId, common::MaybeString};
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]
 #[serde(tag = "type")]
@@ -25,6 +25,7 @@ pub enum Bristol {
 pub struct PooId(i64);
 
 impl PooId {
+    #[cfg(feature = "server")]
     pub fn new(id: i64) -> Self {
         Self(id)
     }

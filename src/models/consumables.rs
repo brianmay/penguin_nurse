@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 use crate::forms::{FieldValue, FieldValueError};
 
 use super::{
-    common::{MaybeDateTime, MaybeString},
     ConsumableItem,
+    common::{MaybeDateTime, MaybeString},
 };
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
@@ -73,6 +73,7 @@ impl Display for ConsumableUnit {
 pub struct ConsumableId(i64);
 
 impl ConsumableId {
+    #[cfg(feature = "server")]
     pub fn new(id: i64) -> Self {
         Self(id)
     }

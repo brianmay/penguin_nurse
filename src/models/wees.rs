@@ -2,12 +2,13 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
-use super::{common::MaybeString, UserId};
+use super::{UserId, common::MaybeString};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct WeeId(i64);
 
 impl WeeId {
+    #[cfg(feature = "server")]
     pub fn new(id: i64) -> Self {
         Self(id)
     }

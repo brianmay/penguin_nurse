@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::{consumables::ConsumableId, Consumable, ConsumptionId, MaybeF64, MaybeString};
+use super::{Consumable, ConsumptionId, MaybeF64, MaybeString, consumables::ConsumableId};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ConsumptionConsumableId(ConsumptionId, ConsumableId);
@@ -9,11 +9,13 @@ impl ConsumptionConsumableId {
     pub fn new(parent_id: ConsumptionId, consumable_id: ConsumableId) -> Self {
         Self(parent_id, consumable_id)
     }
+    #[cfg(feature = "server")]
     pub fn as_inner(self) -> (ConsumptionId, ConsumableId) {
         (self.0, self.1)
     }
 }
 
+#[cfg(feature = "server")]
 impl ConsumptionConsumableId {
     pub fn parent_id(&self) -> ConsumptionId {
         self.0

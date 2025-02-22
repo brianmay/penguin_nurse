@@ -9,6 +9,7 @@ impl NestedConsumableId {
     pub fn new(parent_id: ConsumableId, consumable_id: ConsumableId) -> Self {
         Self(parent_id, consumable_id)
     }
+    #[cfg(feature = "server")]
     pub fn as_inner(self) -> (ConsumableId, ConsumableId) {
         (self.0, self.1)
     }
