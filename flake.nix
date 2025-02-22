@@ -67,20 +67,21 @@
         };
 
         postgres = pkgs.postgresql_15;
+        tailwindcss = pkgs-unstable.tailwindcss_4;
 
-        # nodePackages = pkgs.buildNpmPackage {
-        #   name = "node-packages";
-        #   src = ./.;
-        #   npmDepsHash = builtins.readFile ./npm-deps-hash;
-        #   dontNpmBuild = true;
-        #   inherit nodejs;
+        nodePackages = pkgs.buildNpmPackage {
+          name = "node-packages";
+          src = ./.;
+          npmDepsHash = builtins.readFile ./npm-deps-hash;
+          dontNpmBuild = true;
+          inherit nodejs;
 
-        #   installPhase = ''
-        #     mkdir $out
-        #     cp -r node_modules $out
-        #     ln -s $out/node_modules/.bin $out/bin
-        #   '';
-        # };
+          installPhase = ''
+            mkdir $out
+            cp -r node_modules $out
+            ln -s $out/node_modules/.bin $out/bin
+          '';
+        };
 
         # frontend =
         #   let
@@ -243,8 +244,8 @@
             buildPhase = ''
               export VCS_REF="${build_env.VCS_REF}"
               export BUILD_DATE="${build_env.BUILD_DATE}"
-              mkdir -p target/dx/penguin_nurse/release/web/public/wasm
-              ln -s target/dx/penguin_nurse/release/web/public/wasm-bindgen target/dx/penguin_nurse/release/web/public/wasm
+              ln -s ${nodePackages}/node_modules ./node_modules
+              ${tailwindcss}/bin/tailwindcss -i ./input.css -o ./assets/tailwind.css
               dx build --release --platform web
             '';
             installPhase = ''
@@ -314,7 +315,7 @@
                 pkgs.diesel-cli
                 pkgs.diesel-cli-ext
                 postgres
-                pkgs-unstable.tailwindcss_4
+                tailwindcss
                 pkgs.watchman
               ];
               enterShell = ''

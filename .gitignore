@@ -9,3 +9,4 @@
 /.devenv
 /.direnv
 /node_modules
+/assets/tailwind.css
