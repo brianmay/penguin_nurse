@@ -195,7 +195,7 @@ pub fn UserList() -> Element {
     let navigator = navigator();
 
     rsx! {
-        match users() {
+       match users() {
             Some(Ok(users)) => {
                 rsx! {
                     if users.is_empty() {
@@ -215,8 +215,8 @@ pub fn UserList() -> Element {
                                 tbody { class: "block sm:table-row-group",
                                     for user in users {
                                         UserItem {
-                                            key: "{user.id}",
-                                            user,
+                                            key: user.id,
+                                            user: user.clone(),
                                             on_click: move |user: User| {
                                                 navigator
                                                     .push(Route::UserDetail {
