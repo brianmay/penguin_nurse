@@ -14,7 +14,7 @@ use crate::server::database::{connection::DatabaseConnection, schema};
 use super::nested_consumables::NestedConsumable;
 
 #[derive(diesel_derive_enum::DbEnum, Debug, Copy, Clone)]
-#[ExistingTypePath = "schema::sql_types::ConsumableUnit"]
+#[db_enum(existing_type_path = "schema::sql_types::ConsumableUnit")]
 pub enum ConsumableUnit {
     Millilitres,
     Grams,
