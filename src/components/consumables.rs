@@ -2,13 +2,14 @@ use chrono::Local;
 use dioxus::prelude::*;
 
 use crate::{
+    Route,
     forms::{
-        validate_barcode, validate_brand, validate_comments, validate_consumable_millilitres,
-        validate_consumable_quantity, validate_consumable_unit, validate_maybe_date_time,
-        validate_name, Dialog, EditError, FieldValue, FormCancelButton, FormCloseButton,
+        Barcode, Dialog, EditError, FieldValue, FormCancelButton, FormCloseButton,
         FormDeleteButton, FormEditButton, FormSubmitButton, InputBoolean, InputConsumable,
         InputMaybeDateTime, InputNumber, InputSelect, InputString, InputTextArea, Saving,
-        ValidationError,
+        ValidationError, validate_barcode, validate_brand, validate_comments,
+        validate_consumable_millilitres, validate_consumable_quantity, validate_consumable_unit,
+        validate_maybe_date_time, validate_name,
     },
     functions::consumables::{
         create_consumable, create_nested_consumable, delete_consumable, delete_nested_consumable,
@@ -19,7 +20,6 @@ use crate::{
         NestedConsumable, NestedConsumableId, NewConsumable, NewNestedConsumable, UpdateConsumable,
         UpdateNestedConsumable,
     },
-    Route,
 };
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -236,6 +236,9 @@ pub fn ChangeConsumable(
                 value: barcode,
                 validate: validate.barcode,
                 disabled,
+            }
+            Barcode {
+                barcode: barcode,
             }
             InputBoolean {
                 id: "is_organic",

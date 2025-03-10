@@ -10,13 +10,13 @@ use crate::{
         buttons::{ActionButton, CreateButton},
         consumables::{self, ChangeConsumable},
     },
-    forms::{validate_colour_hue, validate_colour_saturation, validate_colour_value},
+    forms::{Barcode, validate_colour_hue, validate_colour_saturation, validate_colour_value},
     functions::consumables::search_consumables,
     models::{Consumable, Maybe, MaybeDateTime},
 };
 
-use super::errors::ValidationError;
 use super::FieldValue;
+use super::errors::ValidationError;
 
 fn get_input_classes(is_valid: bool, changed: bool, is_disabled: bool) -> &'static str {
     if is_disabled {
@@ -496,10 +496,7 @@ pub fn InputColour(
                         value.set(v);
                     },
                 }
-                if disabled() {
-
-                }
-                if !changed() {
+                if disabled() || !changed() {
 
                 } else if let Err(err) = validate_hue() {
                     div { class: "text-red-500", "{err}" }
@@ -677,6 +674,9 @@ pub fn InputConsumable(
                         oninput: move |e| query.set(e.value()),
                         id,
                         placeholder: "Search...",
+                    }
+                    Barcode {
+                        barcode: query,
                     }
                     match list.read().deref() {
                         Some(Some(Err(err))) => rsx! {

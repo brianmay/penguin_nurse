@@ -246,6 +246,7 @@
               export BUILD_DATE="${build_env.BUILD_DATE}"
               ln -s ${nodePackages}/node_modules ./node_modules
               ${tailwindcss}/bin/tailwindcss -i ./input.css -o ./assets/tailwind.css
+              ./node_modules/.bin/rollup --config rollup.config.mjs
               dx build --release --platform web
             '';
             installPhase = ''

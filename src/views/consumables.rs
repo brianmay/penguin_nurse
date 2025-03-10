@@ -4,15 +4,17 @@ use chrono::Local;
 use dioxus::prelude::*;
 
 use crate::{
+    Route,
     components::{
         buttons::{ChangeButton, CreateButton, DeleteButton, NavButton},
         consumables::{self, ActiveDialog, ConsumableDialog, ConsumableItemList, Operation},
     },
+    forms::Barcode,
     functions::consumables::{
         get_child_consumables, get_consumable_by_id, search_consumables_with_nested,
     },
     models::{ConsumableId, ConsumableWithItems, Maybe},
-    use_user, Route,
+    use_user,
 };
 
 #[component]
@@ -137,6 +139,9 @@ pub fn ConsumableList() -> Element {
                     value: query(),
                     oninput: move |e| query.set(e.value()),
                     placeholder: "Search...",
+                }
+                Barcode {
+                    barcode: query
                 }
             }
 

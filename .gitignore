@@ -10,3 +10,5 @@
 /.direnv
 /node_modules
 /assets/tailwind.css
+/assets/bundle.js
+/assets/zbar.wasm

@@ -1,3 +1,4 @@
+mod barcodes;
 mod buttons;
 mod dialog;
 mod errors;
@@ -5,6 +6,7 @@ mod fields;
 mod saving;
 mod validation;
 
+pub use barcodes::Barcode;
 pub use buttons::{
     FormCancelButton, FormCloseButton, FormDeleteButton, FormEditButton, FormSubmitButton,
 };

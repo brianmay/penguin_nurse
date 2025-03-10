@@ -6,8 +6,8 @@ use dioxus::prelude::*;
 use components::navbar::Navbar;
 use models::{ConsumableId, ConsumptionId, PooId, User, UserId, WeeId};
 use views::{
-    get_user, ConsumableDetail, ConsumableList, ConsumptionDetail, Home, Login, Logout, PooDetail,
-    TimelineList, UserDetail, UserList, WeeDetail,
+    ConsumableDetail, ConsumableList, ConsumptionDetail, Home, Login, Logout, PooDetail,
+    TimelineList, UserDetail, UserList, WeeDetail, get_user,
 };
 
 mod components;
@@ -88,11 +88,18 @@ fn App() -> Element {
     })?;
 
     use_context_provider(|| user_resource);
+    let _zbar = asset!("/assets/zbar.wasm");
 
     rsx! {
         // Global app resources
         document::Link { rel: "icon", href: MEDICAL_SVG }
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
+
+        document::Script {
+            type: "module",
+            src: asset!("/assets/bundle.js", JsAssetOptions::new().with_minify(false)),
+        }
+
 
         Router::<Route> {}
     }
