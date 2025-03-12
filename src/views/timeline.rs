@@ -335,7 +335,7 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                     },
                     ">"
                 }
-                p { class: "inline-block", {date.to_string()} }
+                p { class: "inline-block", {display_date(date())} }
             }
         }
 

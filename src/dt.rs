@@ -59,3 +59,7 @@ pub fn get_date_for_dt(entry_date: DateTime<Utc>) -> NaiveDate {
         local_date
     }
 }
+
+pub fn display_date(entry_date: NaiveDate) -> String {
+    entry_date.format("%A, %-d %B, %C%y").to_string()
+}
