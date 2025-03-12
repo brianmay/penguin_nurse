@@ -5,21 +5,22 @@ use dioxus::prelude::*;
 use tap::Pipe;
 
 use crate::{
+    Route,
     components::{
         buttons::{ChangeButton, CreateButton, DeleteButton, NavButton},
-        consumptions::{self, consumption_duration, consumption_icon, ConsumptionItemList},
+        consumptions::{self, ConsumptionItemList, consumption_duration, consumption_icon},
         events::{event_colour, event_time, event_urgency},
         poos::{self, poo_bristol, poo_duration, poo_icon, poo_quantity},
         timeline::{ActiveDialog, TimelineDialog},
         wees::{self, wee_duration, wee_icon, wee_mls},
     },
-    dt::{get_date_for_dt, get_utc_times_for_date},
+    dt::{display_date, get_date_for_dt, get_utc_times_for_date},
     functions::{
         consumptions::get_consumptions_for_time_range, poos::get_poos_for_time_range,
         wees::get_wees_for_time_range,
     },
     models::{Entry, EntryData, EntryId, Maybe, Timeline},
-    use_user, Route,
+    use_user,
 };
 
 #[component]
@@ -315,12 +316,10 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                 NavButton {
                     on_click: move |_| {
                         let new_date = get_date_for_dt(Utc::now());
-                        if let Ok(new_date) = new_date {
                             navigator
                                 .push(Route::TimelineList {
                                     date: new_date,
                                 });
-                        }
                     },
                     "Today"
                 }

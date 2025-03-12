@@ -1,7 +1,7 @@
 use chrono::Utc;
 use dioxus::prelude::*;
 
-use crate::{components::buttons::NavButton, dt::get_date_for_dt, use_user, Route};
+use crate::{Route, components::buttons::NavButton, dt::get_date_for_dt, use_user};
 
 #[component]
 pub fn Home() -> Element {
@@ -19,12 +19,10 @@ pub fn Home() -> Element {
                 NavButton {
                     on_click: move |_| {
                         let new_date = get_date_for_dt(Utc::now());
-                        if let Ok(new_date) = new_date {
-                            navigator
-                                .push(Route::TimelineList {
-                                    date: new_date,
-                                });
-                        }
+                        navigator
+                            .push(Route::TimelineList {
+                                date: new_date,
+                            });
                     },
                     "Today"
                 }
