@@ -251,7 +251,6 @@ pub fn ConsumableDetail(consumable_id: ReadOnlySignal<ConsumableId>) -> Element 
                 ConsumableDialog {
                     dialog: active_dialog,
                     on_change: move |_consumption| {
-                        active_dialog.set(ActiveDialog::Idle);
                         maybe_items.restart();
                         maybe_consumable.restart();
                     },

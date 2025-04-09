@@ -30,7 +30,6 @@ pub fn ConsumptionDetail(consumption_id: ReadOnlySignal<ConsumptionId>) -> Eleme
                 ConsumptionDialog {
                     dialog: active_dialog(),
                     on_change: move |_consumption| {
-                        active_dialog.set(ActiveDialog::Idle);
                         maybe_consumption.restart();
                         maybe_items.restart();
                     },
