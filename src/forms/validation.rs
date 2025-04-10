@@ -1,9 +1,11 @@
 use chrono::{FixedOffset, TimeDelta};
 use palette::Hsv;
 
-use crate::models::{Bristol, ConsumableUnit, MaybeDateTime, MaybeF64, MaybeString};
+use crate::models::{
+    Bristol, ConsumableUnit, ConsumptionType, MaybeDateTime, MaybeF64, MaybeString,
+};
 
-use super::{errors::ValidationError, FieldValue};
+use super::{FieldValue, errors::ValidationError};
 
 pub fn validate_field_value<T: FieldValue>(str: &str) -> Result<T, ValidationError> {
     T::from_string(str).map_err(|_| ValidationError("Invalid value".to_string()))
@@ -92,6 +94,10 @@ pub fn validate_consumable_millilitres(str: &str) -> Result<MaybeF64, Validation
 }
 
 pub fn validate_consumable_unit(str: &str) -> Result<ConsumableUnit, ValidationError> {
+    validate_field_value(str)
+}
+
+pub fn validate_consumption_type(str: &str) -> Result<ConsumptionType, ValidationError> {
     validate_field_value(str)
 }
 

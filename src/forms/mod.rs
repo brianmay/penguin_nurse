@@ -22,10 +22,10 @@ pub use validation::{
     validate_1st_password, validate_2nd_password, validate_barcode, validate_brand,
     validate_bristol, validate_colour, validate_colour_hue, validate_colour_saturation,
     validate_colour_value, validate_comments, validate_consumable_millilitres,
-    validate_consumable_quantity, validate_consumable_unit, validate_duration, validate_email,
-    validate_fixed_offset_date_time, validate_full_name, validate_maybe_date_time,
-    validate_millilitres, validate_name, validate_password, validate_poo_quantity,
-    validate_urgency, validate_username,
+    validate_consumable_quantity, validate_consumable_unit, validate_consumption_type,
+    validate_duration, validate_email, validate_fixed_offset_date_time, validate_full_name,
+    validate_maybe_date_time, validate_millilitres, validate_name, validate_password,
+    validate_poo_quantity, validate_urgency, validate_username,
 };
 
 mod values;

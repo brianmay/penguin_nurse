@@ -2,13 +2,14 @@ use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use dioxus::prelude::*;
 
 use crate::{
+    Route,
     components::{events::event_date_time, times::time_delta_to_string},
     forms::{
-        validate_comments, validate_consumable_millilitres, validate_consumable_quantity,
-        validate_duration, validate_fixed_offset_date_time, Dialog, EditError, FieldValue,
-        FormCancelButton, FormCloseButton, FormDeleteButton, FormEditButton, FormSubmitButton,
-        InputConsumable, InputDateTime, InputDuration, InputNumber, InputTextArea, Saving,
-        ValidationError,
+        Dialog, EditError, FieldValue, FormCancelButton, FormCloseButton, FormDeleteButton,
+        FormEditButton, FormSubmitButton, InputConsumable, InputDateTime, InputDuration,
+        InputNumber, InputSelect, InputTextArea, Saving, ValidationError, validate_comments,
+        validate_consumable_millilitres, validate_consumable_quantity, validate_consumption_type,
+        validate_duration, validate_fixed_offset_date_time,
     },
     functions::consumptions::{
         create_consumption, create_consumption_consumable, delete_consumption,
@@ -17,10 +18,9 @@ use crate::{
     },
     models::{
         Consumable, Consumption, ConsumptionConsumable, ConsumptionConsumableId, ConsumptionItem,
-        Maybe, MaybeF64, MaybeString, NewConsumption, NewConsumptionConsumable, UpdateConsumption,
-        UpdateConsumptionConsumable, UserId,
+        ConsumptionType, Maybe, MaybeF64, MaybeString, NewConsumption, NewConsumptionConsumable,
+        UpdateConsumption, UpdateConsumptionConsumable, UserId,
     },
-    Route,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -33,6 +33,7 @@ pub enum Operation {
 struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
     duration: Memo<Result<TimeDelta, ValidationError>>,
+    consumption_type: Memo<Result<ConsumptionType, ValidationError>>,
     liquid_mls: Memo<Result<MaybeF64, ValidationError>>,
     comments: Memo<Result<MaybeString, ValidationError>>,
 }
@@ -40,6 +41,7 @@ struct Validate {
 async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumption, EditError> {
     let time = validate.time.read().clone()?;
     let duration = validate.duration.read().clone()?;
+    let consumption_type = validate.consumption_type.read().clone()?;
     let liquid_mls = validate.liquid_mls.read().clone()?;
     let comments = validate.comments.read().clone()?;
 
@@ -51,6 +53,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumption, Edi
                 duration,
                 liquid_mls,
                 comments,
+                consumption_type,
             };
             create_consumption(updates).await.map_err(EditError::Server)
         }
@@ -59,6 +62,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumption, Edi
                 user_id: None,
                 time: Some(time),
                 duration: Some(duration),
+                consumption_type: Some(consumption_type),
                 liquid_mls: Some(liquid_mls),
                 comments: Some(comments),
             };
@@ -85,6 +89,11 @@ pub fn ChangeConsumption(
         Operation::Update { consumption } => consumption.duration.as_string(),
     });
 
+    let consumption_type = use_signal(|| match &op {
+        Operation::Create { .. } => String::new(),
+        Operation::Update { consumption } => consumption.consumption_type.as_string(),
+    });
+
     let liquid_mls = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
         Operation::Update { consumption } => consumption.liquid_mls.as_string(),
@@ -98,6 +107,7 @@ pub fn ChangeConsumption(
     let validate = Validate {
         time: use_memo(move || validate_fixed_offset_date_time(&time())),
         duration: use_memo(move || validate_duration(&duration())),
+        consumption_type: use_memo(move || validate_consumption_type(&consumption_type())),
         liquid_mls: use_memo(move || validate_consumable_millilitres(&liquid_mls())),
         comments: use_memo(move || validate_comments(&comments())),
     };
@@ -109,6 +119,7 @@ pub fn ChangeConsumption(
     let disabled_save = use_memo(move || {
         validate.time.read().is_err()
             || validate.duration.read().is_err()
+            || validate.consumption_type.read().is_err()
             || validate.liquid_mls.read().is_err()
             || validate.comments.read().is_err()
             || disabled()
@@ -189,6 +200,14 @@ pub fn ChangeConsumption(
                 value: duration,
                 start_time: validate.time,
                 validate: validate.duration,
+                disabled,
+            }
+            InputSelect {
+                id: "consumption_type",
+                label: "Type",
+                value: consumption_type,
+                validate: validate.consumption_type,
+                options: ConsumptionType::options(),
                 disabled,
             }
             InputNumber {
@@ -420,6 +439,12 @@ pub fn ConsumptionDetail(consumption: Consumption, list: Vec<ConsumptionItem>) -
                         }
                     }
                     tr {
+                        td { "Type"}
+                        td {
+                            { consumption.consumption_type.to_string() }
+                        }
+                    }
+                    tr {
                         td { "Liquid Millilitres" }
                         td { {consumption.liquid_mls.as_string()} }
                     }
@@ -533,7 +558,7 @@ pub fn ConsumableConsumption(
                     div { class: "p-4",
                         ul {
                             for item in consumption_consumables {
-                    
+
                                 li {
                                     class: "p-4 mb-1 bg-gray-700 border-2 rounded-lg",
                                     class: if is_selected(&item) { "border-gray-50 text-gray-50" } else { "border-gray-500" },

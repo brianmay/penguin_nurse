@@ -4,6 +4,10 @@ pub mod sql_types {
     #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "consumable_unit"))]
     pub struct ConsumableUnit;
+
+    #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "consumption_type"))]
+    pub struct ConsumptionType;
 }
 
 diesel::table! {
@@ -38,6 +42,9 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::ConsumptionType;
+
     consumptions (id) {
         id -> Int8,
         user_id -> Int8,
@@ -48,6 +55,7 @@ diesel::table! {
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
         utc_offset -> Int4,
+        consumption_type -> ConsumptionType,
     }
 }
 

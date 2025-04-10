@@ -93,6 +93,7 @@ fn EntryRow(
                             consumption_duration { duration: consumption.consumption.duration }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
+                            { consumption.consumption.consumption_type.to_string() }
                             if let Maybe::Some(liquid_mls) = &consumption.consumption.liquid_mls {
                                 div {
                                     "Liquid: "

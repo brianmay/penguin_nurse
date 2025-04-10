@@ -10,6 +10,43 @@ use crate::server::database::models::consumables::Consumable;
 use crate::server::database::models::consumption_consumables::ConsumptionConsumable;
 use crate::server::database::{connection::DatabaseConnection, schema};
 
+#[derive(diesel_derive_enum::DbEnum, Debug, Copy, Clone)]
+#[db_enum(existing_type_path = "schema::sql_types::ConsumptionType")]
+pub enum ConsumptionType {
+    Digest,
+    InhaleNose,
+    InhaleMouth,
+    SpitOut,
+    Inject,
+    ApplySkin,
+}
+
+impl From<ConsumptionType> for models::ConsumptionType {
+    fn from(unit: ConsumptionType) -> models::ConsumptionType {
+        match unit {
+            ConsumptionType::Digest => models::ConsumptionType::Digest,
+            ConsumptionType::InhaleNose => models::ConsumptionType::InhaleNose,
+            ConsumptionType::InhaleMouth => models::ConsumptionType::InhaleMouth,
+            ConsumptionType::SpitOut => models::ConsumptionType::SpitOut,
+            ConsumptionType::Inject => models::ConsumptionType::Inject,
+            ConsumptionType::ApplySkin => models::ConsumptionType::ApplySkin,
+        }
+    }
+}
+
+impl From<models::ConsumptionType> for ConsumptionType {
+    fn from(unit: models::ConsumptionType) -> ConsumptionType {
+        match unit {
+            models::ConsumptionType::Digest => ConsumptionType::Digest,
+            models::ConsumptionType::InhaleNose => ConsumptionType::InhaleNose,
+            models::ConsumptionType::InhaleMouth => ConsumptionType::InhaleMouth,
+            models::ConsumptionType::SpitOut => ConsumptionType::SpitOut,
+            models::ConsumptionType::Inject => ConsumptionType::Inject,
+            models::ConsumptionType::ApplySkin => ConsumptionType::ApplySkin,
+        }
+    }
+}
+
 #[allow(dead_code)]
 #[derive(Queryable, Selectable, Debug, Clone, Identifiable)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -24,6 +61,7 @@ pub struct Consumption {
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub utc_offset: i32,
+    pub consumption_type: ConsumptionType,
 }
 
 const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
@@ -43,6 +81,7 @@ impl From<Consumption> for crate::models::Consumption {
             comments: consumption.comments.into(),
             created_at: consumption.created_at,
             updated_at: consumption.updated_at,
+            consumption_type: consumption.consumption_type.into(),
         }
     }
 }
@@ -107,6 +146,7 @@ pub struct NewConsumption<'a> {
     pub time: DateTime<Utc>,
     pub utc_offset: i32,
     pub duration: TimeDelta,
+    pub consumption_type: ConsumptionType,
     pub liquid_mls: Option<f64>,
     pub comments: Option<&'a str>,
 }
@@ -118,6 +158,7 @@ impl<'a> NewConsumption<'a> {
             time: consumption.time.with_timezone(&Utc),
             utc_offset: consumption.time.offset().local_minus_utc(),
             duration: consumption.duration,
+            consumption_type: consumption.consumption_type.into(),
             liquid_mls: consumption.liquid_mls.into(),
             comments: consumption.comments.as_deref(),
         }
@@ -142,6 +183,7 @@ pub struct UpdateConsumption<'a> {
     pub time: Option<DateTime<Utc>>,
     pub utc_offset: Option<i32>,
     pub duration: Option<TimeDelta>,
+    pub consumption_type: Option<ConsumptionType>,
     pub liquid_mls: Option<Option<f64>>,
     pub comments: Option<Option<&'a str>>,
 }
@@ -152,6 +194,7 @@ impl<'a> UpdateConsumption<'a> {
             time: consumption.time.map(|time| time.with_timezone(&Utc)),
             utc_offset: consumption.time.map(|time| time.offset().local_minus_utc()),
             duration: consumption.duration,
+            consumption_type: consumption.consumption_type.map(|x| x.into()),
             liquid_mls: consumption.liquid_mls.map(|x| x.into()),
             comments: consumption.comments.as_ref().map(|x| x.as_deref()),
         }
