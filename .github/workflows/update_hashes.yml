@@ -4,11 +4,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: ${{ github.actor != 'github-actions[bot]' && github.event_name != 'push' || github.event.pusher.name != 'github-actions[bot]' }}
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
- 
+        with:
+          github_token: ${{ secrets.GH_TOKEN_FOR_UPDATES }}
       - uses: DeterminateSystems/nix-installer-action@main
         with:
           determinate: true
