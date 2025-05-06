@@ -140,9 +140,7 @@ pub fn ConsumableList() -> Element {
                     oninput: move |e| query.set(e.value()),
                     placeholder: "Search...",
                 }
-                Barcode {
-                    barcode: query
-                }
+                Barcode { barcode: query }
             }
 
             div {
@@ -205,7 +203,8 @@ pub fn ConsumableList() -> Element {
                         tbody { class: "block sm:table-row-group",
                             for consumable in list.iter() {
                                 EntryRow {
-                                    key: "{consumable.consumable.id.as_inner().to_string()}",
+                                    // Borken, See https://github.com/dioxuslabs/dioxus/issues/4066
+                                    // key: "{consumable.consumable.id.as_inner().to_string()}",
                                     consumable_with_items: consumable.clone(),
                                     selected,
                                     dialog,
