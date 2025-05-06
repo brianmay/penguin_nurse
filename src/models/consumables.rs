@@ -77,6 +77,7 @@ impl ConsumableId {
     pub fn new(id: i64) -> Self {
         Self(id)
     }
+    #[cfg(feature = "server")]
     pub fn as_inner(self) -> i64 {
         self.0
     }
