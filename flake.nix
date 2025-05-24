@@ -2,8 +2,7 @@
   description = "Medical Records";
 
   inputs.flake-utils.url = "github:numtide/flake-utils";
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
-  inputs.nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
   inputs.rust-overlay.url = "github:oxalica/rust-overlay";
   inputs.devenv.url = "github:cachix/devenv";
   inputs.crane.url = "github:ipetkov/crane";
@@ -13,7 +12,6 @@
     inputs@{
       self,
       nixpkgs,
-      nixpkgs-unstable,
       flake-utils,
       rust-overlay,
       devenv,
@@ -27,14 +25,7 @@
           inherit system;
           overlays = [ (import rust-overlay) ];
         };
-        pkgs-unstable = nixpkgs-unstable.legacyPackages.${system};
-        wasm-bindgen-cli = pkgs.wasm-bindgen-cli.override (old: {
-          version = "0.2.100";
-          hash = "sha256-3RJzK7mkYFrs7C/WkhW9Rr4LdP5ofb2FdYGz1P7Uxog";
-          cargoHash = "sha256-tD0OY2PounRqsRiFh8Js5nyknQ809ZcHMvCOLrvYHRE=";
-          # hash = pkgs.lib.fakeHash;
-          # cargoHash = pkgs.lib.fakeHash;
-        });
+        wasm-bindgen-cli = pkgs.wasm-bindgen-cli_0_2_100;
 
         # This should work but isn't currently required.
         # dioxus-cli = pkgs-unstable.dioxus-cli.overrideAttrs (old: rec {
@@ -51,9 +42,9 @@
         #     # outputHash = pkgs.lib.fakeHash;
         #   });
         # });
-        dioxus-cli = pkgs-unstable.dioxus-cli;
+        dioxus-cli = pkgs.dioxus-cli;
 
-        rustPlatform = pkgs.rust-bin.stable.latest.default.override {
+        rustPlatform = pkgs.rust-bin.stable."1.86.0".default.override {
           targets = [ "wasm32-unknown-unknown" ];
           extensions = [ "rust-src" ];
         };
@@ -67,7 +58,7 @@
         };
 
         postgres = pkgs.postgresql_15;
-        tailwindcss = pkgs-unstable.tailwindcss_4;
+        tailwindcss = pkgs.tailwindcss_4;
 
         nodePackages = pkgs.buildNpmPackage {
           name = "node-packages";
