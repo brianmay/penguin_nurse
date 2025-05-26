@@ -18,7 +18,7 @@ diesel_migrations = { version = "2.2.0", features = ["postgres"], optional = tru
 dioxus-cli-config = { version = "*", optional = true }
 tokio = { version = "1.45.1", optional = true }
 tracing-subscriber = { version = "0.3.19", optional = true }
-tower-sessions = { version = "0.13.0", optional = true }
+tower-sessions = { version = "0.14.0", optional = true }
 thiserror = "2.0.12"
 async-trait = "0.1.83"
 mobc = { version = "0.8.5", optional = true }
