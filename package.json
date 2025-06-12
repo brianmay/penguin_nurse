@@ -6,7 +6,7 @@
     "daisyui": "^5.0.43",
     "rollup": "^4.43.0",
     "rollup-plugin-copy": "^3.4.0",
-    "tailwindcss": "^4.1.8"
+    "tailwindcss": "^4.1.10"
   },
   "dependencies": {
     "@undecaf/barcode-detector-polyfill": "^0.9.21",
