@@ -311,15 +311,28 @@ pub fn DeleteConsumption(
     }
 }
 
-const CONSUMPTION_SVG: Asset = asset!("/assets/consumption.svg");
+const DIGEST_SVG: Asset = asset!("/assets/consumption/digest.svg");
+const NOSE_SVG: Asset = asset!("/assets/consumption/nose.svg");
+const MOUTH_SVG: Asset = asset!("/assets/consumption/mouth.svg");
+const SPIT_SVG: Asset = asset!("/assets/consumption/spit.svg");
+const INJECT_SVG: Asset = asset!("/assets/consumption/inject.svg");
+const SKIN_SVG: Asset = asset!("/assets/consumption/skin.svg");
 
 #[component]
-pub fn consumption_icon() -> Element {
+pub fn consumption_icon(consumption_type: ConsumptionType) -> Element {
+    let icon = match consumption_type {
+        ConsumptionType::Digest => DIGEST_SVG,
+        ConsumptionType::InhaleNose => NOSE_SVG,
+        ConsumptionType::InhaleMouth => MOUTH_SVG,
+        ConsumptionType::SpitOut => SPIT_SVG,
+        ConsumptionType::Inject => INJECT_SVG,
+        ConsumptionType::ApplySkin => SKIN_SVG,
+    };
     rsx! {
         img {
             class: "w-10 invert inline-block",
-            alt: "Consumption",
-            src: CONSUMPTION_SVG,
+            alt: format!("{}", consumption_type),
+            src: icon,
         }
     }
 }
@@ -420,7 +433,9 @@ pub fn ConsumptionDetail(consumption: Consumption, list: Vec<ConsumptionItem>) -
                 tbody {
                     tr {
                         td { "Event" }
-                        td { consumption_icon {} }
+                        td { consumption_icon {
+                            consumption_type: consumption.consumption_type
+                        } }
                     }
                     tr {
                         td { "ID" }

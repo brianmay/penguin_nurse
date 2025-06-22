@@ -88,7 +88,9 @@ fn EntryRow(
                 }
                 EntryData::Consumption(consumption) => {
                     rsx! {
-                        td { class: "block sm:table-cell border-blue-300 sm:border-t-2", consumption_icon {} }
+                        td { class: "block sm:table-cell border-blue-300 sm:border-t-2", consumption_icon {
+                            consumption_type: consumption.consumption.consumption_type
+                        } }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             consumption_duration { duration: consumption.consumption.duration }
                         }
