@@ -33,7 +33,7 @@ impl FieldValue for ConsumptionType {
         match value {
             "digest" => Ok(Self::Digest),
             "inhale_nose" => Ok(Self::InhaleNose),
-            "inhale_mount" => Ok(Self::InhaleMouth),
+            "inhale_mouth" => Ok(Self::InhaleMouth),
             "spit_out" => Ok(Self::SpitOut),
             "inject" => Ok(Self::Inject),
             "apply_skin" => Ok(Self::ApplySkin),
@@ -47,7 +47,7 @@ impl ConsumptionType {
         vec![
             ("digest", "eat/drink"),
             ("inhale_nose", "inhale nose"),
-            ("ingale_mouth", "inhale mouth"),
+            ("inhale_mouth", "inhale mouth"),
             ("spit_out", "spit out"),
             ("inject", "inject"),
             ("apply_skin", "apply skin"),
