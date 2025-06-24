@@ -73,7 +73,6 @@ impl Display for ConsumptionType {
 pub struct ConsumptionId(i64);
 
 impl ConsumptionId {
-    #[cfg(feature = "server")]
     pub fn new(id: i64) -> Self {
         Self(id)
     }

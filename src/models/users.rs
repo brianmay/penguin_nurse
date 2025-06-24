@@ -9,7 +9,6 @@ use serde::{Deserialize, Serialize};
 pub struct UserId(i64);
 
 impl UserId {
-    #[cfg(feature = "server")]
     pub fn new(id: i64) -> Self {
         Self(id)
     }

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use chrono::NaiveDate;
 use dioxus::prelude::*;
 
-use components::navbar::Navbar;
+use components::{navbar::Navbar, timeline};
 use models::{ConsumableId, ConsumptionId, PooId, User, UserId, WeeId};
 use views::{
     ConsumableDetail, ConsumableList, ConsumptionDetail, Home, Login, Logout, PooDetail,
@@ -31,8 +31,8 @@ enum Route {
     #[layout(Navbar)]
     #[route("/")]
     Home {  },
-    #[route("/:date")]
-    TimelineList { date: NaiveDate },
+    #[route("/:date?:dialog")]
+    TimelineList { date: NaiveDate, dialog: timeline::DialogReference},
     #[route("/users")]
     UserList {},
     #[route("/users/:user_id")]

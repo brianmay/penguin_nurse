@@ -108,7 +108,7 @@ pub fn ConsumableList() -> Element {
 
     let Some(_user) = user.as_ref() else {
         return rsx! {
-            p { class: "alert alert-danger", "You are not logged in." }
+            p { class: "alert alert-error", "You are not logged in." }
         };
     };
 
@@ -178,7 +178,7 @@ pub fn ConsumableList() -> Element {
 
         match list.read().deref() {
             Some(Err(err)) => rsx! {
-                div { class: "alert alert-danger",
+                div { class: "alert alert-error",
                     "Error loading consumables: "
                     {err.to_string()}
                 }

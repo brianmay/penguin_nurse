@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 use crate::{
     components::{
         buttons::{ChangeButton, DeleteButton},
-        consumptions::{self, ActiveDialog, ConsumptionDialog},
+        consumptions::{self, ActiveDialog, ConsumptionDialog, Operation},
     },
     functions::consumptions::{get_child_consumables, get_consumption_by_id},
     models::ConsumptionId,
@@ -38,11 +38,19 @@ pub fn ConsumptionDetail(consumption_id: ReadOnlySignal<ConsumptionId>) -> Eleme
                         maybe_consumption.restart();
                         maybe_items.restart();
                     },
-                    select_dialog: move |dialog| active_dialog.set(dialog),
+                    on_close: move || {
+                        active_dialog.set(ActiveDialog::Idle);
+                    },
+                    show_edit: move |consumption| {
+                        active_dialog.set(ActiveDialog::Change(Operation::Update{consumption}))
+                    },
+                    show_ingredients: move |consumption| {
+                        active_dialog.set(ActiveDialog::Ingredients(consumption))
+                    },
                 }
                 ChangeButton {
                     on_click: move |_| {
-                        active_dialog.set(ActiveDialog::Consumption(consumption_clone_2.clone()))
+                        active_dialog.set(ActiveDialog::Ingredients(consumption_clone_2.clone()))
                     },
                     "Ingredients"
                 }

@@ -358,16 +358,18 @@ pub fn consumption_duration(duration: chrono::TimeDelta) -> Element {
 pub enum ActiveDialog {
     Change(Operation),
     Delete(Consumption),
-    Consumption(Consumption),
+    Ingredients(Consumption),
     Idle,
 }
 
 #[component]
 pub fn ConsumptionDialog(
     dialog: ActiveDialog,
-    select_dialog: Callback<ActiveDialog>,
     on_change: Callback<Consumption>,
     on_delete: Callback<Consumption>,
+    show_edit: Callback<Consumption>,
+    show_ingredients: Callback<Consumption>,
+    on_close: Callback<()>,
 ) -> Element {
     match dialog {
         ActiveDialog::Change(op) => {
@@ -375,10 +377,10 @@ pub fn ConsumptionDialog(
                 Dialog {
                     ChangeConsumption {
                         op,
-                        on_cancel: move || select_dialog(ActiveDialog::Idle),
+                        on_cancel: on_close,
                         on_save: move |consumption: Consumption| {
                             on_change(consumption.clone());
-                            select_dialog(ActiveDialog::Consumption(consumption));
+                            show_ingredients(consumption);
                         },
                     }
                 }
@@ -389,23 +391,23 @@ pub fn ConsumptionDialog(
                 Dialog {
                     DeleteConsumption {
                         consumption,
-                        on_cancel: move || select_dialog(ActiveDialog::Idle),
+                        on_cancel: on_close,
                         on_delete: move |consumption| {
                             on_delete(consumption);
-                            select_dialog(ActiveDialog::Idle);
+                            on_close(())
                         },
                     }
                 }
             }
         }
-        ActiveDialog::Consumption(consumption) => {
+        ActiveDialog::Ingredients(consumption) => {
             rsx! {
                 Dialog {
                     ConsumableConsumption {
                         consumption,
-                        on_close: move || select_dialog(ActiveDialog::Idle),
+                        on_close,
                         on_edit: move |consumption| {
-                            select_dialog(ActiveDialog::Change(Operation::Update { consumption }));
+                            show_edit(consumption)
                         },
                         on_change: move |consumption: Consumption| {
                             on_change(consumption.clone());

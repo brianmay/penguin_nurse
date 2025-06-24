@@ -1,7 +1,12 @@
 use chrono::Utc;
 use dioxus::prelude::*;
 
-use crate::{Route, components::buttons::NavButton, dt::get_date_for_dt, use_user};
+use crate::{
+    Route,
+    components::{buttons::NavButton, timeline::DialogReference},
+    dt::get_date_for_dt,
+    use_user,
+};
 
 #[component]
 pub fn Home() -> Element {
@@ -22,6 +27,7 @@ pub fn Home() -> Element {
                         navigator
                             .push(Route::TimelineList {
                                 date: new_date,
+                                dialog: DialogReference::Idle
                             });
                     },
                     "Today"

@@ -25,7 +25,6 @@ pub enum Bristol {
 pub struct PooId(i64);
 
 impl PooId {
-    #[cfg(feature = "server")]
     pub fn new(id: i64) -> Self {
         Self(id)
     }

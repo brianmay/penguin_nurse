@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use chrono::{NaiveDate, Utc};
-use dioxus::prelude::*;
+use dioxus::prelude::{server_fn::error::NoCustomError, *};
 use tap::Pipe;
 
 use crate::{
@@ -11,25 +11,28 @@ use crate::{
         consumptions::{self, ConsumptionItemList, consumption_duration, consumption_icon},
         events::{event_colour, event_time, event_urgency},
         poos::{self, poo_bristol, poo_duration, poo_icon, poo_quantity},
-        timeline::{ActiveDialog, TimelineDialog},
+        timeline::{ActiveDialog, DialogReference, TimelineDialog},
         wees::{self, wee_duration, wee_icon, wee_mls},
     },
     dt::{display_date, get_date_for_dt, get_utc_times_for_date},
     functions::{
-        consumptions::get_consumptions_for_time_range, poos::get_poos_for_time_range,
-        wees::get_wees_for_time_range,
+        consumptions::{get_consumption_by_id, get_consumptions_for_time_range},
+        poos::{get_poo_by_id, get_poos_for_time_range},
+        wees::{get_wee_by_id, get_wees_for_time_range},
     },
-    models::{Entry, EntryData, EntryId, Maybe, Timeline},
+    models::{Consumption, Entry, EntryData, EntryId, Maybe, Timeline},
     use_user,
 };
 
 #[component]
 fn EntryRow(
     entry: Entry,
-    dialog: Signal<ActiveDialog>,
+    date: ReadOnlySignal<NaiveDate>,
+    // dialog: Signal<ActiveDialog>,
     selected: Signal<Option<EntryId>>,
 ) -> Element {
     let id = entry.get_id();
+    let navigator = navigator();
 
     rsx! {
         tr {
@@ -118,67 +121,71 @@ fn EntryRow(
             td { colspan: 4, class: "block sm:table-cell",
                 match entry.data {
                     EntryData::Wee(wee) => {
-                        let wee_clone_2 = wee.clone();
                         rsx! {
                             NavButton {
                                 on_click: move |_| {
-                                    navigator().push(Route::WeeDetail { wee_id: wee.id });
+                                    navigator.push(Route::WeeDetail { wee_id: wee.id });
                                 },
                                 "Details"
                             }
                             ChangeButton {
                                 on_click: move |_| {
-                                    dialog
-                                        .set(
-                                            ActiveDialog::Wee(
-                                                wees::ActiveDialog::Change(wees::Operation::Update {
-                                                    wee: wee_clone_2.clone(),
-                                                }),
-                                            ),
-                                        )
+                                    navigator
+                                    .push(Route::TimelineList {
+                                        date: date(),
+                                        dialog: DialogReference::UpdateWee { wee_id: wee.id }
+                                    });
                                 },
                                 "Edit"
                             }
-                            DeleteButton { on_click: move |_| { dialog.set(ActiveDialog::Wee(wees::ActiveDialog::Delete(wee.clone()))) },
+                            DeleteButton {
+                                on_click: move |_| {
+                                    navigator
+                                    .push(Route::TimelineList {
+                                        date: date(),
+                                        dialog: DialogReference::DeleteWee{ wee_id: wee.id }
+                                    });
+                                },
                                 "Delete"
                             }
                         }
                     }
                     EntryData::Poo(poo) => {
-                        let poo_clone_2 = poo.clone();
                         rsx! {
                             NavButton {
                                 on_click: move |_| {
-                                    navigator().push(Route::PooDetail { poo_id: poo.id });
+                                    navigator.push(Route::PooDetail { poo_id: poo.id });
                                 },
                                 "Details"
                             }
                             ChangeButton {
                                 on_click: move |_| {
-                                    dialog
-                                        .set(
-                                            ActiveDialog::Poo(
-                                                poos::ActiveDialog::Change(poos::Operation::Update {
-                                                    poo: poo_clone_2.clone(),
-                                                }),
-                                            ),
-                                        )
+                                    navigator
+                                    .push(Route::TimelineList {
+                                        date: date(),
+                                        dialog: DialogReference::UpdatePoo{ poo_id: poo.id }
+                                    });
                                 },
                                 "Edit"
                             }
-                            DeleteButton { on_click: move |_| { dialog.set(ActiveDialog::Poo(poos::ActiveDialog::Delete(poo.clone()))) },
+                            DeleteButton {
+                                on_click: move |_| {
+                                    navigator
+                                    .push(Route::TimelineList {
+                                        date: date(),
+                                        dialog: DialogReference::DeletePoo{ poo_id: poo.id }
+                                    });
+                                 },
                                 "Delete"
                             }
                         }
                     }
                     EntryData::Consumption(consumption) => {
-                        let consumption_clone_2 = consumption.consumption.clone();
-                        let consumption_clone_3 = consumption.consumption.clone();
                         let consumption = consumption.consumption;
                         rsx! {
                             NavButton {
                                 on_click: move |_| {
-                                    navigator()
+                                    navigator
                                         .push(Route::ConsumptionDetail {
                                             consumption_id: consumption.id,
                                         });
@@ -187,36 +194,31 @@ fn EntryRow(
                             }
                             ChangeButton {
                                 on_click: move |_| {
-                                    dialog
-                                        .set(
-                                            ActiveDialog::Consumption(
-                                                consumptions::ActiveDialog::Consumption(consumption_clone_2.clone()),
-                                            ),
-                                        )
+                                    navigator
+                                    .push(Route::TimelineList {
+                                        date: date(),
+                                        dialog: DialogReference::UpdateConsumptionIngredients{ consumption_id: consumption.id }
+                                    });
                                 },
                                 "Ingredients"
                             }
                             ChangeButton {
                                 on_click: move |_| {
-                                    dialog
-                                        .set(
-                                            ActiveDialog::Consumption(
-                                                consumptions::ActiveDialog::Change(consumptions::Operation::Update {
-                                                    consumption: consumption_clone_3.clone(),
-                                                }),
-                                            ),
-                                        )
+                                    navigator
+                                    .push(Route::TimelineList {
+                                        date: date(),
+                                        dialog: DialogReference::UpdateConsumption{ consumption_id: consumption.id }
+                                    });
                                 },
                                 "Edit"
                             }
                             DeleteButton {
                                 on_click: move |_| {
-                                    dialog
-                                        .set(
-                                            ActiveDialog::Consumption(
-                                                consumptions::ActiveDialog::Delete(consumption.clone()),
-                                            ),
-                                        )
+                                    navigator
+                                    .push(Route::TimelineList {
+                                        date: date(),
+                                        dialog: DialogReference::DeleteConsumption{ consumption_id: consumption.id }
+                                    });
                                 },
                                 "Delete"
                             }
@@ -229,20 +231,105 @@ fn EntryRow(
 }
 
 #[component]
-pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
+pub fn TimelineList(
+    date: ReadOnlySignal<NaiveDate>,
+    dialog: ReadOnlySignal<Option<DialogReference>>,
+) -> Element {
     let navigator = navigator();
     let selected: Signal<Option<EntryId>> = use_signal(|| None);
     let user = use_user().ok().flatten();
 
     let Some(user) = user.as_ref() else {
         return rsx! {
-            p { class: "alert alert-danger", "You are not logged in." }
+            p { class: "alert alert-error", "You are not logged in." }
         };
     };
 
     let user_id = user.pipe(|x| x.id);
 
-    let mut dialog = use_signal(|| ActiveDialog::Idle);
+    let dialog: Resource<Result<ActiveDialog, ServerFnError>> = use_resource(move || async move {
+        let Some(dialog) = dialog() else {
+            return Ok(ActiveDialog::Idle);
+        };
+        match dialog {
+            DialogReference::CreateWee { user_id } => {
+                ActiveDialog::Wee(wees::ActiveDialog::Change(wees::Operation::Create {
+                    user_id,
+                }))
+                .pipe(Ok)
+            }
+            DialogReference::UpdateWee { wee_id } => {
+                let wee = get_wee_by_id(wee_id).await?.ok_or(
+                    ServerFnError::<NoCustomError>::ServerError("Cannot find wee".to_string()),
+                )?;
+                ActiveDialog::Wee(wees::ActiveDialog::Change(wees::Operation::Update { wee }))
+                    .pipe(Ok)
+            }
+            DialogReference::DeleteWee { wee_id } => {
+                let wee = get_wee_by_id(wee_id).await?.ok_or(
+                    ServerFnError::<NoCustomError>::ServerError("Cannot find wee".to_string()),
+                )?;
+                ActiveDialog::Wee(wees::ActiveDialog::Delete(wee)).pipe(Ok)
+            }
+            DialogReference::CreatePoo { user_id } => {
+                ActiveDialog::Poo(poos::ActiveDialog::Change(poos::Operation::Create {
+                    user_id,
+                }))
+                .pipe(Ok)
+            }
+            DialogReference::UpdatePoo { poo_id } => {
+                let poo = get_poo_by_id(poo_id).await?.ok_or(
+                    ServerFnError::<NoCustomError>::ServerError("Cannot find poo".to_string()),
+                )?;
+                ActiveDialog::Poo(poos::ActiveDialog::Change(poos::Operation::Update { poo }))
+                    .pipe(Ok)
+            }
+            DialogReference::DeletePoo { poo_id } => {
+                let poo = get_poo_by_id(poo_id).await?.ok_or(
+                    ServerFnError::<NoCustomError>::ServerError("Cannot find poo".to_string()),
+                )?;
+                ActiveDialog::Poo(poos::ActiveDialog::Delete(poo)).pipe(Ok)
+            }
+            DialogReference::CreateConsumption { user_id } => ActiveDialog::Consumption(
+                consumptions::ActiveDialog::Change(consumptions::Operation::Create { user_id }),
+            )
+            .pipe(Ok),
+            DialogReference::UpdateConsumption { consumption_id } => {
+                let consumption =
+                    get_consumption_by_id(consumption_id)
+                        .await?
+                        .ok_or(ServerFnError::<NoCustomError>::ServerError(
+                            "Cannot find consumption".to_string(),
+                        ))?;
+                ActiveDialog::Consumption(consumptions::ActiveDialog::Change(
+                    consumptions::Operation::Update { consumption },
+                ))
+                .pipe(Ok)
+            }
+            DialogReference::UpdateConsumptionIngredients { consumption_id } => {
+                let consumption =
+                    get_consumption_by_id(consumption_id)
+                        .await?
+                        .ok_or(ServerFnError::<NoCustomError>::ServerError(
+                            "Cannot find consumption".to_string(),
+                        ))?;
+                ActiveDialog::Consumption(consumptions::ActiveDialog::Ingredients(consumption))
+                    .pipe(Ok)
+            }
+            DialogReference::DeleteConsumption { consumption_id } => {
+                let consumption =
+                    get_consumption_by_id(consumption_id)
+                        .await?
+                        .ok_or(ServerFnError::<NoCustomError>::ServerError(
+                            "Cannot find consumption".to_string(),
+                        ))?;
+                ActiveDialog::Consumption(consumptions::ActiveDialog::Delete(consumption)).pipe(Ok)
+            }
+            DialogReference::Idle => Ok(ActiveDialog::Idle),
+        }
+    });
+
+    // let mut dialog = use_signal(|| ActiveDialog::Idle);
 
     let mut timeline: Resource<Result<Timeline, ServerFnError>> =
         use_resource(move || async move {
@@ -268,36 +355,28 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
             div { class: "mb-2",
                 CreateButton {
                     on_click: move |_| {
-                        dialog
-                            .set(
-                                ActiveDialog::Wee(
-                                    wees::ActiveDialog::Change(wees::Operation::Create { user_id }),
-                                ),
-                            )
+                        navigator.push(Route::TimelineList {
+                            date: date(),
+                            dialog: DialogReference::CreateWee { user_id }
+                        });
                     },
                     "Wee"
                 }
                 CreateButton {
                     on_click: move |_| {
-                        dialog
-                            .set(
-                                ActiveDialog::Poo(
-                                    poos::ActiveDialog::Change(poos::Operation::Create { user_id }),
-                                ),
-                            )
+                        navigator.push(Route::TimelineList {
+                            date: date(),
+                            dialog: DialogReference::CreatePoo{ user_id }
+                        });
                     },
                     "Poo"
                 }
                 CreateButton {
                     on_click: move |_| {
-                        dialog
-                            .set(
-                                ActiveDialog::Consumption(
-                                    consumptions::ActiveDialog::Change(consumptions::Operation::Create {
-                                        user_id,
-                                    }),
-                                ),
-                            )
+                        navigator.push(Route::TimelineList {
+                            date: date(),
+                            dialog: DialogReference::CreateConsumption{ user_id }
+                        });
                     },
                     "Consumption"
                 }
@@ -311,6 +390,7 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                             navigator
                                 .push(Route::TimelineList {
                                     date: new_date,
+                                    dialog: DialogReference::Idle
                                 });
                         }
                     },
@@ -322,6 +402,7 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                             navigator
                                 .push(Route::TimelineList {
                                     date: new_date,
+                                    dialog: DialogReference::Idle
                                 });
                     },
                     "Today"
@@ -333,6 +414,7 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                             navigator
                                 .push(Route::TimelineList {
                                     date: new_date,
+                                    dialog: DialogReference::Idle
                                 });
                         }
                     },
@@ -344,8 +426,8 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
 
         match timeline.read().deref() {
             Some(Err(err)) => rsx! {
-                div { class: "alert alert-danger",
-                    "Error loading timeline"
+                div { class: "alert alert-error",
+                    "Error loading timeline: "
                     {err.to_string()}
                 }
             },
@@ -368,8 +450,8 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
                                 EntryRow {
                                     key: "{entry.get_id().as_str()}",
                                     entry: entry.clone(),
+                                    date: date(),
                                     selected,
-                                    dialog,
                                 }
                             }
                         }
@@ -383,6 +465,46 @@ pub fn TimelineList(date: ReadOnlySignal<NaiveDate>) -> Element {
             }
         }
 
-        TimelineDialog { dialog, on_change: move || timeline.restart() }
+        match dialog.read().deref() {
+            Some(Err(err)) => rsx! {
+                div { class: "alert alert-error",
+                    "Error loading dialog: "
+                    {err.to_string()}
+                }
+            },
+            Some(Ok(dialog)) => rsx! {
+                TimelineDialog {
+                    dialog: dialog.clone(),
+                    on_change: move || timeline.restart(),
+                    show_consumption_edit: move |consumption: Consumption| {
+                        navigator
+                            .push(Route::TimelineList {
+                                date: date(),
+                                dialog: DialogReference::UpdateConsumption { consumption_id: consumption.id }
+                            });
+                    },
+                    show_consumption_ingredients: move |consumption: Consumption| {
+                        navigator
+                            .push(Route::TimelineList {
+                                date: date(),
+                                dialog: DialogReference::UpdateConsumptionIngredients { consumption_id: consumption.id }
+                            });
+                    },
+                    on_close: move || {
+                            navigator
+                                .push(Route::TimelineList {
+                                    date: date(),
+                                    dialog: DialogReference::Idle
+                                });
+
+                    }
+                }
+            },
+            None => {
+                rsx! {
+                    p { class: "alert alert-info", "Loading..." }
+                }
+            }
+        }
     }
 }

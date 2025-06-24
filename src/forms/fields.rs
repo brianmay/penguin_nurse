@@ -680,7 +680,7 @@ pub fn InputConsumable(
                     }
                     match list.read().deref() {
                         Some(Some(Err(err))) => rsx! {
-                            div { class: "alert alert-danger",
+                            div { class: "alert alert-error",
                                 "Error loading consumables: "
                                 {err.to_string()}
                             }
