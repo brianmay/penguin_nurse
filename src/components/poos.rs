@@ -1,7 +1,11 @@
+use std::str::FromStr;
+
 use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use classes::classes;
 use dioxus::prelude::*;
 use palette::Hsv;
+use tap::Pipe;
+use thiserror::Error;
 
 use crate::{
     components::{
@@ -9,10 +13,10 @@ use crate::{
         times::time_delta_to_string,
     },
     forms::{
-        validate_bristol, validate_colour, validate_comments, validate_duration,
-        validate_fixed_offset_date_time, validate_poo_quantity, validate_urgency, Dialog,
-        EditError, FieldValue, FormCancelButton, FormSubmitButton, InputColour, InputDateTime,
-        InputDuration, InputNumber, InputSelect, InputTextArea, Saving, ValidationError,
+        Dialog, EditError, FieldValue, FormCancelButton, FormSubmitButton, InputColour,
+        InputDateTime, InputDuration, InputNumber, InputSelect, InputTextArea, Saving,
+        ValidationError, validate_bristol, validate_colour, validate_comments, validate_duration,
+        validate_fixed_offset_date_time, validate_poo_quantity, validate_urgency,
     },
     functions::poos::{create_poo, delete_poo, update_poo},
     models::{Bristol, MaybeString, NewPoo, Poo, UpdatePoo, UserId},
@@ -404,6 +408,46 @@ pub enum ActiveDialog {
     Idle,
 }
 
+#[derive(Error, Debug)]
+pub enum DialogReferenceError {
+    #[error("Invalid reference")]
+    ReferenceError,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum DialogReference {
+    Update,
+    Delete,
+    #[default]
+    Idle,
+}
+
+impl FromStr for DialogReference {
+    type Err = DialogReferenceError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let split = s.split("-").collect::<Vec<_>>();
+        match split[..] {
+            ["update"] => Self::Update,
+            ["delete"] => Self::Delete,
+            [] => Self::Idle,
+            _ => return Err(DialogReferenceError::ReferenceError),
+        }
+        .pipe(Ok)
+    }
+}
+
+#[allow(clippy::to_string_trait_impl)]
+impl ToString for DialogReference {
+    fn to_string(&self) -> String {
+        match self {
+            DialogReference::Update => "update".to_string(),
+            DialogReference::Delete => "delete".to_string(),
+            DialogReference::Idle => String::new(),
+        }
+    }
+}
+
 #[component]
 pub fn PooDialog(
     dialog: ActiveDialog,
@@ -433,7 +477,7 @@ pub fn PooDialog(
 }
 
 #[component]
-pub fn PooDetail(poo: Poo, on_close: Callback<()>) -> Element {
+pub fn PooDetail(poo: Poo) -> Element {
     rsx! {
         h3 { class: "text-lg font-bold",
             "Poo "
@@ -501,17 +545,6 @@ pub fn PooDetail(poo: Poo, on_close: Callback<()>) -> Element {
                         td { {poo.updated_at.with_timezone(&Local).to_string()} }
                     }
                 }
-            }
-        }
-
-
-        div { class: "p-4",
-            button {
-                class: "btn btn-secondary m-1",
-                onclick: move |_| {
-                    on_close(());
-                },
-                "Close"
             }
         }
     }

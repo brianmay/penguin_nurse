@@ -1,7 +1,11 @@
+use std::str::FromStr;
+
 use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use classes::classes;
 use dioxus::prelude::*;
 use palette::Hsv;
+use tap::Pipe;
+use thiserror::Error;
 
 use crate::{
     components::{
@@ -370,6 +374,46 @@ pub enum ActiveDialog {
     Idle,
 }
 
+#[derive(Error, Debug)]
+pub enum DialogReferenceError {
+    #[error("Invalid reference")]
+    ReferenceError,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum DialogReference {
+    Update,
+    Delete,
+    #[default]
+    Idle,
+}
+
+impl FromStr for DialogReference {
+    type Err = DialogReferenceError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let split = s.split("-").collect::<Vec<_>>();
+        match split[..] {
+            ["update"] => Self::Update,
+            ["delete"] => Self::Delete,
+            [] => Self::Idle,
+            _ => return Err(DialogReferenceError::ReferenceError),
+        }
+        .pipe(Ok)
+    }
+}
+
+#[allow(clippy::to_string_trait_impl)]
+impl ToString for DialogReference {
+    fn to_string(&self) -> String {
+        match self {
+            DialogReference::Update => "update".to_string(),
+            DialogReference::Delete => "delete".to_string(),
+            DialogReference::Idle => String::new(),
+        }
+    }
+}
+
 #[component]
 pub fn WeeDialog(
     dialog: ActiveDialog,
@@ -399,7 +443,7 @@ pub fn WeeDialog(
 }
 
 #[component]
-pub fn WeeDetail(wee: Wee, on_close: Callback<()>) -> Element {
+pub fn WeeDetail(wee: Wee) -> Element {
     rsx! {
         h3 { class: "text-lg font-bold",
             "Wee "
@@ -461,16 +505,6 @@ pub fn WeeDetail(wee: Wee, on_close: Callback<()>) -> Element {
                         td { {wee.updated_at.with_timezone(&Local).to_string()} }
                     }
                 }
-            }
-        }
-
-        div { class: "p-4",
-            button {
-                class: "btn btn-secondary m-1",
-                onclick: move |_| {
-                    on_close(());
-                },
-                "Close"
             }
         }
     }

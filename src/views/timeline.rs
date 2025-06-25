@@ -28,7 +28,6 @@ use crate::{
 fn EntryRow(
     entry: Entry,
     date: ReadOnlySignal<NaiveDate>,
-    // dialog: Signal<ActiveDialog>,
     selected: Signal<Option<EntryId>>,
 ) -> Element {
     let id = entry.get_id();
@@ -124,7 +123,7 @@ fn EntryRow(
                         rsx! {
                             NavButton {
                                 on_click: move |_| {
-                                    navigator.push(Route::WeeDetail { wee_id: wee.id });
+                                    navigator.push(Route::WeeDetail { wee_id: wee.id, dialog: wees::DialogReference::Idle });
                                 },
                                 "Details"
                             }
@@ -154,7 +153,7 @@ fn EntryRow(
                         rsx! {
                             NavButton {
                                 on_click: move |_| {
-                                    navigator.push(Route::PooDetail { poo_id: poo.id });
+                                    navigator.push(Route::PooDetail { poo_id: poo.id, dialog: poos::DialogReference::Idle });
                                 },
                                 "Details"
                             }
@@ -188,6 +187,7 @@ fn EntryRow(
                                     navigator
                                         .push(Route::ConsumptionDetail {
                                             consumption_id: consumption.id,
+                                            dialog: consumptions::DialogReference::Idle
                                         });
                                 },
                                 "Details"
@@ -328,8 +328,6 @@ pub fn TimelineList(
             DialogReference::Idle => Ok(ActiveDialog::Idle),
         }
     });
-
-    // let mut dialog = use_signal(|| ActiveDialog::Idle);
 
     let mut timeline: Resource<Result<Timeline, ServerFnError>> =
         use_resource(move || async move {

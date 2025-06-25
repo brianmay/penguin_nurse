@@ -3,7 +3,7 @@ use std::sync::Arc;
 use chrono::NaiveDate;
 use dioxus::prelude::*;
 
-use components::{navbar::Navbar, timeline};
+use components::{consumptions, navbar::Navbar, poos, timeline, wees};
 use models::{ConsumableId, ConsumptionId, PooId, User, UserId, WeeId};
 use views::{
     ConsumableDetail, ConsumableList, ConsumptionDetail, Home, Login, Logout, PooDetail,
@@ -39,16 +39,16 @@ enum Route {
     UserDetail { user_id: UserId },
     #[route("/consumables")]
     ConsumableList {},
-    #[route("/:..segments")]
-    NotFound { segments: Vec<String> },
-    #[route("/wees/:wee_id")]
-    WeeDetail { wee_id: WeeId },
-    #[route("/poos/:poo_id")]
-    PooDetail { poo_id: PooId },
-    #[route("/consumptions/:consumption_id")]
-    ConsumptionDetail { consumption_id: ConsumptionId },
+    #[route("/wees/:wee_id?:dialog")]
+    WeeDetail { wee_id: WeeId, dialog: wees::DialogReference },
+    #[route("/poos/:poo_id?:dialog")]
+    PooDetail { poo_id: PooId, dialog: poos::DialogReference },
+    #[route("/consumptions/:consumption_id?:dialog")]
+    ConsumptionDetail { consumption_id: ConsumptionId, dialog: consumptions::DialogReference},
     #[route("/consumables/:consumable_id")]
     ConsumableDetail { consumable_id: ConsumableId },
+    #[route("/:..segments")]
+    NotFound { segments: Vec<String> },
 }
 
 const MEDICAL_SVG: Asset = asset!("/assets/medical.svg");

@@ -1,30 +1,45 @@
 use dioxus::prelude::*;
 
 use crate::{
+    Route,
     components::{
         buttons::{ChangeButton, DeleteButton},
-        consumptions::{self, ActiveDialog, ConsumptionDialog, Operation},
+        consumptions::{self, ActiveDialog, ConsumptionDialog, DialogReference, Operation},
     },
     functions::consumptions::{get_child_consumables, get_consumption_by_id},
-    models::ConsumptionId,
+    models::{Consumption, ConsumptionId},
 };
 
 #[component]
-pub fn ConsumptionDetail(consumption_id: ReadOnlySignal<ConsumptionId>) -> Element {
+pub fn ConsumptionDetail(
+    consumption_id: ReadOnlySignal<ConsumptionId>,
+    dialog: ReadOnlySignal<Option<DialogReference>>,
+) -> Element {
     let mut maybe_consumption =
         use_resource(move || async move { get_consumption_by_id(consumption_id()).await });
 
     let mut maybe_items =
         use_resource(move || async move { get_child_consumables(consumption_id()).await });
 
-    let mut active_dialog: Signal<ActiveDialog> = use_signal(|| ActiveDialog::Idle);
+    let active_dialog: Memo<ActiveDialog> = use_memo(move || {
+        let Some(dialog) = dialog() else {
+            return ActiveDialog::Idle;
+        };
+        let Some(Ok(Some(consumption))) = maybe_consumption() else {
+            return ActiveDialog::Idle;
+        };
+        match dialog {
+            DialogReference::Update => ActiveDialog::Change(Operation::Update { consumption }),
+            DialogReference::Ingredients => ActiveDialog::Ingredients(consumption),
+            DialogReference::Delete => ActiveDialog::Delete(consumption),
+            DialogReference::Idle => ActiveDialog::Idle,
+        }
+    });
 
+    let navigator = navigator();
     match (maybe_consumption(), maybe_items()) {
         (Some(Ok(Some(consumption))), Some(Ok(items))) => {
-            let consumption_clone_2 = consumption.clone();
-            let consumption_clone_3 = consumption.clone();
-            let consumption_clone_4 = consumption.clone();
-
+            let consumption_id = consumption.id;
             rsx! {
                 consumptions::ConsumptionDetail { consumption, list: items }
                 ConsumptionDialog {
@@ -34,41 +49,58 @@ pub fn ConsumptionDetail(consumption_id: ReadOnlySignal<ConsumptionId>) -> Eleme
                         maybe_items.restart();
                     },
                     on_delete: move |_consumption| {
-                        active_dialog.set(ActiveDialog::Idle);
                         maybe_consumption.restart();
                         maybe_items.restart();
                     },
                     on_close: move || {
-                        active_dialog.set(ActiveDialog::Idle);
+                        navigator
+                            .push(Route::ConsumptionDetail {
+                                consumption_id,
+                                dialog: consumptions::DialogReference::Idle
+                            });
                     },
-                    show_edit: move |consumption| {
-                        active_dialog.set(ActiveDialog::Change(Operation::Update{consumption}))
+                    show_edit: move |consumption: Consumption| {
+                        navigator
+                            .push(Route::ConsumptionDetail {
+                                consumption_id: consumption.id,
+                                dialog: consumptions::DialogReference::Update
+                            });
                     },
-                    show_ingredients: move |consumption| {
-                        active_dialog.set(ActiveDialog::Ingredients(consumption))
+                    show_ingredients: move |consumption: Consumption| {
+                        navigator
+                            .push(Route::ConsumptionDetail {
+                                consumption_id: consumption.id,
+                                dialog: consumptions::DialogReference::Ingredients
+                            });
                     },
                 }
                 ChangeButton {
                     on_click: move |_| {
-                        active_dialog.set(ActiveDialog::Ingredients(consumption_clone_2.clone()))
+                        navigator
+                            .push(Route::ConsumptionDetail {
+                                consumption_id,
+                                dialog: consumptions::DialogReference::Ingredients
+                            });
                     },
                     "Ingredients"
                 }
                 ChangeButton {
                     on_click: move |_| {
-                        active_dialog
-                            .set(
-                                consumptions::ActiveDialog::Change(consumptions::Operation::Update {
-                                    consumption: consumption_clone_3.clone(),
-                                }),
-                            )
+                        navigator
+                            .push(Route::ConsumptionDetail {
+                                consumption_id,
+                                dialog: consumptions::DialogReference::Update
+                            });
                     },
                     "Edit"
                 }
                 DeleteButton {
                     on_click: move |_| {
-                        active_dialog
-                            .set(consumptions::ActiveDialog::Delete(consumption_clone_4.clone()))
+                        navigator
+                            .push(Route::ConsumptionDetail {
+                                consumption_id,
+                                dialog: consumptions::DialogReference::Delete
+                            });
                     },
                     "Delete"
                 }

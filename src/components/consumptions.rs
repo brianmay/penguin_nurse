@@ -1,5 +1,9 @@
+use std::str::FromStr;
+
 use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use dioxus::prelude::*;
+use tap::Pipe;
+use thiserror::Error;
 
 use crate::{
     Route,
@@ -360,6 +364,49 @@ pub enum ActiveDialog {
     Delete(Consumption),
     Ingredients(Consumption),
     Idle,
+}
+
+#[derive(Error, Debug)]
+pub enum DialogReferenceError {
+    #[error("Invalid reference")]
+    ReferenceError,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum DialogReference {
+    Update,
+    Ingredients,
+    Delete,
+    #[default]
+    Idle,
+}
+
+impl FromStr for DialogReference {
+    type Err = DialogReferenceError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let split = s.split("-").collect::<Vec<_>>();
+        match split[..] {
+            ["update"] => Self::Update,
+            ["ingredients"] => Self::Ingredients,
+            ["delete"] => Self::Delete,
+            [] => Self::Idle,
+            _ => return Err(DialogReferenceError::ReferenceError),
+        }
+        .pipe(Ok)
+    }
+}
+
+#[allow(clippy::to_string_trait_impl)]
+impl ToString for DialogReference {
+    fn to_string(&self) -> String {
+        match self {
+            DialogReference::Update => "update".to_string(),
+            DialogReference::Ingredients => "ingredients".to_string(),
+            DialogReference::Delete => "delete".to_string(),
+            DialogReference::Idle => String::new(),
+        }
+    }
 }
 
 #[component]

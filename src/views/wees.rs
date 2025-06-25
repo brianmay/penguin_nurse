@@ -1,51 +1,81 @@
 use dioxus::prelude::*;
 
 use crate::{
+    Route,
     components::{
         buttons::{ChangeButton, DeleteButton},
-        wees::{self, ActiveDialog, WeeDialog},
+        wees::{self, ActiveDialog, DialogReference, Operation, WeeDialog},
     },
     functions::wees::get_wee_by_id,
     models::WeeId,
 };
 
 #[component]
-pub fn WeeDetail(wee_id: WeeId) -> Element {
+pub fn WeeDetail(wee_id: WeeId, dialog: ReadOnlySignal<Option<DialogReference>>) -> Element {
     let mut maybe_wee = use_resource(move || async move { get_wee_by_id(wee_id).await });
 
-    let mut active_dialog: Signal<ActiveDialog> = use_signal(|| ActiveDialog::Idle);
+    let active_dialog: Memo<ActiveDialog> = use_memo(move || {
+        let Some(dialog) = dialog() else {
+            return ActiveDialog::Idle;
+        };
+        let Some(Ok(Some(wee))) = maybe_wee() else {
+            return ActiveDialog::Idle;
+        };
+        match dialog {
+            DialogReference::Update => ActiveDialog::Change(Operation::Update { wee }),
+            DialogReference::Delete => ActiveDialog::Delete(wee),
+            DialogReference::Idle => ActiveDialog::Idle,
+        }
+    });
+
+    let navigator = navigator();
 
     match maybe_wee() {
         Some(Ok(Some(wee))) => {
-            let wee_clone_2 = wee.clone();
-            let wee_clone_3 = wee.clone();
-
             rsx! {
-                wees::WeeDetail { wee, on_close: move || navigator().go_back() }
+                wees::WeeDetail { wee }
                 WeeDialog {
                     dialog: active_dialog(),
-                    on_change: move |_consumption| {
-                        active_dialog.set(ActiveDialog::Idle);
+                    on_change: move |_wee| {
+                        navigator.push(Route::WeeDetail {
+                            wee_id,
+                            dialog: DialogReference::Idle
+                        });
                         maybe_wee.restart();
                     },
-                    on_delete: move |_consumption| {
-                        active_dialog.set(ActiveDialog::Idle);
+                    on_delete: move |_wee| {
+                        navigator.push(Route::WeeDetail {
+                            wee_id,
+                            dialog: DialogReference::Idle
+                        });
                         maybe_wee.restart();
                     },
-                    on_close: move || active_dialog.set(ActiveDialog::Idle),
+                    on_close: move || {
+                       navigator.push(Route::WeeDetail {
+                            wee_id,
+                            dialog: DialogReference::Idle
+                        });
+                    },
                 }
                 ChangeButton {
                     on_click: move |_| {
-                        active_dialog
-                            .set(
-                                wees::ActiveDialog::Change(wees::Operation::Update {
-                                    wee: wee_clone_2.clone(),
-                                }),
-                            )
+                        navigator
+                            .push(Route::WeeDetail {
+                                wee_id,
+                                dialog: DialogReference::Update
+                            });
                     },
                     "Edit"
                 }
-                DeleteButton { on_click: move |_| { active_dialog.set(wees::ActiveDialog::Delete(wee_clone_3.clone())) },
+                DeleteButton {
+                    on_click: move |_| {
+                        navigator
+                            .push(Route::WeeDetail {
+                                wee_id,
+                                dialog: DialogReference::Delete
+                            });
+
+                    },
                     "Delete"
                 }
             }
