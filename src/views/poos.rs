@@ -7,7 +7,7 @@ use crate::{
         poos::{self, ActiveDialog, DialogReference, Operation, PooDialog},
     },
     functions::poos::get_poo_by_id,
-    models::PooId,
+    models::{Poo, PooId},
 };
 
 #[component]
@@ -35,16 +35,16 @@ pub fn PooDetail(poo_id: PooId, dialog: ReadOnlySignal<Option<DialogReference>>)
                 poos::PooDetail { poo }
                 PooDialog {
                     dialog: active_dialog(),
-                    on_change: move |_poo| {
+                    on_change: move |poo: Poo| {
                         navigator.push(Route::PooDetail {
-                            poo_id,
+                            poo_id: poo.id,
                             dialog: DialogReference::Idle
                         });
                         maybe_poo.restart();
                     },
-                    on_delete: move |_poo| {
+                    on_delete: move |poo: Poo| {
                         navigator.push(Route::PooDetail {
-                            poo_id,
+                            poo_id: poo.id,
                             dialog: DialogReference::Idle
                         });
                         maybe_poo.restart();

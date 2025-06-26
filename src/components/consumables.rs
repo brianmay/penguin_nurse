@@ -1,5 +1,9 @@
+use std::{num::ParseIntError, str::FromStr};
+
 use chrono::Local;
 use dioxus::prelude::*;
+use tap::Pipe;
+use thiserror::Error;
 
 use crate::{
     Route,
@@ -16,15 +20,15 @@ use crate::{
         get_child_consumables, update_consumable, update_nested_consumable,
     },
     models::{
-        Consumable, ConsumableItem, ConsumableUnit, Maybe, MaybeDateTime, MaybeF64, MaybeString,
-        NestedConsumable, NestedConsumableId, NewConsumable, NewNestedConsumable, UpdateConsumable,
-        UpdateNestedConsumable,
+        Consumable, ConsumableId, ConsumableItem, ConsumableUnit, Maybe, MaybeDateTime, MaybeF64,
+        MaybeString, NestedConsumable, NestedConsumableId, NewConsumable, NewNestedConsumable,
+        UpdateConsumable, UpdateNestedConsumable,
     },
 };
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Operation {
-    Create {},
+    Create,
     Update { consumable: Consumable },
 }
 
@@ -51,7 +55,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumable, Edit
     let destroyed: MaybeDateTime = validate.destroyed.read().clone()?;
 
     match op {
-        Operation::Create {} => {
+        Operation::Create => {
             let updates = NewConsumable {
                 name,
                 brand,
@@ -89,42 +93,42 @@ pub fn ChangeConsumable(
     on_save: Callback<Consumable>,
 ) -> Element {
     let name = use_signal(|| match &op {
-        Operation::Create { .. } => String::new(),
+        Operation::Create => String::new(),
         Operation::Update { consumable } => consumable.name.as_string(),
     });
 
     let brand = use_signal(|| match &op {
-        Operation::Create { .. } => String::new(),
+        Operation::Create => String::new(),
         Operation::Update { consumable } => consumable.brand.as_string(),
     });
 
     let barcode = use_signal(|| match &op {
-        Operation::Create { .. } => String::new(),
+        Operation::Create => String::new(),
         Operation::Update { consumable } => consumable.barcode.as_string(),
     });
 
     let is_organic = use_signal(|| match &op {
-        Operation::Create { .. } => false,
+        Operation::Create => false,
         Operation::Update { consumable } => consumable.is_organic,
     });
 
     let unit = use_signal(|| match &op {
-        Operation::Create { .. } => String::new(),
+        Operation::Create => String::new(),
         Operation::Update { consumable } => consumable.unit.as_string(),
     });
 
     let comments = use_signal(|| match &op {
-        Operation::Create { .. } => String::new(),
+        Operation::Create => String::new(),
         Operation::Update { consumable } => consumable.comments.as_string(),
     });
 
     let created = use_signal(|| match &op {
-        Operation::Create { .. } => String::new(),
+        Operation::Create => String::new(),
         Operation::Update { consumable } => consumable.created.as_string(),
     });
 
     let destroyed = use_signal(|| match &op {
-        Operation::Create { .. } => String::new(),
+        Operation::Create => String::new(),
         Operation::Update { consumable } => consumable.destroyed.as_string(),
     });
 
@@ -179,7 +183,7 @@ pub fn ChangeConsumable(
 
         h3 { class: "text-lg font-bold",
             match &op {
-                Operation::Create { .. } => "Create Consumable".to_string(),
+                Operation::Create => "Create Consumable".to_string(),
                 Operation::Update { consumable } => format!("Edit {}", consumable.name),
             }
         }
@@ -280,7 +284,7 @@ pub fn ChangeConsumable(
                 disabled: disabled_save,
                 on_save: move |_| on_save(()),
                 title: match &op {
-                    Operation::Create { .. } => "Create",
+                    Operation::Create => "Create",
                     Operation::Update { .. } => "Save",
                 },
             }
@@ -367,15 +371,122 @@ pub fn DeleteConsumable(
 pub enum ActiveDialog {
     Change(Operation),
     Delete(Consumable),
-    Nested(Consumable),
+    Ingredients(Consumable),
     Idle,
+}
+
+#[derive(Error, Debug)]
+pub enum ListDialogReferenceError {
+    #[error("Invalid integer")]
+    ParseIntError(#[from] ParseIntError),
+
+    #[error("Invalid reference")]
+    ReferenceError,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum ListDialogReference {
+    Create,
+    Update {
+        consumable_id: ConsumableId,
+    },
+    Ingredients {
+        consumable_id: ConsumableId,
+    },
+    Delete {
+        consumable_id: ConsumableId,
+    },
+    #[default]
+    Idle,
+}
+
+impl FromStr for ListDialogReference {
+    type Err = ListDialogReferenceError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let split = s.split("-").collect::<Vec<_>>();
+        match split[..] {
+            ["create"] => Self::Create,
+            ["update", id] => {
+                let consumable_id = ConsumableId::new(id.parse()?);
+                Self::Update { consumable_id }
+            }
+            ["ingredients", id] => {
+                let consumable_id = ConsumableId::new(id.parse()?);
+                Self::Ingredients { consumable_id }
+            }
+            [] => Self::Idle,
+            _ => return Err(ListDialogReferenceError::ReferenceError),
+        }
+        .pipe(Ok)
+    }
+}
+
+#[allow(clippy::to_string_trait_impl)]
+impl ToString for ListDialogReference {
+    fn to_string(&self) -> String {
+        match self {
+            ListDialogReference::Create => "create".to_string(),
+            ListDialogReference::Update { consumable_id } => format!("update-{consumable_id}"),
+            ListDialogReference::Ingredients { consumable_id } => {
+                format!("ingredients-{consumable_id}")
+            }
+            ListDialogReference::Delete { consumable_id } => format!("delete-{consumable_id}"),
+            ListDialogReference::Idle => String::new(),
+        }
+    }
+}
+
+#[derive(Error, Debug)]
+pub enum DetailsDialogReferenceError {
+    #[error("Invalid reference")]
+    ReferenceError,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum DetailsDialogReference {
+    Update,
+    Ingredients,
+    Delete,
+    #[default]
+    Idle,
+}
+
+impl FromStr for DetailsDialogReference {
+    type Err = DetailsDialogReferenceError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let split = s.split("-").collect::<Vec<_>>();
+        match split[..] {
+            ["update"] => Self::Update,
+            ["ingredients"] => Self::Ingredients,
+            [] => Self::Idle,
+            _ => return Err(DetailsDialogReferenceError::ReferenceError),
+        }
+        .pipe(Ok)
+    }
+}
+
+#[allow(clippy::to_string_trait_impl)]
+impl ToString for DetailsDialogReference {
+    fn to_string(&self) -> String {
+        match self {
+            DetailsDialogReference::Update => "update".to_string(),
+            DetailsDialogReference::Ingredients => "ingredients".to_string(),
+            DetailsDialogReference::Delete => "delete".to_string(),
+            DetailsDialogReference::Idle => String::new(),
+        }
+    }
 }
 
 #[component]
 pub fn ConsumableDialog(
-    dialog: Signal<ActiveDialog>,
+    dialog: ReadOnlySignal<ActiveDialog>,
     on_change: Callback<Consumable>,
     on_delete: Callback<Consumable>,
+    show_edit: Callback<Consumable>,
+    show_ingredients: Callback<Consumable>,
+    on_close: Callback<()>,
 ) -> Element {
     match dialog() {
         ActiveDialog::Idle => rsx! {},
@@ -384,10 +495,10 @@ pub fn ConsumableDialog(
                 Dialog {
                     ChangeConsumable {
                         op,
-                        on_cancel: move || dialog.set(ActiveDialog::Idle),
+                        on_cancel: on_close,
                         on_save: move |consumable: Consumable| {
                             on_change(consumable.clone());
-                            dialog.set(ActiveDialog::Nested(consumable));
+                            show_ingredients(consumable)
                         },
                     }
                 }
@@ -398,24 +509,22 @@ pub fn ConsumableDialog(
                 Dialog {
                     DeleteConsumable {
                         consumable,
-                        on_cancel: move || dialog.set(ActiveDialog::Idle),
+                        on_cancel: on_close,
                         on_delete: move |consumable| {
                             on_delete(consumable);
-                            dialog.set(ActiveDialog::Idle);
+                            on_close(())
                         },
                     }
                 }
             }
         }
-        ActiveDialog::Nested(consumable) => {
+        ActiveDialog::Ingredients(consumable) => {
             rsx! {
                 Dialog {
                     ConsumableNested {
                         consumable,
-                        on_close: move || dialog.set(ActiveDialog::Idle),
-                        on_edit: move |consumable: Consumable| {
-                            dialog.set(ActiveDialog::Change(Operation::Update { consumable }))
-                        },
+                        on_close,
+                        on_edit: show_edit,
                         on_change,
                     }
                 }
@@ -846,6 +955,7 @@ pub fn ConsumableItemSummary(item: ConsumableItem, show_links: Option<bool>) -> 
                 Link {
                     to: Route::ConsumableDetail {
                         consumable_id: item.consumable.id,
+                        dialog: DetailsDialogReference::Idle
                     },
                     class: "text-blue-500 hover:underline",
                     {item.consumable.name.clone()}

@@ -7,7 +7,7 @@ use crate::{
         wees::{self, ActiveDialog, DialogReference, Operation, WeeDialog},
     },
     functions::wees::get_wee_by_id,
-    models::WeeId,
+    models::{Wee, WeeId},
 };
 
 #[component]
@@ -36,16 +36,16 @@ pub fn WeeDetail(wee_id: WeeId, dialog: ReadOnlySignal<Option<DialogReference>>)
                 wees::WeeDetail { wee }
                 WeeDialog {
                     dialog: active_dialog(),
-                    on_change: move |_wee| {
+                    on_change: move |wee: Wee| {
                         navigator.push(Route::WeeDetail {
-                            wee_id,
+                            wee_id: wee.id,
                             dialog: DialogReference::Idle
                         });
                         maybe_wee.restart();
                     },
-                    on_delete: move |_wee| {
+                    on_delete: move |wee: Wee| {
                         navigator.push(Route::WeeDetail {
-                            wee_id,
+                            wee_id: wee.id,
                             dialog: DialogReference::Idle
                         });
                         maybe_wee.restart();

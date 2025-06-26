@@ -7,7 +7,9 @@ use thiserror::Error;
 
 use crate::{
     Route,
-    components::{events::event_date_time, times::time_delta_to_string},
+    components::{
+        consumables::DetailsDialogReference, events::event_date_time, times::time_delta_to_string,
+    },
     forms::{
         Dialog, EditError, FieldValue, FormCancelButton, FormCloseButton, FormDeleteButton,
         FormEditButton, FormSubmitButton, InputConsumable, InputDateTime, InputDuration,
@@ -868,6 +870,7 @@ pub fn ConsumptionItemSummary(item: ConsumptionItem, show_links: Option<bool>) -
                 Link {
                     to: Route::ConsumableDetail {
                         consumable_id: item.consumable.id,
+                        dialog: DetailsDialogReference::Idle,
                     },
                     class: "text-blue-500 hover:underline",
                     {item.consumable.name.clone()}

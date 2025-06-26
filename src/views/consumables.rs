@@ -1,36 +1,37 @@
 use std::ops::Deref;
 
 use chrono::Local;
-use dioxus::prelude::*;
+use dioxus::prelude::{server_fn::error::NoCustomError, *};
+use tap::Pipe;
 
 use crate::{
     Route,
     components::{
         buttons::{ChangeButton, CreateButton, DeleteButton, NavButton},
-        consumables::{self, ActiveDialog, ConsumableDialog, ConsumableItemList, Operation},
+        consumables::{
+            self, ActiveDialog, ConsumableDialog, ConsumableItemList, DetailsDialogReference,
+            ListDialogReference, Operation,
+        },
     },
     forms::Barcode,
     functions::consumables::{
         get_child_consumables, get_consumable_by_id, search_consumables_with_nested,
     },
-    models::{ConsumableId, ConsumableWithItems, Maybe},
+    models::{Consumable, ConsumableId, ConsumableWithItems, Maybe},
     use_user,
 };
 
 #[component]
 fn EntryRow(
     consumable_with_items: ConsumableWithItems,
-    dialog: Signal<ActiveDialog>,
     selected: Signal<Option<ConsumableId>>,
 ) -> Element {
     let consumable = consumable_with_items.consumable;
     let items = consumable_with_items.items;
 
     let id = consumable.id;
-    let consumable_clone_2 = consumable.clone();
-    let consumable_clone_3 = consumable.clone();
-    let consumable_clone_4 = consumable.clone();
 
+    let navigator = navigator();
     rsx! {
         tr {
             class: "hover:bg-gray-500 border-blue-300 mt-2 mb-2 p-2 border-2 w-full sm:w-auto sm:border-none inline-block sm:table-row",
@@ -72,28 +73,35 @@ fn EntryRow(
                 td { colspan: "6", class: "block sm:table-cell",
                     NavButton {
                         on_click: move |_| {
-                            navigator()
+                            navigator
                                 .push(Route::ConsumableDetail {
                                     consumable_id: id,
+                                    dialog: DetailsDialogReference::Idle,
                                 });
                         },
                         "Details"
                     }
-                    ChangeButton { on_click: move |_| { dialog.set(ActiveDialog::Nested(consumable_clone_2.clone())) },
+                    ChangeButton { on_click: move |_| {
+                            navigator.push(Route::ConsumableList{
+                                dialog: ListDialogReference::Ingredients{consumable_id: id}
+                            });
+                        },
                         "Ingredients"
                     }
                     ChangeButton {
                         on_click: move |_| {
-                            dialog
-                                .set(
-                                    ActiveDialog::Change(Operation::Update {
-                                        consumable: consumable_clone_3.clone(),
-                                    }),
-                                )
+                            navigator.push(Route::ConsumableList{
+                                dialog: ListDialogReference::Update{consumable_id: id}
+                            });
                         },
                         "Edit"
                     }
-                    ChangeButton { on_click: move |_| { dialog.set(ActiveDialog::Delete(consumable_clone_4.clone())) },
+                    ChangeButton {
+                        on_click: move |_| {
+                            navigator.push(Route::ConsumableList{
+                                dialog: ListDialogReference::Delete{consumable_id: id}
+                            });
+                        },
                         "Delete"
                     }
                 }
@@ -103,7 +111,7 @@ fn EntryRow(
 }
 
 #[component]
-pub fn ConsumableList() -> Element {
+pub fn ConsumableList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> Element {
     let user = use_user().ok().flatten();
 
     let Some(_user) = user.as_ref() else {
@@ -117,8 +125,45 @@ pub fn ConsumableList() -> Element {
     let mut show_destroyed = use_signal(|| false);
 
     let mut query = use_signal(|| "".to_string());
-    let mut dialog = use_signal(|| ActiveDialog::Idle);
 
+    let dialog: Resource<Result<ActiveDialog, ServerFnError>> = use_resource(move || async move {
+        let Some(dialog) = dialog() else {
+            return Ok(ActiveDialog::Idle);
+        };
+        match dialog {
+            ListDialogReference::Create => ActiveDialog::Change(Operation::Create).pipe(Ok),
+            ListDialogReference::Update { consumable_id } => {
+                let consumable =
+                    get_consumable_by_id(consumable_id)
+                        .await?
+                        .ok_or(ServerFnError::<NoCustomError>::ServerError(
+                            "Cannot find consumable".to_string(),
+                        ))?;
+                ActiveDialog::Change(Operation::Update { consumable }).pipe(Ok)
+            }
+            ListDialogReference::Ingredients { consumable_id } => {
+                let consumable =
+                    get_consumable_by_id(consumable_id)
+                        .await?
+                        .ok_or(ServerFnError::<NoCustomError>::ServerError(
+                            "Cannot find consumable".to_string(),
+                        ))?;
+                ActiveDialog::Ingredients(consumable).pipe(Ok)
+            }
+            ListDialogReference::Delete { consumable_id } => {
+                let consumable =
+                    get_consumable_by_id(consumable_id)
+                        .await?
+                        .ok_or(ServerFnError::<NoCustomError>::ServerError(
+                            "Cannot find consumable".to_string(),
+                        ))?;
+                ActiveDialog::Delete(consumable).pipe(Ok)
+            }
+            ListDialogReference::Idle => Ok(ActiveDialog::Idle),
+        }
+    });
+
+    let navigator = navigator();
     let mut list: Resource<Result<Vec<ConsumableWithItems>, ServerFnError>> =
         use_resource(move || async move {
             search_consumables_with_nested(query(), show_only_created(), show_destroyed()).await
@@ -127,7 +172,12 @@ pub fn ConsumableList() -> Element {
     rsx! {
         div { class: "ml-2 mr-2",
             div { class: "mb-2",
-                CreateButton { on_click: move |_| { dialog.set(ActiveDialog::Change(Operation::Create {})) },
+                CreateButton {
+                    on_click: move |_| {
+                        navigator.push(Route::ConsumableList{
+                            dialog: ListDialogReference::Create
+                        });
+                    },
                     "Create"
                 }
             }
@@ -207,7 +257,6 @@ pub fn ConsumableList() -> Element {
                                     // key: "{consumable.consumable.id.as_inner().to_string()}",
                                     consumable_with_items: consumable.clone(),
                                     selected,
-                                    dialog,
                                 }
                             }
                         }
@@ -221,61 +270,148 @@ pub fn ConsumableList() -> Element {
             }
         }
 
-        ConsumableDialog {
-            dialog,
-            on_change: move |_consumable| list.restart(),
-            on_delete: move |_consumable| list.restart(),
+        match dialog.read().deref() {
+            Some(Err(err)) => rsx! {
+                div { class: "alert alert-error",
+                    "Error loading dialog: "
+                    {err.to_string()}
+                }
+            },
+            Some(Ok(dialog)) => rsx! {
+                ConsumableDialog {
+                    dialog: dialog.clone(),
+                    on_change: move |_consumable| list.restart(),
+                    on_delete: move |_consumable| list.restart(),
+                    show_edit: move |consumable: Consumable| {
+                        navigator
+                            .push(Route::ConsumableList {
+                                dialog: ListDialogReference::Update { consumable_id: consumable.id }
+                            });
+                    },
+                    show_ingredients: move |consumable: Consumable| {
+                        navigator
+                            .push(Route::ConsumableList {
+                                dialog: ListDialogReference::Ingredients{ consumable_id: consumable.id }
+                            });
+                    },
+                    on_close: move |()| {
+                        navigator
+                            .push(Route::ConsumableList {
+                                dialog: ListDialogReference::Idle
+                            });
+                    },
+                }
+            },
+            None => {
+                rsx! {
+                    p { class: "alert alert-info", "Loading..." }
+                }
+            }
         }
     }
 }
 
 #[component]
-pub fn ConsumableDetail(consumable_id: ReadOnlySignal<ConsumableId>) -> Element {
+pub fn ConsumableDetail(
+    consumable_id: ReadOnlySignal<ConsumableId>,
+    dialog: ReadOnlySignal<Option<DetailsDialogReference>>,
+) -> Element {
     let mut maybe_consumable =
         use_resource(move || async move { get_consumable_by_id(consumable_id()).await });
 
     let mut maybe_items =
         use_resource(move || async move { get_child_consumables(consumable_id()).await });
 
-    let mut active_dialog: Signal<ActiveDialog> = use_signal(|| ActiveDialog::Idle);
+    let active_dialog: Memo<ActiveDialog> = use_memo(move || {
+        let Some(dialog) = dialog() else {
+            return ActiveDialog::Idle;
+        };
+        let Some(Ok(Some(consumable))) = maybe_consumable() else {
+            return ActiveDialog::Idle;
+        };
+        match dialog {
+            DetailsDialogReference::Update => {
+                ActiveDialog::Change(Operation::Update { consumable })
+            }
+            DetailsDialogReference::Ingredients => ActiveDialog::Ingredients(consumable),
+            DetailsDialogReference::Delete => ActiveDialog::Delete(consumable),
+            DetailsDialogReference::Idle => ActiveDialog::Idle,
+        }
+    });
 
+    let navigator = navigator();
     match (maybe_consumable(), maybe_items()) {
         (Some(Ok(Some(consumable))), Some(Ok(items))) => {
-            let consumable_clone_2 = consumable.clone();
-            let consumable_clone_3 = consumable.clone();
-            let consumable_clone_4 = consumable.clone();
+            let consumable_id = consumable.id;
 
             rsx! {
                 consumables::ConsumableDetail { consumable, list: items }
                 ConsumableDialog {
                     dialog: active_dialog,
-                    on_change: move |_consumption| {
+                    on_change: move |consumable: Consumable| {
+                        navigator.push(Route::ConsumableDetail {
+                            consumable_id: consumable.id,
+                            dialog: DetailsDialogReference::Idle
+                        });
                         maybe_items.restart();
                         maybe_consumable.restart();
                     },
-                    on_delete: move |_consumption| {
-                        active_dialog.set(ActiveDialog::Idle);
+                    on_delete: move |consumable: Consumable| {
+                        navigator.push(Route::ConsumableDetail {
+                            consumable_id: consumable.id,
+                            dialog: DetailsDialogReference::Idle
+                        });
                         maybe_items.restart();
                         maybe_consumable.restart();
+                    },
+                    show_edit: move |consumable: Consumable| {
+                        navigator
+                            .push(Route::ConsumableDetail {
+                                consumable_id: consumable.id,
+                                dialog: DetailsDialogReference::Update
+                        });
+                    },
+                    show_ingredients: move |consumable: Consumable| {
+                        navigator
+                            .push(Route::ConsumableDetail {
+                                consumable_id: consumable.id,
+                                dialog: DetailsDialogReference::Ingredients
+                            });
+                    },
+                    on_close: move |()| {
+                        navigator
+                            .push(Route::ConsumableDetail {
+                                consumable_id,
+                                dialog: DetailsDialogReference::Idle
+                            });
                     },
                 }
-                ChangeButton { on_click: move |_| { active_dialog.set(ActiveDialog::Nested(consumable_clone_2.clone())) },
+                ChangeButton { on_click: move |_| {
+                        navigator
+                            .push(Route::ConsumableDetail {
+                                consumable_id,
+                                dialog: DetailsDialogReference::Ingredients
+                        });
+                    },
                     "Ingredients"
                 }
                 ChangeButton {
                     on_click: move |_| {
-                        active_dialog
-                            .set(
-                                consumables::ActiveDialog::Change(consumables::Operation::Update {
-                                    consumable: consumable_clone_3.clone(),
-                                }),
-                            )
+                        navigator
+                            .push(Route::ConsumableDetail {
+                                consumable_id,
+                                dialog: DetailsDialogReference::Update
+                        });
                     },
                     "Edit"
                 }
                 DeleteButton {
                     on_click: move |_| {
-                        active_dialog.set(consumables::ActiveDialog::Delete(consumable_clone_4.clone()))
+                        navigator
+                            .push(Route::ConsumableDetail {
+                                consumable_id,
+                                dialog: DetailsDialogReference::Delete
+                        });
                     },
                     "Delete"
                 }

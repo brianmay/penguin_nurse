@@ -44,11 +44,19 @@ pub fn ConsumptionDetail(
                 consumptions::ConsumptionDetail { consumption, list: items }
                 ConsumptionDialog {
                     dialog: active_dialog(),
-                    on_change: move |_consumption| {
+                    on_change: move |consumption: Consumption| {
+                        navigator.push(Route::ConsumptionDetail {
+                            consumption_id: consumption.id,
+                            dialog: DialogReference::Idle
+                        });
                         maybe_consumption.restart();
                         maybe_items.restart();
                     },
-                    on_delete: move |_consumption| {
+                    on_delete: move |consumption: Consumption| {
+                        navigator.push(Route::ConsumptionDetail {
+                            consumption_id: consumption.id,
+                            dialog: DialogReference::Idle
+                        });
                         maybe_consumption.restart();
                         maybe_items.restart();
                     },
