@@ -95,7 +95,9 @@ pub fn Navbar() -> Element {
                         if let Some(user) = user {
                             if user.is_admin {
                                 MenuItem {
-                                    route: Route::UserList {},
+                                    route: Route::UserList {
+                                        dialog: crate::components::users::ListDialogReference::Idle
+                                    },
                                     title: "Users",
                                     show_menu,
                                 }

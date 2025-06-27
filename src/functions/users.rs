@@ -20,7 +20,7 @@ pub async fn get_users() -> Result<Vec<models::User>, ServerFnError> {
 }
 
 #[server]
-pub async fn get_user(id: UserId) -> Result<Option<models::User>, ServerFnError> {
+pub async fn get_user_by_id(id: UserId) -> Result<Option<models::User>, ServerFnError> {
     assert_is_admin().await?;
     let mut conn = get_database_connection().await?;
 

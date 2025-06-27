@@ -1,20 +1,17 @@
+use std::ops::Deref;
+
 use chrono::Local;
 use dioxus::prelude::*;
+use tap::Pipe;
 
 use crate::Route;
 use crate::components::buttons::{ChangeButton, DeleteButton, NavButton};
-use crate::components::users::{ChangePassword, ChangeUser, CreateUser, DeleteUser};
-use crate::functions::users::{get_user, get_users};
+use crate::components::users::{
+    ActiveDialog, ChangePassword, ChangeUser, CreateUser, DeleteUser, DetailsDialogReference,
+    ListDialogReference,
+};
+use crate::functions::users::{get_user_by_id, get_users};
 use crate::models::{User, UserId};
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub enum ActiveDialog {
-    Create,
-    Change(User),
-    ChangePassword(User),
-    Delete(User),
-    Idle,
-}
 
 #[component]
 pub fn UserItem(user: ReadOnlySignal<User>, on_click: Callback<User>) -> Element {
@@ -43,7 +40,11 @@ pub fn UserItem(user: ReadOnlySignal<User>, on_click: Callback<User>) -> Element
 }
 
 #[component]
-pub fn UserDialog(dialog: Signal<ActiveDialog>, reload: Callback<()>) -> Element {
+pub fn UserDialog(
+    dialog: ReadOnlySignal<ActiveDialog>,
+    reload: Callback<()>,
+    on_close: Callback<()>,
+) -> Element {
     match dialog() {
         ActiveDialog::Idle => {
             rsx! {}
@@ -51,10 +52,10 @@ pub fn UserDialog(dialog: Signal<ActiveDialog>, reload: Callback<()>) -> Element
         ActiveDialog::Create => {
             rsx! {
                 CreateUser {
-                    on_cancel: move || dialog.set(ActiveDialog::Idle),
+                    on_cancel: on_close,
                     on_save: move |_user| {
                         reload(());
-                        dialog.set(ActiveDialog::Idle);
+                        on_close(());
                     },
                 }
             }
@@ -63,22 +64,22 @@ pub fn UserDialog(dialog: Signal<ActiveDialog>, reload: Callback<()>) -> Element
             rsx! {
                 ChangeUser {
                     user,
-                    on_cancel: move || dialog.set(ActiveDialog::Idle),
+                    on_cancel: on_close,
                     on_save: move |_user| {
                         reload(());
-                        dialog.set(ActiveDialog::Idle);
+                        on_close(());
                     },
                 }
             }
         }
-        ActiveDialog::ChangePassword(user) => {
+        ActiveDialog::Password(user) => {
             rsx! {
                 ChangePassword {
                     user,
-                    on_cancel: move || dialog.set(ActiveDialog::Idle),
+                    on_cancel: on_close,
                     on_save: move |_user| {
                         reload(());
-                        dialog.set(ActiveDialog::Idle);
+                        on_close(());
                     },
                 }
             }
@@ -87,10 +88,10 @@ pub fn UserDialog(dialog: Signal<ActiveDialog>, reload: Callback<()>) -> Element
             rsx! {
                 DeleteUser {
                     user,
-                    on_cancel: move || dialog.set(ActiveDialog::Idle),
+                    on_cancel: on_close,
                     on_delete: move |_user| {
                         reload(());
-                        dialog.set(ActiveDialog::Idle);
+                        on_close(());
                     },
                 }
             }
@@ -99,16 +100,30 @@ pub fn UserDialog(dialog: Signal<ActiveDialog>, reload: Callback<()>) -> Element
 }
 
 #[component]
-pub fn UserDetail(user_id: UserId) -> Element {
-    let mut user = use_resource(move || async move { get_user(user_id).await });
-    let mut dialog: Signal<ActiveDialog> = use_signal(|| ActiveDialog::Idle);
+pub fn UserDetail(
+    user_id: UserId,
+    dialog: ReadOnlySignal<Option<DetailsDialogReference>>,
+) -> Element {
+    let mut maybe_user = use_resource(move || async move { get_user_by_id(user_id).await });
 
-    match user() {
+    let active_dialog: Memo<ActiveDialog> = use_memo(move || {
+        let Some(dialog) = dialog() else {
+            return ActiveDialog::Idle;
+        };
+        let Some(Ok(Some(user))) = maybe_user() else {
+            return ActiveDialog::Idle;
+        };
+        match dialog {
+            DetailsDialogReference::Update => ActiveDialog::Change(user),
+            DetailsDialogReference::Password => ActiveDialog::Password(user),
+            DetailsDialogReference::Delete => ActiveDialog::Delete(user),
+            DetailsDialogReference::Idle => ActiveDialog::Idle,
+        }
+    });
+
+    let navigator = navigator();
+    match maybe_user() {
         Some(Ok(Some(obj))) => {
-            let user_clone_1 = obj.clone();
-            let user_clone_2 = obj.clone();
-            let user_clone_3 = obj.clone();
-
             rsx! {
                 table { class: "table table-striped",
                     tbody {
@@ -144,27 +159,58 @@ pub fn UserDetail(user_id: UserId) -> Element {
                 }
 
                 div { class: "p-4",
-                    ChangeButton { on_click: move |_| dialog.set(ActiveDialog::Change(user_clone_1.clone())),
+                    ChangeButton {
+                        on_click: move |_| {
+                            navigator
+                            .push(Route::UserDetail {
+                                user_id,
+                                dialog: DetailsDialogReference::Update,
+                            });
+                        },
                         "Change"
                     }
-
-                    ChangeButton { on_click: move |_| dialog.set(ActiveDialog::ChangePassword(user_clone_2.clone())),
+                    ChangeButton {
+                        on_click: move |_| {
+                            navigator
+                            .push(Route::UserDetail {
+                                user_id,
+                                dialog: DetailsDialogReference::Password,
+                            });
+                        },
                         "Password"
                     }
-                    DeleteButton { on_click: move |_| dialog.set(ActiveDialog::Delete(user_clone_3.clone())),
+                    DeleteButton {
+                        on_click: move |_| {
+                        navigator
+                            .push(Route::UserDetail {
+                                user_id,
+                                dialog: DetailsDialogReference::Delete,
+                            });
+                        },
                         "Delete"
                     }
                 }
                 div { class: "p-4",
                     NavButton {
                         on_click: move |_| {
-                            navigator().push(Route::UserList {});
+                            navigator.push(Route::UserList {
+                                dialog: ListDialogReference::Idle
+                            });
                         },
                         "User List"
                     }
                 }
 
-                UserDialog { dialog, reload: move || (user.restart()) }
+                UserDialog {
+                    dialog: active_dialog,
+                    on_close: move |()| {
+                        navigator.push(Route::UserDetail{
+                            user_id,
+                            dialog: DetailsDialogReference::Idle
+                        });
+                    },
+                    reload: move || (maybe_user.restart())
+                }
             }
         }
         Some(Ok(None)) => {
@@ -189,9 +235,37 @@ pub fn UserDetail(user_id: UserId) -> Element {
 }
 
 #[component]
-pub fn UserList() -> Element {
+pub fn UserList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> Element {
     let mut users = use_resource(|| async { get_users().await });
-    let mut dialog: Signal<ActiveDialog> = use_signal(|| ActiveDialog::Idle);
+
+    let dialog: Resource<Result<ActiveDialog, ServerFnError>> = use_resource(move || async move {
+        let Some(dialog) = dialog() else {
+            return Ok(ActiveDialog::Idle);
+        };
+        match dialog {
+            ListDialogReference::Create => ActiveDialog::Create.pipe(Ok),
+            // ListDialogReference::Update { user_id } => {
+            //     let user = get_user_by_id(user_id).await?.ok_or(
+            //         ServerFnError::<NoCustomError>::ServerError("Cannot find user".to_string()),
+            //     )?;
+            //     ActiveDialog::Change(user).pipe(Ok)
+            // }
+            // ListDialogReference::Password { user_id } => {
+            //     let user = get_user_by_id(user_id).await?.ok_or(
+            //         ServerFnError::<NoCustomError>::ServerError("Cannot find user".to_string()),
+            //     )?;
+            //     ActiveDialog::Password(user).pipe(Ok)
+            // }
+            // ListDialogReference::Delete { user_id } => {
+            //     let user = get_user_by_id(user_id).await?.ok_or(
+            //         ServerFnError::<NoCustomError>::ServerError("Cannot find user".to_string()),
+            //     )?;
+            //     ActiveDialog::Delete(user).pipe(Ok)
+            // }
+            ListDialogReference::Idle => Ok(ActiveDialog::Idle),
+        }
+    });
+
     let navigator = navigator();
 
     rsx! {
@@ -221,6 +295,7 @@ pub fn UserList() -> Element {
                                                 navigator
                                                     .push(Route::UserDetail {
                                                         user_id: user.id,
+                                                        dialog: DetailsDialogReference::Idle
                                                     });
                                             },
                                         }
@@ -249,11 +324,37 @@ pub fn UserList() -> Element {
         div { class: "ml-2 mr-2",
             button {
                 class: "btn btn-secondary",
-                onclick: move |_| dialog.set(ActiveDialog::Create),
+                onclick: move |_| {
+                    navigator.push(Route::UserList { dialog: ListDialogReference::Create });
+                },
                 "Create User"
             }
         }
 
-        UserDialog { dialog, reload: move || (users.restart()) }
+        match dialog.read().deref() {
+            Some(Err(err)) => rsx! {
+                div { class: "alert alert-error",
+                    "Error loading dialog: "
+                    {err.to_string()}
+                }
+            },
+            Some(Ok(dialog)) => rsx! {
+                UserDialog {
+                    dialog: dialog.clone(),
+                    reload: move || (users.restart()),
+                    on_close: move |()| {
+                        navigator
+                            .push(Route::UserList {
+                                dialog: ListDialogReference::Idle
+                            });
+                    },
+                }
+            },
+            None => {
+                rsx! {
+                    p { class: "alert alert-info", "Loading..." }
+                }
+            }
+        }
     }
 }

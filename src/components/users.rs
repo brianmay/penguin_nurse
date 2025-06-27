@@ -1,12 +1,14 @@
-use std::sync::Arc;
+use std::{num::ParseIntError, str::FromStr, sync::Arc};
 
 use dioxus::prelude::*;
+use tap::Pipe;
+use thiserror::Error;
 
 use crate::{
     forms::{
-        validate_1st_password, validate_2nd_password, validate_email, validate_full_name,
-        validate_username, Dialog, EditError, FieldValue, FormCancelButton, FormSubmitButton,
-        InputBoolean, InputPassword, InputString, Saving, ValidationError,
+        Dialog, EditError, FieldValue, FormCancelButton, FormSubmitButton, InputBoolean,
+        InputPassword, InputString, Saving, ValidationError, validate_1st_password,
+        validate_2nd_password, validate_email, validate_full_name, validate_username,
     },
     functions::users::{create_user, delete_user, update_user},
     models::{MaybeString, NewUser, UpdateUser, User},
@@ -533,6 +535,124 @@ pub fn DeleteUser(user: User, on_cancel: Callback, on_delete: Callback<User>) ->
                     title: "Delete",
                 }
             }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum ActiveDialog {
+    Create,
+    Change(User),
+    Password(User),
+    Delete(User),
+    Idle,
+}
+
+#[derive(Error, Debug)]
+pub enum ListDialogReferenceError {
+    #[error("Invalid integer")]
+    ParseIntError(#[from] ParseIntError),
+
+    #[error("Invalid reference")]
+    ReferenceError,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum ListDialogReference {
+    Create,
+    // Update {
+    //     user_id: UserId,
+    // },
+    // Password {
+    //     user_id: UserId,
+    // },
+    // Delete {
+    //     user_id: UserId,
+    // },
+    #[default]
+    Idle,
+}
+
+impl FromStr for ListDialogReference {
+    type Err = ListDialogReferenceError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let split = s.split("-").collect::<Vec<_>>();
+        match split[..] {
+            ["create"] => Self::Create,
+            // ["update", id] => {
+            //     let user_id = UserId::new(id.parse()?);
+            //     Self::Update { user_id }
+            // }
+            // ["password", id] => {
+            //     let user_id = UserId::new(id.parse()?);
+            //     Self::Password { user_id }
+            // }
+            // ["delete", id] => {
+            //     let user_id = UserId::new(id.parse()?);
+            //     Self::Delete { user_id }
+            // }
+            [] => Self::Idle,
+            _ => return Err(ListDialogReferenceError::ReferenceError),
+        }
+        .pipe(Ok)
+    }
+}
+
+#[allow(clippy::to_string_trait_impl)]
+impl ToString for ListDialogReference {
+    fn to_string(&self) -> String {
+        match self {
+            ListDialogReference::Create => "create".to_string(),
+            // ListDialogReference::Update { user_id } => format!("update-{user_id}"),
+            // ListDialogReference::Password { user_id } => {
+            //     format!("password-{user_id}")
+            // }
+            // ListDialogReference::Delete { user_id } => format!("delete-{user_id}"),
+            ListDialogReference::Idle => String::new(),
+        }
+    }
+}
+
+#[derive(Error, Debug)]
+pub enum DetailsDialogReferenceError {
+    #[error("Invalid reference")]
+    ReferenceError,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum DetailsDialogReference {
+    Update,
+    Password,
+    Delete,
+    #[default]
+    Idle,
+}
+
+impl FromStr for DetailsDialogReference {
+    type Err = DetailsDialogReferenceError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let split = s.split("-").collect::<Vec<_>>();
+        match split[..] {
+            ["update"] => Self::Update,
+            ["password"] => Self::Password,
+            ["delete"] => Self::Delete,
+            [] => Self::Idle,
+            _ => return Err(DetailsDialogReferenceError::ReferenceError),
+        }
+        .pipe(Ok)
+    }
+}
+
+#[allow(clippy::to_string_trait_impl)]
+impl ToString for DetailsDialogReference {
+    fn to_string(&self) -> String {
+        match self {
+            DetailsDialogReference::Update => "update".to_string(),
+            DetailsDialogReference::Password => "password".to_string(),
+            DetailsDialogReference::Delete => "delete".to_string(),
+            DetailsDialogReference::Idle => String::new(),
         }
     }
 }
