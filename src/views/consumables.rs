@@ -349,20 +349,10 @@ pub fn ConsumableDetail(
                 ConsumableDialog {
                     dialog: active_dialog,
                     on_change: move |_consumable: Consumable| {
-                        // Don't do this here!
-                        // on_close will be called when dialog should be closed.
-                        // navigator.push(Route::ConsumableDetail {
-                        //     consumable_id: consumable.id,
-                        //     dialog: DetailsDialogReference::Idle
-                        // });
                         maybe_items.restart();
                         maybe_consumable.restart();
                     },
-                    on_delete: move |consumable: Consumable| {
-                        navigator.push(Route::ConsumableDetail {
-                            consumable_id: consumable.id,
-                            dialog: DetailsDialogReference::Idle
-                        });
+                    on_delete: move |_consumable: Consumable| {
                         maybe_items.restart();
                         maybe_consumable.restart();
                     },
