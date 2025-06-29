@@ -1,5 +1,6 @@
 mod barcodes;
 mod buttons;
+mod colours;
 mod dialog;
 mod errors;
 mod fields;
@@ -10,6 +11,7 @@ pub use barcodes::Barcode;
 pub use buttons::{
     FormCancelButton, FormCloseButton, FormDeleteButton, FormEditButton, FormSubmitButton,
 };
+pub use colours::Colour;
 pub use dialog::Dialog;
 pub use errors::{EditError, ValidationError};
 pub use fields::{

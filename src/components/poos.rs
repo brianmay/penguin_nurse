@@ -13,7 +13,7 @@ use crate::{
         times::time_delta_to_string,
     },
     forms::{
-        Dialog, EditError, FieldValue, FormCancelButton, FormSubmitButton, InputColour,
+        Colour, Dialog, EditError, FieldValue, FormCancelButton, FormSubmitButton, InputColour,
         InputDateTime, InputDuration, InputNumber, InputSelect, InputTextArea, Saving,
         ValidationError, validate_bristol, validate_colour, validate_comments, validate_duration,
         validate_fixed_offset_date_time, validate_poo_quantity, validate_urgency,
@@ -246,6 +246,9 @@ pub fn ChangePoo(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
                     ("red".to_string(), Hsv::new(0.0, 1.0, 1.0)),
                 ],
                 disabled,
+            }
+            Colour {
+                colour: colour
             }
             InputTextArea {
                 id: "comments",

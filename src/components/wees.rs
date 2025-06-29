@@ -13,7 +13,7 @@ use crate::{
         times::time_delta_to_string,
     },
     forms::{
-        Dialog, EditError, FieldValue, FormCancelButton, FormSubmitButton, InputColour,
+        Colour, Dialog, EditError, FieldValue, FormCancelButton, FormSubmitButton, InputColour,
         InputDateTime, InputDuration, InputNumber, InputTextArea, Saving, ValidationError,
         validate_colour, validate_comments, validate_duration, validate_fixed_offset_date_time,
         validate_millilitres, validate_urgency,
@@ -230,6 +230,9 @@ pub fn ChangeWee(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
                     ("extra dark".to_string(), Hsv::new(36.0, 1.0, 0.8)),
                 ],
                 disabled,
+            }
+            Colour {
+                colour: colour
             }
             InputTextArea {
                 id: "comments",

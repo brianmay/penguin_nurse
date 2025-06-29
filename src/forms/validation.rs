@@ -107,7 +107,7 @@ pub fn validate_bristol(str: &str) -> Result<Bristol, ValidationError> {
 
 pub fn validate_colour_hue(str: &str) -> Result<f32, ValidationError> {
     match str.parse() {
-        Ok(hue) if (0.0..=360.0).contains(&hue) => Ok(hue),
+        Ok(hue) if (-180.0..=360.0).contains(&hue) => Ok(hue),
         Ok(_) => Err(ValidationError("Invalid hue".to_string())),
         Err(err) => Err(ValidationError(format!("Invalid hue: {err}"))),
     }
