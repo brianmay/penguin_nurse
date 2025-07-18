@@ -9,7 +9,7 @@
     "tailwindcss": "^4.1.11"
   },
   "dependencies": {
-    "@undecaf/barcode-detector-polyfill": "^0.9.22",
+    "@undecaf/barcode-detector-polyfill": "^0.9.23",
     "@undecaf/zbar-wasm": "^0.11.0"
   }
 }
