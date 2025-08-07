@@ -1,14 +1,16 @@
 use dioxus::prelude::*;
 use tracing::debug;
 
-use crate::components::buttons::ActionButton;
+use crate::{components::buttons::ActionButton, forms::fields::ColourButton};
 
 use palette::{Hsv, IntoColor, rgb::Srgb};
 
 const TARGET_SVG: Asset = asset!("/assets/target.svg");
 
 #[component]
-fn Colourinput(on_set: Callback<Hsv>, on_click: Callback<()>) -> Element {
+fn Colourinput(on_set: Callback<Hsv>) -> Element {
+    let mut colour = use_signal(|| Hsv::new(0.0, 0.0, 0.0));
+
     use_future(move || async move {
         let mut eval = document::eval(
             r#"
@@ -65,7 +67,7 @@ fn Colourinput(on_set: Callback<Hsv>, on_click: Callback<()>) -> Element {
                     let b: f32 = b.parse().unwrap_or(0.0) / 255.0;
                     let c = Srgb::new(r, g, b);
                     let c: Hsv = c.into_color();
-                    on_set(c);
+                    colour.set(c);
                 }
                 _ => {
                     debug!("Invalid color");
@@ -83,11 +85,24 @@ fn Colourinput(on_set: Callback<Hsv>, on_click: Callback<()>) -> Element {
             }
             div {
                 class: "absolute w-full h-full top-0 left-0 opacity-40 z-20",
-                onclick: move |_| on_click(()),
                 img {
                     class: "w-full h-full",
                     src: TARGET_SVG
                 }
+            }
+            div {
+                class: "absolute w-full h-full top-0 left-0 opacity-0 z-30",
+                onclick: move |_| {
+                    on_set(colour());
+                },
+                ColourButton {
+                    colour: colour(),
+                    name: "Colour",
+                    on_click: move |colour| {
+                        on_set(colour);
+                    },
+                    selected: false
+              }
             }
         }
     }
@@ -107,9 +122,9 @@ pub fn Colour(colour: Signal<(String, String, String)>) -> Element {
                             c.hue.into_inner().to_string(),
                             c.saturation.to_string(),
                             c.value.to_string(),
-                        ))
+                        ));
+                    show.set(false);
                 },
-                on_click: move |_| show.set(false),
             }
             ActionButton {
                 on_click: move |_| show.set(false),
