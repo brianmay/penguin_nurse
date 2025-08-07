@@ -280,7 +280,16 @@ pub fn ConsumableList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> El
             Some(Ok(dialog)) => rsx! {
                 ConsumableDialog {
                     dialog: dialog.clone(),
-                    on_change: move |_consumable| list.restart(),
+                    on_change: move |consumable: Consumable| {
+                        navigator
+                            .replace(Route::ConsumableList {
+                                dialog: ListDialogReference::Update { consumable_id: consumable.id }
+                            });
+                        list.restart()
+                    },
+                    on_change_ingredients: move |_consumable: Consumable| {
+                        list.restart()
+                    },
                     on_delete: move |_consumable| list.restart(),
                     show_edit: move |consumable: Consumable| {
                         navigator
@@ -349,6 +358,10 @@ pub fn ConsumableDetail(
                 ConsumableDialog {
                     dialog: active_dialog,
                     on_change: move |_consumable: Consumable| {
+                        maybe_items.restart();
+                        maybe_consumable.restart();
+                    },
+                    on_change_ingredients: move |_consumable: Consumable| {
                         maybe_items.restart();
                         maybe_consumable.restart();
                     },

@@ -415,6 +415,7 @@ impl ToString for DialogReference {
 pub fn ConsumptionDialog(
     dialog: ActiveDialog,
     on_change: Callback<Consumption>,
+    on_change_ingredients: Callback<Consumption>,
     on_delete: Callback<Consumption>,
     show_edit: Callback<Consumption>,
     show_ingredients: Callback<Consumption>,
@@ -459,7 +460,7 @@ pub fn ConsumptionDialog(
                             show_edit(consumption)
                         },
                         on_change: move |consumption: Consumption| {
-                            on_change(consumption.clone());
+                            on_change_ingredients(consumption.clone());
                         },
                     }
                 }

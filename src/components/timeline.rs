@@ -6,7 +6,7 @@ use thiserror::Error;
 
 use crate::{
     components::{consumptions::ConsumptionDialog, poos::PooDialog, wees::WeeDialog},
-    models::{Consumption, ConsumptionId, PooId, UserId, WeeId},
+    models::{Consumption, ConsumptionId, Poo, PooId, UserId, Wee, WeeId},
 };
 
 use super::{consumptions, poos, wees};
@@ -149,6 +149,7 @@ pub fn TimelineDialog(
     dialog: ReadOnlySignal<ActiveDialog>,
     on_change: Callback<()>,
     on_close: Callback<()>,
+    replace_dialog: Callback<DialogReference>,
     show_consumption_edit: Callback<Consumption>,
     show_consumption_ingredients: Callback<Consumption>,
 ) -> Element {
@@ -158,7 +159,8 @@ pub fn TimelineDialog(
                 WeeDialog {
                     dialog: wee_dialog,
                     on_close,
-                    on_change: move |_wee| {
+                    on_change: move |wee: Wee| {
+                        replace_dialog(DialogReference::UpdateWee { wee_id: wee.id });
                         on_change(());
                         on_close(());
                     },
@@ -174,7 +176,8 @@ pub fn TimelineDialog(
                 PooDialog {
                     dialog: poo_dialog,
                     on_close,
-                    on_change: move |_poo| {
+                    on_change: move |poo: Poo| {
+                        replace_dialog(DialogReference::UpdatePoo{ poo_id: poo.id });
                         on_change(());
                         on_close(());
                    },
@@ -191,10 +194,14 @@ pub fn TimelineDialog(
                     dialog: consumption_dialog,
                     show_edit: show_consumption_edit,
                     show_ingredients: show_consumption_ingredients,
-                    on_change: move |_wee| {
+                    on_change: move |consumption: Consumption| {
+                        replace_dialog(DialogReference::UpdateConsumption{ consumption_id: consumption.id });
                         on_change(());
                     },
-                    on_delete: move |_wee| {
+                    on_change_ingredients: move |_consumption: Consumption| {
+                        on_change(());
+                    },
+                    on_delete: move |_consumption| {
                         on_change(());
                     },
                     on_close,

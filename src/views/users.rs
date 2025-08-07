@@ -53,7 +53,8 @@ pub fn UserDialog(
             rsx! {
                 CreateUser {
                     on_cancel: on_close,
-                    on_save: move |_user| {
+                    on_save: move |user: User| {
+                        navigator().replace(Route::UserDetail{ user_id: user.id, dialog: DetailsDialogReference::Update});
                         reload(());
                         on_close(());
                     },

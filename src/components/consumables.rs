@@ -483,6 +483,7 @@ impl ToString for DetailsDialogReference {
 pub fn ConsumableDialog(
     dialog: ReadOnlySignal<ActiveDialog>,
     on_change: Callback<Consumable>,
+    on_change_ingredients: Callback<Consumable>,
     on_delete: Callback<Consumable>,
     show_edit: Callback<Consumable>,
     show_ingredients: Callback<Consumable>,
@@ -525,7 +526,7 @@ pub fn ConsumableDialog(
                         consumable,
                         on_close,
                         on_edit: show_edit,
-                        on_change,
+                        on_change: on_change_ingredients,
                     }
                 }
             }

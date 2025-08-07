@@ -48,6 +48,10 @@ pub fn ConsumptionDetail(
                         maybe_consumption.restart();
                         maybe_items.restart();
                     },
+                    on_change_ingredients: move |_consumption: Consumption| {
+                        maybe_consumption.restart();
+                        maybe_items.restart();
+                    },
                     on_delete: move |_consumption: Consumption| {
                         maybe_consumption.restart();
                         maybe_items.restart();

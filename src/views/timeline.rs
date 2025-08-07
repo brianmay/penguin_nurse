@@ -473,7 +473,16 @@ pub fn TimelineList(
             Some(Ok(dialog)) => rsx! {
                 TimelineDialog {
                     dialog: dialog.clone(),
-                    on_change: move || timeline.restart(),
+                    on_change: move || {
+                        timeline.restart()
+                    },
+                    replace_dialog: move |dialog| {
+                        navigator
+                            .replace(Route::TimelineList {
+                                date: date(),
+                                dialog
+                            });
+                    },
                     show_consumption_edit: move |consumption: Consumption| {
                         navigator
                             .push(Route::TimelineList {
