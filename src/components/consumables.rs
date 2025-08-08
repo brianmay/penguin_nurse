@@ -415,7 +415,7 @@ impl FromStr for ListDialogReference {
                 let consumable_id = ConsumableId::new(id.parse()?);
                 Self::Ingredients { consumable_id }
             }
-            [] => Self::Idle,
+            [""] | [] => Self::Idle,
             _ => return Err(ListDialogReferenceError::ReferenceError),
         }
         .pipe(Ok)
@@ -460,7 +460,7 @@ impl FromStr for DetailsDialogReference {
         match split[..] {
             ["update"] => Self::Update,
             ["ingredients"] => Self::Ingredients,
-            [] => Self::Idle,
+            [""] | [] => Self::Idle,
             _ => return Err(DetailsDialogReferenceError::ReferenceError),
         }
         .pipe(Ok)

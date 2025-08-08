@@ -24,7 +24,7 @@ pub enum DialogReferenceError {
     #[error("Invalid integer")]
     ParseIntError(#[from] ParseIntError),
 
-    #[error("Invalid reference")]
+    #[error("Invalid reference2")]
     ReferenceError,
 }
 
@@ -110,7 +110,7 @@ impl FromStr for DialogReference {
                 let consumption_id = ConsumptionId::new(id.parse()?);
                 Self::DeleteConsumption { consumption_id }
             }
-            [] => Self::Idle,
+            [""] | [] => Self::Idle,
             _ => return Err(DialogReferenceError::ReferenceError),
         }
         .pipe(Ok)

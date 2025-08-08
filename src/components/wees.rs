@@ -399,7 +399,7 @@ impl FromStr for DialogReference {
         match split[..] {
             ["update"] => Self::Update,
             ["delete"] => Self::Delete,
-            [] => Self::Idle,
+            [""] | [] => Self::Idle,
             _ => return Err(DialogReferenceError::ReferenceError),
         }
         .pipe(Ok)

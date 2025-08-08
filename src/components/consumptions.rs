@@ -392,7 +392,7 @@ impl FromStr for DialogReference {
             ["update"] => Self::Update,
             ["ingredients"] => Self::Ingredients,
             ["delete"] => Self::Delete,
-            [] => Self::Idle,
+            [""] | [] => Self::Idle,
             _ => return Err(DialogReferenceError::ReferenceError),
         }
         .pipe(Ok)

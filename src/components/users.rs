@@ -592,7 +592,7 @@ impl FromStr for ListDialogReference {
             //     let user_id = UserId::new(id.parse()?);
             //     Self::Delete { user_id }
             // }
-            [] => Self::Idle,
+            [""] | [] => Self::Idle,
             _ => return Err(ListDialogReferenceError::ReferenceError),
         }
         .pipe(Ok)
@@ -638,7 +638,7 @@ impl FromStr for DetailsDialogReference {
             ["update"] => Self::Update,
             ["password"] => Self::Password,
             ["delete"] => Self::Delete,
-            [] => Self::Idle,
+            [""] | [] => Self::Idle,
             _ => return Err(DetailsDialogReferenceError::ReferenceError),
         }
         .pipe(Ok)
