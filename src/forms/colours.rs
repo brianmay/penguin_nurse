@@ -85,6 +85,9 @@ fn Colourinput(on_set: Callback<Hsv>) -> Element {
             }
             div {
                 class: "absolute w-full h-full top-0 left-0 opacity-40 z-20",
+                onclick: move |_| {
+                    on_set(colour());
+                },
                 img {
                     class: "w-full h-full",
                     src: TARGET_SVG
@@ -92,18 +95,15 @@ fn Colourinput(on_set: Callback<Hsv>) -> Element {
             }
             div {
                 class: "absolute w-full h-full top-0 left-0 opacity-0 z-30",
-                onclick: move |_| {
-                    on_set(colour());
-                },
-                ColourButton {
-                    colour: colour(),
-                    name: "Colour",
-                    on_click: move |colour| {
-                        on_set(colour);
-                    },
-                    selected: false
-              }
             }
+        }
+        ColourButton {
+            colour: colour(),
+            name: "Set",
+            on_click: move |colour| {
+                on_set(colour);
+            },
+            selected: false
         }
     }
 }
