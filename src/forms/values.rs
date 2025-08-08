@@ -87,27 +87,49 @@ impl FieldValue for TimeDelta {
         } else {
             (1, value)
         };
-        let split = value.split(':').collect::<Vec<&str>>();
+        let split = value.split([':', '.']).collect::<Vec<&str>>();
 
-        if split.len() != 3 {
-            return Err(FieldValueError::InvalidValue);
-        }
+        let (hours, minutes, seconds) = match split[..] {
+            [a] => {
+                let minutes = a
+                    .parse::<i64>()
+                    .map_err(|_| FieldValueError::InvalidValue)?;
+                (0, minutes, 0)
+            }
 
-        let hours = split[0]
-            .parse::<i64>()
-            .map_err(|_| FieldValueError::InvalidValue)?;
+            [a, b] => {
+                let minutes = a
+                    .parse::<i64>()
+                    .map_err(|_| FieldValueError::InvalidValue)?;
 
-        let minutes = split[1]
-            .parse::<i64>()
-            .map_err(|_| FieldValueError::InvalidValue)?;
+                let seconds = b
+                    .parse::<i64>()
+                    .map_err(|_| FieldValueError::InvalidValue)?;
 
-        let seconds = split[2]
-            .parse::<i64>()
-            .map_err(|_| FieldValueError::InvalidValue)?;
+                (0, minutes, seconds)
+            }
 
-        if negative == -1 {
-            return Err(FieldValueError::InvalidValue);
-        }
+            [a, b, c] => {
+                let hours = a
+                    .parse::<i64>()
+                    .map_err(|_| FieldValueError::InvalidValue)?;
+
+                let minutes = b
+                    .parse::<i64>()
+                    .map_err(|_| FieldValueError::InvalidValue)?;
+
+                let seconds = c
+                    .parse::<i64>()
+                    .map_err(|_| FieldValueError::InvalidValue)?;
+
+                (hours, minutes, seconds)
+            }
+
+            _ => {
+                return Err(FieldValueError::InvalidValue);
+            }
+        };
+
         if hours < 0 || minutes < 0 || seconds < 0 {
             return Err(FieldValueError::InvalidValue);
         }
