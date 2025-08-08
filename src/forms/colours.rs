@@ -93,9 +93,6 @@ fn Colourinput(on_set: Callback<Hsv>) -> Element {
                     src: TARGET_SVG
                 }
             }
-            div {
-                class: "absolute w-full h-full top-0 left-0 opacity-0 z-30",
-            }
         }
         ColourButton {
             colour: colour(),
