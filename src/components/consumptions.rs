@@ -348,12 +348,10 @@ pub fn consumption_duration(duration: chrono::TimeDelta) -> Element {
     let text = time_delta_to_string(duration);
 
     rsx! {
-        if duration.num_minutes() < 5 {
+        if duration.num_seconds() < 2 {
             span { class: "text-error", {text} }
-        } else if duration.num_minutes() < 20 {
+        } else if duration.num_minutes() < 60 {
             span { class: "text-success", {text} }
-        } else if duration.num_minutes() < 30 {
-            span { class: "text-warning", {text} }
         } else {
             span { class: "text-error", {text} }
         }
