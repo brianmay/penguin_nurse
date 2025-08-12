@@ -7,16 +7,13 @@ use tap::Pipe;
 use crate::{
     Route,
     components::{
-        buttons::{ChangeButton, CreateButton, DeleteButton, NavButton},
+        buttons::{ChangeButton, CreateButton},
         consumables::{
-            self, ActiveDialog, ConsumableDialog, ConsumableItemList, DetailsDialogReference,
-            ListDialogReference, Operation,
+            ActiveDialog, ConsumableDialog, ConsumableItemList, ListDialogReference, Operation,
         },
     },
     forms::Barcode,
-    functions::consumables::{
-        get_child_consumables, get_consumable_by_id, search_consumables_with_nested,
-    },
+    functions::consumables::{get_consumable_by_id, search_consumables_with_nested},
     models::{Consumable, ConsumableId, ConsumableWithItems, Maybe},
     use_user,
 };
@@ -71,16 +68,6 @@ fn EntryRow(
         if selected() == Some(id) {
             tr {
                 td { colspan: "6", class: "block sm:table-cell",
-                    NavButton {
-                        on_click: move |_| {
-                            navigator
-                                .push(Route::ConsumableDetail {
-                                    consumable_id: id,
-                                    dialog: DetailsDialogReference::Idle,
-                                });
-                        },
-                        "Details"
-                    }
                     ChangeButton { on_click: move |_| {
                             navigator.push(Route::ConsumableList{
                                 dialog: ListDialogReference::Ingredients{consumable_id: id}
@@ -357,143 +344,6 @@ pub fn ConsumableList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> El
                 rsx! {
                     p { class: "alert alert-info", "Loading..." }
                 }
-            }
-        }
-    }
-}
-
-#[component]
-pub fn ConsumableDetail(
-    consumable_id: ReadOnlySignal<ConsumableId>,
-    dialog: ReadOnlySignal<Option<DetailsDialogReference>>,
-) -> Element {
-    let mut maybe_consumable =
-        use_resource(move || async move { get_consumable_by_id(consumable_id()).await });
-
-    let mut maybe_items =
-        use_resource(move || async move { get_child_consumables(consumable_id()).await });
-
-    let active_dialog: Memo<ActiveDialog> = use_memo(move || {
-        let Some(dialog) = dialog() else {
-            return ActiveDialog::Idle;
-        };
-        let Some(Ok(Some(consumable))) = maybe_consumable() else {
-            return ActiveDialog::Idle;
-        };
-        match dialog {
-            DetailsDialogReference::Update => {
-                ActiveDialog::Change(Operation::Update { consumable })
-            }
-            DetailsDialogReference::Ingredients => ActiveDialog::Ingredients(consumable),
-            DetailsDialogReference::Delete => ActiveDialog::Delete(consumable),
-            DetailsDialogReference::Idle => ActiveDialog::Idle,
-        }
-    });
-
-    let navigator = navigator();
-    match (maybe_consumable(), maybe_items()) {
-        (Some(Ok(Some(consumable))), Some(Ok(items))) => {
-            let consumable_id = consumable.id;
-
-            rsx! {
-                consumables::ConsumableDetail { consumable, list: items }
-                ConsumableDialog {
-                    dialog: active_dialog,
-                    on_change: move |_consumable: Consumable| {
-                        maybe_items.restart();
-                        maybe_consumable.restart();
-                    },
-                    on_change_ingredients: move |_consumable: Consumable| {
-                        maybe_items.restart();
-                        maybe_consumable.restart();
-                    },
-                    on_delete: move |_consumable: Consumable| {
-                        maybe_items.restart();
-                        maybe_consumable.restart();
-                    },
-                    show_edit: move |consumable: Consumable| {
-                        navigator
-                            .push(Route::ConsumableDetail {
-                                consumable_id: consumable.id,
-                                dialog: DetailsDialogReference::Update
-                        });
-                    },
-                    show_ingredients: move |consumable: Consumable| {
-                        navigator
-                            .push(Route::ConsumableDetail {
-                                consumable_id: consumable.id,
-                                dialog: DetailsDialogReference::Ingredients
-                            });
-                    },
-                    show_nested_ingredient: move |(_parent, consumable): (Consumable, Consumable)| {
-                        navigator
-                            .push(Route::ConsumableDetail {
-                                consumable_id: consumable.id,
-                                dialog: DetailsDialogReference::Update { }
-                            });
-                    },
-                    show_nested_ingredients: move |(_parent, consumable): (Consumable, Consumable)| {
-                        navigator
-                            .push(Route::ConsumableDetail {
-                                consumable_id: consumable.id,
-                                dialog: DetailsDialogReference::Update { }
-                            });
-                    },
-                    on_close: move |()| {
-                        navigator
-                            .push(Route::ConsumableDetail {
-                                consumable_id,
-                                dialog: DetailsDialogReference::Idle
-                            });
-                    },
-                }
-                ChangeButton { on_click: move |_| {
-                        navigator
-                            .push(Route::ConsumableDetail {
-                                consumable_id,
-                                dialog: DetailsDialogReference::Ingredients
-                        });
-                    },
-                    "Ingredients"
-                }
-                ChangeButton {
-                    on_click: move |_| {
-                        navigator
-                            .push(Route::ConsumableDetail {
-                                consumable_id,
-                                dialog: DetailsDialogReference::Update
-                        });
-                    },
-                    "Edit"
-                }
-                DeleteButton {
-                    on_click: move |_| {
-                        navigator
-                            .push(Route::ConsumableDetail {
-                                consumable_id,
-                                dialog: DetailsDialogReference::Delete
-                        });
-                    },
-                    "Delete"
-                }
-            }
-        }
-        (Some(Ok(None)), _) => {
-            rsx! {
-                div { class: "alert alert-error", "Consumption not found." }
-            }
-        }
-        (Some(Err(err)), _) | (_, Some(Err(err))) => {
-            rsx! {
-                div { class: "alert alert-error",
-                    "Error: "
-                    {err.to_string()}
-                }
-            }
-        }
-        (None, _) | (_, None) => {
-            rsx! {
-                div { class: "alert alert-info", "Loading..." }
             }
         }
     }

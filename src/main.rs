@@ -3,12 +3,9 @@ use std::sync::Arc;
 use chrono::NaiveDate;
 use dioxus::prelude::*;
 
-use components::{consumables, consumptions, navbar::Navbar, poos, timeline, users, wees};
-use models::{ConsumableId, ConsumptionId, PooId, User, UserId, WeeId};
-use views::{
-    ConsumableDetail, ConsumableList, ConsumptionDetail, Home, Login, Logout, PooDetail,
-    TimelineList, UserDetail, UserList, WeeDetail, get_user,
-};
+use components::{consumables, navbar::Navbar, timeline, users};
+use models::{User, UserId};
+use views::{ConsumableList, Home, Login, Logout, TimelineList, UserDetail, UserList, get_user};
 
 mod components;
 mod dt;
@@ -37,16 +34,8 @@ enum Route {
     UserList { dialog: users::ListDialogReference },
     #[route("/users/:user_id?:dialog")]
     UserDetail { user_id: UserId, dialog: users::DetailsDialogReference },
-    #[route("/wees/:wee_id?:dialog")]
-    WeeDetail { wee_id: WeeId, dialog: wees::DialogReference },
-    #[route("/poos/:poo_id?:dialog")]
-    PooDetail { poo_id: PooId, dialog: poos::DialogReference },
-    #[route("/consumptions/:consumption_id?:dialog")]
-    ConsumptionDetail { consumption_id: ConsumptionId, dialog: consumptions::DialogReference},
     #[route("/consumables?:dialog")]
     ConsumableList {dialog: consumables::ListDialogReference },
-    #[route("/consumables/:consumable_id?:dialog")]
-    ConsumableDetail { consumable_id: ConsumableId, dialog: consumables::DetailsDialogReference },
     #[route("/:..segments")]
     NotFound { segments: Vec<String> },
 }

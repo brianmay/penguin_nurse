@@ -8,10 +8,7 @@ use tap::Pipe;
 use thiserror::Error;
 
 use crate::{
-    components::{
-        events::{event_colour, event_date_time, event_urgency},
-        times::time_delta_to_string,
-    },
+    components::times::time_delta_to_string,
     forms::{
         Colour, Dialog, EditError, FieldValue, FormCancelButton, FormSubmitButton, InputColour,
         InputDateTime, InputDuration, InputNumber, InputTextArea, Saving, ValidationError,
@@ -370,6 +367,7 @@ pub fn wee_mls(mls: i32) -> Element {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum ActiveDialog {
     Change(Operation),
@@ -441,74 +439,6 @@ pub fn WeeDialog(
         }
         ActiveDialog::Idle => {
             rsx! {}
-        }
-    }
-}
-
-#[component]
-pub fn WeeDetail(wee: Wee) -> Element {
-    rsx! {
-        h3 { class: "text-lg font-bold",
-            "Wee "
-            {wee.id.to_string()}
-        }
-        div { class: "p-4",
-            table { class: "table table-striped",
-                tbody {
-                    tr {
-                        td { "Event" }
-                        td { wee_icon {} }
-                    }
-                    tr {
-                        td { "ID" }
-                        td { {wee.id.as_inner().to_string()} }
-                    }
-                    tr {
-                        td { "Time" }
-                        td {
-                            event_date_time { time: wee.time }
-                        }
-                    }
-                    tr {
-                        td { "Duration" }
-                        td {
-                            wee_duration { duration: wee.duration }
-                        }
-                    }
-                    tr {
-                        td { "Colour" }
-                        td {
-                            event_colour { colour: wee.colour }
-                        }
-                    }
-                    tr {
-                        td { "Urgency" }
-                        td {
-                            event_urgency { urgency: wee.urgency }
-                        }
-                    }
-                    tr {
-                        td { "Duration" }
-                        td {
-                            wee_duration { duration: wee.duration }
-                        }
-                    }
-                    tr {
-                        td { "Quantity" }
-                        td {
-                            wee_mls { mls: wee.mls }
-                        }
-                    }
-                    tr {
-                        td { "Created" }
-                        td { {wee.created_at.with_timezone(&Local).to_string()} }
-                    }
-                    tr {
-                        td { "Updated" }
-                        td { {wee.updated_at.with_timezone(&Local).to_string()} }
-                    }
-                }
-            }
         }
     }
 }

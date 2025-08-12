@@ -6,7 +6,6 @@ use tap::Pipe;
 use thiserror::Error;
 
 use crate::{
-    Route,
     forms::{
         Barcode, Dialog, EditError, FieldValue, FormCancelButton, FormCloseButton,
         FormDeleteButton, FormEditButton, FormSubmitButton, InputBoolean, InputConsumable,
@@ -475,48 +474,6 @@ impl ToString for ListDialogReference {
     }
 }
 
-#[derive(Error, Debug)]
-pub enum DetailsDialogReferenceError {
-    #[error("Invalid reference")]
-    ReferenceError,
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub enum DetailsDialogReference {
-    Update,
-    Ingredients,
-    Delete,
-    #[default]
-    Idle,
-}
-
-impl FromStr for DetailsDialogReference {
-    type Err = DetailsDialogReferenceError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let split = s.split("-").collect::<Vec<_>>();
-        match split[..] {
-            ["update"] => Self::Update,
-            ["ingredients"] => Self::Ingredients,
-            [""] | [] => Self::Idle,
-            _ => return Err(DetailsDialogReferenceError::ReferenceError),
-        }
-        .pipe(Ok)
-    }
-}
-
-#[allow(clippy::to_string_trait_impl)]
-impl ToString for DetailsDialogReference {
-    fn to_string(&self) -> String {
-        match self {
-            DetailsDialogReference::Update => "update".to_string(),
-            DetailsDialogReference::Ingredients => "ingredients".to_string(),
-            DetailsDialogReference::Delete => "delete".to_string(),
-            DetailsDialogReference::Idle => String::new(),
-        }
-    }
-}
-
 #[component]
 pub fn ConsumableDialog(
     dialog: ReadOnlySignal<ActiveDialog>,
@@ -617,96 +574,6 @@ pub fn ConsumableDialog(
                         show_ingredients: move |(_parent, consumable): (Consumable, Consumable)| {
                             show_nested_ingredients((parent_clone_4.clone(), consumable.clone()));
                         },
-                    }
-                }
-            }
-        }
-    }
-}
-
-#[component]
-pub fn ConsumableDetail(consumable: Consumable, list: Vec<ConsumableItem>) -> Element {
-    rsx! {
-        h3 { class: "text-lg font-bold", {consumable.name.clone()} }
-
-        div { class: "p-4",
-            table { class: "table table-striped",
-                tbody {
-                    tr {
-                        td { "ID" }
-                        td { {consumable.id.to_string()} }
-                    }
-                    tr {
-                        td { "Name" }
-                        td { {consumable.name} }
-                    }
-                    tr {
-                        td { "Brand" }
-                        td {
-                            if let MaybeString::Some(brand) = &consumable.brand {
-                                {brand.clone()}
-                            }
-                        }
-                    }
-                    tr {
-                        td { "Barcode" }
-                        td {
-                            if let MaybeString::Some(barcode) = &consumable.barcode {
-                                {barcode.clone()}
-                            }
-                        }
-                    }
-                    tr {
-                        td { "Is Organic" }
-                        td { {consumable.is_organic.to_string()} }
-                    }
-                    tr {
-                        td { "Unit" }
-                        td { {consumable.unit.to_string()} }
-                    }
-                    tr {
-                        td { "Comments" }
-                        td {
-                            if let MaybeString::Some(comments) = &consumable.comments {
-                                {comments.to_string()}
-                            }
-                        }
-                    }
-                    tr {
-                        td { "Created" }
-                        td {
-                            if let MaybeDateTime::Some(created) = consumable.created {
-                                {created.with_timezone(&Local).to_string()}
-                            } else {
-                                "Not Created"
-                            }
-                        }
-                    }
-                    tr {
-                        td { "Destroyed" }
-                        td {
-                            if let MaybeDateTime::Some(destroyed) = consumable.destroyed {
-                                {destroyed.with_timezone(&Local).to_string()}
-                            } else {
-                                "Not destroyed"
-                            }
-                        }
-                    }
-                    tr {
-                        td { "Created At" }
-                        td { {consumable.created_at.with_timezone(&Local).to_string()} }
-                    }
-                    tr {
-                        td { "Updated At" }
-                        td { {consumable.updated_at.with_timezone(&Local).to_string()} }
-                    }
-                    if !list.is_empty() {
-                        tr {
-                            td { "Ingredients" }
-                            td {
-                                ConsumableItemList { list, show_links: true }
-                            }
-                        }
                     }
                 }
             }
@@ -1062,9 +929,7 @@ fn ConsumableNestedForm(
 }
 
 #[component]
-pub fn ConsumableItemSummary(item: ConsumableItem, show_links: Option<bool>) -> Element {
-    let show_links = show_links.unwrap_or(false);
-
+pub fn ConsumableItemSummary(item: ConsumableItem) -> Element {
     rsx! {
         span {
 
@@ -1076,18 +941,7 @@ pub fn ConsumableItemSummary(item: ConsumableItem, show_links: Option<bool>) -> 
                     " "
                 }
             }
-            if show_links {
-                Link {
-                    to: Route::ConsumableDetail {
-                        consumable_id: item.consumable.id,
-                        dialog: DetailsDialogReference::Idle
-                    },
-                    class: "text-blue-500 hover:underline",
-                    {item.consumable.name.clone()}
-                }
-            } else {
-                {item.consumable.name.clone()}
-            }
+            {item.consumable.name.clone()}
             if let Maybe::Some(brand) = &item.consumable.brand {
                 ", "
                 {brand.clone()}
@@ -1121,7 +975,6 @@ pub fn ConsumableItemList(list: Vec<ConsumableItem>, show_links: Option<bool>) -
                         ConsumableItemSummary {
                             key: item.id,
                             item: item.clone(),
-                            show_links,
                         }
                     }
                 }

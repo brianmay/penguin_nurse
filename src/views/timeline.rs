@@ -122,12 +122,6 @@ fn EntryRow(
                 match entry.data {
                     EntryData::Wee(wee) => {
                         rsx! {
-                            NavButton {
-                                on_click: move |_| {
-                                    navigator.push(Route::WeeDetail { wee_id: wee.id, dialog: wees::DialogReference::Idle });
-                                },
-                                "Details"
-                            }
                             ChangeButton {
                                 on_click: move |_| {
                                     navigator
@@ -152,12 +146,6 @@ fn EntryRow(
                     }
                     EntryData::Poo(poo) => {
                         rsx! {
-                            NavButton {
-                                on_click: move |_| {
-                                    navigator.push(Route::PooDetail { poo_id: poo.id, dialog: poos::DialogReference::Idle });
-                                },
-                                "Details"
-                            }
                             ChangeButton {
                                 on_click: move |_| {
                                     navigator
@@ -183,16 +171,6 @@ fn EntryRow(
                     EntryData::Consumption(consumption) => {
                         let consumption = consumption.consumption;
                         rsx! {
-                            NavButton {
-                                on_click: move |_| {
-                                    navigator
-                                        .push(Route::ConsumptionDetail {
-                                            consumption_id: consumption.id,
-                                            dialog: consumptions::DialogReference::Idle
-                                        });
-                                },
-                                "Details"
-                            }
                             ChangeButton {
                                 on_click: move |_| {
                                     navigator

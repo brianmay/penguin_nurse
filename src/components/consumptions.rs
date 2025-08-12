@@ -6,10 +6,8 @@ use tap::Pipe;
 use thiserror::Error;
 
 use crate::{
-    Route,
     components::{
-        consumables::{self, ChangeConsumable, ConsumableNested, DetailsDialogReference},
-        events::event_date_time,
+        consumables::{self, ChangeConsumable, ConsumableNested},
         times::time_delta_to_string,
     },
     forms::{
@@ -360,6 +358,7 @@ pub fn consumption_duration(duration: chrono::TimeDelta) -> Element {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum ActiveDialog {
     Change(Operation),
@@ -521,71 +520,6 @@ pub fn ConsumptionDialog(
         }
         ActiveDialog::Idle => {
             rsx! {}
-        }
-    }
-}
-
-#[component]
-pub fn ConsumptionDetail(consumption: Consumption, list: Vec<ConsumptionItem>) -> Element {
-    rsx! {
-        h3 { class: "text-lg font-bold",
-            "Consumption "
-            {consumption.time.with_timezone(&Local).to_string()}
-        }
-
-        div { class: "p-4",
-            table { class: "table table-striped",
-                tbody {
-                    tr {
-                        td { "Event" }
-                        td { consumption_icon {
-                            consumption_type: consumption.consumption_type
-                        } }
-                    }
-                    tr {
-                        td { "ID" }
-                        td { {consumption.id.to_string()} }
-                    }
-                    tr {
-                        td { "Time" }
-                        td {
-                            event_date_time { time: consumption.time }
-                        }
-                    }
-                    tr {
-                        td { "Duration" }
-                        td {
-                            consumption_duration { duration: consumption.duration }
-                        }
-                    }
-                    tr {
-                        td { "Type"}
-                        td {
-                            { consumption.consumption_type.to_string() }
-                        }
-                    }
-                    tr {
-                        td { "Liquid Millilitres" }
-                        td { {consumption.liquid_mls.as_string()} }
-                    }
-                    tr {
-                        td { "Created At" }
-                        td { {consumption.created_at.with_timezone(&Local).to_string()} }
-                    }
-                    tr {
-                        td { "Updated At" }
-                        td { {consumption.updated_at.with_timezone(&Local).to_string()} }
-                    }
-                    if !list.is_empty() {
-                        tr {
-                            td { "Ingredients" }
-                            td {
-                                ConsumptionItemList { list, show_links: true }
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 }
@@ -941,9 +875,7 @@ fn ConsumableConsumptionForm(
 }
 
 #[component]
-pub fn ConsumptionItemSummary(item: ConsumptionItem, show_links: Option<bool>) -> Element {
-    let show_links: bool = show_links.unwrap_or(false);
-
+pub fn ConsumptionItemSummary(item: ConsumptionItem) -> Element {
     rsx! {
         span {
             if let Maybe::Some(quantity) = item.nested.quantity {
@@ -953,18 +885,7 @@ pub fn ConsumptionItemSummary(item: ConsumptionItem, show_links: Option<bool>) -
                     " "
                 }
             }
-            if show_links {
-                Link {
-                    to: Route::ConsumableDetail {
-                        consumable_id: item.consumable.id,
-                        dialog: DetailsDialogReference::Idle,
-                    },
-                    class: "text-blue-500 hover:underline",
-                    {item.consumable.name.clone()}
-                }
-            } else {
-                {item.consumable.name.clone()}
-            }
+            {item.consumable.name.clone()}
             if let Maybe::Some(brand) = &item.consumable.brand {
                 ", "
                 {brand.clone()}
@@ -989,7 +910,7 @@ pub fn ConsumptionItemSummary(item: ConsumptionItem, show_links: Option<bool>) -
 }
 
 #[component]
-pub fn ConsumptionItemList(list: Vec<ConsumptionItem>, show_links: Option<bool>) -> Element {
+pub fn ConsumptionItemList(list: Vec<ConsumptionItem>) -> Element {
     rsx! {
         if !list.is_empty() {
             ul { class: "list-disc ml-4",
@@ -998,7 +919,6 @@ pub fn ConsumptionItemList(list: Vec<ConsumptionItem>, show_links: Option<bool>)
                         ConsumptionItemSummary {
                             key: item.id,
                             item: item.clone(),
-                            show_links,
                         }
                     }
                 }

@@ -8,10 +8,7 @@ use tap::Pipe;
 use thiserror::Error;
 
 use crate::{
-    components::{
-        events::{event_colour, event_date_time, event_urgency},
-        times::time_delta_to_string,
-    },
+    components::times::time_delta_to_string,
     forms::{
         Colour, Dialog, EditError, FieldValue, FormCancelButton, FormSubmitButton, InputColour,
         InputDateTime, InputDuration, InputNumber, InputSelect, InputTextArea, Saving,
@@ -404,6 +401,7 @@ pub fn poo_quantity(quantity: i32) -> Element {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum ActiveDialog {
     Change(Operation),
@@ -475,80 +473,6 @@ pub fn PooDialog(
         }
         ActiveDialog::Idle => {
             rsx! {}
-        }
-    }
-}
-
-#[component]
-pub fn PooDetail(poo: Poo) -> Element {
-    rsx! {
-        h3 { class: "text-lg font-bold",
-            "Poo "
-            {poo.id.to_string()}
-        }
-        div { class: "p-4",
-            table { class: "table table-striped",
-                tbody {
-                    tr {
-                        td { "Event" }
-                        td { poo_icon {} }
-                    }
-                    tr {
-                        td { "ID" }
-                        td { {poo.id.as_inner().to_string()} }
-                    }
-                    tr {
-                        td { "Time" }
-                        td {
-                            event_date_time { time: poo.time }
-                        }
-                    }
-                    tr {
-                        td { "Duration" }
-                        td {
-                            poo_duration { duration: poo.duration }
-                        }
-                    }
-                    tr {
-                        td { "Colour" }
-                        td {
-                            event_colour { colour: poo.colour }
-                        }
-                    }
-                    tr {
-                        td { "Urgency" }
-                        td {
-                            event_urgency { urgency: poo.urgency }
-                        }
-                    }
-                    tr {
-                        td { "Duration" }
-                        td {
-                            poo_duration { duration: poo.duration }
-                        }
-                    }
-                    tr {
-                        td { "Quantity" }
-                        td {
-                            poo_quantity { quantity: poo.quantity }
-                        }
-                    }
-                    tr {
-                        td { "Bristol" }
-                        td {
-                            poo_bristol { bristol: poo.bristol }
-                        }
-                    }
-                    tr {
-                        td { "Created" }
-                        td { {poo.created_at.with_timezone(&Local).to_string()} }
-                    }
-                    tr {
-                        td { "Updated" }
-                        td { {poo.updated_at.with_timezone(&Local).to_string()} }
-                    }
-                }
-            }
         }
     }
 }
