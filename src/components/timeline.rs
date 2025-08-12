@@ -6,7 +6,9 @@ use thiserror::Error;
 
 use crate::{
     components::{consumptions::ConsumptionDialog, poos::PooDialog, wees::WeeDialog},
-    models::{Consumption, ConsumptionId, Poo, PooId, UserId, Wee, WeeId},
+    models::{
+        Consumable, ConsumableId, Consumption, ConsumptionId, Poo, PooId, UserId, Wee, WeeId,
+    },
 };
 
 use super::{consumptions, poos, wees};
@@ -57,6 +59,14 @@ pub enum DialogReference {
     UpdateConsumptionIngredients {
         consumption_id: ConsumptionId,
     },
+    UpdateConsumptionNestedIngredient {
+        parent_id: ConsumptionId,
+        consumable_id: ConsumableId,
+    },
+    UpdateConsumptionNestedIngredients {
+        parent_id: ConsumptionId,
+        consumable_id: ConsumableId,
+    },
     DeleteConsumption {
         consumption_id: ConsumptionId,
     },
@@ -106,6 +116,32 @@ impl FromStr for DialogReference {
                 let consumption_id = ConsumptionId::new(id.parse()?);
                 Self::UpdateConsumptionIngredients { consumption_id }
             }
+            [
+                "consumption_ingredients",
+                "nested_ingredient",
+                parent_id,
+                id,
+            ] => {
+                let parent_id = ConsumptionId::new(parent_id.parse()?);
+                let consumable_id = ConsumableId::new(id.parse()?);
+                Self::UpdateConsumptionNestedIngredient {
+                    parent_id,
+                    consumable_id,
+                }
+            }
+            [
+                "consumption_ingredients",
+                "nested_ingredients",
+                parent_id,
+                id,
+            ] => {
+                let parent_id = ConsumptionId::new(parent_id.parse()?);
+                let consumable_id = ConsumableId::new(id.parse()?);
+                Self::UpdateConsumptionNestedIngredients {
+                    parent_id,
+                    consumable_id,
+                }
+            }
             ["consumption", "delete", id] => {
                 let consumption_id = ConsumptionId::new(id.parse()?);
                 Self::DeleteConsumption { consumption_id }
@@ -136,6 +172,18 @@ impl ToString for DialogReference {
             DialogReference::UpdateConsumptionIngredients { consumption_id } => {
                 format!("consumption_ingredients-update-{consumption_id}")
             }
+            DialogReference::UpdateConsumptionNestedIngredient {
+                parent_id,
+                consumable_id,
+            } => {
+                format!("consumption_ingredients-nested_ingredient-{parent_id}-{consumable_id}")
+            }
+            DialogReference::UpdateConsumptionNestedIngredients {
+                parent_id,
+                consumable_id,
+            } => {
+                format!("consumption_ingredients-nested_ingredients-{parent_id}-{consumable_id}")
+            }
             DialogReference::DeleteConsumption { consumption_id } => {
                 format!("consumption-delete-{consumption_id}")
             }
@@ -152,6 +200,8 @@ pub fn TimelineDialog(
     replace_dialog: Callback<DialogReference>,
     show_consumption_edit: Callback<Consumption>,
     show_consumption_ingredients: Callback<Consumption>,
+    show_consumption_nested_ingredient: Callback<(Consumption, Consumable)>,
+    show_consumption_nested_ingredients: Callback<(Consumption, Consumable)>,
 ) -> Element {
     match dialog() {
         ActiveDialog::Wee(wee_dialog) => {
@@ -194,11 +244,13 @@ pub fn TimelineDialog(
                     dialog: consumption_dialog,
                     show_edit: show_consumption_edit,
                     show_ingredients: show_consumption_ingredients,
+                    show_nested_ingredient: show_consumption_nested_ingredient,
+                    show_nested_ingredients: show_consumption_nested_ingredients,
                     on_change: move |consumption: Consumption| {
                         replace_dialog(DialogReference::UpdateConsumption{ consumption_id: consumption.id });
                         on_change(());
                     },
-                    on_change_ingredients: move |_consumption: Consumption| {
+                    on_change_ingredients: move |_consumption| {
                         on_change(());
                     },
                     on_delete: move |_consumption| {

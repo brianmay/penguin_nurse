@@ -623,6 +623,7 @@ pub fn InputConsumable(
     label: &'static str,
     value: Signal<Option<Consumable>>,
     disabled: Memo<bool>,
+    on_create: Callback<Consumable>,
     on_change: Callback<Option<Consumable>>,
 ) -> Element {
     let mut query = use_signal(|| "".to_string());
@@ -647,7 +648,7 @@ pub fn InputConsumable(
                     on_cancel: move || create_form.set(false),
                     on_save: move |consumable: Consumable| {
                         value.set(Some(consumable.clone()));
-                        on_change(Some(consumable));
+                        on_create(consumable);
                         create_form.set(false);
                     },
                 }

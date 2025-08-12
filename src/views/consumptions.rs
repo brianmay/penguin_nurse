@@ -4,10 +4,11 @@ use crate::{
     Route,
     components::{
         buttons::{ChangeButton, DeleteButton},
+        consumables,
         consumptions::{self, ActiveDialog, ConsumptionDialog, DialogReference, Operation},
     },
     functions::consumptions::{get_child_consumables, get_consumption_by_id},
-    models::{Consumption, ConsumptionId},
+    models::{Consumable, Consumption, ConsumptionId},
 };
 
 #[component]
@@ -48,7 +49,7 @@ pub fn ConsumptionDetail(
                         maybe_consumption.restart();
                         maybe_items.restart();
                     },
-                    on_change_ingredients: move |_consumption: Consumption| {
+                    on_change_ingredients: move |_consumption| {
                         maybe_consumption.restart();
                         maybe_items.restart();
                     },
@@ -75,6 +76,20 @@ pub fn ConsumptionDetail(
                             .push(Route::ConsumptionDetail {
                                 consumption_id: consumption.id,
                                 dialog: consumptions::DialogReference::Ingredients
+                            });
+                    },
+                    show_nested_ingredient: move |(_consumption, consumable): (Consumption, Consumable)| {
+                        navigator
+                            .push(Route::ConsumableDetail {
+                                consumable_id: consumable.id,
+                                dialog: consumables::DetailsDialogReference::Update { }
+                            });
+                    },
+                    show_nested_ingredients: move |(_consumption, consumable): (Consumption, Consumable)| {
+                        navigator
+                            .push(Route::ConsumableDetail {
+                                consumable_id: consumable.id,
+                                dialog: consumables::DetailsDialogReference::Update { }
                             });
                     },
                 }

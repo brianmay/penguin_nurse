@@ -16,11 +16,12 @@ use crate::{
     },
     dt::{display_date, get_date_for_dt, get_utc_times_for_date},
     functions::{
+        consumables::get_consumable_by_id,
         consumptions::{get_consumption_by_id, get_consumptions_for_time_range},
         poos::{get_poo_by_id, get_poos_for_time_range},
         wees::{get_wee_by_id, get_wees_for_time_range},
     },
-    models::{Consumption, Entry, EntryData, EntryId, Maybe, Timeline},
+    models::{Consumable, Consumption, Entry, EntryData, EntryId, Maybe, Timeline},
     use_user,
 };
 
@@ -316,6 +317,46 @@ pub fn TimelineList(
                 ActiveDialog::Consumption(consumptions::ActiveDialog::Ingredients(consumption))
                     .pipe(Ok)
             }
+            DialogReference::UpdateConsumptionNestedIngredient {
+                parent_id,
+                consumable_id,
+            } => {
+                let parent = get_consumption_by_id(parent_id)
+                    .await?
+                    .ok_or(ServerFnError::<NoCustomError>::ServerError(
+                        "Cannot find consumption".to_string(),
+                    ))?;
+                let consumable =
+                    get_consumable_by_id(consumable_id)
+                        .await?
+                        .ok_or(ServerFnError::<NoCustomError>::ServerError(
+                            "Cannot find consumption".to_string(),
+                        ))?;
+                ActiveDialog::Consumption(consumptions::ActiveDialog::NestedIngredient(
+                    parent, consumable,
+                ))
+                .pipe(Ok)
+            }
+            DialogReference::UpdateConsumptionNestedIngredients {
+                parent_id,
+                consumable_id,
+            } => {
+                let parent = get_consumption_by_id(parent_id)
+                    .await?
+                    .ok_or(ServerFnError::<NoCustomError>::ServerError(
+                        "Cannot find consumption".to_string(),
+                    ))?;
+                let consumable =
+                    get_consumable_by_id(consumable_id)
+                        .await?
+                        .ok_or(ServerFnError::<NoCustomError>::ServerError(
+                            "Cannot find consumption".to_string(),
+                        ))?;
+                ActiveDialog::Consumption(consumptions::ActiveDialog::NestedIngredients(
+                    parent, consumable,
+                ))
+                .pipe(Ok)
+            }
             DialogReference::DeleteConsumption { consumption_id } => {
                 let consumption =
                     get_consumption_by_id(consumption_id)
@@ -495,6 +536,20 @@ pub fn TimelineList(
                             .push(Route::TimelineList {
                                 date: date(),
                                 dialog: DialogReference::UpdateConsumptionIngredients { consumption_id: consumption.id }
+                            });
+                    },
+                    show_consumption_nested_ingredient: move |(consumption, consumable): (Consumption, Consumable)| {
+                        navigator
+                            .push(Route::TimelineList {
+                                date: date(),
+                                dialog: DialogReference::UpdateConsumptionNestedIngredient { parent_id: consumption.id, consumable_id: consumable.id }
+                            });
+                    },
+                    show_consumption_nested_ingredients: move |(consumption, consumable): (Consumption, Consumable)| {
+                        navigator
+                            .push(Route::TimelineList {
+                                date: date(),
+                                dialog: DialogReference::UpdateConsumptionNestedIngredients { parent_id: consumption.id, consumable_id: consumable.id }
                             });
                     },
                     on_close: move || {

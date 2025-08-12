@@ -150,6 +150,40 @@ pub fn ConsumableList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> El
                         ))?;
                 ActiveDialog::Ingredients(consumable).pipe(Ok)
             }
+            ListDialogReference::NestedIngredient {
+                parent_id,
+                consumable_id,
+            } => {
+                let parent = get_consumable_by_id(parent_id)
+                    .await?
+                    .ok_or(ServerFnError::<NoCustomError>::ServerError(
+                        "Cannot find consumable".to_string(),
+                    ))?;
+                let consumable =
+                    get_consumable_by_id(consumable_id)
+                        .await?
+                        .ok_or(ServerFnError::<NoCustomError>::ServerError(
+                            "Cannot find consumable".to_string(),
+                        ))?;
+                ActiveDialog::NestedIngredient(parent, consumable).pipe(Ok)
+            }
+            ListDialogReference::NestedIngredients {
+                parent_id,
+                consumable_id,
+            } => {
+                let parent = get_consumable_by_id(parent_id)
+                    .await?
+                    .ok_or(ServerFnError::<NoCustomError>::ServerError(
+                        "Cannot find consumable".to_string(),
+                    ))?;
+                let consumable =
+                    get_consumable_by_id(consumable_id)
+                        .await?
+                        .ok_or(ServerFnError::<NoCustomError>::ServerError(
+                            "Cannot find consumable".to_string(),
+                        ))?;
+                ActiveDialog::NestedIngredients(parent, consumable).pipe(Ok)
+            }
             ListDialogReference::Delete { consumable_id } => {
                 let consumable =
                     get_consumable_by_id(consumable_id)
@@ -280,11 +314,7 @@ pub fn ConsumableList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> El
             Some(Ok(dialog)) => rsx! {
                 ConsumableDialog {
                     dialog: dialog.clone(),
-                    on_change: move |consumable: Consumable| {
-                        navigator
-                            .replace(Route::ConsumableList {
-                                dialog: ListDialogReference::Update { consumable_id: consumable.id }
-                            });
+                    on_change: move |_consumable: Consumable| {
                         list.restart()
                     },
                     on_change_ingredients: move |_consumable: Consumable| {
@@ -301,6 +331,18 @@ pub fn ConsumableList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> El
                         navigator
                             .push(Route::ConsumableList {
                                 dialog: ListDialogReference::Ingredients{ consumable_id: consumable.id }
+                            });
+                    },
+                    show_nested_ingredient: move |(parent, consumable): (Consumable, Consumable)| {
+                        navigator
+                            .push(Route::ConsumableList{
+                                dialog: ListDialogReference::NestedIngredient { parent_id: parent.id, consumable_id: consumable.id}
+                            });
+                    },
+                    show_nested_ingredients: move |(parent, consumable): (Consumable, Consumable)| {
+                        navigator
+                            .push(Route::ConsumableList{
+                                dialog: ListDialogReference::NestedIngredients { parent_id: parent.id, consumable_id: consumable.id}
                             });
                     },
                     on_close: move |()| {
@@ -381,6 +423,20 @@ pub fn ConsumableDetail(
                             .push(Route::ConsumableDetail {
                                 consumable_id: consumable.id,
                                 dialog: DetailsDialogReference::Ingredients
+                            });
+                    },
+                    show_nested_ingredient: move |(_parent, consumable): (Consumable, Consumable)| {
+                        navigator
+                            .push(Route::ConsumableDetail {
+                                consumable_id: consumable.id,
+                                dialog: DetailsDialogReference::Update { }
+                            });
+                    },
+                    show_nested_ingredients: move |(_parent, consumable): (Consumable, Consumable)| {
+                        navigator
+                            .push(Route::ConsumableDetail {
+                                consumable_id: consumable.id,
+                                dialog: DetailsDialogReference::Update { }
                             });
                     },
                     on_close: move |()| {

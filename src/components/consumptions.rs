@@ -8,7 +8,9 @@ use thiserror::Error;
 use crate::{
     Route,
     components::{
-        consumables::DetailsDialogReference, events::event_date_time, times::time_delta_to_string,
+        consumables::{self, ChangeConsumable, ConsumableNested, DetailsDialogReference},
+        events::event_date_time,
+        times::time_delta_to_string,
     },
     forms::{
         Dialog, EditError, FieldValue, FormCancelButton, FormCloseButton, FormDeleteButton,
@@ -363,6 +365,8 @@ pub enum ActiveDialog {
     Change(Operation),
     Delete(Consumption),
     Ingredients(Consumption),
+    NestedIngredient(Consumption, Consumable),
+    NestedIngredients(Consumption, Consumable),
     Idle,
 }
 
@@ -417,6 +421,8 @@ pub fn ConsumptionDialog(
     on_delete: Callback<Consumption>,
     show_edit: Callback<Consumption>,
     show_ingredients: Callback<Consumption>,
+    show_nested_ingredient: Callback<(Consumption, Consumable)>,
+    show_nested_ingredients: Callback<(Consumption, Consumable)>,
     on_close: Callback<()>,
 ) -> Element {
     match dialog {
@@ -454,11 +460,60 @@ pub fn ConsumptionDialog(
                     ConsumableConsumption {
                         consumption,
                         on_close,
-                        on_edit: move |consumption| {
-                            show_edit(consumption)
-                        },
                         on_change: move |consumption: Consumption| {
-                            on_change_ingredients(consumption.clone());
+                            on_change_ingredients(consumption);
+                        },
+                        show_edit,
+                        show_ingredient: show_nested_ingredient,
+                        show_ingredients: show_nested_ingredients,
+                    }
+                }
+            }
+        }
+        ActiveDialog::NestedIngredient(parent, consumable) => {
+            let parent_clone_1 = parent.clone();
+            let parent_clone_2 = parent.clone();
+            rsx! {
+                Dialog {
+                    ChangeConsumable {
+                        op: consumables::Operation::Update {
+                            consumable: consumable.clone()
+                        },
+
+                        on_cancel: move |()| {
+                            show_ingredients(parent_clone_1.clone())
+                        },
+                        on_save: move |_consumable: Consumable| {
+                            on_change_ingredients(parent.clone());
+                            show_nested_ingredients((parent_clone_2.clone(), consumable.clone()));
+                        },
+                    }
+                }
+            }
+        }
+        ActiveDialog::NestedIngredients(parent, consumable) => {
+            let parent_clone_1 = parent.clone();
+            let parent_clone_2 = parent.clone();
+            let parent_clone_3 = parent.clone();
+            let parent_clone_4 = parent.clone();
+            rsx! {
+                Dialog {
+                    ConsumableNested {
+                        consumable,
+                        on_close: move |()| {
+                            show_ingredients(parent.clone())
+                        },
+                        on_change: move |_consumable: Consumable| {
+                            on_change_ingredients(parent_clone_1.clone());
+                        },
+                        show_edit: move |consumable: Consumable| {
+                            show_nested_ingredient((parent_clone_2.clone(), consumable));
+                        },
+                        show_ingredient: move |(_parent, consumable): (Consumable, Consumable)| {
+                            show_nested_ingredient((parent_clone_3.clone(), consumable));
+                        },
+                        show_ingredients: move |(_parent, consumable): (Consumable, Consumable)| {
+                            show_nested_ingredients((parent_clone_4.clone(), consumable.clone()));
                         },
                     }
                 }
@@ -544,25 +599,35 @@ enum State {
 
 #[component]
 pub fn ConsumableConsumption(
-    consumption: Consumption,
+    consumption: ReadOnlySignal<Consumption>,
     on_close: Callback<()>,
-    on_edit: Callback<Consumption>,
     on_change: Callback<Consumption>,
+    show_edit: Callback<Consumption>,
+    show_ingredient: Callback<(Consumption, Consumable)>,
+    show_ingredients: Callback<(Consumption, Consumable)>,
 ) -> Element {
     let mut selected_consumable = use_signal(|| None);
-
     let mut consumption_consumables =
-        use_resource(move || async move { get_child_consumables(consumption.id).await });
+        use_resource(move || async move { get_child_consumables(consumption().id).await });
+
+    use_effect(move || {
+        let _trigger = consumption();
+        selected_consumable.set(None);
+    });
+
+    let consumption = consumption();
 
     let consumption_clone = consumption.clone();
     let consumption_clone_3 = consumption.clone();
     let consumption_clone_4 = consumption.clone();
+    let consumption_clone_5 = consumption.clone();
+    let consumption_clone_6 = consumption.clone();
 
     let mut state = use_signal(|| State::Idle);
 
     let mut add_value = use_signal(|| None);
-    let add_consumable = use_callback(move |child: Consumable| {
-        let consumable = consumption_clone.clone();
+    let add_consumable = use_callback(move |(child, new): (Consumable, bool)| {
+        let consumption = consumption_clone.clone();
         if let Some(Ok(list)) = consumption_consumables.read().as_ref() {
             if let Some(existing) = list.iter().find(|cc| cc.consumable.id == child.id) {
                 selected_consumable.set(Some(existing.clone()));
@@ -574,7 +639,7 @@ pub fn ConsumableConsumption(
         spawn(async move {
             state.set(State::Saving);
             let updates = NewConsumptionConsumable {
-                id: ConsumptionConsumableId::new(consumable.id, child.id),
+                id: ConsumptionConsumableId::new(consumption.id, child.id),
                 quantity: Maybe::None,
                 liquid_mls: Maybe::None,
                 comments: Maybe::None,
@@ -587,6 +652,9 @@ pub fn ConsumableConsumption(
             let result = result.map(|_nested| ());
             state.set(State::Finished(result));
             on_change(consumption_clone.clone());
+            if new {
+                show_ingredient((consumption, child))
+            }
         });
     });
 
@@ -675,43 +743,63 @@ pub fn ConsumableConsumption(
                 rsx! {}
             }
         }
-        if let Some(sel) = selected_consumable() {
-            div { class: "card bg-gray-800 shadow-xl",
-                div { class: "card-body",
-                    h2 { class: "card-title",
-                        "Selected: "
-                        {sel.consumable.name.clone()}
-                    }
-                    ConsumableConsumptionForm {
-                        consumption: sel.nested.clone(),
-                        consumable: sel.consumable.clone(),
-                        on_cancel: move |_| {
-                            selected_consumable.set(None);
-                        },
-                        on_save: move |_consumption| {
-                            selected_consumable.set(None);
-                            consumption_consumables.restart();
-                            on_change(consumption.clone());
-                        },
-                    }
-                    FormDeleteButton {
-                        title: "Delete",
-                        on_delete: move |_| {
-                            selected_consumable.set(None);
-                            remove_consumable(sel.nested.clone());
-                        },
+        if let Some(sel) = selected_consumable() {{
+            let consumable_clone_1 = sel.consumable.clone();
+            let consumable_clone_2 = sel.consumable.clone();
+            rsx!{
+                div { class: "card bg-gray-800 shadow-xl",
+                    div { class: "card-body",
+                        h2 { class: "card-title",
+                            "Selected: "
+                            {sel.consumable.name.clone()}
+                        }
+                        ConsumableConsumptionForm {
+                            consumption: sel.nested.clone(),
+                            consumable: sel.consumable.clone(),
+                            on_cancel: move |_| {
+                                selected_consumable.set(None);
+                            },
+                            on_save: move |_consumption| {
+                                selected_consumable.set(None);
+                                consumption_consumables.restart();
+                                on_change(consumption.clone());
+                            },
+                        }
+                        FormEditButton {
+                            title: "Edit",
+                            on_edit: move || {
+                                show_ingredient((consumption_clone_5.clone(), consumable_clone_1.clone()));
+                            },
+                        }
+                        FormEditButton {
+                            title: "Ingredients",
+                            on_edit: move || {
+                                show_ingredients((consumption_clone_6.clone(), consumable_clone_2.clone()));
+                            },
+                        }
+                        FormDeleteButton {
+                            title: "Delete",
+                            on_delete: move |_| {
+                                selected_consumable.set(None);
+                                remove_consumable(sel.nested.clone());
+                            },
+                        }
                     }
                 }
             }
-        } else {
+        }} else {
             div { class: "p-4",
                 InputConsumable {
                     id: "consumable",
                     label: "Add Consumable",
                     value: add_value,
+                    on_create: move |value| {
+                        add_consumable((value, true));
+                        add_value.set(None);
+                    },
                     on_change: move |value| {
                         if let Some(value) = value {
-                            add_consumable(value);
+                            add_consumable((value, false));
                             add_value.set(None);
                         }
                     },
@@ -720,7 +808,7 @@ pub fn ConsumableConsumption(
                 FormEditButton {
                     title: "Edit",
                     on_edit: move || {
-                        on_edit(consumption.clone());
+                        show_edit(consumption.clone());
                     },
                 }
                 FormCloseButton {

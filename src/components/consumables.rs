@@ -372,6 +372,8 @@ pub enum ActiveDialog {
     Change(Operation),
     Delete(Consumable),
     Ingredients(Consumable),
+    NestedIngredient(Consumable, Consumable),
+    NestedIngredients(Consumable, Consumable),
     Idle,
 }
 
@@ -391,6 +393,14 @@ pub enum ListDialogReference {
         consumable_id: ConsumableId,
     },
     Ingredients {
+        consumable_id: ConsumableId,
+    },
+    NestedIngredient {
+        parent_id: ConsumableId,
+        consumable_id: ConsumableId,
+    },
+    NestedIngredients {
+        parent_id: ConsumableId,
         consumable_id: ConsumableId,
     },
     Delete {
@@ -415,6 +425,22 @@ impl FromStr for ListDialogReference {
                 let consumable_id = ConsumableId::new(id.parse()?);
                 Self::Ingredients { consumable_id }
             }
+            ["ingredients_update", parent_id, id] => {
+                let parent_id = ConsumableId::new(parent_id.parse()?);
+                let consumable_id = ConsumableId::new(id.parse()?);
+                Self::NestedIngredient {
+                    parent_id,
+                    consumable_id,
+                }
+            }
+            ["ingredients_ingredients", parent_id, id] => {
+                let parent_id = ConsumableId::new(parent_id.parse()?);
+                let consumable_id = ConsumableId::new(id.parse()?);
+                Self::NestedIngredients {
+                    parent_id,
+                    consumable_id,
+                }
+            }
             [""] | [] => Self::Idle,
             _ => return Err(ListDialogReferenceError::ReferenceError),
         }
@@ -430,6 +456,18 @@ impl ToString for ListDialogReference {
             ListDialogReference::Update { consumable_id } => format!("update-{consumable_id}"),
             ListDialogReference::Ingredients { consumable_id } => {
                 format!("ingredients-{consumable_id}")
+            }
+            ListDialogReference::NestedIngredient {
+                parent_id,
+                consumable_id,
+            } => {
+                format!("ingredients_update-{parent_id}-{consumable_id}")
+            }
+            ListDialogReference::NestedIngredients {
+                parent_id,
+                consumable_id,
+            } => {
+                format!("ingredients_ingredients-{parent_id}-{consumable_id}")
             }
             ListDialogReference::Delete { consumable_id } => format!("delete-{consumable_id}"),
             ListDialogReference::Idle => String::new(),
@@ -487,6 +525,8 @@ pub fn ConsumableDialog(
     on_delete: Callback<Consumable>,
     show_edit: Callback<Consumable>,
     show_ingredients: Callback<Consumable>,
+    show_nested_ingredient: Callback<(Consumable, Consumable)>,
+    show_nested_ingredients: Callback<(Consumable, Consumable)>,
     on_close: Callback<()>,
 ) -> Element {
     match dialog() {
@@ -522,11 +562,61 @@ pub fn ConsumableDialog(
         ActiveDialog::Ingredients(consumable) => {
             rsx! {
                 Dialog {
+                    // Closures must be used here or it will sometimes panic.
+                    // See https://github.com/DioxusLabs/dioxus/discussions/4534
                     ConsumableNested {
                         consumable,
                         on_close,
-                        on_edit: show_edit,
-                        on_change: on_change_ingredients,
+                        on_change: move |param| { on_change_ingredients(param); },
+                        show_edit,
+                        show_ingredient: move |param| { show_nested_ingredient(param); },
+                        show_ingredients: move |param| { show_nested_ingredients(param); },
+                    }
+                }
+            }
+        }
+        ActiveDialog::NestedIngredient(parent, consumable) => {
+            let parent_clone_1 = parent.clone();
+            let parent_clone_2 = parent.clone();
+            rsx! {
+                Dialog {
+                    ChangeConsumable {
+                        op: Operation::Update { consumable: consumable.clone() },
+                        on_cancel: move |()| {
+                            show_ingredients(parent_clone_1.clone())
+                        },
+                        on_save: move |consumable: Consumable| {
+                            on_change(consumable.clone());
+                            show_nested_ingredients((parent_clone_2.clone(), consumable.clone()));
+                        },
+                    }
+                }
+            }
+        }
+        ActiveDialog::NestedIngredients(parent, consumable) => {
+            let parent_clone_1 = parent.clone();
+            let parent_clone_2 = parent.clone();
+            let parent_clone_3 = parent.clone();
+            let parent_clone_4 = parent.clone();
+            rsx! {
+                Dialog {
+                    ConsumableNested {
+                        consumable,
+                        on_close: move |()| {
+                            show_ingredients(parent.clone())
+                        },
+                        on_change: move |_consumable: Consumable| {
+                            on_change_ingredients(parent_clone_1.clone());
+                        },
+                        show_edit: move |consumable: Consumable| {
+                            show_nested_ingredient((parent_clone_2.clone(), consumable));
+                        },
+                        show_ingredient: move |(_parent, consumable): (Consumable, Consumable)| {
+                            show_nested_ingredient((parent_clone_3.clone(), consumable));
+                        },
+                        show_ingredients: move |(_parent, consumable): (Consumable, Consumable)| {
+                            show_nested_ingredients((parent_clone_4.clone(), consumable.clone()));
+                        },
                     }
                 }
             }
@@ -633,25 +723,36 @@ enum State {
 
 #[component]
 pub fn ConsumableNested(
-    consumable: Consumable,
+    consumable: ReadOnlySignal<Consumable>,
     on_close: Callback<()>,
-    on_edit: Callback<Consumable>,
     on_change: Callback<Consumable>,
+    show_edit: Callback<Consumable>,
+    show_ingredient: Callback<(Consumable, Consumable)>,
+    show_ingredients: Callback<(Consumable, Consumable)>,
 ) -> Element {
     let mut selected_consumable = use_signal(|| None);
 
     let mut nested_consumables =
-        use_resource(move || async move { get_child_consumables(consumable.id).await });
+        use_resource(move || async move { get_child_consumables(consumable().id).await });
+
+    use_effect(move || {
+        let _trigger = consumable();
+        selected_consumable.set(None);
+    });
+
+    let consumable = consumable();
 
     let consumable_clone = consumable.clone();
     let consumable_clone_2 = consumable.clone();
     let consumable_clone_3 = consumable.clone();
     let consumable_clone_4 = consumable.clone();
     let consumable_clone_5 = consumable.clone();
+    let consumable_clone_6 = consumable.clone();
+    let consumable_clone_7 = consumable.clone();
     let mut state = use_signal(|| State::Idle);
 
     let mut add_value = use_signal(|| None);
-    let add_consumable = use_callback(move |child: Consumable| {
+    let add_consumable = use_callback(move |(child, new): (Consumable, bool)| {
         let consumable = consumable_clone.clone();
         if let Some(Ok(nested_consumables)) = nested_consumables() {
             if let Some(existing) = nested_consumables
@@ -680,6 +781,9 @@ pub fn ConsumableNested(
             let result = result.map(|_nested| ());
             state.set(State::Finished(result));
             on_change(consumable_clone.clone());
+            if new {
+                show_ingredient((consumable, child))
+            }
         });
     });
 
@@ -767,43 +871,63 @@ pub fn ConsumableNested(
                 rsx! {}
             }
         }
-        if let Some(sel) = selected_consumable() {
-            div { class: "card bg-gray-800 shadow-xl",
-                div { class: "card-body",
-                    h2 {
-                        "Selected: "
-                        {sel.consumable.name.clone()}
-                    }
-                    ConsumableNestedForm {
-                        nested: sel.nested.clone(),
-                        consumable: sel.consumable.clone(),
-                        on_cancel: move |_| {
-                            selected_consumable.set(None);
-                        },
-                        on_save: move |_nested| {
-                            selected_consumable.set(None);
-                            nested_consumables.restart();
-                            on_change(consumable_clone_3.clone());
-                        },
-                    }
-                    FormDeleteButton {
-                        title: "Delete",
-                        on_delete: move |_| {
-                            selected_consumable.set(None);
-                            remove_consumable(sel.nested.clone());
-                        },
+        if let Some(sel) = selected_consumable() {{
+            let consumable_clone_1 = sel.consumable.clone();
+            let consumable_clone_2 = sel.consumable.clone();
+            rsx!{
+                div { class: "card bg-gray-800 shadow-xl",
+                    div { class: "card-body",
+                        h2 {
+                            "Selected: "
+                            {sel.consumable.name.clone()}
+                        }
+                        ConsumableNestedForm {
+                            nested: sel.nested.clone(),
+                            consumable: sel.consumable.clone(),
+                            on_cancel: move |_| {
+                                selected_consumable.set(None);
+                            },
+                            on_save: move |_nested| {
+                                selected_consumable.set(None);
+                                nested_consumables.restart();
+                                on_change(consumable_clone_3.clone());
+                            },
+                        }
+                        FormEditButton {
+                            title: "Edit",
+                            on_edit: move || {
+                                show_ingredient((consumable_clone_6.clone(), consumable_clone_1.clone()));
+                            },
+                        }
+                        FormEditButton {
+                            title: "Ingredients",
+                            on_edit: move || {
+                                show_ingredients((consumable_clone_7.clone(), consumable_clone_2.clone()));
+                            },
+                        }
+                        FormDeleteButton {
+                            title: "Delete",
+                            on_delete: move |_| {
+                                selected_consumable.set(None);
+                                remove_consumable(sel.nested.clone());
+                            },
+                        }
                     }
                 }
             }
-        } else {
+        }} else {
             div { class: "p-4",
                 InputConsumable {
                     id: "consumable",
                     label: "Add Consumable",
                     value: add_value,
+                    on_create: move |value| {
+                        add_consumable((value, true));
+                        add_value.set(None);
+                    },
                     on_change: move |value| {
                         if let Some(value) = value {
-                            add_consumable(value);
+                            add_consumable((value, false));
                             add_value.set(None);
                         }
                     },
@@ -811,7 +935,7 @@ pub fn ConsumableNested(
                 }
                 FormEditButton {
                     title: "Edit Consumable",
-                    on_edit: move |_| on_edit(consumable_clone_2.clone()),
+                    on_edit: move |_| show_edit(consumable_clone_2.clone()),
                 }
                 FormCloseButton { on_close, title: "Close" }
             }
