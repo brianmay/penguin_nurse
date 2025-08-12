@@ -156,7 +156,7 @@ pub fn ChangeConsumption(
             match &op {
                 Operation::Create { .. } => "Create Consumption".to_string(),
                 Operation::Update { consumption } => {
-                    format!("Edit consumption {}", consumption.time.with_timezone(&Local))
+                    format!("Edit Consumption {}", consumption.name())
                 }
             }
         }
@@ -615,8 +615,8 @@ pub fn ConsumableConsumption(
 
     rsx! {
         h3 { class: "text-lg font-bold",
-            "Ingredients for "
-            {consumption.time.with_timezone(&Local).to_string()}
+            "Consumption Ingredients "
+            {consumption.name()}
         }
 
         match consumption_consumables() {

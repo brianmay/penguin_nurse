@@ -183,7 +183,7 @@ pub fn ChangeConsumable(
         h3 { class: "text-lg font-bold",
             match &op {
                 Operation::Create => "Create Consumable".to_string(),
-                Operation::Update { consumable } => format!("Edit {}", consumable.name),
+                Operation::Update { consumable } => format!("Edit Consumable {}", consumable.name),
             }
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
@@ -677,7 +677,7 @@ pub fn ConsumableNested(
 
     rsx! {
         h3 { class: "text-lg font-bold",
-            "Ingredients for "
+            "Consumable Ingredients "
             {consumable.name.clone()}
         }
 

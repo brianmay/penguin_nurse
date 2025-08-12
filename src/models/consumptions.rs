@@ -1,3 +1,4 @@
+use chrono::Local;
 use std::{fmt::Display, str::FromStr};
 use tap::Pipe;
 
@@ -108,6 +109,11 @@ pub struct Consumption {
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
+impl Consumption {
+    pub fn name(&self) -> String {
+        self.time.with_timezone(&Local).time().to_string()
+    }
+}
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ConsumptionWithItems {
     pub consumption: Consumption,
