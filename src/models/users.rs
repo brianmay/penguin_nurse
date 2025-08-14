@@ -54,7 +54,7 @@ pub struct NewUser {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct UpdateUser {
+pub struct ChangeUser {
     pub username: Option<String>,
     pub password: Option<String>,
     pub full_name: Option<String>,

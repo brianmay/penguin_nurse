@@ -130,7 +130,7 @@ pub async fn create_wee(
 #[derive(AsChangeset, Debug, Clone)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::wees)]
-pub struct UpdateWee<'a> {
+pub struct ChangeWee<'a> {
     time: Option<chrono::DateTime<chrono::Utc>>,
     utc_offset: Option<i32>,
     duration: Option<chrono::Duration>,
@@ -142,8 +142,8 @@ pub struct UpdateWee<'a> {
     comments: Option<Option<&'a str>>,
 }
 
-impl<'a> UpdateWee<'a> {
-    pub fn from_front_end(wee: &'a crate::models::UpdateWee) -> Self {
+impl<'a> ChangeWee<'a> {
+    pub fn from_front_end(wee: &'a crate::models::ChangeWee) -> Self {
         Self {
             time: wee.time.map(|time| time.with_timezone(&Utc)),
             utc_offset: wee.time.map(|time| time.offset().local_minus_utc()),
@@ -161,7 +161,7 @@ impl<'a> UpdateWee<'a> {
 pub async fn update_wee(
     conn: &mut DatabaseConnection,
     id: i64,
-    update: &UpdateWee<'_>,
+    update: &ChangeWee<'_>,
 ) -> Result<Wee, diesel::result::Error> {
     diesel::update(schema::wees::table.filter(schema::wees::id.eq(id)))
         .set(update)

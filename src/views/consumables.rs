@@ -70,7 +70,7 @@ fn EntryRow(
                 td { colspan: "6", class: "block sm:table-cell",
                     ChangeButton { on_click: move |_| {
                             navigator.push(Route::ConsumableList{
-                                dialog: ListDialogReference::Ingredients{consumable_id: id}
+                                dialog: ListDialogReference::UpdateIngredients{consumable_id: id}
                             });
                         },
                         "Ingredients"
@@ -78,7 +78,7 @@ fn EntryRow(
                     ChangeButton {
                         on_click: move |_| {
                             navigator.push(Route::ConsumableList{
-                                dialog: ListDialogReference::Update{consumable_id: id}
+                                dialog: ListDialogReference::UpdateBasic{consumable_id: id}
                             });
                         },
                         "Edit"
@@ -119,7 +119,7 @@ pub fn ConsumableList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> El
         };
         match dialog {
             ListDialogReference::Create => ActiveDialog::Change(Operation::Create).pipe(Ok),
-            ListDialogReference::Update { consumable_id } => {
+            ListDialogReference::UpdateBasic { consumable_id } => {
                 let consumable =
                     get_consumable_by_id(consumable_id)
                         .await?
@@ -128,7 +128,7 @@ pub fn ConsumableList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> El
                         ))?;
                 ActiveDialog::Change(Operation::Update { consumable }).pipe(Ok)
             }
-            ListDialogReference::Ingredients { consumable_id } => {
+            ListDialogReference::UpdateIngredients { consumable_id } => {
                 let consumable =
                     get_consumable_by_id(consumable_id)
                         .await?
@@ -137,7 +137,7 @@ pub fn ConsumableList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> El
                         ))?;
                 ActiveDialog::Ingredients(consumable).pipe(Ok)
             }
-            ListDialogReference::NestedIngredient {
+            ListDialogReference::IngredientUpdateBasic {
                 parent_id,
                 consumable_id,
             } => {
@@ -154,7 +154,7 @@ pub fn ConsumableList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> El
                         ))?;
                 ActiveDialog::NestedIngredient(parent, consumable).pipe(Ok)
             }
-            ListDialogReference::NestedIngredients {
+            ListDialogReference::IngredientUpdateIngredients {
                 parent_id,
                 consumable_id,
             } => {
@@ -308,28 +308,28 @@ pub fn ConsumableList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> El
                         list.restart()
                     },
                     on_delete: move |_consumable| list.restart(),
-                    show_edit: move |consumable: Consumable| {
+                    show_update_basic: move |consumable: Consumable| {
                         navigator
                             .push(Route::ConsumableList {
-                                dialog: ListDialogReference::Update { consumable_id: consumable.id }
+                                dialog: ListDialogReference::UpdateBasic { consumable_id: consumable.id }
                             });
                     },
-                    show_ingredients: move |consumable: Consumable| {
+                    show_update_ingredients: move |consumable: Consumable| {
                         navigator
                             .push(Route::ConsumableList {
-                                dialog: ListDialogReference::Ingredients{ consumable_id: consumable.id }
+                                dialog: ListDialogReference::UpdateIngredients{ consumable_id: consumable.id }
                             });
                     },
-                    show_nested_ingredient: move |(parent, consumable): (Consumable, Consumable)| {
+                    show_ingredient_update_basic: move |(parent, consumable): (Consumable, Consumable)| {
                         navigator
                             .push(Route::ConsumableList{
-                                dialog: ListDialogReference::NestedIngredient { parent_id: parent.id, consumable_id: consumable.id}
+                                dialog: ListDialogReference::IngredientUpdateBasic { parent_id: parent.id, consumable_id: consumable.id}
                             });
                     },
-                    show_nested_ingredients: move |(parent, consumable): (Consumable, Consumable)| {
+                    show_ingredient_update_ingredients: move |(parent, consumable): (Consumable, Consumable)| {
                         navigator
                             .push(Route::ConsumableList{
-                                dialog: ListDialogReference::NestedIngredients { parent_id: parent.id, consumable_id: consumable.id}
+                                dialog: ListDialogReference::IngredientUpdateIngredients { parent_id: parent.id, consumable_id: consumable.id}
                             });
                     },
                     on_close: move |()| {

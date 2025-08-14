@@ -59,7 +59,7 @@ pub struct NewWee {
 
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct UpdateWee {
+pub struct ChangeWee {
     pub user_id: Option<UserId>,
     pub time: Option<chrono::DateTime<chrono::FixedOffset>>,
     pub duration: Option<chrono::Duration>,

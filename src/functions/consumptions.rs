@@ -130,12 +130,12 @@ pub async fn create_consumption(
 #[server]
 pub async fn update_consumption(
     id: ConsumptionId,
-    consumption: models::UpdateConsumption,
+    consumption: models::ChangeConsumption,
 ) -> Result<models::Consumption, ServerFnError> {
     let _logged_in_user_id = get_user_id().await?;
 
     let mut conn = get_database_connection().await?;
-    let updates = crate::server::database::models::consumptions::UpdateConsumption::from_front_end(
+    let updates = crate::server::database::models::consumptions::ChangeConsumption::from_front_end(
         &consumption,
     );
 
@@ -200,13 +200,13 @@ pub async fn delete_consumption_consumable(
 #[server]
 pub async fn update_consumption_consumable(
     id: models::ConsumptionConsumableId,
-    consumable: models::UpdateConsumptionConsumable,
+    consumable: models::ChangeConsumptionConsumable,
 ) -> Result<models::ConsumptionConsumable, ServerFnError> {
     let _logged_in_user_id = get_user_id().await?;
 
     let mut conn = get_database_connection().await?;
     let updates =
-        crate::server::database::models::consumption_consumables::UpdateConsumptionConsumable::from_front_end(
+        crate::server::database::models::consumption_consumables::ChangeConsumptionConsumable::from_front_end(
             &consumable,
         );
     let (parent_id, consumable_id) = id.as_inner();

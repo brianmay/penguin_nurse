@@ -125,14 +125,14 @@ pub async fn create_nested_consumable(
 #[derive(AsChangeset, Debug, Clone)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::nested_consumables)]
-pub struct UpdateNestedConsumable<'a> {
+pub struct ChangeNestedConsumable<'a> {
     pub quantity: Option<Option<f64>>,
     pub liquid_mls: Option<Option<f64>>,
     pub comments: Option<Option<&'a str>>,
 }
 
-impl<'a> UpdateNestedConsumable<'a> {
-    pub fn from_front_end(nested_consumable: &'a crate::models::UpdateNestedConsumable) -> Self {
+impl<'a> ChangeNestedConsumable<'a> {
+    pub fn from_front_end(nested_consumable: &'a crate::models::ChangeNestedConsumable) -> Self {
         Self {
             quantity: nested_consumable.quantity.map(|x| x.into()),
             liquid_mls: nested_consumable.liquid_mls.map(|x| x.into()),
@@ -145,7 +145,7 @@ pub async fn update_nested_consumable(
     conn: &mut DatabaseConnection,
     parent_id: i64,
     consumable_id: i64,
-    update: &UpdateNestedConsumable<'_>,
+    update: &ChangeNestedConsumable<'_>,
 ) -> Result<NestedConsumable, diesel::result::Error> {
     diesel::update(
         schema::nested_consumables::table

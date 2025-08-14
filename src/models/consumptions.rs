@@ -138,7 +138,7 @@ pub struct NewConsumption {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct UpdateConsumption {
+pub struct ChangeConsumption {
     pub user_id: Option<UserId>,
     pub time: Option<chrono::DateTime<chrono::FixedOffset>>,
     pub duration: Option<chrono::TimeDelta>,

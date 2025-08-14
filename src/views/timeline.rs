@@ -176,7 +176,7 @@ fn EntryRow(
                                     navigator
                                     .push(Route::TimelineList {
                                         date: date(),
-                                        dialog: DialogReference::UpdateConsumptionIngredients{ consumption_id: consumption.id }
+                                        dialog: DialogReference::UpdateIngredients{ consumption_id: consumption.id }
                                     });
                                 },
                                 "Ingredients"
@@ -186,7 +186,7 @@ fn EntryRow(
                                     navigator
                                     .push(Route::TimelineList {
                                         date: date(),
-                                        dialog: DialogReference::UpdateConsumption{ consumption_id: consumption.id }
+                                        dialog: DialogReference::UpdateBasic{ consumption_id: consumption.id }
                                     });
                                 },
                                 "Edit"
@@ -269,33 +269,37 @@ pub fn TimelineList(
                 )?;
                 ActiveDialog::Poo(poos::ActiveDialog::Delete(poo)).pipe(Ok)
             }
-            DialogReference::CreateConsumption { user_id } => ActiveDialog::Consumption(
-                consumptions::ActiveDialog::Change(consumptions::Operation::Create { user_id }),
-            )
-            .pipe(Ok),
-            DialogReference::UpdateConsumption { consumption_id } => {
+            DialogReference::CreateConsumption { user_id } => {
+                ActiveDialog::Consumption(consumptions::ActiveDialog::UpdateBasic(
+                    consumptions::Operation::Create { user_id },
+                ))
+                .pipe(Ok)
+            }
+            DialogReference::UpdateBasic { consumption_id } => {
                 let consumption =
                     get_consumption_by_id(consumption_id)
                         .await?
                         .ok_or(ServerFnError::<NoCustomError>::ServerError(
                             "Cannot find consumption".to_string(),
                         ))?;
-                ActiveDialog::Consumption(consumptions::ActiveDialog::Change(
+                ActiveDialog::Consumption(consumptions::ActiveDialog::UpdateBasic(
                     consumptions::Operation::Update { consumption },
                 ))
                 .pipe(Ok)
             }
-            DialogReference::UpdateConsumptionIngredients { consumption_id } => {
+            DialogReference::UpdateIngredients { consumption_id } => {
                 let consumption =
                     get_consumption_by_id(consumption_id)
                         .await?
                         .ok_or(ServerFnError::<NoCustomError>::ServerError(
                             "Cannot find consumption".to_string(),
                         ))?;
-                ActiveDialog::Consumption(consumptions::ActiveDialog::Ingredients(consumption))
-                    .pipe(Ok)
+                ActiveDialog::Consumption(consumptions::ActiveDialog::UpdateIngredients(
+                    consumption,
+                ))
+                .pipe(Ok)
             }
-            DialogReference::UpdateConsumptionNestedIngredient {
+            DialogReference::IngredientUpdateBasic {
                 parent_id,
                 consumable_id,
             } => {
@@ -315,7 +319,7 @@ pub fn TimelineList(
                 ))
                 .pipe(Ok)
             }
-            DialogReference::UpdateConsumptionNestedIngredients {
+            DialogReference::IngredientUpdateIngredients {
                 parent_id,
                 consumable_id,
             } => {
@@ -502,32 +506,32 @@ pub fn TimelineList(
                                 dialog
                             });
                     },
-                    show_consumption_edit: move |consumption: Consumption| {
+                    show_consumption_update_basic: move |consumption: Consumption| {
                         navigator
                             .push(Route::TimelineList {
                                 date: date(),
-                                dialog: DialogReference::UpdateConsumption { consumption_id: consumption.id }
+                                dialog: DialogReference::UpdateBasic { consumption_id: consumption.id }
                             });
                     },
-                    show_consumption_ingredients: move |consumption: Consumption| {
+                    show_consumption_update_ingredients: move |consumption: Consumption| {
                         navigator
                             .push(Route::TimelineList {
                                 date: date(),
-                                dialog: DialogReference::UpdateConsumptionIngredients { consumption_id: consumption.id }
+                                dialog: DialogReference::UpdateIngredients { consumption_id: consumption.id }
                             });
                     },
-                    show_consumption_nested_ingredient: move |(consumption, consumable): (Consumption, Consumable)| {
+                    show_consumption_ingredient_update_basic: move |(consumption, consumable): (Consumption, Consumable)| {
                         navigator
                             .push(Route::TimelineList {
                                 date: date(),
-                                dialog: DialogReference::UpdateConsumptionNestedIngredient { parent_id: consumption.id, consumable_id: consumable.id }
+                                dialog: DialogReference::IngredientUpdateBasic { parent_id: consumption.id, consumable_id: consumable.id }
                             });
                     },
-                    show_consumption_nested_ingredients: move |(consumption, consumable): (Consumption, Consumable)| {
+                    show_consumption_ingredient_update_ingredients: move |(consumption, consumable): (Consumption, Consumable)| {
                         navigator
                             .push(Route::TimelineList {
                                 date: date(),
-                                dialog: DialogReference::UpdateConsumptionNestedIngredients { parent_id: consumption.id, consumable_id: consumable.id }
+                                dialog: DialogReference::IngredientUpdateIngredients { parent_id: consumption.id, consumable_id: consumable.id }
                             });
                     },
                     on_close: move || {

@@ -8,7 +8,7 @@ use tap::Pipe;
 use crate::{
     components::{
         buttons::{ActionButton, CreateButton},
-        consumables::{self, ChangeConsumable},
+        consumables::{self, ConsumableUpdate},
     },
     forms::{Barcode, validate_colour_hue, validate_colour_saturation, validate_colour_value},
     functions::consumables::search_consumables,
@@ -643,7 +643,7 @@ pub fn InputConsumable(
 
         div {
             if create_form() {
-                ChangeConsumable {
+                ConsumableUpdate {
                     op: consumables::Operation::Create {},
                     on_cancel: move || create_form.set(false),
                     on_save: move |consumable: Consumable| {

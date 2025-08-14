@@ -64,7 +64,7 @@ pub struct NewNestedConsumable {
 
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct UpdateNestedConsumable {
+pub struct ChangeNestedConsumable {
     pub quantity: Option<MaybeF64>,
     pub liquid_mls: Option<MaybeF64>,
     pub comments: Option<MaybeString>,

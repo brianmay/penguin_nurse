@@ -179,7 +179,7 @@ pub async fn create_consumption(
 #[derive(AsChangeset, Debug, Clone)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::consumptions)]
-pub struct UpdateConsumption<'a> {
+pub struct ChangeConsumption<'a> {
     pub time: Option<DateTime<Utc>>,
     pub utc_offset: Option<i32>,
     pub duration: Option<TimeDelta>,
@@ -188,8 +188,8 @@ pub struct UpdateConsumption<'a> {
     pub comments: Option<Option<&'a str>>,
 }
 
-impl<'a> UpdateConsumption<'a> {
-    pub fn from_front_end(consumption: &'a crate::models::UpdateConsumption) -> Self {
+impl<'a> ChangeConsumption<'a> {
+    pub fn from_front_end(consumption: &'a crate::models::ChangeConsumption) -> Self {
         Self {
             time: consumption.time.map(|time| time.with_timezone(&Utc)),
             utc_offset: consumption.time.map(|time| time.offset().local_minus_utc()),
@@ -204,7 +204,7 @@ impl<'a> UpdateConsumption<'a> {
 pub async fn update_consumption(
     conn: &mut DatabaseConnection,
     id: i64,
-    update: &UpdateConsumption<'_>,
+    update: &ChangeConsumption<'_>,
 ) -> Result<Consumption, diesel::result::Error> {
     diesel::update(schema::consumptions::table.filter(schema::consumptions::id.eq(id)))
         .set(update)

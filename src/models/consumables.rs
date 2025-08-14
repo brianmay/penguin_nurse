@@ -137,7 +137,7 @@ pub struct NewConsumable {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct UpdateConsumable {
+pub struct ChangeConsumable {
     pub name: Option<String>,
     pub brand: Option<MaybeString>,
     pub barcode: Option<MaybeString>,

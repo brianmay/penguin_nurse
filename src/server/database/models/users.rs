@@ -115,7 +115,7 @@ pub struct UpdateUser<'a> {
 
 impl<'a> UpdateUser<'a> {
     pub fn from_front_end(
-        user: &'a crate::models::UpdateUser,
+        user: &'a crate::models::ChangeUser,
         hashed_password: Option<&'a str>,
     ) -> Self {
         Self {

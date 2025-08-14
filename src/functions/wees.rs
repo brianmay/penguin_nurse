@@ -67,7 +67,7 @@ pub async fn create_wee(wee: models::NewWee) -> Result<models::Wee, ServerFnErro
 }
 
 #[server]
-pub async fn update_wee(id: WeeId, wee: models::UpdateWee) -> Result<models::Wee, ServerFnError> {
+pub async fn update_wee(id: WeeId, wee: models::ChangeWee) -> Result<models::Wee, ServerFnError> {
     let logged_in_user_id = get_user_id().await?;
 
     if let Some(req_user_id) = wee.user_id {
@@ -79,7 +79,7 @@ pub async fn update_wee(id: WeeId, wee: models::UpdateWee) -> Result<models::Wee
     }
 
     let mut conn = get_database_connection().await?;
-    let updates = crate::server::database::models::wees::UpdateWee::from_front_end(&wee);
+    let updates = crate::server::database::models::wees::ChangeWee::from_front_end(&wee);
 
     crate::server::database::models::wees::update_wee(&mut conn, id.as_inner(), &updates)
         .await

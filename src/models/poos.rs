@@ -185,7 +185,7 @@ pub struct NewPoo {
 
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct UpdatePoo {
+pub struct ChangePoo {
     pub user_id: Option<UserId>,
     pub time: Option<chrono::DateTime<chrono::FixedOffset>>,
     pub duration: Option<chrono::Duration>,

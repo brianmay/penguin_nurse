@@ -19,9 +19,9 @@ use crate::{
         get_child_consumables, update_consumable, update_nested_consumable,
     },
     models::{
-        Consumable, ConsumableId, ConsumableItem, ConsumableUnit, Maybe, MaybeDateTime, MaybeF64,
-        MaybeString, NestedConsumable, NestedConsumableId, NewConsumable, NewNestedConsumable,
-        UpdateConsumable, UpdateNestedConsumable,
+        ChangeConsumable, ChangeNestedConsumable, Consumable, ConsumableId, ConsumableItem,
+        ConsumableUnit, Maybe, MaybeDateTime, MaybeF64, MaybeString, NestedConsumable,
+        NestedConsumableId, NewConsumable, NewNestedConsumable,
     },
 };
 
@@ -68,7 +68,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumable, Edit
             create_consumable(updates).await.map_err(EditError::Server)
         }
         Operation::Update { consumable } => {
-            let updates = UpdateConsumable {
+            let changes = ChangeConsumable {
                 name: Some(name),
                 brand: Some(brand),
                 barcode: Some(barcode),
@@ -78,7 +78,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumable, Edit
                 created: Some(created),
                 destroyed: Some(destroyed),
             };
-            update_consumable(consumable.id, updates)
+            update_consumable(consumable.id, changes)
                 .await
                 .map_err(EditError::Server)
         }
@@ -86,7 +86,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumable, Edit
 }
 
 #[component]
-pub fn ChangeConsumable(
+pub fn ConsumableUpdate(
     op: Operation,
     on_cancel: Callback,
     on_save: Callback<Consumable>,
@@ -293,7 +293,7 @@ pub fn ChangeConsumable(
 }
 
 #[component]
-pub fn DeleteConsumable(
+pub fn ConsumableDelete(
     consumable: Consumable,
     on_cancel: Callback,
     on_delete: Callback<Consumable>,
@@ -388,17 +388,17 @@ pub enum ListDialogReferenceError {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub enum ListDialogReference {
     Create,
-    Update {
+    UpdateBasic {
         consumable_id: ConsumableId,
     },
-    Ingredients {
+    UpdateIngredients {
         consumable_id: ConsumableId,
     },
-    NestedIngredient {
+    IngredientUpdateBasic {
         parent_id: ConsumableId,
         consumable_id: ConsumableId,
     },
-    NestedIngredients {
+    IngredientUpdateIngredients {
         parent_id: ConsumableId,
         consumable_id: ConsumableId,
     },
@@ -418,16 +418,16 @@ impl FromStr for ListDialogReference {
             ["create"] => Self::Create,
             ["update", id] => {
                 let consumable_id = ConsumableId::new(id.parse()?);
-                Self::Update { consumable_id }
+                Self::UpdateBasic { consumable_id }
             }
             ["ingredients", id] => {
                 let consumable_id = ConsumableId::new(id.parse()?);
-                Self::Ingredients { consumable_id }
+                Self::UpdateIngredients { consumable_id }
             }
             ["ingredients_update", parent_id, id] => {
                 let parent_id = ConsumableId::new(parent_id.parse()?);
                 let consumable_id = ConsumableId::new(id.parse()?);
-                Self::NestedIngredient {
+                Self::IngredientUpdateBasic {
                     parent_id,
                     consumable_id,
                 }
@@ -435,7 +435,7 @@ impl FromStr for ListDialogReference {
             ["ingredients_ingredients", parent_id, id] => {
                 let parent_id = ConsumableId::new(parent_id.parse()?);
                 let consumable_id = ConsumableId::new(id.parse()?);
-                Self::NestedIngredients {
+                Self::IngredientUpdateIngredients {
                     parent_id,
                     consumable_id,
                 }
@@ -452,17 +452,17 @@ impl ToString for ListDialogReference {
     fn to_string(&self) -> String {
         match self {
             ListDialogReference::Create => "create".to_string(),
-            ListDialogReference::Update { consumable_id } => format!("update-{consumable_id}"),
-            ListDialogReference::Ingredients { consumable_id } => {
+            ListDialogReference::UpdateBasic { consumable_id } => format!("update-{consumable_id}"),
+            ListDialogReference::UpdateIngredients { consumable_id } => {
                 format!("ingredients-{consumable_id}")
             }
-            ListDialogReference::NestedIngredient {
+            ListDialogReference::IngredientUpdateBasic {
                 parent_id,
                 consumable_id,
             } => {
                 format!("ingredients_update-{parent_id}-{consumable_id}")
             }
-            ListDialogReference::NestedIngredients {
+            ListDialogReference::IngredientUpdateIngredients {
                 parent_id,
                 consumable_id,
             } => {
@@ -480,10 +480,10 @@ pub fn ConsumableDialog(
     on_change: Callback<Consumable>,
     on_change_ingredients: Callback<Consumable>,
     on_delete: Callback<Consumable>,
-    show_edit: Callback<Consumable>,
-    show_ingredients: Callback<Consumable>,
-    show_nested_ingredient: Callback<(Consumable, Consumable)>,
-    show_nested_ingredients: Callback<(Consumable, Consumable)>,
+    show_update_basic: Callback<Consumable>,
+    show_update_ingredients: Callback<Consumable>,
+    show_ingredient_update_basic: Callback<(Consumable, Consumable)>,
+    show_ingredient_update_ingredients: Callback<(Consumable, Consumable)>,
     on_close: Callback<()>,
 ) -> Element {
     match dialog() {
@@ -491,12 +491,12 @@ pub fn ConsumableDialog(
         ActiveDialog::Change(op) => {
             rsx! {
                 Dialog {
-                    ChangeConsumable {
+                    ConsumableUpdate {
                         op,
                         on_cancel: on_close,
                         on_save: move |consumable: Consumable| {
                             on_change(consumable.clone());
-                            show_ingredients(consumable)
+                            show_update_ingredients(consumable)
                         },
                     }
                 }
@@ -505,7 +505,7 @@ pub fn ConsumableDialog(
         ActiveDialog::Delete(consumable) => {
             rsx! {
                 Dialog {
-                    DeleteConsumable {
+                    ConsumableDelete {
                         consumable,
                         on_cancel: on_close,
                         on_delete: move |consumable| {
@@ -521,13 +521,13 @@ pub fn ConsumableDialog(
                 Dialog {
                     // Closures must be used here or it will sometimes panic.
                     // See https://github.com/DioxusLabs/dioxus/discussions/4534
-                    ConsumableNested {
+                    ConsumableUpgradeIngredients {
                         consumable,
                         on_close,
                         on_change: move |param| { on_change_ingredients(param); },
-                        show_edit,
-                        show_ingredient: move |param| { show_nested_ingredient(param); },
-                        show_ingredients: move |param| { show_nested_ingredients(param); },
+                        show_update_basic,
+                        show_ingredient_update_basic: move |param| { show_ingredient_update_basic(param); },
+                        show_ingredient_update_ingredients: move |param| { show_ingredient_update_ingredients(param); },
                     }
                 }
             }
@@ -537,14 +537,14 @@ pub fn ConsumableDialog(
             let parent_clone_2 = parent.clone();
             rsx! {
                 Dialog {
-                    ChangeConsumable {
+                    ConsumableUpdate {
                         op: Operation::Update { consumable: consumable.clone() },
                         on_cancel: move |()| {
-                            show_ingredients(parent_clone_1.clone())
+                            show_update_ingredients(parent_clone_1.clone())
                         },
                         on_save: move |consumable: Consumable| {
                             on_change(consumable.clone());
-                            show_nested_ingredients((parent_clone_2.clone(), consumable.clone()));
+                            show_ingredient_update_ingredients((parent_clone_2.clone(), consumable.clone()));
                         },
                     }
                 }
@@ -557,22 +557,22 @@ pub fn ConsumableDialog(
             let parent_clone_4 = parent.clone();
             rsx! {
                 Dialog {
-                    ConsumableNested {
+                    ConsumableUpgradeIngredients {
                         consumable,
                         on_close: move |()| {
-                            show_ingredients(parent.clone())
+                            show_update_ingredients(parent.clone())
                         },
                         on_change: move |_consumable: Consumable| {
                             on_change_ingredients(parent_clone_1.clone());
                         },
-                        show_edit: move |consumable: Consumable| {
-                            show_nested_ingredient((parent_clone_2.clone(), consumable));
+                        show_update_basic: move |consumable: Consumable| {
+                            show_ingredient_update_basic((parent_clone_2.clone(), consumable));
                         },
-                        show_ingredient: move |(_parent, consumable): (Consumable, Consumable)| {
-                            show_nested_ingredient((parent_clone_3.clone(), consumable));
+                        show_ingredient_update_basic: move |(_parent, consumable): (Consumable, Consumable)| {
+                            show_ingredient_update_basic((parent_clone_3.clone(), consumable));
                         },
-                        show_ingredients: move |(_parent, consumable): (Consumable, Consumable)| {
-                            show_nested_ingredients((parent_clone_4.clone(), consumable.clone()));
+                        show_ingredient_update_ingredients: move |(_parent, consumable): (Consumable, Consumable)| {
+                            show_ingredient_update_ingredients((parent_clone_4.clone(), consumable.clone()));
                         },
                     }
                 }
@@ -589,13 +589,13 @@ enum State {
 }
 
 #[component]
-pub fn ConsumableNested(
+pub fn ConsumableUpgradeIngredients(
     consumable: ReadOnlySignal<Consumable>,
     on_close: Callback<()>,
     on_change: Callback<Consumable>,
-    show_edit: Callback<Consumable>,
-    show_ingredient: Callback<(Consumable, Consumable)>,
-    show_ingredients: Callback<(Consumable, Consumable)>,
+    show_update_basic: Callback<Consumable>,
+    show_ingredient_update_basic: Callback<(Consumable, Consumable)>,
+    show_ingredient_update_ingredients: Callback<(Consumable, Consumable)>,
 ) -> Element {
     let mut selected_consumable = use_signal(|| None);
 
@@ -649,7 +649,7 @@ pub fn ConsumableNested(
             state.set(State::Finished(result));
             on_change(consumable_clone.clone());
             if new {
-                show_ingredient((consumable, child))
+                show_ingredient_update_basic((consumable, child))
             }
         });
     });
@@ -763,13 +763,13 @@ pub fn ConsumableNested(
                         FormEditButton {
                             title: "Edit",
                             on_edit: move || {
-                                show_ingredient((consumable_clone_6.clone(), consumable_clone_1.clone()));
+                                show_ingredient_update_basic((consumable_clone_6.clone(), consumable_clone_1.clone()));
                             },
                         }
                         FormEditButton {
                             title: "Ingredients",
                             on_edit: move || {
-                                show_ingredients((consumable_clone_7.clone(), consumable_clone_2.clone()));
+                                show_ingredient_update_ingredients((consumable_clone_7.clone(), consumable_clone_2.clone()));
                             },
                         }
                         FormDeleteButton {
@@ -802,7 +802,7 @@ pub fn ConsumableNested(
                 }
                 FormEditButton {
                     title: "Edit Consumable",
-                    on_edit: move |_| show_edit(consumable_clone_2.clone()),
+                    on_edit: move |_| show_update_basic(consumable_clone_2.clone()),
                 }
                 FormCloseButton { on_close, title: "Close" }
             }
@@ -825,7 +825,7 @@ async fn do_save_nested(
     let liquid_mls = validate.liquid_mls.read().clone()?;
     let comments = validate.comments.read().clone()?;
 
-    let updates = UpdateNestedConsumable {
+    let updates = ChangeNestedConsumable {
         quantity: Some(quantity),
         liquid_mls: Some(liquid_mls),
         comments: Some(comments),

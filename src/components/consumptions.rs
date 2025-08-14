@@ -1,13 +1,9 @@
-use std::str::FromStr;
-
 use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use dioxus::prelude::*;
-use tap::Pipe;
-use thiserror::Error;
 
 use crate::{
     components::{
-        consumables::{self, ChangeConsumable, ConsumableNested},
+        consumables::{self, ConsumableUpdate, ConsumableUpgradeIngredients},
         times::time_delta_to_string,
     },
     forms::{
@@ -23,9 +19,9 @@ use crate::{
         update_consumption_consumable,
     },
     models::{
-        Consumable, Consumption, ConsumptionConsumable, ConsumptionConsumableId, ConsumptionItem,
-        ConsumptionType, Maybe, MaybeF64, MaybeString, NewConsumption, NewConsumptionConsumable,
-        UpdateConsumption, UpdateConsumptionConsumable, UserId,
+        ChangeConsumption, ChangeConsumptionConsumable, Consumable, Consumption,
+        ConsumptionConsumable, ConsumptionConsumableId, ConsumptionItem, ConsumptionType, Maybe,
+        MaybeF64, MaybeString, NewConsumption, NewConsumptionConsumable, UserId,
     },
 };
 
@@ -64,7 +60,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumption, Edi
             create_consumption(updates).await.map_err(EditError::Server)
         }
         Operation::Update { consumption } => {
-            let updates = UpdateConsumption {
+            let changes = ChangeConsumption {
                 user_id: None,
                 time: Some(time),
                 duration: Some(duration),
@@ -72,7 +68,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumption, Edi
                 liquid_mls: Some(liquid_mls),
                 comments: Some(comments),
             };
-            update_consumption(consumption.id, updates)
+            update_consumption(consumption.id, changes)
                 .await
                 .map_err(EditError::Server)
         }
@@ -80,7 +76,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumption, Edi
 }
 
 #[component]
-pub fn ChangeConsumption(
+pub fn ConsumptionUpdate(
     op: Operation,
     on_cancel: Callback,
     on_save: Callback<Consumption>,
@@ -244,7 +240,7 @@ pub fn ChangeConsumption(
 }
 
 #[component]
-pub fn DeleteConsumption(
+pub fn ConsumptionDelete(
     consumption: Consumption,
     on_cancel: Callback,
     on_delete: Callback<Consumption>,
@@ -358,58 +354,15 @@ pub fn consumption_duration(duration: chrono::TimeDelta) -> Element {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum ActiveDialog {
-    Change(Operation),
+    UpdateBasic(Operation),
     Delete(Consumption),
-    Ingredients(Consumption),
+    UpdateIngredients(Consumption),
     NestedIngredient(Consumption, Consumable),
     NestedIngredients(Consumption, Consumable),
+    #[allow(dead_code)]
     Idle,
-}
-
-#[derive(Error, Debug)]
-pub enum DialogReferenceError {
-    #[error("Invalid reference")]
-    ReferenceError,
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub enum DialogReference {
-    Update,
-    Ingredients,
-    Delete,
-    #[default]
-    Idle,
-}
-
-impl FromStr for DialogReference {
-    type Err = DialogReferenceError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let split = s.split("-").collect::<Vec<_>>();
-        match split[..] {
-            ["update"] => Self::Update,
-            ["ingredients"] => Self::Ingredients,
-            ["delete"] => Self::Delete,
-            [""] | [] => Self::Idle,
-            _ => return Err(DialogReferenceError::ReferenceError),
-        }
-        .pipe(Ok)
-    }
-}
-
-#[allow(clippy::to_string_trait_impl)]
-impl ToString for DialogReference {
-    fn to_string(&self) -> String {
-        match self {
-            DialogReference::Update => "update".to_string(),
-            DialogReference::Ingredients => "ingredients".to_string(),
-            DialogReference::Delete => "delete".to_string(),
-            DialogReference::Idle => String::new(),
-        }
-    }
 }
 
 #[component]
@@ -418,22 +371,22 @@ pub fn ConsumptionDialog(
     on_change: Callback<Consumption>,
     on_change_ingredients: Callback<Consumption>,
     on_delete: Callback<Consumption>,
-    show_edit: Callback<Consumption>,
-    show_ingredients: Callback<Consumption>,
-    show_nested_ingredient: Callback<(Consumption, Consumable)>,
-    show_nested_ingredients: Callback<(Consumption, Consumable)>,
+    show_update_basic: Callback<Consumption>,
+    show_update_ingredients: Callback<Consumption>,
+    show_ingredient_update_basic: Callback<(Consumption, Consumable)>,
+    show_ingredient_update_ingredients: Callback<(Consumption, Consumable)>,
     on_close: Callback<()>,
 ) -> Element {
     match dialog {
-        ActiveDialog::Change(op) => {
+        ActiveDialog::UpdateBasic(op) => {
             rsx! {
                 Dialog {
-                    ChangeConsumption {
+                    ConsumptionUpdate {
                         op,
                         on_cancel: on_close,
                         on_save: move |consumption: Consumption| {
                             on_change(consumption.clone());
-                            show_ingredients(consumption);
+                            show_update_ingredients(consumption);
                         },
                     }
                 }
@@ -442,7 +395,7 @@ pub fn ConsumptionDialog(
         ActiveDialog::Delete(consumption) => {
             rsx! {
                 Dialog {
-                    DeleteConsumption {
+                    ConsumptionDelete {
                         consumption,
                         on_cancel: on_close,
                         on_delete: move |consumption| {
@@ -453,18 +406,18 @@ pub fn ConsumptionDialog(
                 }
             }
         }
-        ActiveDialog::Ingredients(consumption) => {
+        ActiveDialog::UpdateIngredients(consumption) => {
             rsx! {
                 Dialog {
-                    ConsumableConsumption {
+                    ConsumptionUpdateIngredients {
                         consumption,
                         on_close,
                         on_change: move |consumption: Consumption| {
                             on_change_ingredients(consumption);
                         },
-                        show_edit,
-                        show_ingredient: show_nested_ingredient,
-                        show_ingredients: show_nested_ingredients,
+                        show_update_basic,
+                        show_ingredient_update_basic,
+                        show_ingredient_update_ingredients,
                     }
                 }
             }
@@ -474,17 +427,17 @@ pub fn ConsumptionDialog(
             let parent_clone_2 = parent.clone();
             rsx! {
                 Dialog {
-                    ChangeConsumable {
+                    ConsumableUpdate {
                         op: consumables::Operation::Update {
                             consumable: consumable.clone()
                         },
 
                         on_cancel: move |()| {
-                            show_ingredients(parent_clone_1.clone())
+                            show_update_ingredients(parent_clone_1.clone())
                         },
                         on_save: move |_consumable: Consumable| {
                             on_change_ingredients(parent.clone());
-                            show_nested_ingredients((parent_clone_2.clone(), consumable.clone()));
+                            show_ingredient_update_ingredients((parent_clone_2.clone(), consumable.clone()));
                         },
                     }
                 }
@@ -497,22 +450,22 @@ pub fn ConsumptionDialog(
             let parent_clone_4 = parent.clone();
             rsx! {
                 Dialog {
-                    ConsumableNested {
+                    ConsumableUpgradeIngredients {
                         consumable,
                         on_close: move |()| {
-                            show_ingredients(parent.clone())
+                            show_update_ingredients(parent.clone())
                         },
                         on_change: move |_consumable: Consumable| {
                             on_change_ingredients(parent_clone_1.clone());
                         },
-                        show_edit: move |consumable: Consumable| {
-                            show_nested_ingredient((parent_clone_2.clone(), consumable));
+                        show_update_basic: move |consumable: Consumable| {
+                            show_ingredient_update_basic((parent_clone_2.clone(), consumable));
                         },
-                        show_ingredient: move |(_parent, consumable): (Consumable, Consumable)| {
-                            show_nested_ingredient((parent_clone_3.clone(), consumable));
+                        show_ingredient_update_basic: move |(_parent, consumable): (Consumable, Consumable)| {
+                            show_ingredient_update_basic((parent_clone_3.clone(), consumable));
                         },
-                        show_ingredients: move |(_parent, consumable): (Consumable, Consumable)| {
-                            show_nested_ingredients((parent_clone_4.clone(), consumable.clone()));
+                        show_ingredient_update_ingredients: move |(_parent, consumable): (Consumable, Consumable)| {
+                            show_ingredient_update_ingredients((parent_clone_4.clone(), consumable.clone()));
                         },
                     }
                 }
@@ -532,13 +485,13 @@ enum State {
 }
 
 #[component]
-pub fn ConsumableConsumption(
+pub fn ConsumptionUpdateIngredients(
     consumption: ReadOnlySignal<Consumption>,
     on_close: Callback<()>,
     on_change: Callback<Consumption>,
-    show_edit: Callback<Consumption>,
-    show_ingredient: Callback<(Consumption, Consumable)>,
-    show_ingredients: Callback<(Consumption, Consumable)>,
+    show_update_basic: Callback<Consumption>,
+    show_ingredient_update_basic: Callback<(Consumption, Consumable)>,
+    show_ingredient_update_ingredients: Callback<(Consumption, Consumable)>,
 ) -> Element {
     let mut selected_consumable = use_signal(|| None);
     let mut consumption_consumables =
@@ -587,7 +540,7 @@ pub fn ConsumableConsumption(
             state.set(State::Finished(result));
             on_change(consumption_clone.clone());
             if new {
-                show_ingredient((consumption, child))
+                show_ingredient_update_basic((consumption, child))
             }
         });
     });
@@ -702,13 +655,13 @@ pub fn ConsumableConsumption(
                         FormEditButton {
                             title: "Edit",
                             on_edit: move || {
-                                show_ingredient((consumption_clone_5.clone(), consumable_clone_1.clone()));
+                                show_ingredient_update_basic((consumption_clone_5.clone(), consumable_clone_1.clone()));
                             },
                         }
                         FormEditButton {
                             title: "Ingredients",
                             on_edit: move || {
-                                show_ingredients((consumption_clone_6.clone(), consumable_clone_2.clone()));
+                                show_ingredient_update_ingredients((consumption_clone_6.clone(), consumable_clone_2.clone()));
                             },
                         }
                         FormDeleteButton {
@@ -742,7 +695,7 @@ pub fn ConsumableConsumption(
                 FormEditButton {
                     title: "Edit",
                     on_edit: move || {
-                        show_edit(consumption.clone());
+                        show_update_basic(consumption.clone());
                     },
                 }
                 FormCloseButton {
@@ -771,7 +724,7 @@ async fn do_save_consumption(
     let liquid_mls = validate.liquid_mls.read().clone()?;
     let comments = validate.comments.read().clone()?;
 
-    let updates = UpdateConsumptionConsumable {
+    let updates = ChangeConsumptionConsumable {
         quantity: Some(quantity),
         liquid_mls: Some(liquid_mls),
         comments: Some(comments),

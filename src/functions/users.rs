@@ -49,7 +49,7 @@ pub async fn create_user(user: models::NewUser) -> Result<models::User, ServerFn
 #[server]
 pub async fn update_user(
     id: UserId,
-    user: models::UpdateUser,
+    user: models::ChangeUser,
 ) -> Result<models::User, ServerFnError> {
     use crate::server::database::models::users as server;
 

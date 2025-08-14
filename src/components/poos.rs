@@ -1,11 +1,7 @@
-use std::str::FromStr;
-
 use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use classes::classes;
 use dioxus::prelude::*;
 use palette::Hsv;
-use tap::Pipe;
-use thiserror::Error;
 
 use crate::{
     components::times::time_delta_to_string,
@@ -16,7 +12,7 @@ use crate::{
         validate_fixed_offset_date_time, validate_poo_quantity, validate_urgency,
     },
     functions::poos::{create_poo, delete_poo, update_poo},
-    models::{Bristol, MaybeString, NewPoo, Poo, UpdatePoo, UserId},
+    models::{Bristol, ChangePoo, MaybeString, NewPoo, Poo, UserId},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -60,7 +56,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Poo, EditError> 
             create_poo(updates).await.map_err(EditError::Server)
         }
         Operation::Update { poo } => {
-            let updates = UpdatePoo {
+            let changes = ChangePoo {
                 user_id: None,
                 time: Some(time),
                 duration: Some(duration),
@@ -70,13 +66,13 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Poo, EditError> 
                 colour: Some(colour),
                 comments: Some(comments),
             };
-            update_poo(poo.id, updates).await.map_err(EditError::Server)
+            update_poo(poo.id, changes).await.map_err(EditError::Server)
         }
     }
 }
 
 #[component]
-pub fn ChangePoo(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> Element {
+pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> Element {
     let time = use_signal(|| match &op {
         Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_string(),
         Operation::Update { poo } => poo.time.as_string(),
@@ -269,7 +265,7 @@ pub fn ChangePoo(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
 }
 
 #[component]
-pub fn DeletePoo(poo: Poo, on_cancel: Callback, on_delete: Callback<Poo>) -> Element {
+pub fn PooDelete(poo: Poo, on_cancel: Callback, on_delete: Callback<Poo>) -> Element {
     let mut saving = use_signal(|| Saving::No);
 
     let disabled = use_memo(move || saving.read().is_saving());
@@ -409,46 +405,6 @@ pub enum ActiveDialog {
     Idle,
 }
 
-#[derive(Error, Debug)]
-pub enum DialogReferenceError {
-    #[error("Invalid reference")]
-    ReferenceError,
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub enum DialogReference {
-    Update,
-    Delete,
-    #[default]
-    Idle,
-}
-
-impl FromStr for DialogReference {
-    type Err = DialogReferenceError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let split = s.split("-").collect::<Vec<_>>();
-        match split[..] {
-            ["update"] => Self::Update,
-            ["delete"] => Self::Delete,
-            [""] | [] => Self::Idle,
-            _ => return Err(DialogReferenceError::ReferenceError),
-        }
-        .pipe(Ok)
-    }
-}
-
-#[allow(clippy::to_string_trait_impl)]
-impl ToString for DialogReference {
-    fn to_string(&self) -> String {
-        match self {
-            DialogReference::Update => "update".to_string(),
-            DialogReference::Delete => "delete".to_string(),
-            DialogReference::Idle => String::new(),
-        }
-    }
-}
-
 #[component]
 pub fn PooDialog(
     dialog: ActiveDialog,
@@ -460,14 +416,14 @@ pub fn PooDialog(
         ActiveDialog::Change(op) => {
             rsx! {
                 Dialog {
-                    ChangePoo { op, on_cancel: on_close, on_save: on_change }
+                    PooUpdate { op, on_cancel: on_close, on_save: on_change }
                 }
             }
         }
         ActiveDialog::Delete(poo) => {
             rsx! {
                 Dialog {
-                    DeletePoo { poo, on_cancel: on_close, on_delete }
+                    PooDelete { poo, on_cancel: on_close, on_delete }
                 }
             }
         }

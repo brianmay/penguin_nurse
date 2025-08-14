@@ -138,7 +138,7 @@ pub async fn create_poo(
 #[derive(AsChangeset, Debug, Clone)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::poos)]
-pub struct UpdatePoo<'a> {
+pub struct ChangePoo<'a> {
     pub time: Option<chrono::DateTime<chrono::Utc>>,
     pub utc_offset: Option<i32>,
     pub duration: Option<chrono::Duration>,
@@ -151,8 +151,8 @@ pub struct UpdatePoo<'a> {
     pub comments: Option<Option<&'a str>>,
 }
 
-impl<'a> UpdatePoo<'a> {
-    pub fn from_front_end(poo: &'a crate::models::UpdatePoo) -> Self {
+impl<'a> ChangePoo<'a> {
+    pub fn from_front_end(poo: &'a crate::models::ChangePoo) -> Self {
         Self {
             time: poo.time.map(|time| time.with_timezone(&Utc)),
             utc_offset: poo.time.map(|time| time.offset().local_minus_utc()),
@@ -171,7 +171,7 @@ impl<'a> UpdatePoo<'a> {
 pub async fn update_poo(
     conn: &mut DatabaseConnection,
     id: i64,
-    updates: UpdatePoo<'_>,
+    updates: ChangePoo<'_>,
 ) -> Result<Poo, diesel::result::Error> {
     use crate::server::database::schema::poos::id as q_id;
     use crate::server::database::schema::poos::table;

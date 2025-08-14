@@ -1,21 +1,21 @@
 mod users;
+pub use users::ChangeUser;
 pub use users::NewUser;
-pub use users::UpdateUser;
 pub use users::User;
 pub use users::UserId;
 
 mod wees;
+pub use wees::ChangeWee;
 pub use wees::NewWee;
-pub use wees::UpdateWee;
 pub use wees::Wee;
 pub use wees::WeeId;
 
 mod poos;
 pub use poos::Bristol;
+pub use poos::ChangePoo;
 pub use poos::NewPoo;
 pub use poos::Poo;
 pub use poos::PooId;
-pub use poos::UpdatePoo;
 
 mod entry;
 pub use entry::Entry;
@@ -32,31 +32,31 @@ pub use common::MaybeF64;
 pub use common::MaybeString;
 
 mod consumables;
+pub use consumables::ChangeConsumable;
 pub use consumables::Consumable;
 pub use consumables::ConsumableId;
 pub use consumables::ConsumableUnit;
 pub use consumables::ConsumableWithItems;
 pub use consumables::NewConsumable;
-pub use consumables::UpdateConsumable;
 
 mod consumptions;
+pub use consumptions::ChangeConsumption;
 pub use consumptions::Consumption;
 pub use consumptions::ConsumptionId;
 pub use consumptions::ConsumptionType;
 pub use consumptions::ConsumptionWithItems;
 pub use consumptions::NewConsumption;
-pub use consumptions::UpdateConsumption;
 
 mod nested_consumables;
+pub use nested_consumables::ChangeNestedConsumable;
 pub use nested_consumables::ConsumableItem;
 pub use nested_consumables::NestedConsumable;
 pub use nested_consumables::NestedConsumableId;
 pub use nested_consumables::NewNestedConsumable;
-pub use nested_consumables::UpdateNestedConsumable;
 
 mod consumption_consumables;
+pub use consumption_consumables::ChangeConsumptionConsumable;
 pub use consumption_consumables::ConsumptionConsumable;
 pub use consumption_consumables::ConsumptionConsumableId;
 pub use consumption_consumables::ConsumptionItem;
 pub use consumption_consumables::NewConsumptionConsumable;
-pub use consumption_consumables::UpdateConsumptionConsumable;

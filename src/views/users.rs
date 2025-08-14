@@ -7,8 +7,8 @@ use tap::Pipe;
 use crate::Route;
 use crate::components::buttons::{ChangeButton, DeleteButton, NavButton};
 use crate::components::users::{
-    ActiveDialog, ChangePassword, ChangeUser, CreateUser, DeleteUser, DetailsDialogReference,
-    ListDialogReference,
+    ActiveDialog, DetailsDialogReference, ListDialogReference, UserCreate, UserDelete, UserUpdate,
+    UserUpdatePassword,
 };
 use crate::functions::users::{get_user_by_id, get_users};
 use crate::models::{User, UserId};
@@ -51,7 +51,7 @@ pub fn UserDialog(
         }
         ActiveDialog::Create => {
             rsx! {
-                CreateUser {
+                UserCreate {
                     on_cancel: on_close,
                     on_save: move |user: User| {
                         navigator().replace(Route::UserDetail{ user_id: user.id, dialog: DetailsDialogReference::Update});
@@ -63,7 +63,7 @@ pub fn UserDialog(
         }
         ActiveDialog::Change(user) => {
             rsx! {
-                ChangeUser {
+                UserUpdate {
                     user,
                     on_cancel: on_close,
                     on_save: move |_user| {
@@ -75,7 +75,7 @@ pub fn UserDialog(
         }
         ActiveDialog::Password(user) => {
             rsx! {
-                ChangePassword {
+                UserUpdatePassword {
                     user,
                     on_cancel: on_close,
                     on_save: move |_user| {
@@ -87,7 +87,7 @@ pub fn UserDialog(
         }
         ActiveDialog::Delete(user) => {
             rsx! {
-                DeleteUser {
+                UserDelete {
                     user,
                     on_cancel: on_close,
                     on_delete: move |_user| {

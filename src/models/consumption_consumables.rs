@@ -69,7 +69,7 @@ pub struct NewConsumptionConsumable {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct UpdateConsumptionConsumable {
+pub struct ChangeConsumptionConsumable {
     pub quantity: Option<MaybeF64>,
     pub liquid_mls: Option<MaybeF64>,
     pub comments: Option<MaybeString>,

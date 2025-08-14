@@ -130,15 +130,15 @@ pub async fn create_consumption_consumable(
 #[derive(AsChangeset, Debug, Clone)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::consumption_consumables)]
-pub struct UpdateConsumptionConsumable<'a> {
+pub struct ChangeConsumptionConsumable<'a> {
     pub quantity: Option<Option<f64>>,
     pub liquid_mls: Option<Option<f64>>,
     pub comments: Option<Option<&'a str>>,
 }
 
-impl<'a> UpdateConsumptionConsumable<'a> {
+impl<'a> ChangeConsumptionConsumable<'a> {
     pub fn from_front_end(
-        consumption_consumable: &'a crate::models::UpdateConsumptionConsumable,
+        consumption_consumable: &'a crate::models::ChangeConsumptionConsumable,
     ) -> Self {
         Self {
             quantity: consumption_consumable.quantity.map(|x| x.into()),
@@ -155,7 +155,7 @@ pub async fn update_consumption_consumable(
     conn: &mut DatabaseConnection,
     parent_id: i64,
     consumable_id: i64,
-    update: &UpdateConsumptionConsumable<'_>,
+    update: &ChangeConsumptionConsumable<'_>,
 ) -> Result<ConsumptionConsumable, diesel::result::Error> {
     diesel::update(
         schema::consumption_consumables::table

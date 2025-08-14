@@ -206,7 +206,7 @@ pub async fn create_consumable(
 #[derive(AsChangeset, Debug, Clone)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::consumables)]
-pub struct UpdateConsumable<'a> {
+pub struct ChangeConsumable<'a> {
     pub name: Option<&'a str>,
     pub brand: Option<Option<&'a str>>,
     pub barcode: Option<Option<&'a str>>,
@@ -217,8 +217,8 @@ pub struct UpdateConsumable<'a> {
     pub destroyed: Option<Option<DateTime<Utc>>>,
 }
 
-impl<'a> UpdateConsumable<'a> {
-    pub fn from_front_end(consumable: &'a crate::models::UpdateConsumable) -> Self {
+impl<'a> ChangeConsumable<'a> {
+    pub fn from_front_end(consumable: &'a crate::models::ChangeConsumable) -> Self {
         Self {
             name: consumable.name.as_deref(),
             brand: consumable.brand.as_ref().map(|x| x.as_deref()),
@@ -235,7 +235,7 @@ impl<'a> UpdateConsumable<'a> {
 pub async fn update_consumable(
     conn: &mut DatabaseConnection,
     id: i64,
-    update: &UpdateConsumable<'_>,
+    update: &ChangeConsumable<'_>,
 ) -> Result<Consumable, diesel::result::Error> {
     diesel::update(schema::consumables::table.filter(schema::consumables::id.eq(id)))
         .set(update)

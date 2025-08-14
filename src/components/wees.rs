@@ -1,11 +1,7 @@
-use std::str::FromStr;
-
 use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use classes::classes;
 use dioxus::prelude::*;
 use palette::Hsv;
-use tap::Pipe;
-use thiserror::Error;
 
 use crate::{
     components::times::time_delta_to_string,
@@ -16,7 +12,7 @@ use crate::{
         validate_millilitres, validate_urgency,
     },
     functions::wees::{create_wee, delete_wee, update_wee},
-    models::{MaybeString, NewWee, UpdateWee, UserId, Wee},
+    models::{ChangeWee, MaybeString, NewWee, UserId, Wee},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -57,7 +53,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> 
             create_wee(updates).await.map_err(EditError::Server)
         }
         Operation::Update { wee } => {
-            let updates = UpdateWee {
+            let changes = ChangeWee {
                 user_id: None,
                 time: Some(time),
                 duration: Some(duration),
@@ -66,13 +62,13 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> 
                 colour: Some(colour),
                 comments: Some(comments),
             };
-            update_wee(wee.id, updates).await.map_err(EditError::Server)
+            update_wee(wee.id, changes).await.map_err(EditError::Server)
         }
     }
 }
 
 #[component]
-pub fn ChangeWee(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> Element {
+pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> Element {
     let time = use_signal(|| match &op {
         Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_string(),
         Operation::Update { wee } => wee.time.as_string(),
@@ -253,7 +249,7 @@ pub fn ChangeWee(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
 }
 
 #[component]
-pub fn DeleteWee(wee: Wee, on_cancel: Callback, on_delete: Callback<Wee>) -> Element {
+pub fn WeeDelete(wee: Wee, on_cancel: Callback, on_delete: Callback<Wee>) -> Element {
     let mut saving = use_signal(|| Saving::No);
 
     let disabled = use_memo(move || saving.read().is_saving());
@@ -375,46 +371,6 @@ pub enum ActiveDialog {
     Idle,
 }
 
-#[derive(Error, Debug)]
-pub enum DialogReferenceError {
-    #[error("Invalid reference")]
-    ReferenceError,
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub enum DialogReference {
-    Update,
-    Delete,
-    #[default]
-    Idle,
-}
-
-impl FromStr for DialogReference {
-    type Err = DialogReferenceError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let split = s.split("-").collect::<Vec<_>>();
-        match split[..] {
-            ["update"] => Self::Update,
-            ["delete"] => Self::Delete,
-            [""] | [] => Self::Idle,
-            _ => return Err(DialogReferenceError::ReferenceError),
-        }
-        .pipe(Ok)
-    }
-}
-
-#[allow(clippy::to_string_trait_impl)]
-impl ToString for DialogReference {
-    fn to_string(&self) -> String {
-        match self {
-            DialogReference::Update => "update".to_string(),
-            DialogReference::Delete => "delete".to_string(),
-            DialogReference::Idle => String::new(),
-        }
-    }
-}
-
 #[component]
 pub fn WeeDialog(
     dialog: ActiveDialog,
@@ -426,14 +382,14 @@ pub fn WeeDialog(
         ActiveDialog::Change(op) => {
             rsx! {
                 Dialog {
-                    ChangeWee { op, on_cancel: on_close, on_save: on_change }
+                    WeeUpdate { op, on_cancel: on_close, on_save: on_change }
                 }
             }
         }
         ActiveDialog::Delete(wee) => {
             rsx! {
                 Dialog {
-                    DeleteWee { wee, on_cancel: on_close, on_delete }
+                    WeeDelete { wee, on_cancel: on_close, on_delete }
                 }
             }
         }

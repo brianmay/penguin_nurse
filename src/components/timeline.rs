@@ -53,17 +53,17 @@ pub enum DialogReference {
     CreateConsumption {
         user_id: UserId,
     },
-    UpdateConsumption {
+    UpdateBasic {
         consumption_id: ConsumptionId,
     },
-    UpdateConsumptionIngredients {
+    UpdateIngredients {
         consumption_id: ConsumptionId,
     },
-    UpdateConsumptionNestedIngredient {
+    IngredientUpdateBasic {
         parent_id: ConsumptionId,
         consumable_id: ConsumableId,
     },
-    UpdateConsumptionNestedIngredients {
+    IngredientUpdateIngredients {
         parent_id: ConsumptionId,
         consumable_id: ConsumableId,
     },
@@ -110,11 +110,11 @@ impl FromStr for DialogReference {
             }
             ["consumption", "update", id] => {
                 let consumption_id = ConsumptionId::new(id.parse()?);
-                Self::UpdateConsumption { consumption_id }
+                Self::UpdateBasic { consumption_id }
             }
             ["consumption_ingredients", "update", id] => {
                 let consumption_id = ConsumptionId::new(id.parse()?);
-                Self::UpdateConsumptionIngredients { consumption_id }
+                Self::UpdateIngredients { consumption_id }
             }
             [
                 "consumption_ingredients",
@@ -124,7 +124,7 @@ impl FromStr for DialogReference {
             ] => {
                 let parent_id = ConsumptionId::new(parent_id.parse()?);
                 let consumable_id = ConsumableId::new(id.parse()?);
-                Self::UpdateConsumptionNestedIngredient {
+                Self::IngredientUpdateBasic {
                     parent_id,
                     consumable_id,
                 }
@@ -137,7 +137,7 @@ impl FromStr for DialogReference {
             ] => {
                 let parent_id = ConsumptionId::new(parent_id.parse()?);
                 let consumable_id = ConsumableId::new(id.parse()?);
-                Self::UpdateConsumptionNestedIngredients {
+                Self::IngredientUpdateIngredients {
                     parent_id,
                     consumable_id,
                 }
@@ -166,19 +166,19 @@ impl ToString for DialogReference {
             DialogReference::CreateConsumption { user_id } => {
                 format!("consumption-create-{user_id}")
             }
-            DialogReference::UpdateConsumption { consumption_id } => {
+            DialogReference::UpdateBasic { consumption_id } => {
                 format!("consumption-update-{consumption_id}")
             }
-            DialogReference::UpdateConsumptionIngredients { consumption_id } => {
+            DialogReference::UpdateIngredients { consumption_id } => {
                 format!("consumption_ingredients-update-{consumption_id}")
             }
-            DialogReference::UpdateConsumptionNestedIngredient {
+            DialogReference::IngredientUpdateBasic {
                 parent_id,
                 consumable_id,
             } => {
                 format!("consumption_ingredients-nested_ingredient-{parent_id}-{consumable_id}")
             }
-            DialogReference::UpdateConsumptionNestedIngredients {
+            DialogReference::IngredientUpdateIngredients {
                 parent_id,
                 consumable_id,
             } => {
@@ -198,10 +198,10 @@ pub fn TimelineDialog(
     on_change: Callback<()>,
     on_close: Callback<()>,
     replace_dialog: Callback<DialogReference>,
-    show_consumption_edit: Callback<Consumption>,
-    show_consumption_ingredients: Callback<Consumption>,
-    show_consumption_nested_ingredient: Callback<(Consumption, Consumable)>,
-    show_consumption_nested_ingredients: Callback<(Consumption, Consumable)>,
+    show_consumption_update_basic: Callback<Consumption>,
+    show_consumption_update_ingredients: Callback<Consumption>,
+    show_consumption_ingredient_update_basic: Callback<(Consumption, Consumable)>,
+    show_consumption_ingredient_update_ingredients: Callback<(Consumption, Consumable)>,
 ) -> Element {
     match dialog() {
         ActiveDialog::Wee(wee_dialog) => {
@@ -242,12 +242,12 @@ pub fn TimelineDialog(
             rsx! {
                 ConsumptionDialog {
                     dialog: consumption_dialog,
-                    show_edit: show_consumption_edit,
-                    show_ingredients: show_consumption_ingredients,
-                    show_nested_ingredient: show_consumption_nested_ingredient,
-                    show_nested_ingredients: show_consumption_nested_ingredients,
+                    show_update_basic: show_consumption_update_basic,
+                    show_update_ingredients: show_consumption_update_ingredients,
+                    show_ingredient_update_basic: show_consumption_ingredient_update_basic,
+                    show_ingredient_update_ingredients: show_consumption_ingredient_update_ingredients,
                     on_change: move |consumption: Consumption| {
-                        replace_dialog(DialogReference::UpdateConsumption{ consumption_id: consumption.id });
+                        replace_dialog(DialogReference::UpdateBasic{ consumption_id: consumption.id });
                         on_change(());
                     },
                     on_change_ingredients: move |_consumption| {

@@ -11,7 +11,7 @@ use crate::{
         validate_2nd_password, validate_email, validate_full_name, validate_username,
     },
     functions::users::{create_user, delete_user, update_user},
-    models::{MaybeString, NewUser, UpdateUser, User},
+    models::{ChangeUser, MaybeString, NewUser, User},
 };
 
 #[derive(Debug, Clone)]
@@ -60,7 +60,7 @@ async fn do_update_existing_user(
     let full_name = validate.full_name.read().clone()?;
     let is_admin = validate.is_admin.read().clone()?;
 
-    let user_updates = UpdateUser {
+    let changes = ChangeUser {
         username: Some(username),
         email: Some(email),
         full_name: Some(full_name),
@@ -68,7 +68,7 @@ async fn do_update_existing_user(
         oidc_id: None,
         is_admin: Some(is_admin),
     };
-    update_user(user.id, user_updates)
+    update_user(user.id, changes)
         .await
         .map_err(EditError::Server)
 }
@@ -86,7 +86,7 @@ async fn do_change_password(
     let password = validate.password.read().clone()?;
     let _password_confirm = validate.password_confirm.read().clone()?;
 
-    let user_updates = UpdateUser {
+    let changes = ChangeUser {
         username: None,
         email: None,
         full_name: None,
@@ -94,13 +94,13 @@ async fn do_change_password(
         oidc_id: None,
         is_admin: None,
     };
-    update_user(user.id, user_updates)
+    update_user(user.id, changes)
         .await
         .map_err(EditError::Server)
 }
 
 #[component]
-pub fn CreateUser(on_cancel: Callback, on_save: Callback<User>) -> Element {
+pub fn UserCreate(on_cancel: Callback, on_save: Callback<User>) -> Element {
     let username = use_signal(String::new);
     let email = use_signal(String::new);
     let full_name = use_signal(String::new);
@@ -238,7 +238,7 @@ pub fn CreateUser(on_cancel: Callback, on_save: Callback<User>) -> Element {
 }
 
 #[component]
-pub fn ChangeUser(user: User, on_cancel: Callback, on_save: Callback<User>) -> Element {
+pub fn UserUpdate(user: User, on_cancel: Callback, on_save: Callback<User>) -> Element {
     let user = Arc::new(user);
 
     let username = use_signal(|| user.username.as_string());
@@ -363,7 +363,7 @@ pub fn ChangeUser(user: User, on_cancel: Callback, on_save: Callback<User>) -> E
 }
 
 #[component]
-pub fn ChangePassword(user: User, on_cancel: Callback, on_save: Callback<User>) -> Element {
+pub fn UserUpdatePassword(user: User, on_cancel: Callback, on_save: Callback<User>) -> Element {
     let user = Arc::new(user);
 
     let password = use_signal(String::new);
@@ -466,7 +466,7 @@ pub fn ChangePassword(user: User, on_cancel: Callback, on_save: Callback<User>) 
 }
 
 #[component]
-pub fn DeleteUser(user: User, on_cancel: Callback, on_delete: Callback<User>) -> Element {
+pub fn UserDelete(user: User, on_cancel: Callback, on_delete: Callback<User>) -> Element {
     let user = Arc::new(user);
 
     let mut saving = use_signal(|| Saving::No);

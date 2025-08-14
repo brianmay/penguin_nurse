@@ -138,13 +138,13 @@ pub async fn create_consumable(
 #[server]
 pub async fn update_consumable(
     id: ConsumableId,
-    consumable: models::UpdateConsumable,
+    consumable: models::ChangeConsumable,
 ) -> Result<models::Consumable, ServerFnError> {
     let _logged_in_user_id = get_user_id().await?;
 
     let mut conn = get_database_connection().await?;
     let updates =
-        crate::server::database::models::consumables::UpdateConsumable::from_front_end(&consumable);
+        crate::server::database::models::consumables::ChangeConsumable::from_front_end(&consumable);
 
     crate::server::database::models::consumables::update_consumable(
         &mut conn,
@@ -205,13 +205,13 @@ pub async fn delete_nested_consumable(id: models::NestedConsumableId) -> Result<
 #[server]
 pub async fn update_nested_consumable(
     id: models::NestedConsumableId,
-    consumable: models::UpdateNestedConsumable,
+    consumable: models::ChangeNestedConsumable,
 ) -> Result<models::NestedConsumable, ServerFnError> {
     let _logged_in_user_id = get_user_id().await?;
 
     let mut conn = get_database_connection().await?;
     let updates =
-        crate::server::database::models::nested_consumables::UpdateNestedConsumable::from_front_end(
+        crate::server::database::models::nested_consumables::ChangeNestedConsumable::from_front_end(
             &consumable,
         );
     let (parent_id, consumable_id) = id.as_inner();

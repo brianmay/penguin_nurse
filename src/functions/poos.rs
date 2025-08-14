@@ -68,7 +68,7 @@ pub async fn create_poo(poo: models::NewPoo) -> Result<models::Poo, ServerFnErro
 }
 
 #[server]
-pub async fn update_poo(id: PooId, poo: models::UpdatePoo) -> Result<models::Poo, ServerFnError> {
+pub async fn update_poo(id: PooId, poo: models::ChangePoo) -> Result<models::Poo, ServerFnError> {
     let logged_in_user_id = get_user_id().await?;
 
     if let Some(req_user_id) = poo.user_id {
@@ -80,7 +80,7 @@ pub async fn update_poo(id: PooId, poo: models::UpdatePoo) -> Result<models::Poo
     }
 
     let mut conn = get_database_connection().await?;
-    let updates = crate::server::database::models::poos::UpdatePoo::from_front_end(&poo);
+    let updates = crate::server::database::models::poos::ChangePoo::from_front_end(&poo);
 
     crate::server::database::models::poos::update_poo(&mut conn, id.as_inner(), updates)
         .await
