@@ -18,6 +18,8 @@ use crate::{
     use_user,
 };
 
+const ORGANIC_SVG: Asset = asset!("/assets/organic.svg");
+
 #[component]
 fn EntryRow(
     consumable_with_items: ConsumableWithItems,
@@ -33,7 +35,16 @@ fn EntryRow(
         tr {
             class: "hover:bg-gray-500 border-blue-300 mt-2 mb-2 p-2 border-2 w-full sm:w-auto sm:border-none inline-block sm:table-row",
             onclick: move |_| { selected.set(Some(id)) },
-            td { class: "block sm:table-cell border-blue-300 sm:border-t-2", {consumable.name} }
+            td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
+                if consumable.is_organic {
+                    img {
+                        class: "w-5  invert inline-block",
+                        alt: "organic",
+                        src: ORGANIC_SVG,
+                    }
+                }
+                {consumable.name}
+            }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 if let Maybe::Some(brand) = &consumable.brand {
                     div { {brand.clone()} }

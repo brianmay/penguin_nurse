@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 
 use crate::{
     components::{
-        consumables::{self, ConsumableUpdate, ConsumableUpgradeIngredients},
+        consumables::{self, ConsumableUpdate, ConsumableUpdateIngredients},
         times::time_delta_to_string,
     },
     forms::{
@@ -319,6 +319,7 @@ const MOUTH_SVG: Asset = asset!("/assets/consumption/mouth.svg");
 const SPIT_SVG: Asset = asset!("/assets/consumption/spit.svg");
 const INJECT_SVG: Asset = asset!("/assets/consumption/inject.svg");
 const SKIN_SVG: Asset = asset!("/assets/consumption/skin.svg");
+const ORGANIC_SVG: Asset = asset!("/assets/organic.svg");
 
 #[component]
 pub fn consumption_icon(consumption_type: ConsumptionType) -> Element {
@@ -450,7 +451,7 @@ pub fn ConsumptionDialog(
             let parent_clone_4 = parent.clone();
             rsx! {
                 Dialog {
-                    ConsumableUpgradeIngredients {
+                    ConsumableUpdateIngredients {
                         consumable,
                         on_close: move |()| {
                             show_update_ingredients(parent.clone())
@@ -575,6 +576,7 @@ pub fn ConsumptionUpdateIngredients(
         match consumption_consumables() {
             Some(Ok(consumption_consumables)) => {
                 rsx! {
+                    ConsumptionSummary { consumption: consumption.clone() }
                     div { class: "p-4",
                         ul {
                             for item in consumption_consumables {
@@ -828,9 +830,45 @@ fn ConsumableConsumptionForm(
 }
 
 #[component]
+pub fn ConsumptionSummary(consumption: Consumption) -> Element {
+    rsx! {
+        div {
+            div{
+                consumption_icon {
+                    consumption_type: consumption.consumption_type
+                }
+            }
+            div{
+                consumption_duration { duration: consumption.duration }
+            }
+            div {
+                { consumption.consumption_type.to_string() }
+                if let Maybe::Some(liquid_mls) = &consumption.liquid_mls {
+                    div {
+                        "Liquid: "
+                        {liquid_mls.to_string()}
+                        "ml"
+                    }
+                }
+                if let Maybe::Some(comments) = &consumption.comments {
+                    div { {comments.to_string()} }
+                }
+            }
+        }
+    }
+}
+
+#[component]
 pub fn ConsumptionItemSummary(item: ConsumptionItem) -> Element {
     rsx! {
         span {
+            if item.consumable.is_organic {
+                img {
+                    class: "w-5  invert inline-block",
+                    alt: "organic",
+                    src: ORGANIC_SVG,
+                }
+            }
             if let Maybe::Some(quantity) = item.nested.quantity {
                 span {
                     {quantity.to_string()}

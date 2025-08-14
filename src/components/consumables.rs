@@ -521,7 +521,7 @@ pub fn ConsumableDialog(
                 Dialog {
                     // Closures must be used here or it will sometimes panic.
                     // See https://github.com/DioxusLabs/dioxus/discussions/4534
-                    ConsumableUpgradeIngredients {
+                    ConsumableUpdateIngredients {
                         consumable,
                         on_close,
                         on_change: move |param| { on_change_ingredients(param); },
@@ -557,7 +557,7 @@ pub fn ConsumableDialog(
             let parent_clone_4 = parent.clone();
             rsx! {
                 Dialog {
-                    ConsumableUpgradeIngredients {
+                    ConsumableUpdateIngredients {
                         consumable,
                         on_close: move |()| {
                             show_update_ingredients(parent.clone())
@@ -589,7 +589,7 @@ enum State {
 }
 
 #[component]
-pub fn ConsumableUpgradeIngredients(
+pub fn ConsumableUpdateIngredients(
     consumable: ReadOnlySignal<Consumable>,
     on_close: Callback<()>,
     on_change: Callback<Consumable>,
@@ -684,6 +684,7 @@ pub fn ConsumableUpgradeIngredients(
         match nested_consumables() {
             Some(Ok(nested_consumables)) => {
                 rsx! {
+                    ConsumableSummary { consumable: consumable.clone() }
                     div { class: "p-4",
                         ul {
                             for item in nested_consumables {
@@ -928,12 +929,64 @@ fn ConsumableNestedForm(
     }
 }
 
+const ORGANIC_SVG: Asset = asset!("/assets/organic.svg");
+
+#[component]
+pub fn ConsumableSummary(consumable: Consumable) -> Element {
+    rsx! {
+        div {
+            div {
+                if consumable.is_organic {
+                    img {
+                        class: "w-5  invert inline-block",
+                        alt: "organic",
+                        src: ORGANIC_SVG,
+                    }
+                }
+                {consumable.name}
+            }
+            div {
+                if let Maybe::Some(brand) = &consumable.brand {
+                    div { {brand.clone()} }
+                }
+            }
+            div {
+                span { class: "sm:hidden", "Unit: " }
+                {consumable.unit.to_string()}
+            }
+            div {
+                if let Maybe::Some(comments) = &consumable.comments {
+                    div { {comments.to_string()} }
+                }
+            }
+            div {
+                if let Maybe::Some(created) = &consumable.created {
+                    span { class: "sm:hidden", "Created: " }
+                    {created.with_timezone(&Local).to_string()}
+                }
+            }
+            div {
+                if let Maybe::Some(destroyed) = &consumable.destroyed {
+                    span { class: "sm:hidden", "Destroyed: " }
+                    {destroyed.with_timezone(&Local).to_string()}
+                }
+            }
+        }
+
+    }
+}
+
 #[component]
 pub fn ConsumableItemSummary(item: ConsumableItem) -> Element {
     rsx! {
         span {
-
-
+            if item.consumable.is_organic {
+                img {
+                    class: "w-5  invert inline-block",
+                    alt: "organic",
+                    src: ORGANIC_SVG,
+                }
+            }
             if let Maybe::Some(quantity) = item.nested.quantity {
                 span {
                     {quantity.to_string()}
