@@ -665,7 +665,7 @@ pub fn ConsumptionUpdateIngredients(
                             },
                         }
                         FormDeleteButton {
-                            title: "Delete",
+                            title: "Remove",
                             on_delete: move |_| {
                                 selected_consumable.set(None);
                                 remove_consumable(sel.nested.clone());
@@ -678,7 +678,7 @@ pub fn ConsumptionUpdateIngredients(
             div { class: "p-4",
                 InputConsumable {
                     id: "consumable",
-                    label: "Add Consumable",
+                    label: "Add",
                     value: add_value,
                     on_create: move |value| {
                         add_consumable((value, true));
