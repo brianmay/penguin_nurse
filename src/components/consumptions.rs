@@ -514,7 +514,7 @@ pub fn ConsumptionUpdateIngredients(
     let mut state = use_signal(|| State::Idle);
 
     let mut add_value = use_signal(|| None);
-    let add_consumable = use_callback(move |(child, new): (Consumable, bool)| {
+    let add_consumable = use_callback(move |child: Consumable| {
         let consumption = consumption_clone.clone();
         if let Some(Ok(list)) = consumption_consumables.read().as_ref() {
             if let Some(existing) = list.iter().find(|cc| cc.consumable.id == child.id) {
@@ -540,9 +540,6 @@ pub fn ConsumptionUpdateIngredients(
             let result = result.map(|_nested| ());
             state.set(State::Finished(result));
             on_change(consumption_clone.clone());
-            if new {
-                show_ingredient_update_basic((consumption, child))
-            }
         });
     });
 
@@ -683,12 +680,12 @@ pub fn ConsumptionUpdateIngredients(
                     label: "Add",
                     value: add_value,
                     on_create: move |value| {
-                        add_consumable((value, true));
+                        add_consumable(value);
                         add_value.set(None);
                     },
                     on_change: move |value| {
                         if let Some(value) = value {
-                            add_consumable((value, false));
+                            add_consumable(value);
                             add_value.set(None);
                         }
                     },

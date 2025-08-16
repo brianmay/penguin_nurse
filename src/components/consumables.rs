@@ -619,7 +619,7 @@ pub fn ConsumableUpdateIngredients(
     let mut state = use_signal(|| State::Idle);
 
     let mut add_value = use_signal(|| None);
-    let add_consumable = use_callback(move |(child, new): (Consumable, bool)| {
+    let add_consumable = use_callback(move |child: Consumable| {
         let consumable = consumable_clone.clone();
         if let Some(Ok(nested_consumables)) = nested_consumables() {
             if let Some(existing) = nested_consumables
@@ -648,9 +648,6 @@ pub fn ConsumableUpdateIngredients(
             let result = result.map(|_nested| ());
             state.set(State::Finished(result));
             on_change(consumable_clone.clone());
-            if new {
-                show_ingredient_update_basic((consumable, child))
-            }
         });
     });
 
@@ -790,12 +787,12 @@ pub fn ConsumableUpdateIngredients(
                     label: "Add",
                     value: add_value,
                     on_create: move |value| {
-                        add_consumable((value, true));
+                        add_consumable(value);
                         add_value.set(None);
                     },
                     on_change: move |value| {
                         if let Some(value) = value {
-                            add_consumable((value, false));
+                            add_consumable(value);
                             add_value.set(None);
                         }
                     },
