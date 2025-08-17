@@ -321,9 +321,10 @@ pub fn ConsumableDelete(
     rsx! {
         h3 { class: "text-lg font-bold",
             "Delete consumable "
-            {consumable.id.to_string()}
+            {consumable.name.clone()}
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
+        ConsumableSummary { consumable: consumable.clone() }
         match &*saving.read() {
             Saving::Yes => {
                 rsx! {
@@ -419,6 +420,10 @@ impl FromStr for ListDialogReference {
             ["update", id] => {
                 let consumable_id = ConsumableId::new(id.parse()?);
                 Self::UpdateBasic { consumable_id }
+            }
+            ["delete", id] => {
+                let consumable_id = ConsumableId::new(id.parse()?);
+                Self::Delete { consumable_id }
             }
             ["ingredients", id] => {
                 let consumable_id = ConsumableId::new(id.parse()?);

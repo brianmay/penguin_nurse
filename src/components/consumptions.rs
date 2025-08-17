@@ -268,9 +268,10 @@ pub fn ConsumptionDelete(
     rsx! {
         h3 { class: "text-lg font-bold",
             "Delete consumption "
-            {consumption.id.to_string()}
+            {consumption.name()}
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
+        ConsumptionSummary { consumption: consumption.clone() }
         match &*saving.read() {
             Saving::Yes => {
                 rsx! {
