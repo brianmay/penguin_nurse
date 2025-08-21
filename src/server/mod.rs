@@ -6,10 +6,10 @@ mod handlers;
 mod oidc;
 mod session_store;
 
-use axum::{routing::get, Extension};
+use axum::{Extension, routing::get};
 use handlers::{dioxus_handler, health_check};
 use time::Duration;
-use tower_sessions::{cookie::SameSite, ExpiredDeletion, Expiry, SessionManagerLayer};
+use tower_sessions::{ExpiredDeletion, Expiry, SessionManagerLayer, cookie::SameSite};
 
 pub use oidc::middleware::ClientState as OidcClientState;
 
@@ -37,6 +37,7 @@ pub async fn init(app: fn() -> Element) {
             .with_secure(false)
             .with_expiry(Expiry::OnInactivity(Duration::days(7)))
             .with_same_site(SameSite::Lax)
+            .with_always_save(true)
     };
 
     let auth_layer = {

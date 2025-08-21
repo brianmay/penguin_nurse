@@ -3,13 +3,14 @@
 #![allow(unused)]
 #![allow(clippy::all)]
 
-use chrono::offset::Utc;
 use chrono::DateTime;
+use chrono::offset::Utc;
 use diesel::{
+    Expression, ExpressionMethods, OptionalExtension, Queryable, Selectable,
     dsl::exists,
     expression::AsExpression,
     query_dsl::methods::{FilterDsl, SelectDsl},
-    select, Expression, ExpressionMethods, OptionalExtension, Queryable, Selectable,
+    select,
 };
 use diesel_async::{AsyncConnection, RunQueryDsl};
 use serde::Serialize;
@@ -56,7 +57,7 @@ pub async fn load_session(
         .pipe(Ok)
 }
 
-pub async fn create_session(
+pub async fn create_or_update_session(
     conn: &mut DatabaseConnection,
     id: &str,
     data: serde_json::Value,
@@ -66,7 +67,14 @@ pub async fn create_session(
     use schema::session::{data as q_data, expiry_date as q_expiry_date, id as q_id};
 
     diesel::insert_into(table)
-        .values((q_id.eq(id), q_data.eq(data), q_expiry_date.eq(expiry_date)))
+        .values((
+            q_id.eq(id),
+            q_data.eq(data.clone()),
+            q_expiry_date.eq(expiry_date),
+        ))
+        .on_conflict(q_id)
+        .do_update()
+        .set((q_data.eq(data), q_expiry_date.eq(expiry_date)))
         .execute(conn)
         .await?;
 

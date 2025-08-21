@@ -3,11 +3,11 @@ use tap::Pipe;
 use thiserror::Error;
 use tower_sessions::cookie::time;
 use tower_sessions::session::Record;
-use tower_sessions::{session::Id, session_store};
 use tower_sessions::{ExpiredDeletion, SessionStore};
+use tower_sessions::{session::Id, session_store};
 
 use crate::server::database::models::session::{
-    create_session, delete_expired, delete_session, load_session, session_exists,
+    create_or_update_session, delete_expired, delete_session, load_session, session_exists,
 };
 
 use super::database;
@@ -100,7 +100,7 @@ impl PostgresStore {
     ) -> session_store::Result<()> {
         let json = serde_json::to_value(&record.data).map_err(Error::Encode)?;
 
-        create_session(
+        create_or_update_session(
             conn,
             &record.id.to_string(),
             json,
@@ -203,7 +203,7 @@ impl SessionStore for PostgresStore {
 mod tests {
     use super::*;
     use chrono::{Datelike, TimeZone, Timelike};
-    use time::{macros::datetime, Month};
+    use time::{Month, macros::datetime};
 
     #[test]
     fn test_time_to_chrono() {
