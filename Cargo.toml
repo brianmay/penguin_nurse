@@ -34,7 +34,7 @@ password-auth = { version = "1.0.0", optional = true }
 palette = { version = "0.7.6", features = ["serde", "serializing"] }
 openid = { version = "0.18.0", optional = true, features = ["rustls"], default-features = false }
 arc-swap = { version = "1.7.1", optional = true }
-url = { version = "2.5.4", optional = true }
+url = { version = "2.5.5", optional = true }
 futures = "0.3.31"
 gloo-timers = { version = "0.3.0", features = ["futures"] }
 classes = "1.0.0"
