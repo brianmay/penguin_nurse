@@ -6,9 +6,9 @@ use palette::Hsv;
 use crate::{
     components::times::time_delta_to_string,
     forms::{
-        Colour, Dialog, EditError, FieldValue, FormCancelButton, FormSubmitButton, InputColour,
-        InputDateTime, InputDuration, InputNumber, InputTextArea, Saving, ValidationError,
-        validate_colour, validate_comments, validate_duration, validate_fixed_offset_date_time,
+        Colour, Dialog, EditError, FieldValue, FormSaveCancelButton, InputColour, InputDateTime,
+        InputDuration, InputNumber, InputTextArea, Saving, ValidationError, validate_colour,
+        validate_comments, validate_duration, validate_fixed_offset_date_time,
         validate_millilitres, validate_urgency,
     },
     functions::wees::{create_wee, delete_wee, update_wee},
@@ -149,29 +149,6 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
             }
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
-        match &*saving.read() {
-            Saving::Yes => {
-                rsx! {
-                    div { class: "alert alert-info", "Saving..." }
-                }
-            }
-            Saving::Finished(Ok(())) => {
-                rsx! {
-                    div { class: "alert alert-success", "Saved!" }
-                }
-            }
-            Saving::Finished(Err(err)) => {
-                rsx! {
-                    div { class: "alert alert-error",
-                        "Error: "
-                        {err.to_string()}
-                    }
-                }
-            }
-            _ => {
-                rsx! {}
-            }
-        }
         form {
             novalidate: true,
             action: "javascript:void(0)",
@@ -235,15 +212,16 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
                 disabled,
             }
 
-            FormSubmitButton {
+            FormSaveCancelButton {
                 disabled: disabled_save,
-                on_save: move |_| on_save(()),
+                on_save: move |()| on_save(()),
+                on_cancel: move |()| on_cancel(()),
                 title: match &op {
                     Operation::Create { .. } => "Create",
                     Operation::Update { .. } => "Save",
                 },
+                saving
             }
-            FormCancelButton { on_cancel: move |_| on_cancel(()) }
         }
     }
 }
@@ -276,29 +254,6 @@ pub fn WeeDelete(wee: Wee, on_cancel: Callback, on_delete: Callback<Wee>) -> Ele
             {wee.id.to_string()}
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
-        match &*saving.read() {
-            Saving::Yes => {
-                rsx! {
-                    div { class: "alert alert-info", "Deleting..." }
-                }
-            }
-            Saving::Finished(Ok(())) => {
-                rsx! {
-                    div { class: "alert alert-success", "Deleted!" }
-                }
-            }
-            Saving::Finished(Err(err)) => {
-                rsx! {
-                    div { class: "alert alert-error",
-                        "Error: "
-                        {err.to_string()}
-                    }
-                }
-            }
-            _ => {
-                rsx! {}
-            }
-        }
         form {
             novalidate: true,
             action: "javascript:void(0)",
@@ -308,11 +263,12 @@ pub fn WeeDelete(wee: Wee, on_cancel: Callback, on_delete: Callback<Wee>) -> Ele
                     on_cancel(());
                 }
             },
-            FormCancelButton { on_cancel: move |_| on_cancel(()) }
-            FormSubmitButton {
+            FormSaveCancelButton {
                 disabled,
-                on_save: move |_| on_save(()),
+                on_save: move |()| on_save(()),
+                on_cancel: move |_| on_cancel(()),
                 title: "Delete",
+                saving
             }
         }
     }

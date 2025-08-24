@@ -259,16 +259,16 @@ pub fn Logout() -> Element {
                             div {
                                 h1 { "Are you sure you want to logout?" }
                                 form { novalidate: true, action: "javascript:void(0);",
+                                    FormSubmitButton {
+                                        disabled: Memo::new(|| false),
+                                        title: "Logout",
+                                        on_save: move |_e| async move { on_save(()).await },
+                                    }
                                     FormCancelButton {
                                         on_cancel: move |_| {
                                             let navigator = navigator();
                                             navigator.push(Route::Home {});
                                         }
-                                    }
-                                    FormSubmitButton {
-                                        disabled: Memo::new(|| false),
-                                        title: "Logout",
-                                        on_save: move |_e| async move { on_save(()).await },
                                     }
                                 }
                             }

@@ -7,12 +7,12 @@ use thiserror::Error;
 
 use crate::{
     forms::{
-        Barcode, Dialog, EditError, FieldValue, FormCancelButton, FormCloseButton,
-        FormDeleteButton, FormEditButton, FormSubmitButton, InputBoolean, InputConsumable,
-        InputMaybeDateTime, InputNumber, InputSelect, InputString, InputTextArea, Saving,
-        ValidationError, validate_barcode, validate_brand, validate_comments,
-        validate_consumable_millilitres, validate_consumable_quantity, validate_consumable_unit,
-        validate_maybe_date_time, validate_name,
+        Barcode, Dialog, EditError, FieldValue, FormCloseButton, FormDeleteButton, FormEditButton,
+        FormSaveCancelButton, InputBoolean, InputConsumable, InputMaybeDateTime, InputNumber,
+        InputSelect, InputString, InputTextArea, Saving, ValidationError, validate_barcode,
+        validate_brand, validate_comments, validate_consumable_millilitres,
+        validate_consumable_quantity, validate_consumable_unit, validate_maybe_date_time,
+        validate_name,
     },
     functions::consumables::{
         create_consumable, create_nested_consumable, delete_consumable, delete_nested_consumable,
@@ -187,29 +187,6 @@ pub fn ConsumableUpdate(
             }
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
-        match &*saving.read() {
-            Saving::Yes => {
-                rsx! {
-                    div { class: "alert alert-info", "Saving..." }
-                }
-            }
-            Saving::Finished(Ok(())) => {
-                rsx! {
-                    div { class: "alert alert-success", "Saved!" }
-                }
-            }
-            Saving::Finished(Err(err)) => {
-                rsx! {
-                    div { class: "alert alert-error",
-                        "Error: "
-                        {err.to_string()}
-                    }
-                }
-            }
-            _ => {
-                rsx! {}
-            }
-        }
         form {
             novalidate: true,
             action: "javascript:void(0)",
@@ -279,15 +256,16 @@ pub fn ConsumableUpdate(
                 disabled,
             }
 
-            FormSubmitButton {
+            FormSaveCancelButton {
                 disabled: disabled_save,
-                on_save: move |_| on_save(()),
+                on_save: move |()| on_save(()),
+                on_cancel: move |()| on_cancel(()),
                 title: match &op {
                     Operation::Create => "Create",
                     Operation::Update { .. } => "Save",
                 },
+                saving
             }
-            FormCancelButton { on_cancel: move |_| on_cancel(()) }
         }
     }
 }
@@ -325,29 +303,6 @@ pub fn ConsumableDelete(
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
         ConsumableSummary { consumable: consumable.clone() }
-        match &*saving.read() {
-            Saving::Yes => {
-                rsx! {
-                    div { class: "alert alert-info", "Deleting..." }
-                }
-            }
-            Saving::Finished(Ok(())) => {
-                rsx! {
-                    div { class: "alert alert-success", "Deleted!" }
-                }
-            }
-            Saving::Finished(Err(err)) => {
-                rsx! {
-                    div { class: "alert alert-error",
-                        "Error: "
-                        {err.to_string()}
-                    }
-                }
-            }
-            _ => {
-                rsx! {}
-            }
-        }
         form {
             novalidate: true,
             action: "javascript:void(0)",
@@ -357,11 +312,12 @@ pub fn ConsumableDelete(
                     on_cancel(());
                 }
             },
-            FormCancelButton { on_cancel: move |_| on_cancel(()) }
-            FormSubmitButton {
+            FormSaveCancelButton {
                 disabled,
-                on_save: move |_| on_save(()),
+                on_save: move |()| on_save(()),
+                on_cancel: move |_| on_cancel(()),
                 title: "Delete",
+                saving
             }
         }
     }
@@ -921,12 +877,13 @@ fn ConsumableNestedForm(
                 disabled,
             }
 
-            FormSubmitButton {
+            FormSaveCancelButton {
                 disabled: disabled_save,
-                on_save: move |_| on_save(()),
+                on_save: move |()| on_save(()),
+                on_cancel: move |_| on_cancel(()),
                 title: "Save",
+                saving
             }
-            FormCancelButton { on_cancel: move |_| on_cancel(()) }
         }
     }
 }

@@ -7,9 +7,9 @@ use crate::{
         times::time_delta_to_string,
     },
     forms::{
-        Dialog, EditError, FieldValue, FormCancelButton, FormCloseButton, FormDeleteButton,
-        FormEditButton, FormSubmitButton, InputConsumable, InputDateTime, InputDuration,
-        InputNumber, InputSelect, InputTextArea, Saving, ValidationError, validate_comments,
+        Dialog, EditError, FieldValue, FormCloseButton, FormDeleteButton, FormEditButton,
+        FormSaveCancelButton, InputConsumable, InputDateTime, InputDuration, InputNumber,
+        InputSelect, InputTextArea, Saving, ValidationError, validate_comments,
         validate_consumable_millilitres, validate_consumable_quantity, validate_consumption_type,
         validate_duration, validate_fixed_offset_date_time,
     },
@@ -157,29 +157,6 @@ pub fn ConsumptionUpdate(
             }
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
-        match &*saving.read() {
-            Saving::Yes => {
-                rsx! {
-                    div { class: "alert alert-info", "Saving..." }
-                }
-            }
-            Saving::Finished(Ok(())) => {
-                rsx! {
-                    div { class: "alert alert-success", "Saved!" }
-                }
-            }
-            Saving::Finished(Err(err)) => {
-                rsx! {
-                    div { class: "alert alert-error",
-                        "Error: "
-                        {err.to_string()}
-                    }
-                }
-            }
-            _ => {
-                rsx! {}
-            }
-        }
         form {
             novalidate: true,
             action: "javascript:void(0)",
@@ -226,15 +203,16 @@ pub fn ConsumptionUpdate(
                 validate: validate.comments,
                 disabled,
             }
-            FormSubmitButton {
+            FormSaveCancelButton {
                 disabled: disabled_save,
-                on_save: move |_| on_save(()),
+                on_save: move |()| on_save(()),
+                on_cancel: move |_| on_cancel(()),
                 title: match &op {
                     Operation::Create { .. } => "Create",
                     Operation::Update { .. } => "Save",
                 },
+                saving
             }
-            FormCancelButton { on_cancel: move |_| on_cancel(()) }
         }
     }
 }
@@ -272,29 +250,6 @@ pub fn ConsumptionDelete(
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
         ConsumptionSummary { consumption: consumption.clone() }
-        match &*saving.read() {
-            Saving::Yes => {
-                rsx! {
-                    div { class: "alert alert-info", "Deleting..." }
-                }
-            }
-            Saving::Finished(Ok(())) => {
-                rsx! {
-                    div { class: "alert alert-success", "Deleted!" }
-                }
-            }
-            Saving::Finished(Err(err)) => {
-                rsx! {
-                    div { class: "alert alert-error",
-                        "Error: "
-                        {err.to_string()}
-                    }
-                }
-            }
-            _ => {
-                rsx! {}
-            }
-        }
         form {
             novalidate: true,
             action: "javascript:void(0)",
@@ -304,11 +259,12 @@ pub fn ConsumptionDelete(
                     on_cancel(());
                 }
             },
-            FormCancelButton { on_cancel: move |_| on_cancel(()) }
-            FormSubmitButton {
+            FormSaveCancelButton {
                 disabled,
-                on_save: move |_| on_save(()),
+                on_save: move |()| on_save(()),
+                on_cancel: move |_| on_cancel(()),
                 title: "Delete",
+                saving
             }
         }
     }
@@ -817,12 +773,13 @@ fn ConsumableConsumptionForm(
                 disabled,
             }
 
-            FormSubmitButton {
+            FormSaveCancelButton {
                 disabled: disabled_save,
-                on_save: move |_| on_save(()),
+                on_save: move |()| on_save(()),
+                on_cancel: move |_| on_cancel(()),
                 title: "Save",
+                saving
             }
-            FormCancelButton { on_cancel: move |_| on_cancel(()) }
         }
     }
 }

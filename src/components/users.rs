@@ -6,9 +6,9 @@ use thiserror::Error;
 
 use crate::{
     forms::{
-        Dialog, EditError, FieldValue, FormCancelButton, FormSubmitButton, InputBoolean,
-        InputPassword, InputString, Saving, ValidationError, validate_1st_password,
-        validate_2nd_password, validate_email, validate_full_name, validate_username,
+        Dialog, EditError, FieldValue, FormSaveCancelButton, InputBoolean, InputPassword,
+        InputString, Saving, ValidationError, validate_1st_password, validate_2nd_password,
+        validate_email, validate_full_name, validate_username,
     },
     functions::users::{create_user, delete_user, update_user},
     models::{ChangeUser, MaybeString, NewUser, User},
@@ -153,29 +153,6 @@ pub fn UserCreate(on_cancel: Callback, on_save: Callback<User>) -> Element {
         Dialog {
             h3 { class: "text-lg font-bold", "Create User" }
             p { class: "py-4", "Press ESC key or click the button below to close" }
-            match &*saving.read() {
-                Saving::Yes => {
-                    rsx! {
-                        div { class: "alert alert-info", "Saving..." }
-                    }
-                }
-                Saving::Finished(Ok(())) => {
-                    rsx! {
-                        div { class: "alert alert-success", "Saved!" }
-                    }
-                }
-                Saving::Finished(Err(err)) => {
-                    rsx! {
-                        div { class: "alert alert-error",
-                            "Error: "
-                            {err.to_string()}
-                        }
-                    }
-                }
-                _ => {
-                    rsx! {}
-                }
-            }
             form {
                 novalidate: true,
                 action: "javascript:void(0)",
@@ -226,11 +203,12 @@ pub fn UserCreate(on_cancel: Callback, on_save: Callback<User>) -> Element {
                     value: is_admin,
                     disabled,
                 }
-                FormCancelButton { on_cancel: move |_| on_cancel(()) }
-                FormSubmitButton {
+                FormSaveCancelButton {
                     disabled: disabled_save,
-                    on_save: move |_| on_save(()),
+                    on_save: move |()| on_save(()),
+                    on_cancel: move |_| on_cancel(()),
                     title: "Create",
+                    saving
                 }
             }
         }
@@ -292,29 +270,6 @@ pub fn UserUpdate(user: User, on_cancel: Callback, on_save: Callback<User>) -> E
                 {&*user.username}
             }
             p { class: "py-4", "Press ESC key or click the button below to close" }
-            match &*saving.read() {
-                Saving::Yes => {
-                    rsx! {
-                        div { class: "alert alert-info", "Saving..." }
-                    }
-                }
-                Saving::Finished(Ok(())) => {
-                    rsx! {
-                        div { class: "alert alert-success", "Saved!" }
-                    }
-                }
-                Saving::Finished(Err(err)) => {
-                    rsx! {
-                        div { class: "alert alert-error",
-                            "Error: "
-                            {err.to_string()}
-                        }
-                    }
-                }
-                _ => {
-                    rsx! {}
-                }
-            }
             form {
                 novalidate: true,
                 action: "javascript:void(0)",
@@ -351,11 +306,12 @@ pub fn UserUpdate(user: User, on_cancel: Callback, on_save: Callback<User>) -> E
                     value: is_admin,
                     disabled,
                 }
-                FormCancelButton { on_cancel: move |_| on_cancel(()) }
-                FormSubmitButton {
+                FormSaveCancelButton {
                     disabled: disabled_save,
-                    on_save: move |_| on_save(()),
+                    on_save: move |()| on_save(()),
+                    on_cancel: move |_| on_cancel(()),
                     title: "Save",
+                    saving
                 }
             }
         }
@@ -408,29 +364,6 @@ pub fn UserUpdatePassword(user: User, on_cancel: Callback, on_save: Callback<Use
                 {&*user.username}
             }
             p { class: "py-4", "Press ESC key or click the button below to close" }
-            match &*saving.read() {
-                Saving::Yes => {
-                    rsx! {
-                        div { class: "alert alert-info", "Saving..." }
-                    }
-                }
-                Saving::Finished(Ok(())) => {
-                    rsx! {
-                        div { class: "alert alert-success", "Saved!" }
-                    }
-                }
-                Saving::Finished(Err(err)) => {
-                    rsx! {
-                        div { class: "alert alert-error",
-                            "Error: "
-                            {err.to_string()}
-                        }
-                    }
-                }
-                _ => {
-                    rsx! {}
-                }
-            }
             form {
                 novalidate: true,
                 action: "javascript:void(0)",
@@ -454,11 +387,12 @@ pub fn UserUpdatePassword(user: User, on_cancel: Callback, on_save: Callback<Use
                     validate: validate.password_confirm,
                     disabled,
                 }
-                FormCancelButton { on_cancel: move |_| on_cancel(()) }
-                FormSubmitButton {
+                FormSaveCancelButton {
                     disabled: disabled_save,
-                    on_save: move |_| on_save(()),
+                    on_save: move |()| on_save(()),
+                    on_cancel: move |_| on_cancel(()),
                     title: "Save",
+                    saving
                 }
             }
         }
@@ -496,29 +430,6 @@ pub fn UserDelete(user: User, on_cancel: Callback, on_delete: Callback<User>) ->
                 {&*user.username}
             }
             p { class: "py-4", "Press ESC key or click the button below to close" }
-            match &*saving.read() {
-                Saving::Yes => {
-                    rsx! {
-                        div { class: "alert alert-info", "Deleting..." }
-                    }
-                }
-                Saving::Finished(Ok(())) => {
-                    rsx! {
-                        div { class: "alert alert-success", "Deleted!" }
-                    }
-                }
-                Saving::Finished(Err(err)) => {
-                    rsx! {
-                        div { class: "alert alert-error",
-                            "Error: "
-                            {err.to_string()}
-                        }
-                    }
-                }
-                _ => {
-                    rsx! {}
-                }
-            }
             form {
                 novalidate: true,
                 action: "javascript:void(0)",
@@ -528,11 +439,12 @@ pub fn UserDelete(user: User, on_cancel: Callback, on_delete: Callback<User>) ->
                         on_cancel(());
                     }
                 },
-                FormCancelButton { on_cancel: move |_| on_cancel(()) }
-                FormSubmitButton {
+                FormSaveCancelButton {
                     disabled,
-                    on_save: move |_| on_save(()),
+                    on_save: move |()| on_save(()),
+                    on_cancel: move |_| on_cancel(()),
                     title: "Delete",
+                    saving
                 }
             }
         }

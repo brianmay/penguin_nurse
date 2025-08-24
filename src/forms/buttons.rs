@@ -3,6 +3,8 @@ use std::{ops::Deref, time::Duration};
 use dioxus::{prelude::*, signals::Memo};
 use gloo_timers::future::sleep;
 
+use super::Saving;
+
 #[component]
 pub fn FormCancelButton(on_cancel: Callback<()>) -> Element {
     let mut timer = use_signal(|| None);
@@ -89,6 +91,48 @@ pub fn FormSubmitButton(disabled: Memo<bool>, title: String, on_save: Callback<(
             onclick: move |_e| on_save(()),
             {title}
         }
+    }
+}
+
+#[component]
+pub fn FormSaveCancelButton(
+    disabled: Memo<bool>,
+    title: String,
+    on_save: Callback<()>,
+    on_cancel: Callback<()>,
+    saving: ReadOnlySignal<Saving>,
+) -> Element {
+    let buttons = rsx! {
+        FormSubmitButton {
+            disabled,
+            title,
+            on_save
+        }
+        FormCancelButton {
+            on_cancel
+        }
+    };
+    match &*saving.read() {
+        Saving::Yes => {
+            rsx! {
+                div { class: "alert alert-info", "Saving..." }
+            }
+        }
+        Saving::Finished(Ok(())) => {
+            rsx! {
+                div { class: "alert alert-success", "Saved!" }
+            }
+        }
+        Saving::Finished(Err(err)) => {
+            rsx! {
+                div { class: "alert alert-error",
+                    "Error: "
+                    {err.to_string()}
+                }
+                { buttons }
+            }
+        }
+        Saving::No => buttons,
     }
 }
 

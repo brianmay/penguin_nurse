@@ -9,7 +9,8 @@ mod validation;
 
 pub use barcodes::Barcode;
 pub use buttons::{
-    FormCancelButton, FormCloseButton, FormDeleteButton, FormEditButton, FormSubmitButton,
+    FormCancelButton, FormCloseButton, FormDeleteButton, FormEditButton, FormSaveCancelButton,
+    FormSubmitButton,
 };
 pub use colours::Colour;
 pub use dialog::Dialog;
