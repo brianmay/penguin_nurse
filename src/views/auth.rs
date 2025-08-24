@@ -1,10 +1,11 @@
 use crate::{
+    Route,
     forms::{
-        validate_password, validate_username, FormCancelButton, FormSubmitButton, InputPassword,
-        InputString, MyForm,
+        FormCancelButton, FormCloseButton, FormSubmitButton, InputPassword, InputString, MyForm,
+        validate_password, validate_username,
     },
     models::User,
-    reload_user, use_user, Route,
+    reload_user, use_user,
 };
 use dioxus::prelude::*;
 
@@ -262,8 +263,7 @@ pub fn Logout() -> Element {
                                         on_cancel: move |_| {
                                             let navigator = navigator();
                                             navigator.push(Route::Home {});
-                                        },
-                                        title: "Cancel",
+                                        }
                                     }
                                     FormSubmitButton {
                                         disabled: Memo::new(|| false),
@@ -279,8 +279,8 @@ pub fn Logout() -> Element {
                 div {
                     h1 { "You are not logged in!" }
                     form { novalidate: true, action: "javascript:void(0);",
-                        FormCancelButton {
-                            on_cancel: move |_| {
+                        FormCloseButton {
+                            on_close: move |_| {
                                 let navigator = navigator();
                                 navigator.push(Route::Home {});
                             },

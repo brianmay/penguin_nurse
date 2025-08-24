@@ -234,7 +234,7 @@ pub fn ConsumptionUpdate(
                     Operation::Update { .. } => "Save",
                 },
             }
-            FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+            FormCancelButton { on_cancel: move |_| on_cancel(()) }
         }
     }
 }
@@ -304,7 +304,7 @@ pub fn ConsumptionDelete(
                     on_cancel(());
                 }
             },
-            FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+            FormCancelButton { on_cancel: move |_| on_cancel(()) }
             FormSubmitButton {
                 disabled,
                 on_save: move |_| on_save(()),
@@ -822,7 +822,7 @@ fn ConsumableConsumptionForm(
                 on_save: move |_| on_save(()),
                 title: "Save",
             }
-            FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Cancel" }
+            FormCancelButton { on_cancel: move |_| on_cancel(()) }
         }
     }
 }

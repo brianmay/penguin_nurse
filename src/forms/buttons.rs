@@ -1,13 +1,55 @@
+use std::{ops::Deref, time::Duration};
+
 use dioxus::{prelude::*, signals::Memo};
+use gloo_timers::future::sleep;
 
 #[component]
-pub fn FormCancelButton(title: String, on_cancel: Callback<()>) -> Element {
+pub fn FormCancelButton(on_cancel: Callback<()>) -> Element {
+    let mut timer = use_signal(|| None);
+    let mut confirm = use_signal(|| false);
+
+    let start = use_callback(move |()| {
+        let task = spawn(async move {
+            sleep(Duration::from_secs(10)).await;
+            confirm.set(false);
+        });
+        timer.set(Some(task));
+    });
+
     rsx! {
-        button {
-            r#type: "button",
-            class: "w-full btn btn-secondary my-2",
-            onclick: move |_e| on_cancel(()),
-            {title}
+        if confirm() {
+            {"Really cancel?"}
+            div {
+                class: "flex gap-2",
+                button {
+                    r#type: "button",
+                    class: "btn btn-secondary my-2",
+                    onclick: move |_e| {
+                        timer.read().deref().map(|x| x.cancel());
+                        confirm.set(false);
+                    },
+                    "No"
+                }
+                button {
+                    r#type: "button",
+                    class: "btn btn-secondary my-2",
+                    onclick: move |_e| {
+                        timer.read().deref().map(|x| x.cancel());
+                        on_cancel(());
+                    },
+                    "Yes"
+                }
+            }
+        } else {
+            button {
+                r#type: "button",
+                class: "w-full btn btn-secondary my-2",
+                onclick: move |_e| {
+                    start(());
+                    confirm.set(true);
+                },
+                "Cancel"
+            }
         }
     }
 }

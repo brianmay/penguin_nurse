@@ -259,7 +259,7 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
                     Operation::Update { .. } => "Save",
                 },
             }
-            FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+            FormCancelButton { on_cancel: move |_| on_cancel(()) }
         }
     }
 }
@@ -324,7 +324,7 @@ pub fn PooDelete(poo: Poo, on_cancel: Callback, on_delete: Callback<Poo>) -> Ele
                     on_cancel(());
                 }
             },
-            FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+            FormCancelButton { on_cancel: move |_| on_cancel(()) }
             FormSubmitButton {
                 disabled,
                 on_save: move |_| on_save(()),

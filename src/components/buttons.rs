@@ -5,7 +5,7 @@ pub fn NavButton(on_click: Callback<()>, children: Element) -> Element {
     rsx! {
         button {
             r#type: "button",
-            class: "btn btn-outline btn-accent mr-2 align-top",
+            class: "btn btn-outline btn-accent align-top",
             onclick: move |_e| on_click(()),
             {children}
         }
@@ -17,7 +17,7 @@ pub fn CreateButton(on_click: Callback<()>, children: Element) -> Element {
     rsx! {
         button {
             r#type: "button",
-            class: "btn btn-outline btn-secondary mr-2 align-top",
+            class: "btn btn-outline btn-secondary align-top",
             onclick: move |_e| on_click(()),
             svg {
                 "viewBox": "0 0 24 24",
@@ -42,7 +42,7 @@ pub fn ChangeButton(on_click: Callback<()>, children: Element) -> Element {
     rsx! {
         button {
             r#type: "button",
-            class: "btn btn-outline btn-secondary mr-2 align-top",
+            class: "btn btn-outline btn-secondary align-top",
             onclick: move |_e| on_click(()),
             svg {
                 xmlns: "http://www.w3.org/2000/svg",
@@ -67,7 +67,7 @@ pub fn DeleteButton(on_click: Callback<()>, children: Element) -> Element {
     rsx! {
         button {
             r#type: "button",
-            class: "btn btn-outline btn-secondary mr-2 align-top",
+            class: "btn btn-outline btn-secondary align-top",
             onclick: move |_e| on_click(()),
 
             svg {
@@ -93,7 +93,7 @@ pub fn ActionButton(on_click: Callback<()>, children: Element) -> Element {
     rsx! {
         button {
             r#type: "button",
-            class: "btn btn-outline btn-secondary mr-2 align-top",
+            class: "btn btn-outline btn-secondary align-top",
             onclick: move |_e| on_click(()),
             svg {
                 "viewBox": "0 0 24 24",

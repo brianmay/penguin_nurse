@@ -373,7 +373,7 @@ pub fn TimelineList(
 
     rsx! {
         div { class: "ml-2 mr-2",
-            div { class: "mb-2",
+            div { class: "mb-2 flex gap-2",
                 CreateButton {
                     on_click: move |_| {
                         navigator.push(Route::TimelineList {
@@ -403,7 +403,7 @@ pub fn TimelineList(
                 }
             }
 
-            div { class: "mb-2",
+            div { class: "mb-2 flex gap-2",
                 NavButton {
                     on_click: move |_| {
                         let new_date = date().pred_opt();

@@ -226,7 +226,7 @@ pub fn UserCreate(on_cancel: Callback, on_save: Callback<User>) -> Element {
                     value: is_admin,
                     disabled,
                 }
-                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                FormCancelButton { on_cancel: move |_| on_cancel(()) }
                 FormSubmitButton {
                     disabled: disabled_save,
                     on_save: move |_| on_save(()),
@@ -351,7 +351,7 @@ pub fn UserUpdate(user: User, on_cancel: Callback, on_save: Callback<User>) -> E
                     value: is_admin,
                     disabled,
                 }
-                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                FormCancelButton { on_cancel: move |_| on_cancel(()) }
                 FormSubmitButton {
                     disabled: disabled_save,
                     on_save: move |_| on_save(()),
@@ -454,7 +454,7 @@ pub fn UserUpdatePassword(user: User, on_cancel: Callback, on_save: Callback<Use
                     validate: validate.password_confirm,
                     disabled,
                 }
-                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                FormCancelButton { on_cancel: move |_| on_cancel(()) }
                 FormSubmitButton {
                     disabled: disabled_save,
                     on_save: move |_| on_save(()),
@@ -528,7 +528,7 @@ pub fn UserDelete(user: User, on_cancel: Callback, on_delete: Callback<User>) ->
                         on_cancel(());
                     }
                 },
-                FormCancelButton { on_cancel: move |_| on_cancel(()), title: "Close" }
+                FormCancelButton { on_cancel: move |_| on_cancel(()) }
                 FormSubmitButton {
                     disabled,
                     on_save: move |_| on_save(()),
