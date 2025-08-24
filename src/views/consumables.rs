@@ -79,28 +79,31 @@ fn EntryRow(
         if selected() == Some(id) {
             tr {
                 td { colspan: "6", class: "block sm:table-cell",
-                    ChangeButton { on_click: move |_| {
-                            navigator.push(Route::ConsumableList{
-                                dialog: ListDialogReference::UpdateIngredients{consumable_id: id}
-                            });
-                        },
-                        "Ingredients"
-                    }
-                    ChangeButton {
-                        on_click: move |_| {
-                            navigator.push(Route::ConsumableList{
-                                dialog: ListDialogReference::UpdateBasic{consumable_id: id}
-                            });
-                        },
-                        "Edit"
-                    }
-                    ChangeButton {
-                        on_click: move |_| {
-                            navigator.push(Route::ConsumableList{
-                                dialog: ListDialogReference::Delete{consumable_id: id}
-                            });
-                        },
-                        "Delete"
+                    div {
+                        class: "flex gap-2",
+                        ChangeButton { on_click: move |_| {
+                                navigator.push(Route::ConsumableList{
+                                    dialog: ListDialogReference::UpdateIngredients{consumable_id: id}
+                                });
+                            },
+                            "Ingredients"
+                        }
+                        ChangeButton {
+                            on_click: move |_| {
+                                navigator.push(Route::ConsumableList{
+                                    dialog: ListDialogReference::UpdateBasic{consumable_id: id}
+                                });
+                            },
+                            "Edit"
+                        }
+                        ChangeButton {
+                            on_click: move |_| {
+                                navigator.push(Route::ConsumableList{
+                                    dialog: ListDialogReference::Delete{consumable_id: id}
+                                });
+                            },
+                            "Delete"
+                        }
                     }
                 }
             }

@@ -159,7 +159,7 @@ pub fn UserDetail(
                     }
                 }
 
-                div { class: "p-4",
+                div { class: "flex gap-2 p-4",
                     ChangeButton {
                         on_click: move |_| {
                             navigator

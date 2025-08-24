@@ -119,87 +119,89 @@ fn EntryRow(
         }
         if selected() == Some(id) {
             td { colspan: 4, class: "block sm:table-cell",
-                match entry.data {
-                    EntryData::Wee(wee) => {
-                        rsx! {
-                            ChangeButton {
-                                on_click: move |_| {
-                                    navigator
-                                    .push(Route::TimelineList {
-                                        date: date(),
-                                        dialog: DialogReference::UpdateWee { wee_id: wee.id }
-                                    });
-                                },
-                                "Edit"
-                            }
-                            DeleteButton {
-                                on_click: move |_| {
-                                    navigator
-                                    .push(Route::TimelineList {
-                                        date: date(),
-                                        dialog: DialogReference::DeleteWee{ wee_id: wee.id }
-                                    });
-                                },
-                                "Delete"
-                            }
-                        }
-                    }
-                    EntryData::Poo(poo) => {
-                        rsx! {
-                            ChangeButton {
-                                on_click: move |_| {
-                                    navigator
-                                    .push(Route::TimelineList {
-                                        date: date(),
-                                        dialog: DialogReference::UpdatePoo{ poo_id: poo.id }
-                                    });
-                                },
-                                "Edit"
-                            }
-                            DeleteButton {
-                                on_click: move |_| {
-                                    navigator
-                                    .push(Route::TimelineList {
-                                        date: date(),
-                                        dialog: DialogReference::DeletePoo{ poo_id: poo.id }
-                                    });
-                                 },
-                                "Delete"
+                div { class: "flex gap-2",
+                    match entry.data {
+                        EntryData::Wee(wee) => {
+                            rsx! {
+                                ChangeButton {
+                                    on_click: move |_| {
+                                        navigator
+                                        .push(Route::TimelineList {
+                                            date: date(),
+                                            dialog: DialogReference::UpdateWee { wee_id: wee.id }
+                                        });
+                                    },
+                                    "Edit"
+                                }
+                                DeleteButton {
+                                    on_click: move |_| {
+                                        navigator
+                                        .push(Route::TimelineList {
+                                            date: date(),
+                                            dialog: DialogReference::DeleteWee{ wee_id: wee.id }
+                                        });
+                                    },
+                                    "Delete"
+                                }
                             }
                         }
-                    }
-                    EntryData::Consumption(consumption) => {
-                        let consumption = consumption.consumption;
-                        rsx! {
-                            ChangeButton {
-                                on_click: move |_| {
-                                    navigator
-                                    .push(Route::TimelineList {
-                                        date: date(),
-                                        dialog: DialogReference::UpdateIngredients{ consumption_id: consumption.id }
-                                    });
-                                },
-                                "Ingredients"
+                        EntryData::Poo(poo) => {
+                            rsx! {
+                                ChangeButton {
+                                    on_click: move |_| {
+                                        navigator
+                                        .push(Route::TimelineList {
+                                            date: date(),
+                                            dialog: DialogReference::UpdatePoo{ poo_id: poo.id }
+                                        });
+                                    },
+                                    "Edit"
+                                }
+                                DeleteButton {
+                                    on_click: move |_| {
+                                        navigator
+                                        .push(Route::TimelineList {
+                                            date: date(),
+                                            dialog: DialogReference::DeletePoo{ poo_id: poo.id }
+                                        });
+                                     },
+                                    "Delete"
+                                }
                             }
-                            ChangeButton {
-                                on_click: move |_| {
-                                    navigator
-                                    .push(Route::TimelineList {
-                                        date: date(),
-                                        dialog: DialogReference::UpdateBasic{ consumption_id: consumption.id }
-                                    });
-                                },
-                                "Edit"
-                            }
-                            DeleteButton {
-                                on_click: move |_| {
-                                    navigator
-                                    .push(Route::TimelineList {
-                                        date: date(),
-                                        dialog: DialogReference::DeleteConsumption{ consumption_id: consumption.id }
-                                    });
-                                },
-                                "Delete"
+                        }
+                        EntryData::Consumption(consumption) => {
+                            let consumption = consumption.consumption;
+                            rsx! {
+                                ChangeButton {
+                                    on_click: move |_| {
+                                        navigator
+                                        .push(Route::TimelineList {
+                                            date: date(),
+                                            dialog: DialogReference::UpdateIngredients{ consumption_id: consumption.id }
+                                        });
+                                    },
+                                    "Ingredients"
+                                }
+                                ChangeButton {
+                                    on_click: move |_| {
+                                        navigator
+                                        .push(Route::TimelineList {
+                                            date: date(),
+                                            dialog: DialogReference::UpdateBasic{ consumption_id: consumption.id }
+                                        });
+                                    },
+                                    "Edit"
+                                }
+                                DeleteButton {
+                                    on_click: move |_| {
+                                        navigator
+                                        .push(Route::TimelineList {
+                                            date: date(),
+                                            dialog: DialogReference::DeleteConsumption{ consumption_id: consumption.id }
+                                        });
+                                    },
+                                    "Delete"
+                                }
                             }
                         }
                     }
