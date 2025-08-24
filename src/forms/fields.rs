@@ -625,9 +625,9 @@ pub fn InputConsumable(
     disabled: Memo<bool>,
     on_create: Callback<Consumable>,
     on_change: Callback<Option<Consumable>>,
+    mut create_form: Signal<bool>,
 ) -> Element {
     let mut query = use_signal(|| "".to_string());
-    let mut create_form = use_signal(|| false);
 
     let list: Resource<Option<Result<Vec<Consumable>, ServerFnError>>> =
         use_resource(move || async move {

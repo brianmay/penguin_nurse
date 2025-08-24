@@ -452,6 +452,7 @@ pub fn ConsumptionUpdateIngredients(
     show_ingredient_update_ingredients: Callback<(Consumption, Consumable)>,
 ) -> Element {
     let mut selected_consumable = use_signal(|| None);
+    let create_form = use_signal(|| false);
     let mut consumption_consumables =
         use_resource(move || async move { get_child_consumables(consumption().id).await });
 
@@ -527,38 +528,40 @@ pub fn ConsumptionUpdateIngredients(
             {consumption.name()}
         }
 
-        match consumption_consumables() {
-            Some(Ok(consumption_consumables)) => {
-                rsx! {
-                    ConsumptionSummary { consumption: consumption.clone() }
-                    div { class: "p-4",
-                        ul {
-                            for item in consumption_consumables {
+        if !create_form() {
+            match consumption_consumables() {
+                Some(Ok(consumption_consumables)) => {
+                    rsx! {
+                        ConsumptionSummary { consumption: consumption.clone() }
+                        div { class: "p-4",
+                            ul {
+                                for item in consumption_consumables {
 
-                                li {
-                                    class: "p-4 mb-1 bg-gray-700 border-2 rounded-lg",
-                                    class: if is_selected(&item) { "border-gray-50 text-gray-50" } else { "border-gray-500" },
-                                    onclick: move |_| {
-                                        selected_consumable.set(Some(item.clone()));
-                                    },
-                                    ConsumptionItemSummary { key: item.id, item: item.clone() }
+                                    li {
+                                        class: "p-4 mb-1 bg-gray-700 border-2 rounded-lg",
+                                        class: if is_selected(&item) { "border-gray-50 text-gray-50" } else { "border-gray-500" },
+                                        onclick: move |_| {
+                                            selected_consumable.set(Some(item.clone()));
+                                        },
+                                        ConsumptionItemSummary { key: item.id, item: item.clone() }
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
-            Some(Err(err)) => {
-                rsx! {
-                    div { class: "p-4",
-                        "Error: "
-                        {err.to_string()}
+                Some(Err(err)) => {
+                    rsx! {
+                        div { class: "p-4",
+                            "Error: "
+                            {err.to_string()}
+                        }
                     }
                 }
-            }
-            None => {
-                rsx! {
-                    div { class: "p-4", "Loading..." }
+                None => {
+                    rsx! {
+                        div { class: "p-4", "Loading..." }
+                    }
                 }
             }
         }
@@ -646,19 +649,22 @@ pub fn ConsumptionUpdateIngredients(
                             add_value.set(None);
                         }
                     },
+                    create_form,
                     disabled,
                 }
-                FormEditButton {
-                    title: "Edit",
-                    on_edit: move || {
-                        show_update_basic(consumption.clone());
-                    },
-                }
-                FormCloseButton {
-                    on_close: move || {
-                        on_close(());
-                    },
-                    title: "Close",
+                if !create_form() {
+                    FormEditButton {
+                        title: "Edit",
+                        on_edit: move || {
+                            show_update_basic(consumption.clone());
+                        },
+                    }
+                    FormCloseButton {
+                        on_close: move || {
+                            on_close(());
+                        },
+                        title: "Close",
+                    }
                 }
             }
         }

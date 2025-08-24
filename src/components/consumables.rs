@@ -559,6 +559,7 @@ pub fn ConsumableUpdateIngredients(
     show_ingredient_update_ingredients: Callback<(Consumable, Consumable)>,
 ) -> Element {
     let mut selected_consumable = use_signal(|| None);
+    let create_form = use_signal(|| false);
 
     let mut nested_consumables =
         use_resource(move || async move { get_child_consumables(consumable().id).await });
@@ -639,37 +640,39 @@ pub fn ConsumableUpdateIngredients(
             {consumable.name.clone()}
         }
 
-        match nested_consumables() {
-            Some(Ok(nested_consumables)) => {
-                rsx! {
-                    ConsumableSummary { consumable: consumable.clone() }
-                    div { class: "p-4",
-                        ul {
-                            for item in nested_consumables {
-                                li {
-                                    class: "p-4 mb-1 bg-gray-700 border-2 rounded-lg",
-                                    class: if is_selected(&item) { "border-gray-50 text-gray-50" } else { "border-gray-500" },
-                                    onclick: move |_| {
-                                        selected_consumable.set(Some(item.clone()));
-                                    },
-                                    ConsumableItemSummary { item: item.clone() }
+        if !create_form() {
+            match nested_consumables() {
+                Some(Ok(nested_consumables)) => {
+                    rsx! {
+                        ConsumableSummary { consumable: consumable.clone() }
+                        div { class: "p-4",
+                            ul {
+                                for item in nested_consumables {
+                                    li {
+                                        class: "p-4 mb-1 bg-gray-700 border-2 rounded-lg",
+                                        class: if is_selected(&item) { "border-gray-50 text-gray-50" } else { "border-gray-500" },
+                                        onclick: move |_| {
+                                            selected_consumable.set(Some(item.clone()));
+                                        },
+                                        ConsumableItemSummary { item: item.clone() }
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
-            Some(Err(err)) => {
-                rsx! {
-                    div { class: "p-4",
-                        "Error: "
-                        {err.to_string()}
+                Some(Err(err)) => {
+                    rsx! {
+                        div { class: "p-4",
+                            "Error: "
+                            {err.to_string()}
+                        }
                     }
                 }
-            }
-            None => {
-                rsx! {
-                    div { class: "p-4", "Loading..." }
+                None => {
+                    rsx! {
+                        div { class: "p-4", "Loading..." }
+                    }
                 }
             }
         }
@@ -757,13 +760,16 @@ pub fn ConsumableUpdateIngredients(
                             add_value.set(None);
                         }
                     },
+                    create_form,
                     disabled,
                 }
-                FormEditButton {
-                    title: "Edit Consumable",
-                    on_edit: move |_| show_update_basic(consumable_clone_2.clone()),
+                if !create_form() {
+                    FormEditButton {
+                        title: "Edit Consumable",
+                        on_edit: move |_| show_update_basic(consumable_clone_2.clone()),
+                    }
+                    FormCloseButton { on_close, title: "Close" }
                 }
-                FormCloseButton { on_close, title: "Close" }
             }
         }
     }
