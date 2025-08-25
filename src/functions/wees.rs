@@ -70,12 +70,12 @@ pub async fn create_wee(wee: models::NewWee) -> Result<models::Wee, ServerFnErro
 pub async fn update_wee(id: WeeId, wee: models::ChangeWee) -> Result<models::Wee, ServerFnError> {
     let logged_in_user_id = get_user_id().await?;
 
-    if let Some(req_user_id) = wee.user_id {
-        if logged_in_user_id != req_user_id {
-            return Err(ServerFnError::ServerError(
-                "User ID does not match the logged in user".to_string(),
-            ));
-        }
+    if let Some(req_user_id) = wee.user_id
+        && logged_in_user_id != req_user_id
+    {
+        return Err(ServerFnError::ServerError(
+            "User ID does not match the logged in user".to_string(),
+        ));
     }
 
     let mut conn = get_database_connection().await?;

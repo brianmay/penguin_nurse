@@ -1,4 +1,4 @@
-use axum::async_trait;
+use async_trait::async_trait;
 use tap::Pipe;
 use thiserror::Error;
 use tower_sessions::cookie::time;

@@ -1,6 +1,6 @@
 use std::{num::ParseIntError, str::FromStr, sync::Arc};
 
-use dioxus::prelude::*;
+use dioxus::{prelude::*, router::ToQueryArgument};
 use tap::Pipe;
 use thiserror::Error;
 
@@ -485,6 +485,16 @@ pub enum ListDialogReference {
     Idle,
 }
 
+impl ToQueryArgument for ListDialogReference {
+    fn display_query_argument(
+        &self,
+        query_name: &str,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        write!(f, "{}={}", query_name, self.to_string())
+    }
+}
+
 impl FromStr for ListDialogReference {
     type Err = ListDialogReferenceError;
 
@@ -530,6 +540,16 @@ impl ToString for ListDialogReference {
 pub enum DetailsDialogReferenceError {
     #[error("Invalid reference")]
     ReferenceError,
+}
+
+impl ToQueryArgument for DetailsDialogReference {
+    fn display_query_argument(
+        &self,
+        query_name: &str,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        write!(f, "{}={}", query_name, self.to_string())
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

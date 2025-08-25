@@ -3,6 +3,7 @@
 
   inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+  inputs.nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
   inputs.rust-overlay.url = "github:oxalica/rust-overlay";
   inputs.devenv.url = "github:cachix/devenv";
   inputs.crane.url = "github:ipetkov/crane";
@@ -12,6 +13,7 @@
     inputs@{
       self,
       nixpkgs,
+      nixpkgs-unstable,
       flake-utils,
       rust-overlay,
       devenv,
@@ -25,6 +27,7 @@
           inherit system;
           overlays = [ (import rust-overlay) ];
         };
+        pkgs-unstable = nixpkgs-unstable.legacyPackages.${system};
         wasm-bindgen-cli = pkgs.wasm-bindgen-cli_0_2_100;
 
         # This should work but isn't currently required.
@@ -42,9 +45,10 @@
         #     # outputHash = pkgs.lib.fakeHash;
         #   });
         # });
-        dioxus-cli = pkgs.dioxus-cli;
+        dioxus-cli = pkgs.callPackage ./nix/dioxus-cli.nix { };
+        # dioxus-cli = pkgs.dioxus-cli;
 
-        rustPlatform = pkgs.rust-bin.stable."1.86.0".default.override {
+        rustPlatform = pkgs.rust-bin.stable.latest.default.override {
           targets = [ "wasm32-unknown-unknown" ];
           extensions = [ "rust-src" ];
         };
@@ -225,27 +229,31 @@
             version = "${cargoToml.package.version}-${rev}";
             src = ./.;
             strictDeps = true;
-            buildInputs = [ ];
+            buildInputs = [ pkgs.openssl ];
             nativeBuildInputs = [
               dioxus-cli
               rustPlatform
               wasm-bindgen-cli
               postgres
+              pkgs.binaryen
+              pkgs.pkg-config
             ];
             buildPhase = ''
               export VCS_REF="${build_env.VCS_REF}"
               export BUILD_DATE="${build_env.BUILD_DATE}"
+              export NO_DOWNLOADS=1
               ln -s ${nodePackages}/node_modules ./node_modules
               ${tailwindcss}/bin/tailwindcss -i ./input.css -o ./assets/tailwind.css
               ./node_modules/.bin/rollup --config rollup.config.mjs
-              dx build --release --platform web
+              dx --version
+              dx build --release --platform web --verbose
             '';
             installPhase = ''
               mkdir -p $out
               cp -r target/dx/$pname/release/web $out/bin
             '';
             cargoLock.lockFile = ./Cargo.lock;
-            meta.mainProgram = "server";
+            meta.mainProgram = "penguin_nurse";
           };
 
         test_module = pkgs.nixosTest {
@@ -294,13 +302,14 @@
             {
               packages = [
                 rustPlatform
-                pkgs.rust-analyzer
+                pkgs-unstable.rust-analyzer
                 wasm-bindgen-cli
+                pkgs.binaryen
                 nodejs
                 pkgs.cargo-watch
                 pkgs.sqlx-cli
                 # pkgs.jq
-                # pkgs.openssl
+                pkgs.openssl
                 pkgs.prefetch-npm-deps
                 dioxus-cli
                 # pkgs.b3sum

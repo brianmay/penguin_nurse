@@ -1,8 +1,5 @@
 use dioxus::prelude::*;
 
-#[cfg(feature = "server")]
-use server_fn::error::NoCustomError;
-
 use crate::models::{self, UserId};
 
 #[cfg(feature = "server")]
@@ -27,7 +24,7 @@ pub async fn get_user_by_id(id: UserId) -> Result<Option<models::User>, ServerFn
     crate::server::database::models::users::get_user_by_id(&mut conn, id.as_inner())
         .await
         .map(|x| x.map(|y| y.into()))
-        .map_err(ServerFnError::<NoCustomError>::from)
+        .map_err(ServerFnError::from)
 }
 
 #[server]
@@ -43,7 +40,7 @@ pub async fn create_user(user: models::NewUser) -> Result<models::User, ServerFn
     crate::server::database::models::users::create_user(&mut conn, new_user)
         .await
         .map(|x| x.into())
-        .map_err(ServerFnError::<NoCustomError>::from)
+        .map_err(ServerFnError::from)
 }
 
 #[server]
@@ -64,7 +61,7 @@ pub async fn update_user(
     crate::server::database::models::users::update_user(&mut conn, id.as_inner(), updates)
         .await
         .map(|x| x.into())
-        .map_err(ServerFnError::<NoCustomError>::from)
+        .map_err(ServerFnError::from)
 }
 
 #[server]
@@ -74,5 +71,5 @@ pub async fn delete_user(id: UserId) -> Result<(), ServerFnError> {
 
     crate::server::database::models::users::delete_user(&mut conn, id.as_inner())
         .await
-        .map_err(ServerFnError::<NoCustomError>::from)
+        .map_err(ServerFnError::from)
 }

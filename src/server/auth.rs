@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use axum::{
     http,
     response::{IntoResponse, Response},
@@ -12,7 +11,7 @@ use tokio::task;
 use super::database::{
     self,
     connection::DatabasePool,
-    models::users::{get_user_by_id, get_user_by_username, User},
+    models::users::{User, get_user_by_id, get_user_by_username},
 };
 
 // This allows us to extract the authentication fields from forms. We use this
@@ -44,7 +43,6 @@ pub enum Error {
     TaskJoin(#[from] task::JoinError),
 }
 
-#[async_trait]
 impl AuthnBackend for Backend {
     type User = User;
     type Credentials = Credentials;
@@ -135,7 +133,6 @@ impl IntoResponse for AuthSessionLayerNotFound {
     }
 }
 
-#[async_trait]
 impl<S: std::marker::Sync + std::marker::Send> axum::extract::FromRequestParts<S> for Session {
     type Rejection = AuthSessionLayerNotFound;
 

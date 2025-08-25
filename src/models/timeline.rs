@@ -1,7 +1,7 @@
+use super::ConsumptionWithItems;
 use super::entry::{Entry, EntryData, Event};
 use super::poos::Poo;
 use super::wees::Wee;
-use super::ConsumptionWithItems;
 
 pub struct Timeline(Vec<Entry>);
 
@@ -56,7 +56,7 @@ impl Timeline {
         self.0.sort_by(|a, b| a.time.cmp(&b.time));
     }
 
-    pub fn iter(&self) -> std::slice::Iter<Entry> {
+    pub fn iter(&self) -> std::slice::Iter<'_, Entry> {
         self.0.iter()
     }
 
