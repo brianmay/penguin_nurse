@@ -18,7 +18,7 @@ use crate::{
 use super::FieldValue;
 use super::errors::ValidationError;
 
-fn get_input_classes(is_valid: bool, changed: bool, is_disabled: bool) -> &'static str {
+fn get_input_classes(is_valid: bool, is_disabled: bool) -> &'static str {
     if is_disabled {
         return "border-gray-300 dark:border-gray-600";
     }
@@ -27,11 +27,23 @@ fn get_input_classes(is_valid: bool, changed: bool, is_disabled: bool) -> &'stat
         return "border-green-500 dark:border-green-500";
     }
 
-    if !changed {
-        return "";
-    }
-
     "border-red-500 dark:border-red-500"
+}
+
+#[component]
+pub fn FieldMessage<D: 'static + Clone + PartialEq>(
+    validate: Memo<Result<D, ValidationError>>,
+    disabled: Memo<bool>,
+) -> Element {
+    rsx! {
+            if disabled() {
+                div { class: "text-gray-300", "Inactive" }
+            } else if let Err(err) = validate() {
+                div { class: "text-red-500", "{err}" }
+            } else {
+                div { class: "text-green-500", "Looks good!" }
+            }
+    }
 }
 
 #[component]
@@ -42,8 +54,6 @@ pub fn InputString<D: 'static + Clone + PartialEq>(
     validate: Memo<Result<D, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
-    let mut changed = use_signal(|| false);
-
     rsx! {
         div { class: "mb-5",
             label {
@@ -54,23 +64,16 @@ pub fn InputString<D: 'static + Clone + PartialEq>(
             input {
                 r#type: "text",
                 class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                    .to_string() + get_input_classes(validate().is_ok(), changed(), disabled()),
+                    .to_string() + get_input_classes(validate().is_ok(), disabled()),
                 id,
                 placeholder: "Enter input",
                 value: "{value()}",
                 disabled,
                 oninput: move |e| {
-                    changed.set(true);
                     value.set(e.value());
                 },
             }
-            if disabled() || !changed() {
-
-            } else if let Err(err) = validate() {
-                div { class: "text-red-500", "{err}" }
-            } else {
-                div { class: "text-green-500", "Looks good!" }
-            }
+            FieldMessage { validate, disabled }
         }
     }
 }
@@ -83,8 +86,6 @@ pub fn InputNumber<D: 'static + Clone + PartialEq>(
     validate: Memo<Result<D, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
-    let mut changed = use_signal(|| false);
-
     rsx! {
         div { class: "mb-5",
             label {
@@ -95,7 +96,7 @@ pub fn InputNumber<D: 'static + Clone + PartialEq>(
             input {
                 r#type: "text",
                 class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                    .to_string() + get_input_classes(validate().is_ok(), changed(), disabled()),
+                    .to_string() + get_input_classes(validate().is_ok(), disabled()),
                 id,
                 r#type: "number",
                 pattern: "[0-9]*",
@@ -104,17 +105,10 @@ pub fn InputNumber<D: 'static + Clone + PartialEq>(
                 value: "{value()}",
                 disabled,
                 oninput: move |e| {
-                    changed.set(true);
                     value.set(e.value());
                 },
             }
-            if disabled() || !changed() {
-
-            } else if let Err(err) = validate() {
-                div { class: "text-red-500", "{err}" }
-            } else {
-                div { class: "text-green-500", "Looks good!" }
-            }
+            FieldMessage { validate, disabled }
         }
     }
 }
@@ -127,8 +121,6 @@ pub fn InputPassword<D: 'static + Clone + Eq + PartialEq>(
     validate: Memo<Result<D, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
-    let mut changed: Signal<bool> = use_signal(|| false);
-
     rsx! {
         div { class: "my-5",
             label {
@@ -139,23 +131,16 @@ pub fn InputPassword<D: 'static + Clone + Eq + PartialEq>(
             input {
                 r#type: "password",
                 class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                    .to_string() + get_input_classes(validate().is_ok(), changed(), disabled()),
+                    .to_string() + get_input_classes(validate().is_ok(), disabled()),
                 id,
                 placeholder: "Enter input",
                 value: value(),
                 disabled,
                 oninput: move |e| {
-                    changed.set(true);
                     value.set(e.value());
                 },
             }
-            if disabled() || !changed() {
-
-            } else if let Err(err) = validate() {
-                div { class: "text-red-500", "{err}" }
-            } else {
-                div { class: "text-green-500", "Looks good!" }
-            }
+            FieldMessage { validate, disabled }
         }
     }
 }
@@ -168,8 +153,6 @@ pub fn InputTextArea<D: 'static + Clone + Eq + PartialEq>(
     validate: Memo<Result<D, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
-    let mut changed = use_signal(|| false);
-
     rsx! {
         div { class: "mb-5",
             label {
@@ -179,23 +162,16 @@ pub fn InputTextArea<D: 'static + Clone + Eq + PartialEq>(
             }
             textarea {
                 class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                    .to_string() + get_input_classes(validate().is_ok(), changed(), disabled()),
+                    .to_string() + get_input_classes(validate().is_ok(), disabled()),
                 id,
                 placeholder: "Enter input",
                 value: "{value()}",
                 disabled,
                 oninput: move |e| {
-                    changed.set(true);
                     value.set(e.value());
                 },
             }
-            if disabled() || !changed() {
-
-            } else if let Err(err) = validate() {
-                div { class: "text-red-500", "{err}" }
-            } else {
-                div { class: "text-green-500", "Looks good!" }
-            }
+            FieldMessage { validate, disabled }
         }
     }
 }
@@ -208,8 +184,6 @@ pub fn InputDateTime(
     validate: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
-    let mut changed = use_signal(|| false);
-
     rsx! {
         div { class: "mb-5",
             label {
@@ -220,13 +194,12 @@ pub fn InputDateTime(
             input {
                 r#type: "text",
                 class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                    .to_string() + get_input_classes(validate().is_ok(), changed(), disabled()),
+                    .to_string() + get_input_classes(validate().is_ok(), disabled()),
                 id,
                 placeholder: "Enter input",
                 value: "{value()}",
                 disabled,
                 oninput: move |e| {
-                    changed.set(true);
                     value.set(e.value());
                 },
             }
@@ -236,13 +209,7 @@ pub fn InputDateTime(
                 },
                 "Now"
             }
-            if disabled() || !changed() {
-
-            } else if let Err(err) = validate() {
-                div { class: "text-red-500", "{err}" }
-            } else {
-                div { class: "text-green-500", "Looks good!" }
-            }
+            FieldMessage { validate, disabled }
         }
     }
 }
@@ -255,8 +222,6 @@ pub fn InputMaybeDateTime(
     validate: Memo<Result<MaybeDateTime, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
-    let mut changed = use_signal(|| false);
-
     rsx! {
         div { class: "mb-5",
             label {
@@ -267,13 +232,12 @@ pub fn InputMaybeDateTime(
             input {
                 r#type: "text",
                 class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                    .to_string() + get_input_classes(validate().is_ok(), changed(), disabled()),
+                    .to_string() + get_input_classes(validate().is_ok(), disabled()),
                 id,
                 placeholder: "Enter input",
                 value: "{value()}",
                 disabled,
                 oninput: move |e| {
-                    changed.set(true);
                     value.set(e.value());
                 },
             }
@@ -283,13 +247,7 @@ pub fn InputMaybeDateTime(
                 },
                 "Now"
             }
-            if disabled() || !changed() {
-
-            } else if let Err(err) = validate() {
-                div { class: "text-red-500", "{err}" }
-            } else {
-                div { class: "text-green-500", "Looks good!" }
-            }
+            FieldMessage { validate, disabled }
         }
     }
 }
@@ -303,8 +261,6 @@ pub fn InputDuration(
     validate: Memo<Result<TimeDelta, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
-    let mut changed = use_signal(|| false);
-
     rsx! {
         div { class: "mb-5",
             label {
@@ -315,7 +271,7 @@ pub fn InputDuration(
             input {
                 r#type: "text",
                 class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                    .to_string() + get_input_classes(validate().is_ok(), changed(), disabled()),
+                    .to_string() + get_input_classes(validate().is_ok(), disabled()),
                 id,
                 r#type: "number",
                 pattern: "[0-9]*",
@@ -324,7 +280,6 @@ pub fn InputDuration(
                 value: "{value()}",
                 disabled,
                 oninput: move |e| {
-                    changed.set(true);
                     value.set(e.value());
                 },
             }
@@ -337,13 +292,7 @@ pub fn InputDuration(
                     "Stop"
                 }
             }
-            if disabled() || !changed() {
-
-            } else if let Err(err) = validate() {
-                div { class: "text-red-500", "{err}" }
-            } else {
-                div { class: "text-green-500", "Looks good!" }
-            }
+            FieldMessage { validate, disabled }
         }
     }
 }
@@ -357,18 +306,15 @@ pub fn InputSelect<D: 'static + Clone + Eq + PartialEq>(
     disabled: Memo<bool>,
     options: Vec<(&'static str, &'static str)>,
 ) -> Element {
-    let mut changed: Signal<bool> = use_signal(|| false);
-
     rsx! {
         div { class: "form-group",
             label { r#for: id, "{label}" }
             select {
                 class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                    .to_string() + get_input_classes(validate().is_ok(), changed(), disabled()),
+                    .to_string() + get_input_classes(validate().is_ok(), disabled()),
                 id: "input",
                 disabled,
                 oninput: move |e| {
-                    changed.set(true);
                     value.set(e.value());
                 },
                 value: value(),
@@ -377,13 +323,7 @@ pub fn InputSelect<D: 'static + Clone + Eq + PartialEq>(
                     option { value: id, label, selected: id == value() }
                 }
             }
-            if disabled() || !changed() {
-
-            } else if let Err(err) = validate() {
-                div { class: "text-red-500", "{err}" }
-            } else {
-                div { class: "text-green-500", "Looks good!" }
-            }
+            FieldMessage { validate, disabled }
         }
     }
 }
@@ -396,8 +336,6 @@ pub fn InputBoolean(
     // validate: Memo<Result<D, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
-    let mut changed = use_signal(|| false);
-
     rsx! {
         div {
             label {
@@ -407,12 +345,11 @@ pub fn InputBoolean(
             }
             input {
                 r#type: "checkbox",
-                class: "checkbox ".to_string() + get_input_classes(true, changed(), disabled()),
+                class: "checkbox ".to_string() + get_input_classes(true, disabled()),
                 id,
                 checked: value(),
                 disabled,
                 oninput: move |e| {
-                    changed.set(true);
                     value.set(e.checked());
                 },
             }
@@ -450,7 +387,6 @@ pub fn InputColour(
     colours: Vec<(String, Hsv)>,
     disabled: Memo<bool>,
 ) -> Element {
-    let mut changed = use_signal(|| false);
     let (hue, saturation, brightness) = value();
 
     let hue_id = format!("{}-hue", id);
@@ -481,7 +417,7 @@ pub fn InputColour(
                 input {
                     r#type: "text",
                     class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                        .to_string() + get_input_classes(validate_hue().is_ok(), changed(), disabled()),
+                        .to_string() + get_input_classes(validate_hue().is_ok(), disabled()),
                     id: hue_id,
                     r#type: "number",
                     pattern: "[0-9]*",
@@ -492,17 +428,10 @@ pub fn InputColour(
                     oninput: move |e| {
                         let mut v = value();
                         v.0 = e.value();
-                        changed.set(true);
                         value.set(v);
                     },
                 }
-                if disabled() || !changed() {
-
-                } else if let Err(err) = validate_hue() {
-                    div { class: "text-red-500", "{err}" }
-                } else {
-                    div { class: "text-green-500", "Looks good!" }
-                }
+                FieldMessage { validate: validate_hue, disabled }
             }
 
             div { class: "mb-5 w-20 mr-2 inline-block",
@@ -515,7 +444,7 @@ pub fn InputColour(
                     r#type: "text",
                     class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
                         .to_string()
-                        + get_input_classes(validate_saturation().is_ok(), changed(), disabled()),
+                        + get_input_classes(validate_saturation().is_ok(), disabled()),
                     id: saturation_id,
                     r#type: "number",
                     pattern: "[0-9]*",
@@ -527,16 +456,9 @@ pub fn InputColour(
                         let mut v = value();
                         v.1 = e.value();
                         value.set(v);
-                        changed.set(true);
                     },
                 }
-                if disabled() || !changed() {
-
-                } else if let Err(err) = validate_saturation() {
-                    div { class: "text-red-500", "{err}" }
-                } else {
-                    div { class: "text-green-500", "Looks good!" }
-                }
+                FieldMessage { validate: validate_saturation, disabled }
             }
 
             div { class: "mb-5 w-20 mr-2 inline-block",
@@ -549,7 +471,7 @@ pub fn InputColour(
                     r#type: "text",
                     class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
                         .to_string()
-                        + get_input_classes(validate_value().is_ok(), changed(), disabled()),
+                        + get_input_classes(validate_value().is_ok(), disabled()),
                     id: value_id,
                     r#type: "number",
                     pattern: "[0-9]*",
@@ -560,20 +482,10 @@ pub fn InputColour(
                     oninput: move |e| {
                         let mut v = value();
                         v.2 = e.value();
-                        changed.set(true);
                         value.set(v);
                     },
                 }
-                if disabled() {
-
-                }
-                if !changed() {
-
-                } else if let Err(err) = validate_value() {
-                    div { class: "text-red-500", "{err}" }
-                } else {
-                    div { class: "text-green-500", "Looks good!" }
-                }
+                FieldMessage { validate: validate_value, disabled }
             }
 
 
@@ -607,13 +519,7 @@ pub fn InputColour(
                 }
             }
         }
-        if disabled() || !changed() {
-
-        } else if let Err(err) = validate() {
-            div { class: "text-red-500", "{err}" }
-        } else {
-            div { class: "text-green-500", "Looks good!" }
-        }
+        FieldMessage { validate, disabled }
     }
 }
 
