@@ -1,6 +1,5 @@
 use axum::Extension;
 use dioxus::prelude::*;
-use server_fn::error::NoCustomError;
 
 use crate::models::UserId;
 use crate::server::auth::Session;
@@ -19,7 +18,7 @@ pub async fn get_user_id() -> Result<UserId, ServerFnError> {
         .user
         .as_ref()
         .map(|x| UserId::new(x.id))
-        .ok_or(ServerFnError::ServerError::<NoCustomError>(
+        .ok_or(ServerFnError::ServerError::<String>(
             "Not Logged In".to_string(),
         ))
 }
@@ -29,12 +28,12 @@ pub async fn assert_is_admin() -> Result<(), ServerFnError> {
     let user = session
         .user
         .as_ref()
-        .ok_or(ServerFnError::ServerError::<NoCustomError>(
+        .ok_or(ServerFnError::ServerError::<String>(
             "Not Logged In".to_string(),
         ))?;
     user.is_admin
         .then_some(())
-        .ok_or(ServerFnError::ServerError::<NoCustomError>(
+        .ok_or(ServerFnError::ServerError::<String>(
             "Not Admin".to_string(),
         ))?;
     Ok(())

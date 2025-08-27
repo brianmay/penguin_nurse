@@ -8,7 +8,6 @@
 let
   inherit (lib)
     types
-    boolToString
     mkOption
     mkEnableOption
     mkIf
@@ -77,7 +76,7 @@ in
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         User = "penguin_nurse";
-        ExecStart = "${penguin-nurse}/bin/server";
+        ExecStart = "${lib.getExe penguin-nurse}";
         EnvironmentFile = cfg.secretsFile;
       };
       environment = {

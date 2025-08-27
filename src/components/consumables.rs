@@ -1,7 +1,7 @@
 use std::{num::ParseIntError, str::FromStr};
 
 use chrono::Local;
-use dioxus::prelude::*;
+use dioxus::{prelude::*, router::ToQueryArgument};
 use tap::Pipe;
 use thiserror::Error;
 
@@ -183,7 +183,9 @@ pub fn ConsumableUpdate(
         h3 { class: "text-lg font-bold",
             match &op {
                 Operation::Create => "Create Consumable".to_string(),
-                Operation::Update { consumable } => format!("Edit Consumable {}", consumable.name),
+                Operation::Update { consumable } => {
+                    format!("Edit Consumable {}", consumable.name)
+                }
             }
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
@@ -217,9 +219,7 @@ pub fn ConsumableUpdate(
                 validate: validate.barcode,
                 disabled,
             }
-            Barcode {
-                barcode: barcode,
-            }
+            Barcode { barcode }
             InputBoolean {
                 id: "is_organic",
                 label: "Is Organic",
@@ -264,7 +264,7 @@ pub fn ConsumableUpdate(
                     Operation::Create => "Create",
                     Operation::Update { .. } => "Save",
                 },
-                saving
+                saving,
             }
         }
     }
@@ -317,7 +317,7 @@ pub fn ConsumableDelete(
                 on_save: move |()| on_save(()),
                 on_cancel: move |_| on_cancel(()),
                 title: "Delete",
-                saving
+                saving,
             }
         }
     }
@@ -364,6 +364,16 @@ pub enum ListDialogReference {
     },
     #[default]
     Idle,
+}
+
+impl ToQueryArgument for ListDialogReference {
+    fn display_query_argument(
+        &self,
+        query_name: &str,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        write!(f, "{}={}", query_name, self.to_string())
+    }
 }
 
 impl FromStr for ListDialogReference {
@@ -485,10 +495,16 @@ pub fn ConsumableDialog(
                     ConsumableUpdateIngredients {
                         consumable,
                         on_close,
-                        on_change: move |param| { on_change_ingredients(param); },
+                        on_change: move |param| {
+                            on_change_ingredients(param);
+                        },
                         show_update_basic,
-                        show_ingredient_update_basic: move |param| { show_ingredient_update_basic(param); },
-                        show_ingredient_update_ingredients: move |param| { show_ingredient_update_ingredients(param); },
+                        show_ingredient_update_basic: move |param| {
+                            show_ingredient_update_basic(param);
+                        },
+                        show_ingredient_update_ingredients: move |param| {
+                            show_ingredient_update_ingredients(param);
+                        },
                     }
                 }
             }
@@ -499,10 +515,10 @@ pub fn ConsumableDialog(
             rsx! {
                 Dialog {
                     ConsumableUpdate {
-                        op: Operation::Update { consumable: consumable.clone() },
-                        on_cancel: move |()| {
-                            show_update_ingredients(parent_clone_1.clone())
+                        op: Operation::Update {
+                            consumable: consumable.clone(),
                         },
+                        on_cancel: move |()| { show_update_ingredients(parent_clone_1.clone()) },
                         on_save: move |consumable: Consumable| {
                             on_change(consumable.clone());
                             show_ingredient_update_ingredients((parent_clone_2.clone(), consumable.clone()));
@@ -520,9 +536,7 @@ pub fn ConsumableDialog(
                 Dialog {
                     ConsumableUpdateIngredients {
                         consumable,
-                        on_close: move |()| {
-                            show_update_ingredients(parent.clone())
-                        },
+                        on_close: move |()| { show_update_ingredients(parent.clone()) },
                         on_change: move |_consumable: Consumable| {
                             on_change_ingredients(parent_clone_1.clone());
                         },
@@ -583,14 +597,13 @@ pub fn ConsumableUpdateIngredients(
     let mut add_value = use_signal(|| None);
     let add_consumable = use_callback(move |child: Consumable| {
         let consumable = consumable_clone.clone();
-        if let Some(Ok(nested_consumables)) = nested_consumables() {
-            if let Some(existing) = nested_consumables
+        if let Some(Ok(nested_consumables)) = nested_consumables()
+            && let Some(existing) = nested_consumables
                 .iter()
                 .find(|item| item.consumable.id == child.id)
-            {
-                selected_consumable.set(Some(existing.clone()));
-                return;
-            }
+        {
+            selected_consumable.set(Some(existing.clone()));
+            return;
         }
 
         let consumable_clone = consumable_clone_4.clone();
@@ -700,51 +713,59 @@ pub fn ConsumableUpdateIngredients(
                 rsx! {}
             }
         }
-        if let Some(sel) = selected_consumable() {{
-            let consumable_clone_1 = sel.consumable.clone();
-            let consumable_clone_2 = sel.consumable.clone();
-            rsx!{
-                div { class: "card bg-gray-800 shadow-xl",
-                    div { class: "card-body",
-                        h2 {
-                            "Selected: "
-                            {sel.consumable.name.clone()}
-                        }
-                        ConsumableNestedForm {
-                            nested: sel.nested.clone(),
-                            consumable: sel.consumable.clone(),
-                            on_cancel: move |_| {
-                                selected_consumable.set(None);
-                            },
-                            on_save: move |_nested| {
-                                selected_consumable.set(None);
-                                nested_consumables.restart();
-                                on_change(consumable_clone_3.clone());
-                            },
-                        }
-                        FormEditButton {
-                            title: "Edit",
-                            on_edit: move || {
-                                show_ingredient_update_basic((consumable_clone_6.clone(), consumable_clone_1.clone()));
-                            },
-                        }
-                        FormEditButton {
-                            title: "Ingredients",
-                            on_edit: move || {
-                                show_ingredient_update_ingredients((consumable_clone_7.clone(), consumable_clone_2.clone()));
-                            },
-                        }
-                        FormDeleteButton {
-                            title: "Remove",
-                            on_delete: move |_| {
-                                selected_consumable.set(None);
-                                remove_consumable(sel.nested.clone());
-                            },
+        if let Some(sel) = selected_consumable() {
+            {
+                let consumable_clone_1 = sel.consumable.clone();
+                let consumable_clone_2 = sel.consumable.clone();
+                rsx! {
+                    div { class: "card bg-gray-800 shadow-xl",
+                        div { class: "card-body",
+                            h2 {
+                                "Selected: "
+                                {sel.consumable.name.clone()}
+                            }
+                            ConsumableNestedForm {
+                                nested: sel.nested.clone(),
+                                consumable: sel.consumable.clone(),
+                                on_cancel: move |_| {
+                                    selected_consumable.set(None);
+                                },
+                                on_save: move |_nested| {
+                                    selected_consumable.set(None);
+                                    nested_consumables.restart();
+                                    on_change(consumable_clone_3.clone());
+                                },
+                            }
+                            FormEditButton {
+                                title: "Edit",
+                                on_edit: move || {
+                                    show_ingredient_update_basic((
+                                        consumable_clone_6.clone(),
+                                        consumable_clone_1.clone(),
+                                    ));
+                                },
+                            }
+                            FormEditButton {
+                                title: "Ingredients",
+                                on_edit: move || {
+                                    show_ingredient_update_ingredients((
+                                        consumable_clone_7.clone(),
+                                        consumable_clone_2.clone(),
+                                    ));
+                                },
+                            }
+                            FormDeleteButton {
+                                title: "Remove",
+                                on_delete: move |_| {
+                                    selected_consumable.set(None);
+                                    remove_consumable(sel.nested.clone());
+                                },
+                            }
                         }
                     }
                 }
             }
-        }} else {
+        } else {
             div { class: "p-4",
                 InputConsumable {
                     id: "consumable",
@@ -888,7 +909,7 @@ fn ConsumableNestedForm(
                 on_save: move |()| on_save(()),
                 on_cancel: move |_| on_cancel(()),
                 title: "Save",
-                saving
+                saving,
             }
         }
     }
@@ -937,7 +958,6 @@ pub fn ConsumableSummary(consumable: Consumable) -> Element {
                 }
             }
         }
-
     }
 }
 
@@ -990,10 +1010,7 @@ pub fn ConsumableItemList(list: Vec<ConsumableItem>, show_links: Option<bool>) -
             ul { class: "list-disc ml-4",
                 for item in &list {
                     li {
-                        ConsumableItemSummary {
-                            key: item.id,
-                            item: item.clone(),
-                        }
+                        ConsumableItemSummary { key: item.id, item: item.clone() }
                     }
                 }
             }

@@ -2,11 +2,11 @@ use std::{collections::HashMap, env, sync::Arc};
 
 use arc_swap::ArcSwap;
 use axum::{
+    Extension,
     extract::{Query, Request},
     http::StatusCode,
-    middleware::{from_fn, Next},
+    middleware::{Next, from_fn},
     response::{IntoResponse, Redirect, Response},
-    Extension,
 };
 use tap::Pipe;
 use thiserror::Error;
@@ -89,7 +89,7 @@ pub fn add_oidc_middleware<S: Clone + Send + Sync + 'static>(
     app.layer(layer).layer(Extension(oidc_client))
 }
 
-#[axum::debug_middleware]
+// #[axum::debug_middleware]
 async fn auth(
     Extension(oidc_client): Extension<ClientState>,
     Extension(database_pool): Extension<DatabasePool>,

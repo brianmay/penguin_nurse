@@ -9,7 +9,8 @@ mod session_store;
 use axum::{Extension, routing::get};
 use handlers::{dioxus_handler, health_check};
 use time::Duration;
-use tower_sessions::{ExpiredDeletion, Expiry, SessionManagerLayer, cookie::SameSite};
+use tower_sessions::session_store::ExpiredDeletion;
+use tower_sessions::{Expiry, SessionManagerLayer, cookie::SameSite};
 
 pub use oidc::middleware::ClientState as OidcClientState;
 
@@ -53,7 +54,7 @@ pub async fn init(app: fn() -> Element) {
     // and we use the generated address the CLI gives us
     let address = dioxus_cli_config::fullstack_address_or_localhost();
 
-    let cfg = ServeConfigBuilder::default();
+    let cfg = ServeConfig::new().unwrap();
 
     // Set up the axum router
     let router = axum::Router::new()

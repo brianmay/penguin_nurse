@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use chrono::{NaiveDate, Utc};
-use dioxus::prelude::{server_fn::error::NoCustomError, *};
+use dioxus::prelude::*;
 use tap::Pipe;
 
 use crate::{
@@ -240,16 +240,22 @@ pub fn TimelineList(
                 .pipe(Ok)
             }
             DialogReference::UpdateWee { wee_id } => {
-                let wee = get_wee_by_id(wee_id).await?.ok_or(
-                    ServerFnError::<NoCustomError>::ServerError("Cannot find wee".to_string()),
-                )?;
+                let wee =
+                    get_wee_by_id(wee_id)
+                        .await?
+                        .ok_or(ServerFnError::<String>::ServerError(
+                            "Cannot find wee".to_string(),
+                        ))?;
                 ActiveDialog::Wee(wees::ActiveDialog::Change(wees::Operation::Update { wee }))
                     .pipe(Ok)
             }
             DialogReference::DeleteWee { wee_id } => {
-                let wee = get_wee_by_id(wee_id).await?.ok_or(
-                    ServerFnError::<NoCustomError>::ServerError("Cannot find wee".to_string()),
-                )?;
+                let wee =
+                    get_wee_by_id(wee_id)
+                        .await?
+                        .ok_or(ServerFnError::<String>::ServerError(
+                            "Cannot find wee".to_string(),
+                        ))?;
                 ActiveDialog::Wee(wees::ActiveDialog::Delete(wee)).pipe(Ok)
             }
             DialogReference::CreatePoo { user_id } => {
@@ -259,16 +265,22 @@ pub fn TimelineList(
                 .pipe(Ok)
             }
             DialogReference::UpdatePoo { poo_id } => {
-                let poo = get_poo_by_id(poo_id).await?.ok_or(
-                    ServerFnError::<NoCustomError>::ServerError("Cannot find poo".to_string()),
-                )?;
+                let poo =
+                    get_poo_by_id(poo_id)
+                        .await?
+                        .ok_or(ServerFnError::<String>::ServerError(
+                            "Cannot find poo".to_string(),
+                        ))?;
                 ActiveDialog::Poo(poos::ActiveDialog::Change(poos::Operation::Update { poo }))
                     .pipe(Ok)
             }
             DialogReference::DeletePoo { poo_id } => {
-                let poo = get_poo_by_id(poo_id).await?.ok_or(
-                    ServerFnError::<NoCustomError>::ServerError("Cannot find poo".to_string()),
-                )?;
+                let poo =
+                    get_poo_by_id(poo_id)
+                        .await?
+                        .ok_or(ServerFnError::<String>::ServerError(
+                            "Cannot find poo".to_string(),
+                        ))?;
                 ActiveDialog::Poo(poos::ActiveDialog::Delete(poo)).pipe(Ok)
             }
             DialogReference::CreateConsumption { user_id } => {
@@ -278,24 +290,18 @@ pub fn TimelineList(
                 .pipe(Ok)
             }
             DialogReference::UpdateBasic { consumption_id } => {
-                let consumption =
-                    get_consumption_by_id(consumption_id)
-                        .await?
-                        .ok_or(ServerFnError::<NoCustomError>::ServerError(
-                            "Cannot find consumption".to_string(),
-                        ))?;
+                let consumption = get_consumption_by_id(consumption_id).await?.ok_or(
+                    ServerFnError::<String>::ServerError("Cannot find consumption".to_string()),
+                )?;
                 ActiveDialog::Consumption(consumptions::ActiveDialog::UpdateBasic(
                     consumptions::Operation::Update { consumption },
                 ))
                 .pipe(Ok)
             }
             DialogReference::UpdateIngredients { consumption_id } => {
-                let consumption =
-                    get_consumption_by_id(consumption_id)
-                        .await?
-                        .ok_or(ServerFnError::<NoCustomError>::ServerError(
-                            "Cannot find consumption".to_string(),
-                        ))?;
+                let consumption = get_consumption_by_id(consumption_id).await?.ok_or(
+                    ServerFnError::<String>::ServerError("Cannot find consumption".to_string()),
+                )?;
                 ActiveDialog::Consumption(consumptions::ActiveDialog::UpdateIngredients(
                     consumption,
                 ))
@@ -305,17 +311,13 @@ pub fn TimelineList(
                 parent_id,
                 consumable_id,
             } => {
-                let parent = get_consumption_by_id(parent_id)
-                    .await?
-                    .ok_or(ServerFnError::<NoCustomError>::ServerError(
-                        "Cannot find consumption".to_string(),
-                    ))?;
-                let consumable =
-                    get_consumable_by_id(consumable_id)
-                        .await?
-                        .ok_or(ServerFnError::<NoCustomError>::ServerError(
-                            "Cannot find consumption".to_string(),
-                        ))?;
+                let parent =
+                    get_consumption_by_id(parent_id).await?.ok_or(
+                        ServerFnError::<String>::ServerError("Cannot find consumption".to_string()),
+                    )?;
+                let consumable = get_consumable_by_id(consumable_id).await?.ok_or(
+                    ServerFnError::<String>::ServerError("Cannot find consumption".to_string()),
+                )?;
                 ActiveDialog::Consumption(consumptions::ActiveDialog::NestedIngredient(
                     parent, consumable,
                 ))
@@ -325,29 +327,22 @@ pub fn TimelineList(
                 parent_id,
                 consumable_id,
             } => {
-                let parent = get_consumption_by_id(parent_id)
-                    .await?
-                    .ok_or(ServerFnError::<NoCustomError>::ServerError(
-                        "Cannot find consumption".to_string(),
-                    ))?;
-                let consumable =
-                    get_consumable_by_id(consumable_id)
-                        .await?
-                        .ok_or(ServerFnError::<NoCustomError>::ServerError(
-                            "Cannot find consumption".to_string(),
-                        ))?;
+                let parent =
+                    get_consumption_by_id(parent_id).await?.ok_or(
+                        ServerFnError::<String>::ServerError("Cannot find consumption".to_string()),
+                    )?;
+                let consumable = get_consumable_by_id(consumable_id).await?.ok_or(
+                    ServerFnError::<String>::ServerError("Cannot find consumption".to_string()),
+                )?;
                 ActiveDialog::Consumption(consumptions::ActiveDialog::NestedIngredients(
                     parent, consumable,
                 ))
                 .pipe(Ok)
             }
             DialogReference::DeleteConsumption { consumption_id } => {
-                let consumption =
-                    get_consumption_by_id(consumption_id)
-                        .await?
-                        .ok_or(ServerFnError::<NoCustomError>::ServerError(
-                            "Cannot find consumption".to_string(),
-                        ))?;
+                let consumption = get_consumption_by_id(consumption_id).await?.ok_or(
+                    ServerFnError::<String>::ServerError("Cannot find consumption".to_string()),
+                )?;
                 ActiveDialog::Consumption(consumptions::ActiveDialog::Delete(consumption)).pipe(Ok)
             }
             DialogReference::Idle => Ok(ActiveDialog::Idle),

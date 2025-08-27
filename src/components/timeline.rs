@@ -1,6 +1,6 @@
 use std::{num::ParseIntError, str::FromStr};
 
-use dioxus::prelude::*;
+use dioxus::{prelude::*, router::ToQueryArgument};
 use tap::Pipe;
 use thiserror::Error;
 
@@ -72,6 +72,16 @@ pub enum DialogReference {
     },
     #[default]
     Idle,
+}
+
+impl ToQueryArgument for DialogReference {
+    fn display_query_argument(
+        &self,
+        query_name: &str,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        write!(f, "{}={}", query_name, self.to_string())
+    }
 }
 
 impl FromStr for DialogReference {

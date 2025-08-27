@@ -247,19 +247,19 @@ pub fn UserList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> Element 
             ListDialogReference::Create => ActiveDialog::Create.pipe(Ok),
             // ListDialogReference::Update { user_id } => {
             //     let user = get_user_by_id(user_id).await?.ok_or(
-            //         ServerFnError::<NoCustomError>::ServerError("Cannot find user".to_string()),
+            //         ServerFnError::<String>::ServerError("Cannot find user".to_string()),
             //     )?;
             //     ActiveDialog::Change(user).pipe(Ok)
             // }
             // ListDialogReference::Password { user_id } => {
             //     let user = get_user_by_id(user_id).await?.ok_or(
-            //         ServerFnError::<NoCustomError>::ServerError("Cannot find user".to_string()),
+            //         ServerFnError::<String>::ServerError("Cannot find user".to_string()),
             //     )?;
             //     ActiveDialog::Password(user).pipe(Ok)
             // }
             // ListDialogReference::Delete { user_id } => {
             //     let user = get_user_by_id(user_id).await?.ok_or(
-            //         ServerFnError::<NoCustomError>::ServerError("Cannot find user".to_string()),
+            //         ServerFnError::<String>::ServerError("Cannot find user".to_string()),
             //     )?;
             //     ActiveDialog::Delete(user).pipe(Ok)
             // }
@@ -290,7 +290,7 @@ pub fn UserList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> Element 
                                 tbody { class: "block sm:table-row-group",
                                     for user in users {
                                         UserItem {
-                                            key: user.id,
+                                            key: "{user.id}",
                                             user: user.clone(),
                                             on_click: move |user: User| {
                                                 navigator

@@ -71,12 +71,12 @@ pub async fn create_poo(poo: models::NewPoo) -> Result<models::Poo, ServerFnErro
 pub async fn update_poo(id: PooId, poo: models::ChangePoo) -> Result<models::Poo, ServerFnError> {
     let logged_in_user_id = get_user_id().await?;
 
-    if let Some(req_user_id) = poo.user_id {
-        if logged_in_user_id != req_user_id {
-            return Err(ServerFnError::ServerError(
-                "User ID does not match the logged in user".to_string(),
-            ));
-        }
+    if let Some(req_user_id) = poo.user_id
+        && logged_in_user_id != req_user_id
+    {
+        return Err(ServerFnError::ServerError(
+            "User ID does not match the logged in user".to_string(),
+        ));
     }
 
     let mut conn = get_database_connection().await?;

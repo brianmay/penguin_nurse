@@ -62,11 +62,11 @@ fn reload_user() {
 fn use_user() -> Result<Option<Arc<User>>, ServerFnError> {
     let user_resource: Resource<Result<Option<Arc<User>>, ServerFnError>> = use_context();
     let user_result: &Option<Result<Option<Arc<User>>, ServerFnError>> = &user_resource.read();
-    let user_result = user_result.as_ref().map_or_else(
+
+    user_result.as_ref().map_or_else(
         || Err(ServerFnError::ServerError("Mo user resource".to_string())),
         |x| x.clone(),
-    );
-    user_result
+    )
 }
 
 #[component]
@@ -85,7 +85,7 @@ fn App() -> Element {
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
 
         document::Script {
-            type: "module",
+            r#type: "module",
             src: asset!("/assets/bundle.js", JsAssetOptions::new().with_minify(false)),
         }
 
