@@ -1,0 +1,148 @@
+use chrono::Local;
+use std::{fmt::Display, str::FromStr};
+use tap::Pipe;
+
+use serde::{Deserialize, Serialize};
+
+use crate::{
+    forms::{FieldValue, FieldValueError},
+    models::MaybeI32,
+};
+
+use super::{
+    UserId,
+    common::{MaybeDecimal, MaybeString},
+};
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
+pub enum ExerciseType {
+    Walking,
+    Running,
+    Cycling,
+    IndoorCycling,
+    Jumping,
+    Skipping,
+    Flying,
+    Other,
+}
+
+impl FieldValue for ExerciseType {
+    fn as_string(&self) -> String {
+        match self {
+            Self::Walking => "walking".to_string(),
+            Self::Running => "running".to_string(),
+            Self::Cycling => "cycling".to_string(),
+            Self::IndoorCycling => "indoor_cycling".to_string(),
+            Self::Jumping => "jumping".to_string(),
+            Self::Skipping => "skipping".to_string(),
+            Self::Flying => "flying".to_string(),
+            Self::Other => "other".to_string(),
+        }
+    }
+
+    fn from_string(value: &str) -> Result<Self, FieldValueError> {
+        match value {
+            "walking" => Ok(Self::Walking),
+            "running" => Ok(Self::Running),
+            "cycling" => Ok(Self::Cycling),
+            "indoor_cycling" => Ok(Self::IndoorCycling),
+            "jumping" => Ok(Self::Jumping),
+            "skipping" => Ok(Self::Skipping),
+            "flying" => Ok(Self::Flying),
+            "other" => Ok(Self::Other),
+            _ => Err(FieldValueError::InvalidValue),
+        }
+    }
+}
+
+impl Display for ExerciseType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Walking => "walking",
+            Self::Running => "running",
+            Self::Cycling => "cycling",
+            Self::IndoorCycling => "indoor cycling",
+            Self::Jumping => "jumping",
+            Self::Skipping => "skipping",
+            Self::Flying => "flying",
+            Self::Other => "other",
+        }
+        .pipe(|s| f.write_str(s))
+    }
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ExerciseId(i64);
+
+#[allow(dead_code)]
+impl ExerciseId {
+    pub fn new(id: i64) -> Self {
+        Self(id)
+    }
+    pub fn as_inner(self) -> i64 {
+        self.0
+    }
+}
+
+impl FromStr for ExerciseId {
+    type Err = std::num::ParseIntError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(s.parse()?))
+    }
+}
+
+impl std::fmt::Display for ExerciseId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct Exercise {
+    pub id: ExerciseId,
+    pub user_id: UserId,
+    pub time: chrono::DateTime<chrono::FixedOffset>,
+    pub duration: chrono::TimeDelta,
+    pub location: MaybeString,
+    pub distance: MaybeDecimal,
+    pub calories: MaybeI32,
+    pub rpe: MaybeI32,
+    pub exercise_type: ExerciseType,
+    pub comments: MaybeString,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[allow(dead_code)]
+impl Exercise {
+    pub fn name(&self) -> String {
+        self.time.with_timezone(&Local).time().to_string()
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct NewExercise {
+    pub user_id: UserId,
+    pub time: chrono::DateTime<chrono::FixedOffset>,
+    pub duration: chrono::TimeDelta,
+    pub location: MaybeString,
+    pub distance: MaybeDecimal,
+    pub calories: MaybeI32,
+    pub rpe: MaybeI32,
+    pub exercise_type: ExerciseType,
+    pub comments: MaybeString,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct ChangeExercise {
+    pub user_id: Option<UserId>,
+    pub time: Option<chrono::DateTime<chrono::FixedOffset>>,
+    pub duration: Option<chrono::TimeDelta>,
+    pub location: Option<MaybeString>,
+    pub distance: Option<MaybeDecimal>,
+    pub calories: Option<MaybeI32>,
+    pub rpe: Option<MaybeI32>,
+    pub exercise_type: Option<ExerciseType>,
+    pub comments: Option<MaybeString>,
+}

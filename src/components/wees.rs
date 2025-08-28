@@ -201,9 +201,7 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
                 ],
                 disabled,
             }
-            Colour {
-                colour: colour
-            }
+            Colour { colour }
             InputTextArea {
                 id: "comments",
                 label: "Comments",
@@ -220,7 +218,7 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
                     Operation::Create { .. } => "Create",
                     Operation::Update { .. } => "Save",
                 },
-                saving
+                saving,
             }
         }
     }
@@ -268,7 +266,7 @@ pub fn WeeDelete(wee: Wee, on_cancel: Callback, on_delete: Callback<Wee>) -> Ele
                 on_save: move |()| on_save(()),
                 on_cancel: move |_| on_cancel(()),
                 title: "Delete",
-                saving
+                saving,
             }
         }
     }
@@ -278,9 +276,14 @@ const WEE_SVG: Asset = asset!("/assets/wee.svg");
 
 #[component]
 pub fn wee_icon() -> Element {
+    let alt = wee_title();
     rsx! {
-        img { class: "w-10 invert inline-block", alt: "Wee", src: WEE_SVG }
+        img { class: "w-10 dark:invert inline-block", alt, src: WEE_SVG }
     }
+}
+
+pub fn wee_title() -> &'static str {
+    "Wee"
 }
 
 #[component]

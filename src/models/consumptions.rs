@@ -43,19 +43,6 @@ impl FieldValue for ConsumptionType {
     }
 }
 
-impl ConsumptionType {
-    pub fn options() -> Vec<(&'static str, &'static str)> {
-        vec![
-            ("digest", "eat/drink"),
-            ("inhale_nose", "inhale nose"),
-            ("inhale_mouth", "inhale mouth"),
-            ("spit_out", "spit out"),
-            ("inject", "inject"),
-            ("apply_skin", "apply skin"),
-        ]
-    }
-}
-
 impl Display for ConsumptionType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

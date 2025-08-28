@@ -3,13 +3,14 @@ use dioxus::prelude::*;
 
 use crate::{
     components::{
-        consumables::{self, ConsumableUpdate, ConsumableUpdateIngredients},
+        consumables::{self, ConsumableUpdate, ConsumableUpdateIngredients, organic_icon},
+        events::Markdown,
         times::time_delta_to_string,
     },
     forms::{
         Dialog, EditError, FieldValue, FormCloseButton, FormDeleteButton, FormEditButton,
-        FormSaveCancelButton, InputConsumable, InputDateTime, InputDuration, InputNumber,
-        InputSelect, InputTextArea, Saving, ValidationError, validate_comments,
+        FormSaveCancelButton, InputConsumable, InputConsumptionType, InputDateTime, InputDuration,
+        InputNumber, InputTextArea, Saving, ValidationError, validate_comments,
         validate_consumable_millilitres, validate_consumable_quantity, validate_consumption_type,
         validate_duration, validate_fixed_offset_date_time,
     },
@@ -181,12 +182,11 @@ pub fn ConsumptionUpdate(
                 validate: validate.duration,
                 disabled,
             }
-            InputSelect {
+            InputConsumptionType {
                 id: "consumption_type",
                 label: "Type",
                 value: consumption_type,
                 validate: validate.consumption_type,
-                options: ConsumptionType::options(),
                 disabled,
             }
             InputNumber {
@@ -276,7 +276,6 @@ const MOUTH_SVG: Asset = asset!("/assets/consumption/mouth.svg");
 const SPIT_SVG: Asset = asset!("/assets/consumption/spit.svg");
 const INJECT_SVG: Asset = asset!("/assets/consumption/inject.svg");
 const SKIN_SVG: Asset = asset!("/assets/consumption/skin.svg");
-const ORGANIC_SVG: Asset = asset!("/assets/organic.svg");
 
 #[component]
 pub fn consumption_icon(consumption_type: ConsumptionType) -> Element {
@@ -288,12 +287,40 @@ pub fn consumption_icon(consumption_type: ConsumptionType) -> Element {
         ConsumptionType::Inject => INJECT_SVG,
         ConsumptionType::ApplySkin => SKIN_SVG,
     };
+    let alt = consumption_title(consumption_type);
     rsx! {
-        img {
-            class: "w-10 invert inline-block",
-            alt: format!("{}", consumption_type),
-            src: icon,
-        }
+        img { class: "w-10 dark:invert inline-block", alt, src: icon }
+    }
+}
+
+pub const CONSUMPTION_TYPES: [ConsumptionType; 6] = [
+    ConsumptionType::Digest,
+    ConsumptionType::InhaleNose,
+    ConsumptionType::InhaleMouth,
+    ConsumptionType::SpitOut,
+    ConsumptionType::Inject,
+    ConsumptionType::ApplySkin,
+];
+
+pub fn consumption_id(consumption_type: ConsumptionType) -> &'static str {
+    match consumption_type {
+        ConsumptionType::Digest => "digest",
+        ConsumptionType::InhaleNose => "inhale_nose",
+        ConsumptionType::InhaleMouth => "inhale_mouth",
+        ConsumptionType::SpitOut => "spit_out",
+        ConsumptionType::Inject => "inject",
+        ConsumptionType::ApplySkin => "apply_skin",
+    }
+}
+
+pub fn consumption_title(consumption_type: ConsumptionType) -> &'static str {
+    match consumption_type {
+        ConsumptionType::Digest => "Digest",
+        ConsumptionType::InhaleNose => "Inhale (Nose)",
+        ConsumptionType::InhaleMouth => "Inhale (Mouth)",
+        ConsumptionType::SpitOut => "Spit Out",
+        ConsumptionType::Inject => "Inject",
+        ConsumptionType::ApplySkin => "Apply to Skin",
     }
 }
 
@@ -532,7 +559,6 @@ pub fn ConsumptionUpdateIngredients(
                         div { class: "p-4",
                             ul {
                                 for item in consumption_consumables {
-
                                     li {
                                         class: "p-4 mb-1 bg-gray-700 border-2 rounded-lg",
                                         class: if is_selected(&item) { "border-gray-50 text-gray-50" } else { "border-gray-500" },
@@ -814,7 +840,7 @@ pub fn ConsumptionSummary(consumption: Consumption) -> Element {
                     }
                 }
                 if let Maybe::Some(comments) = &consumption.comments {
-                    div { {comments.to_string()} }
+                    Markdown { content: comments.to_string() }
                 }
             }
         }
@@ -826,11 +852,7 @@ pub fn ConsumptionItemSummary(item: ConsumptionItem) -> Element {
     rsx! {
         span {
             if item.consumable.is_organic {
-                img {
-                    class: "w-5  invert inline-block",
-                    alt: "organic",
-                    src: ORGANIC_SVG,
-                }
+                organic_icon {}
             }
             if let Maybe::Some(quantity) = item.nested.quantity {
                 span {
@@ -847,17 +869,15 @@ pub fn ConsumptionItemSummary(item: ConsumptionItem) -> Element {
             if let Maybe::Some(dt) = &item.consumable.created {
                 {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
             }
-            if let Maybe::Some(comments) = &item.nested.comments {
-                " ("
-                {comments.to_string()}
-                ")"
-            }
             if let Maybe::Some(liquid_mls) = item.nested.liquid_mls {
                 span {
                     " Liquid: "
                     {liquid_mls.to_string()}
                     "ml"
                 }
+            }
+            if let Maybe::Some(comments) = &item.nested.comments {
+                Markdown { content: comments.to_string() }
             }
         }
     }

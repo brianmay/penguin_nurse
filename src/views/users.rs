@@ -54,7 +54,11 @@ pub fn UserDialog(
                 UserCreate {
                     on_cancel: on_close,
                     on_save: move |user: User| {
-                        navigator().replace(Route::UserDetail{ user_id: user.id, dialog: DetailsDialogReference::Update});
+                        navigator()
+                            .replace(Route::UserDetail {
+                                user_id: user.id,
+                                dialog: DetailsDialogReference::Update,
+                            });
                         reload(());
                         on_close(());
                     },
@@ -159,34 +163,34 @@ pub fn UserDetail(
                     }
                 }
 
-                div { class: "flex gap-2 p-4",
+                div { class: "flex flex-wrap gap-2 p-4",
                     ChangeButton {
                         on_click: move |_| {
                             navigator
-                            .push(Route::UserDetail {
-                                user_id,
-                                dialog: DetailsDialogReference::Update,
-                            });
+                                .push(Route::UserDetail {
+                                    user_id,
+                                    dialog: DetailsDialogReference::Update,
+                                });
                         },
                         "Change"
                     }
                     ChangeButton {
                         on_click: move |_| {
                             navigator
-                            .push(Route::UserDetail {
-                                user_id,
-                                dialog: DetailsDialogReference::Password,
-                            });
+                                .push(Route::UserDetail {
+                                    user_id,
+                                    dialog: DetailsDialogReference::Password,
+                                });
                         },
                         "Password"
                     }
                     DeleteButton {
                         on_click: move |_| {
-                        navigator
-                            .push(Route::UserDetail {
-                                user_id,
-                                dialog: DetailsDialogReference::Delete,
-                            });
+                            navigator
+                                .push(Route::UserDetail {
+                                    user_id,
+                                    dialog: DetailsDialogReference::Delete,
+                                });
                         },
                         "Delete"
                     }
@@ -194,9 +198,10 @@ pub fn UserDetail(
                 div { class: "p-4",
                     NavButton {
                         on_click: move |_| {
-                            navigator.push(Route::UserList {
-                                dialog: ListDialogReference::Idle
-                            });
+                            navigator
+                                .push(Route::UserList {
+                                    dialog: ListDialogReference::Idle,
+                                });
                         },
                         "User List"
                     }
@@ -205,12 +210,13 @@ pub fn UserDetail(
                 UserDialog {
                     dialog: active_dialog,
                     on_close: move |()| {
-                        navigator.push(Route::UserDetail{
-                            user_id,
-                            dialog: DetailsDialogReference::Idle
-                        });
+                        navigator
+                            .push(Route::UserDetail {
+                                user_id,
+                                dialog: DetailsDialogReference::Idle,
+                            });
                     },
-                    reload: move || (maybe_user.restart())
+                    reload: move || (maybe_user.restart()),
                 }
             }
         }
@@ -270,7 +276,7 @@ pub fn UserList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> Element 
     let navigator = navigator();
 
     rsx! {
-       match users() {
+        match users() {
             Some(Ok(users)) => {
                 rsx! {
                     if users.is_empty() {
@@ -296,7 +302,7 @@ pub fn UserList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> Element 
                                                 navigator
                                                     .push(Route::UserDetail {
                                                         user_id: user.id,
-                                                        dialog: DetailsDialogReference::Idle
+                                                        dialog: DetailsDialogReference::Idle,
                                                     });
                                             },
                                         }
@@ -326,7 +332,10 @@ pub fn UserList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> Element 
             button {
                 class: "btn btn-secondary",
                 onclick: move |_| {
-                    navigator.push(Route::UserList { dialog: ListDialogReference::Create });
+                    navigator
+                        .push(Route::UserList {
+                            dialog: ListDialogReference::Create,
+                        });
                 },
                 "Create User"
             }
@@ -346,7 +355,7 @@ pub fn UserList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> Element 
                     on_close: move |()| {
                         navigator
                             .push(Route::UserList {
-                                dialog: ListDialogReference::Idle
+                                dialog: ListDialogReference::Idle,
                             });
                     },
                 }

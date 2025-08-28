@@ -10,12 +10,49 @@ pub use wees::NewWee;
 pub use wees::Wee;
 pub use wees::WeeId;
 
+mod wee_urges;
+pub use wee_urges::ChangeWeeUrge;
+pub use wee_urges::NewWeeUrge;
+pub use wee_urges::WeeUrge;
+pub use wee_urges::WeeUrgeId;
+
 mod poos;
 pub use poos::Bristol;
 pub use poos::ChangePoo;
 pub use poos::NewPoo;
 pub use poos::Poo;
 pub use poos::PooId;
+
+mod exercises;
+pub use exercises::ChangeExercise;
+pub use exercises::Exercise;
+pub use exercises::ExerciseId;
+pub use exercises::ExerciseType;
+pub use exercises::NewExercise;
+
+mod symptoms;
+pub use symptoms::ChangeSymptom;
+pub use symptoms::NewSymptom;
+pub use symptoms::Symptom;
+pub use symptoms::SymptomId;
+
+mod health_metrics;
+pub use health_metrics::ChangeHealthMetric;
+pub use health_metrics::HealthMetric;
+pub use health_metrics::HealthMetricId;
+pub use health_metrics::NewHealthMetric;
+
+pub mod refluxs;
+pub use refluxs::ChangeReflux;
+pub use refluxs::NewReflux;
+pub use refluxs::Reflux;
+pub use refluxs::RefluxId;
+
+pub mod notes;
+pub use notes::ChangeNote;
+pub use notes::NewNote;
+pub use notes::Note;
+pub use notes::NoteId;
 
 mod entry;
 pub use entry::Entry;
@@ -28,7 +65,9 @@ pub use timeline::Timeline;
 mod common;
 pub use common::Maybe;
 pub use common::MaybeDateTime;
+pub use common::MaybeDecimal;
 pub use common::MaybeF64;
+pub use common::MaybeI32;
 pub use common::MaybeString;
 
 mod consumables;

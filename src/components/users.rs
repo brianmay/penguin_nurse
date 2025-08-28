@@ -108,13 +108,18 @@ pub fn UserCreate(on_cancel: Callback, on_save: Callback<User>) -> Element {
     let password_confirm = use_signal(String::new);
     let is_admin = use_signal(|| false);
 
-    let validate = ValidateSaveNewUser {
-        username: use_memo(move || validate_username(&username())),
-        email: use_memo(move || validate_email(&email())),
-        full_name: use_memo(move || validate_full_name(&full_name())),
-        password: use_memo(move || validate_1st_password(&password())),
-        password_confirm: use_memo(move || validate_2nd_password(&password(), &password_confirm())),
-        is_admin: use_memo(move || Ok(is_admin())),
+    let validate = {
+        let password_validate = use_memo(move || validate_1st_password(&password()));
+        ValidateSaveNewUser {
+            username: use_memo(move || validate_username(&username())),
+            email: use_memo(move || validate_email(&email())),
+            full_name: use_memo(move || validate_full_name(&full_name())),
+            password: password_validate,
+            password_confirm: use_memo(move || {
+                validate_2nd_password(&password_validate.read(), &password_confirm())
+            }),
+            is_admin: use_memo(move || Ok(is_admin())),
+        }
     };
 
     let mut saving = use_signal(|| Saving::No);
@@ -208,7 +213,7 @@ pub fn UserCreate(on_cancel: Callback, on_save: Callback<User>) -> Element {
                     on_save: move |()| on_save(()),
                     on_cancel: move |_| on_cancel(()),
                     title: "Create",
-                    saving
+                    saving,
                 }
             }
         }
@@ -311,7 +316,7 @@ pub fn UserUpdate(user: User, on_cancel: Callback, on_save: Callback<User>) -> E
                     on_save: move |()| on_save(()),
                     on_cancel: move |_| on_cancel(()),
                     title: "Save",
-                    saving
+                    saving,
                 }
             }
         }
@@ -325,9 +330,14 @@ pub fn UserUpdatePassword(user: User, on_cancel: Callback, on_save: Callback<Use
     let password = use_signal(String::new);
     let password_confirm = use_signal(String::new);
 
-    let validate = ValidateChangePassword {
-        password: use_memo(move || validate_1st_password(&password())),
-        password_confirm: use_memo(move || validate_2nd_password(&password(), &password_confirm())),
+    let validate = {
+        let password_validate = use_memo(move || validate_1st_password(&password()));
+        ValidateChangePassword {
+            password: password_validate,
+            password_confirm: use_memo(move || {
+                validate_2nd_password(&password_validate.read(), &password_confirm())
+            }),
+        }
     };
 
     let mut saving = use_signal(|| Saving::No);
@@ -392,7 +402,7 @@ pub fn UserUpdatePassword(user: User, on_cancel: Callback, on_save: Callback<Use
                     on_save: move |()| on_save(()),
                     on_cancel: move |_| on_cancel(()),
                     title: "Save",
-                    saving
+                    saving,
                 }
             }
         }
@@ -444,7 +454,7 @@ pub fn UserDelete(user: User, on_cancel: Callback, on_delete: Callback<User>) ->
                     on_save: move |()| on_save(()),
                     on_cancel: move |_| on_cancel(()),
                     title: "Delete",
-                    saving
+                    saving,
                 }
             }
         }

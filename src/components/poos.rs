@@ -7,7 +7,7 @@ use crate::{
     components::times::time_delta_to_string,
     forms::{
         Colour, Dialog, EditError, FieldValue, FormSaveCancelButton, InputColour, InputDateTime,
-        InputDuration, InputNumber, InputSelect, InputTextArea, Saving, ValidationError,
+        InputDuration, InputNumber, InputPooBristolType, InputTextArea, Saving, ValidationError,
         validate_bristol, validate_colour, validate_comments, validate_duration,
         validate_fixed_offset_date_time, validate_poo_quantity, validate_urgency,
     },
@@ -103,7 +103,7 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
     });
     let comments = use_signal(|| match &op {
         Operation::Create { .. } => "".to_string(),
-        Operation::Update { poo } => poo.comments.clone().option().unwrap_or_default(),
+        Operation::Update { poo } => poo.comments.as_ref().cloned().unwrap_or_default(),
     });
 
     let validate = Validate {
@@ -196,12 +196,11 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
                 validate: validate.quantity,
                 disabled,
             }
-            InputSelect {
+            InputPooBristolType {
                 id: "bristol",
                 label: "Bristol",
                 value: bristol,
                 validate: validate.bristol,
-                options: Bristol::options(),
                 disabled,
             }
             InputColour {
@@ -217,9 +216,7 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
                 ],
                 disabled,
             }
-            Colour {
-                colour: colour
-            }
+            Colour { colour }
             InputTextArea {
                 id: "comments",
                 label: "Comments",
@@ -236,7 +233,7 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
                     Operation::Create { .. } => "Create",
                     Operation::Update { .. } => "Save",
                 },
-                saving
+                saving,
             }
         }
     }
@@ -284,8 +281,8 @@ pub fn PooDelete(poo: Poo, on_cancel: Callback, on_delete: Callback<Poo>) -> Ele
                 on_save: move |()| on_save(()),
                 on_cancel: move |()| on_cancel(()),
                 title: "Delete",
-                saving
-            },
+                saving,
+            }
         }
     }
 }
@@ -294,9 +291,14 @@ const POO_SVG: Asset = asset!("/assets/poo.svg");
 
 #[component]
 pub fn poo_icon() -> Element {
+    let alt = poo_title();
     rsx! {
-        img { class: "w-10 invert inline-block", alt: "Poo", src: POO_SVG }
+        img { class: "w-10 dark:invert inline-block", alt, src: POO_SVG }
     }
+}
+
+pub fn poo_title() -> &'static str {
+    "Poo"
 }
 
 #[component]

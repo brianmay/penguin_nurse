@@ -6,6 +6,9 @@ use crate::models::Maybe;
 
 #[derive(Error, Debug)]
 pub enum FieldValueError {
+    #[error("Required value")]
+    RequiredValue,
+
     #[error("Invalid value")]
     InvalidValue,
 }
@@ -21,7 +24,11 @@ impl FieldValue for String {
     }
 
     fn from_string(value: &str) -> Result<Self, FieldValueError> {
-        Ok(value.to_string())
+        if value.is_empty() {
+            Err(FieldValueError::RequiredValue)
+        } else {
+            Ok(value.to_string())
+        }
     }
 }
 
@@ -31,6 +38,9 @@ impl FieldValue for RgbHue<f32> {
     }
 
     fn from_string(value: &str) -> Result<Self, FieldValueError> {
+        if value.is_empty() {
+            return Err(FieldValueError::RequiredValue);
+        }
         match value.parse() {
             Ok(value) if (0.0..=360.0).contains(&value) => Ok(RgbHue::new(value)),
             _ => Err(FieldValueError::InvalidValue),
@@ -44,6 +54,9 @@ impl FieldValue for DateTime<Utc> {
     }
 
     fn from_string(value: &str) -> Result<Self, FieldValueError> {
+        if value.is_empty() {
+            return Err(FieldValueError::RequiredValue);
+        }
         match DateTime::parse_from_rfc3339(value) {
             Ok(time) => Ok(time.with_timezone(&Utc)),
             Err(_) => Err(FieldValueError::InvalidValue),
@@ -57,6 +70,9 @@ impl FieldValue for DateTime<FixedOffset> {
     }
 
     fn from_string(value: &str) -> Result<Self, FieldValueError> {
+        if value.is_empty() {
+            return Err(FieldValueError::RequiredValue);
+        }
         match DateTime::parse_from_rfc3339(value) {
             Ok(time) => Ok(time),
             Err(_) => Err(FieldValueError::InvalidValue),
@@ -82,6 +98,9 @@ impl FieldValue for TimeDelta {
     }
 
     fn from_string(value: &str) -> Result<Self, FieldValueError> {
+        if value.is_empty() {
+            return Err(FieldValueError::RequiredValue);
+        }
         let (negative, value) = if let Some(stripped) = value.strip_prefix('-') {
             (-1, stripped)
         } else {
@@ -149,6 +168,9 @@ impl FieldValue for f32 {
         self.to_string()
     }
     fn from_string(value: &str) -> Result<Self, FieldValueError> {
+        if value.is_empty() {
+            return Err(FieldValueError::RequiredValue);
+        }
         match value.parse() {
             Ok(value) => Ok(value),
             Err(_) => Err(FieldValueError::InvalidValue),
@@ -161,6 +183,24 @@ impl FieldValue for f64 {
         self.to_string()
     }
     fn from_string(value: &str) -> Result<Self, FieldValueError> {
+        if value.is_empty() {
+            return Err(FieldValueError::RequiredValue);
+        }
+        match value.parse() {
+            Ok(value) => Ok(value),
+            Err(_) => Err(FieldValueError::InvalidValue),
+        }
+    }
+}
+
+impl FieldValue for bigdecimal::BigDecimal {
+    fn as_string(&self) -> String {
+        self.to_string()
+    }
+    fn from_string(value: &str) -> Result<Self, FieldValueError> {
+        if value.is_empty() {
+            return Err(FieldValueError::RequiredValue);
+        }
         match value.parse() {
             Ok(value) => Ok(value),
             Err(_) => Err(FieldValueError::InvalidValue),
@@ -189,6 +229,9 @@ impl FieldValue for i32 {
         self.to_string()
     }
     fn from_string(value: &str) -> Result<Self, FieldValueError> {
+        if value.is_empty() {
+            return Err(FieldValueError::RequiredValue);
+        }
         match value.parse() {
             Ok(value) => Ok(value),
             Err(_) => Err(FieldValueError::InvalidValue),

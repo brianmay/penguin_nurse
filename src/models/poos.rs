@@ -139,19 +139,6 @@ impl Bristol {
             Bristol::B7 => "Watery",
         }
     }
-
-    pub fn options() -> Vec<(&'static str, &'static str)> {
-        vec![
-            ("0", "0. No poo"),
-            ("1", "1. Separate hard lumps"),
-            ("2", "2. Lumpy and sausage-like"),
-            ("3", "3. Sausage shape with cracks"),
-            ("4", "4. Smooth and soft"),
-            ("5", "5. Soft blobs with clear-cut edges"),
-            ("6", "6. Mushy"),
-            ("7", "7. Watery"),
-        ]
-    }
 }
 
 #[allow(dead_code)]
