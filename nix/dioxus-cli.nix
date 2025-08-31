@@ -25,11 +25,11 @@ rustPlatform.buildRustPackage {
   src = fetchFromGitHub {
     owner = "DioxusLabs";
     repo = "dioxus";
-    rev = "main";
-    hash = "sha256-aW7hlteMGd964rl9jkCwVWIH2Qn8TbnOpxTyoqPaqHg=";
+    rev = "80731da25a698b655b1679e2e9deaa2959740d58";
+    hash = "sha256-1J0YPSJUvdS+LR2OrukkFPO25FFJDWhN5WfQPXTLOr4=";
   };
 
-  cargoHash = "sha256-5/BidflpRcyzex4bs4rtEZKTaPo1yO3mce2wS/NFW/w=";
+  cargoHash = "sha256-969tEQeQEiWDyDuNGnCN4p/184ZKu6HqYtNuxpHGems=";
   # cargoHash = lib.fakeHash;
   # cargoPatches = [
   #   # TODO: Remove once https://github.com/DioxusLabs/dioxus/issues/3659 is fixed upstream.
