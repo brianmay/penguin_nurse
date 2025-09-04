@@ -10,7 +10,7 @@ use crate::{
     },
     functions::health_metrics::{create_health_metric, delete_health_metric, update_health_metric},
     models::{
-        ChangeHealthMetric, HealthMetric, Maybe, MaybeDecimal, MaybeI32, MaybeString,
+        ChangeHealthMetric, HealthMetric, Maybe, MaybeDecimal, MaybeI32, MaybeSet, MaybeString,
         NewHealthMetric, UserId,
     },
 };
@@ -62,15 +62,15 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<HealthMetric, Ed
         }
         Operation::Update { health_metric } => {
             let changes = ChangeHealthMetric {
-                user_id: None,
-                time: Some(time),
-                pulse: Some(pulse),
-                blood_glucose: Some(blood_glucose),
-                systolic_bp: Some(systolic_bp),
-                diastolic_bp: Some(diastolic_bp),
-                weight: Some(weight),
-                height: Some(height),
-                comments: Some(comments),
+                user_id: MaybeSet::NoChange,
+                time: MaybeSet::Set(time),
+                pulse: MaybeSet::Set(pulse),
+                blood_glucose: MaybeSet::Set(blood_glucose),
+                systolic_bp: MaybeSet::Set(systolic_bp),
+                diastolic_bp: MaybeSet::Set(diastolic_bp),
+                weight: MaybeSet::Set(weight),
+                height: MaybeSet::Set(height),
+                comments: MaybeSet::Set(comments),
             };
             update_health_metric(health_metric.id, changes)
                 .await

@@ -1,4 +1,4 @@
-use crate::models::{self, ExerciseId, UserId};
+use crate::models::{self, ExerciseId, MaybeSet, UserId};
 use chrono::{DateTime, Utc};
 use dioxus::prelude::*;
 
@@ -75,7 +75,7 @@ pub async fn update_exercise(
 ) -> Result<models::Exercise, ServerFnError> {
     let logged_in_user_id = get_user_id().await?;
 
-    if let Some(req_user_id) = exercise.user_id
+    if let MaybeSet::Set(req_user_id) = exercise.user_id
         && logged_in_user_id != req_user_id
     {
         return Err(ServerFnError::ServerError(

@@ -3,7 +3,10 @@ use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::forms::{FieldValue, FieldValueError};
+use crate::{
+    forms::{FieldValue, FieldValueError},
+    models::MaybeSet,
+};
 
 use super::{UserId, common::MaybeString};
 
@@ -173,12 +176,12 @@ pub struct NewPoo {
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangePoo {
-    pub user_id: Option<UserId>,
-    pub time: Option<chrono::DateTime<chrono::FixedOffset>>,
-    pub duration: Option<chrono::Duration>,
-    pub urgency: Option<i32>,
-    pub quantity: Option<i32>,
-    pub bristol: Option<Bristol>,
-    pub colour: Option<palette::Hsv>,
-    pub comments: Option<MaybeString>,
+    pub user_id: MaybeSet<UserId>,
+    pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
+    pub duration: MaybeSet<chrono::Duration>,
+    pub urgency: MaybeSet<i32>,
+    pub quantity: MaybeSet<i32>,
+    pub bristol: MaybeSet<Bristol>,
+    pub colour: MaybeSet<palette::Hsv>,
+    pub comments: MaybeSet<MaybeString>,
 }

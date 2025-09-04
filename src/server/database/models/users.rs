@@ -67,7 +67,7 @@ impl From<User> for crate::models::User {
             id: UserId::new(user.id),
             username: user.username,
             full_name: user.full_name,
-            oidc_id: user.oidc_id.into(),
+            oidc_id: user.oidc_id,
             email: user.email,
             is_admin: user.is_admin,
             created_at: user.created_at,
@@ -119,12 +119,12 @@ impl<'a> UpdateUser<'a> {
         hashed_password: Option<&'a str>,
     ) -> Self {
         Self {
-            username: user.username.as_deref(),
+            username: user.username.as_deref().into_option(),
             password: hashed_password,
-            full_name: user.full_name.as_deref(),
-            oidc_id: user.oidc_id.as_ref().map(|x| x.as_deref()),
-            email: user.email.as_deref(),
-            is_admin: user.is_admin,
+            full_name: user.full_name.as_deref().into_option(),
+            oidc_id: user.oidc_id.map_inner_deref().into_option(),
+            email: user.email.as_deref().into_option(),
+            is_admin: user.is_admin.into_option(),
         }
     }
 }

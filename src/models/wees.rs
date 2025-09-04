@@ -2,6 +2,8 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
+use crate::models::MaybeSet;
+
 use super::{UserId, common::MaybeString};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -60,11 +62,11 @@ pub struct NewWee {
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeWee {
-    pub user_id: Option<UserId>,
-    pub time: Option<chrono::DateTime<chrono::FixedOffset>>,
-    pub duration: Option<chrono::Duration>,
-    pub urgency: Option<i32>,
-    pub mls: Option<i32>,
-    pub colour: Option<palette::Hsv>,
-    pub comments: Option<MaybeString>,
+    pub user_id: MaybeSet<UserId>,
+    pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
+    pub duration: MaybeSet<chrono::Duration>,
+    pub urgency: MaybeSet<i32>,
+    pub mls: MaybeSet<i32>,
+    pub colour: MaybeSet<palette::Hsv>,
+    pub comments: MaybeSet<MaybeString>,
 }

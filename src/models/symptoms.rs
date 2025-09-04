@@ -3,6 +3,8 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
+use crate::models::MaybeSet;
+
 use super::{UserId, common::MaybeString};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -108,32 +110,32 @@ pub struct NewSymptom {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeSymptom {
-    pub user_id: Option<UserId>,
-    pub time: Option<chrono::DateTime<chrono::FixedOffset>>,
-    pub appetite_loss: Option<i32>,
-    pub fever: Option<i32>,
-    pub cough: Option<i32>,
-    pub sore_throat: Option<i32>,
-    pub runny_nose: Option<i32>,
-    pub sneezing: Option<i32>,
-    pub heart_burn: Option<i32>,
-    pub abdominal_pain: Option<i32>,
-    pub abdominal_pain_location: Option<MaybeString>,
-    pub diarrhea: Option<i32>,
-    pub constipation: Option<i32>,
-    pub lower_back_pain: Option<i32>,
-    pub upper_back_pain: Option<i32>,
-    pub neck_pain: Option<i32>,
-    pub joint_pain: Option<i32>,
-    pub headache: Option<i32>,
-    pub nausea: Option<i32>,
-    pub dizziness: Option<i32>,
-    pub stomach_ache: Option<i32>,
-    pub chest_pain: Option<i32>,
-    pub shortness_of_breath: Option<i32>,
-    pub fatigue: Option<i32>,
-    pub anxiety: Option<i32>,
-    pub depression: Option<i32>,
-    pub insomnia: Option<i32>,
-    pub comments: Option<MaybeString>,
+    pub user_id: MaybeSet<UserId>,
+    pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
+    pub appetite_loss: MaybeSet<i32>,
+    pub fever: MaybeSet<i32>,
+    pub cough: MaybeSet<i32>,
+    pub sore_throat: MaybeSet<i32>,
+    pub runny_nose: MaybeSet<i32>,
+    pub sneezing: MaybeSet<i32>,
+    pub heart_burn: MaybeSet<i32>,
+    pub abdominal_pain: MaybeSet<i32>,
+    pub abdominal_pain_location: MaybeSet<MaybeString>,
+    pub diarrhea: MaybeSet<i32>,
+    pub constipation: MaybeSet<i32>,
+    pub lower_back_pain: MaybeSet<i32>,
+    pub upper_back_pain: MaybeSet<i32>,
+    pub neck_pain: MaybeSet<i32>,
+    pub joint_pain: MaybeSet<i32>,
+    pub headache: MaybeSet<i32>,
+    pub nausea: MaybeSet<i32>,
+    pub dizziness: MaybeSet<i32>,
+    pub stomach_ache: MaybeSet<i32>,
+    pub chest_pain: MaybeSet<i32>,
+    pub shortness_of_breath: MaybeSet<i32>,
+    pub fatigue: MaybeSet<i32>,
+    pub anxiety: MaybeSet<i32>,
+    pub depression: MaybeSet<i32>,
+    pub insomnia: MaybeSet<i32>,
+    pub comments: MaybeSet<MaybeString>,
 }

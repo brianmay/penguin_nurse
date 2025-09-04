@@ -42,7 +42,7 @@ impl From<Wee> for crate::models::Wee {
             colour: palette::Hsv::new(wee.colour_hue, wee.colour_saturation, wee.colour_value),
             created_at: wee.created_at,
             updated_at: wee.updated_at,
-            comments: wee.comments.into(),
+            comments: wee.comments,
         }
     }
 }
@@ -145,15 +145,18 @@ pub struct ChangeWee<'a> {
 impl<'a> ChangeWee<'a> {
     pub fn from_front_end(wee: &'a crate::models::ChangeWee) -> Self {
         Self {
-            time: wee.time.map(|time| time.with_timezone(&Utc)),
-            utc_offset: wee.time.map(|time| time.offset().local_minus_utc()),
-            duration: wee.duration,
-            urgency: wee.urgency,
-            mls: wee.mls,
-            colour_hue: wee.colour.map(|x| x.hue.into_inner()),
-            colour_saturation: wee.colour.map(|x| x.saturation),
-            colour_value: wee.colour.map(|x| x.value),
-            comments: wee.comments.as_ref().map(|x| x.as_deref()),
+            time: wee.time.map(|time| time.with_timezone(&Utc)).into_option(),
+            utc_offset: wee
+                .time
+                .map(|time| time.offset().local_minus_utc())
+                .into_option(),
+            duration: wee.duration.into_option(),
+            urgency: wee.urgency.into_option(),
+            mls: wee.mls.into_option(),
+            colour_hue: wee.colour.map(|x| x.hue.into_inner()).into_option(),
+            colour_saturation: wee.colour.map(|x| x.saturation).into_option(),
+            colour_value: wee.colour.map(|x| x.value).into_option(),
+            comments: wee.comments.as_ref().map(|x| x.as_deref()).into_option(),
         }
     }
 }

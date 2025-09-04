@@ -35,7 +35,7 @@ impl From<WeeUrge> for crate::models::WeeUrge {
             urgency: wee_urge.urgency,
             created_at: wee_urge.created_at,
             updated_at: wee_urge.updated_at,
-            comments: wee_urge.comments.into(),
+            comments: wee_urge.comments,
         }
     }
 }
@@ -123,10 +123,13 @@ pub struct ChangeWeeUrge<'a> {
 impl<'a> ChangeWeeUrge<'a> {
     pub fn from_front_end(wee: &'a crate::models::ChangeWeeUrge) -> Self {
         Self {
-            time: wee.time.map(|time| time.with_timezone(&Utc)),
-            utc_offset: wee.time.map(|time| time.offset().local_minus_utc()),
-            urgency: wee.urgency,
-            comments: wee.comments.as_ref().map(|x| x.as_deref()),
+            time: wee.time.map(|time| time.with_timezone(&Utc)).into_option(),
+            utc_offset: wee
+                .time
+                .map(|time| time.offset().local_minus_utc())
+                .into_option(),
+            urgency: wee.urgency.into_option(),
+            comments: wee.comments.map_inner_deref().into_option(),
         }
     }
 }

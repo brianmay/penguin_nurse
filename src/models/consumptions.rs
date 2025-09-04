@@ -4,7 +4,10 @@ use tap::Pipe;
 
 use serde::{Deserialize, Serialize};
 
-use crate::forms::{FieldValue, FieldValueError};
+use crate::{
+    forms::{FieldValue, FieldValueError},
+    models::common::MaybeSet,
+};
 
 use super::{ConsumptionItem, MaybeF64, UserId, common::MaybeString};
 
@@ -126,10 +129,10 @@ pub struct NewConsumption {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeConsumption {
-    pub user_id: Option<UserId>,
-    pub time: Option<chrono::DateTime<chrono::FixedOffset>>,
-    pub duration: Option<chrono::TimeDelta>,
-    pub consumption_type: Option<ConsumptionType>,
-    pub liquid_mls: Option<MaybeF64>,
-    pub comments: Option<MaybeString>,
+    pub user_id: MaybeSet<UserId>,
+    pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
+    pub duration: MaybeSet<chrono::TimeDelta>,
+    pub consumption_type: MaybeSet<ConsumptionType>,
+    pub liquid_mls: MaybeSet<MaybeF64>,
+    pub comments: MaybeSet<MaybeString>,
 }

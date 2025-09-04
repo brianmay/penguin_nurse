@@ -12,7 +12,7 @@ use crate::{
         validate_millilitres, validate_urgency,
     },
     functions::wees::{create_wee, delete_wee, update_wee},
-    models::{ChangeWee, MaybeString, NewWee, UserId, Wee},
+    models::{ChangeWee, MaybeSet, MaybeString, NewWee, UserId, Wee},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -54,13 +54,13 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> 
         }
         Operation::Update { wee } => {
             let changes = ChangeWee {
-                user_id: None,
-                time: Some(time),
-                duration: Some(duration),
-                urgency: Some(urgency),
-                mls: Some(mls),
-                colour: Some(colour),
-                comments: Some(comments),
+                user_id: MaybeSet::NoChange,
+                time: MaybeSet::Set(time),
+                duration: MaybeSet::Set(duration),
+                urgency: MaybeSet::Set(urgency),
+                mls: MaybeSet::Set(mls),
+                colour: MaybeSet::Set(colour),
+                comments: MaybeSet::Set(comments),
             };
             update_wee(wee.id, changes).await.map_err(EditError::Server)
         }

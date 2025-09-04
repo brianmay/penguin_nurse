@@ -1,4 +1,4 @@
-use crate::models::{self, SymptomId, UserId};
+use crate::models::{self, MaybeSet, SymptomId, UserId};
 use chrono::{DateTime, Utc};
 use dioxus::prelude::*;
 
@@ -73,7 +73,7 @@ pub async fn update_symptom(
 ) -> Result<models::Symptom, ServerFnError> {
     let logged_in_user_id = get_user_id().await?;
 
-    if let Some(req_user_id) = symptom.user_id
+    if let MaybeSet::Set(req_user_id) = symptom.user_id
         && logged_in_user_id != req_user_id
     {
         return Err(ServerFnError::ServerError(

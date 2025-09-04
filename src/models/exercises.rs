@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     forms::{FieldValue, FieldValueError},
-    models::MaybeI32,
+    models::{MaybeI32, common::MaybeSet},
 };
 
 use super::{
@@ -136,13 +136,13 @@ pub struct NewExercise {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeExercise {
-    pub user_id: Option<UserId>,
-    pub time: Option<chrono::DateTime<chrono::FixedOffset>>,
-    pub duration: Option<chrono::TimeDelta>,
-    pub location: Option<MaybeString>,
-    pub distance: Option<MaybeDecimal>,
-    pub calories: Option<MaybeI32>,
-    pub rpe: Option<MaybeI32>,
-    pub exercise_type: Option<ExerciseType>,
-    pub comments: Option<MaybeString>,
+    pub user_id: MaybeSet<UserId>,
+    pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
+    pub duration: MaybeSet<chrono::TimeDelta>,
+    pub location: MaybeSet<MaybeString>,
+    pub distance: MaybeSet<MaybeDecimal>,
+    pub calories: MaybeSet<MaybeI32>,
+    pub rpe: MaybeSet<MaybeI32>,
+    pub exercise_type: MaybeSet<ExerciseType>,
+    pub comments: MaybeSet<MaybeString>,
 }

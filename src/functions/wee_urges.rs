@@ -1,4 +1,4 @@
-use crate::models::{self, UserId, WeeUrgeId};
+use crate::models::{self, MaybeSet, UserId, WeeUrgeId};
 use chrono::{DateTime, Utc};
 use dioxus::prelude::*;
 
@@ -75,7 +75,7 @@ pub async fn update_wee_urge(
 ) -> Result<models::WeeUrge, ServerFnError> {
     let logged_in_user_id = get_user_id().await?;
 
-    if let Some(req_user_id) = wee_urge.user_id
+    if let MaybeSet::Set(req_user_id) = wee_urge.user_id
         && logged_in_user_id != req_user_id
     {
         return Err(ServerFnError::ServerError(

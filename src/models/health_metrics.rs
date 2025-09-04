@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
-use crate::models::common::MaybeI32;
+use crate::models::{MaybeSet, common::MaybeI32};
 
 use super::{
     UserId,
@@ -75,13 +75,13 @@ pub struct NewHealthMetric {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeHealthMetric {
-    pub user_id: Option<UserId>,
-    pub time: Option<chrono::DateTime<chrono::FixedOffset>>,
-    pub pulse: Option<MaybeI32>,
-    pub blood_glucose: Option<MaybeDecimal>,
-    pub systolic_bp: Option<MaybeI32>,
-    pub diastolic_bp: Option<MaybeI32>,
-    pub weight: Option<MaybeDecimal>,
-    pub height: Option<MaybeI32>,
-    pub comments: Option<MaybeString>,
+    pub user_id: MaybeSet<UserId>,
+    pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
+    pub pulse: MaybeSet<MaybeI32>,
+    pub blood_glucose: MaybeSet<MaybeDecimal>,
+    pub systolic_bp: MaybeSet<MaybeI32>,
+    pub diastolic_bp: MaybeSet<MaybeI32>,
+    pub weight: MaybeSet<MaybeDecimal>,
+    pub height: MaybeSet<MaybeI32>,
+    pub comments: MaybeSet<MaybeString>,
 }

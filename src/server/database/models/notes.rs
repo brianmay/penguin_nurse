@@ -33,7 +33,7 @@ impl From<Note> for crate::models::Note {
             id: models::NoteId::new(note.id),
             user_id: models::UserId::new(note.user_id),
             time,
-            comments: note.comments.into(),
+            comments: note.comments,
             created_at: note.created_at,
             updated_at: note.updated_at,
         }
@@ -120,9 +120,12 @@ pub struct ChangeNote<'a> {
 impl<'a> ChangeNote<'a> {
     pub fn from_front_end(note: &'a crate::models::ChangeNote) -> Self {
         Self {
-            time: note.time.map(|time| time.with_timezone(&Utc)),
-            utc_offset: note.time.map(|time| time.offset().local_minus_utc()),
-            comments: note.comments.as_ref().map(|x| x.as_deref()),
+            time: note.time.map(|time| time.with_timezone(&Utc)).into_option(),
+            utc_offset: note
+                .time
+                .map(|time| time.offset().local_minus_utc())
+                .into_option(),
+            comments: note.comments.map_inner_deref().into_option(),
         }
     }
 }

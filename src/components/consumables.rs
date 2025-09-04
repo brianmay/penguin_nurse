@@ -21,7 +21,7 @@ use crate::{
     },
     models::{
         ChangeConsumable, ChangeNestedConsumable, Consumable, ConsumableId, ConsumableItem,
-        ConsumableUnit, Maybe, MaybeDateTime, MaybeF64, MaybeString, NestedConsumable,
+        ConsumableUnit, Maybe, MaybeDateTime, MaybeF64, MaybeSet, MaybeString, NestedConsumable,
         NestedConsumableId, NewConsumable, NewNestedConsumable,
     },
 };
@@ -70,14 +70,14 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumable, Edit
         }
         Operation::Update { consumable } => {
             let changes = ChangeConsumable {
-                name: Some(name),
-                brand: Some(brand),
-                barcode: Some(barcode),
-                is_organic: Some(is_organic),
-                unit: Some(unit),
-                comments: Some(comments),
-                created: Some(created),
-                destroyed: Some(destroyed),
+                name: MaybeSet::Set(name),
+                brand: MaybeSet::Set(brand),
+                barcode: MaybeSet::Set(barcode),
+                is_organic: MaybeSet::Set(is_organic),
+                unit: MaybeSet::Set(unit),
+                comments: MaybeSet::Set(comments),
+                created: MaybeSet::Set(created),
+                destroyed: MaybeSet::Set(destroyed),
             };
             update_consumable(consumable.id, changes)
                 .await
@@ -811,10 +811,10 @@ async fn do_save_nested(
     let liquid_mls = validate.liquid_mls.read().clone()?;
     let comments = validate.comments.read().clone()?;
 
-    let updates = ChangeNestedConsumable {
-        quantity: Some(quantity),
-        liquid_mls: Some(liquid_mls),
-        comments: Some(comments),
+    let updates: ChangeNestedConsumable = ChangeNestedConsumable {
+        quantity: MaybeSet::Set(quantity),
+        liquid_mls: MaybeSet::Set(liquid_mls),
+        comments: MaybeSet::Set(comments),
     };
     update_nested_consumable(nested.id, updates)
         .await

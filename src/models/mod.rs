@@ -68,6 +68,7 @@ pub use common::MaybeDateTime;
 pub use common::MaybeDecimal;
 pub use common::MaybeF64;
 pub use common::MaybeI32;
+pub use common::MaybeSet;
 pub use common::MaybeString;
 
 mod consumables;

@@ -8,7 +8,7 @@ use crate::{
         validate_urgency,
     },
     functions::wee_urges::{create_wee_urge, delete_wee_urge, update_wee_urge},
-    models::{ChangeWeeUrge, MaybeString, NewWeeUrge, UserId, WeeUrge},
+    models::{ChangeWeeUrge, MaybeSet, MaybeString, NewWeeUrge, UserId, WeeUrge},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -41,10 +41,10 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<WeeUrge, EditErr
         }
         Operation::Update { wee_urge } => {
             let changes = ChangeWeeUrge {
-                user_id: None,
-                time: Some(time),
-                urgency: Some(urgency),
-                comments: Some(comments),
+                user_id: MaybeSet::NoChange,
+                time: MaybeSet::Set(time),
+                urgency: MaybeSet::Set(urgency),
+                comments: MaybeSet::Set(comments),
             };
             update_wee_urge(wee_urge.id, changes)
                 .await

@@ -31,9 +31,9 @@ impl From<ConsumptionConsumable> for crate::models::ConsumptionConsumable {
                 models::ConsumptionId::new(consumption_consumable.parent_id),
                 models::ConsumableId::new(consumption_consumable.consumable_id),
             ),
-            quantity: consumption_consumable.quantity.into(),
-            liquid_mls: consumption_consumable.liquid_mls.into(),
-            comments: consumption_consumable.comments.into(),
+            quantity: consumption_consumable.quantity,
+            liquid_mls: consumption_consumable.liquid_mls,
+            comments: consumption_consumable.comments,
             created_at: consumption_consumable.created_at,
             updated_at: consumption_consumable.updated_at,
         }
@@ -109,8 +109,8 @@ impl<'a> NewConsumptionConsumable<'a> {
         Self {
             parent_id: parent_id.as_inner(),
             consumable_id: consumable_id.as_inner(),
-            quantity: consumption_consumable.quantity.into(),
-            liquid_mls: consumption_consumable.liquid_mls.into(),
+            quantity: consumption_consumable.quantity,
+            liquid_mls: consumption_consumable.liquid_mls,
             comments: consumption_consumable.comments.as_deref(),
         }
     }
@@ -141,12 +141,12 @@ impl<'a> ChangeConsumptionConsumable<'a> {
         consumption_consumable: &'a crate::models::ChangeConsumptionConsumable,
     ) -> Self {
         Self {
-            quantity: consumption_consumable.quantity.map(|x| x.into()),
-            liquid_mls: consumption_consumable.liquid_mls.map(|x| x.into()),
+            quantity: consumption_consumable.quantity.into_option(),
+            liquid_mls: consumption_consumable.liquid_mls.into_option(),
             comments: consumption_consumable
                 .comments
-                .as_ref()
-                .map(|x| x.as_deref()),
+                .map_inner_deref()
+                .into_option(),
         }
     }
 }

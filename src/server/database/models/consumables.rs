@@ -67,15 +67,15 @@ impl From<Consumable> for crate::models::Consumable {
         Self {
             id: models::ConsumableId::new(consumable.id),
             name: consumable.name,
-            brand: consumable.brand.into(),
-            barcode: consumable.barcode.into(),
+            brand: consumable.brand,
+            barcode: consumable.barcode,
             is_organic: consumable.is_organic,
             unit: consumable.unit.into(),
-            created: consumable.created.into(),
-            destroyed: consumable.destroyed.into(),
+            created: consumable.created,
+            destroyed: consumable.destroyed,
             created_at: consumable.created_at,
             updated_at: consumable.updated_at,
-            comments: consumable.comments.into(),
+            comments: consumable.comments,
         }
     }
 }
@@ -220,14 +220,14 @@ pub struct ChangeConsumable<'a> {
 impl<'a> ChangeConsumable<'a> {
     pub fn from_front_end(consumable: &'a crate::models::ChangeConsumable) -> Self {
         Self {
-            name: consumable.name.as_deref(),
-            brand: consumable.brand.as_ref().map(|x| x.as_deref()),
-            barcode: consumable.barcode.as_ref().map(|x| x.as_deref()),
-            is_organic: consumable.is_organic,
-            unit: consumable.unit.map(|x| x.into()),
-            comments: consumable.comments.as_ref().map(|x| x.as_deref()),
-            created: consumable.created.map(|x| x.into()),
-            destroyed: consumable.destroyed.map(|x| x.into()),
+            name: consumable.name.as_deref().into_option(),
+            brand: consumable.brand.map_inner_deref().into_option(),
+            barcode: consumable.barcode.map_inner_deref().into_option(),
+            is_organic: consumable.is_organic.into_option(),
+            unit: consumable.unit.map_into().into_option(),
+            comments: consumable.comments.map_inner_deref().into_option(),
+            created: consumable.created.into_option(),
+            destroyed: consumable.destroyed.into_option(),
         }
     }
 }

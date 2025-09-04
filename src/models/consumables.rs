@@ -6,7 +6,7 @@ use crate::forms::{FieldValue, FieldValueError};
 
 use super::{
     ConsumableItem,
-    common::{MaybeDateTime, MaybeString},
+    common::{MaybeDateTime, MaybeSet, MaybeString},
 };
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
@@ -129,12 +129,12 @@ pub struct NewConsumable {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeConsumable {
-    pub name: Option<String>,
-    pub brand: Option<MaybeString>,
-    pub barcode: Option<MaybeString>,
-    pub is_organic: Option<bool>,
-    pub unit: Option<ConsumableUnit>,
-    pub comments: Option<MaybeString>,
-    pub created: Option<MaybeDateTime>,
-    pub destroyed: Option<MaybeDateTime>,
+    pub name: MaybeSet<String>,
+    pub brand: MaybeSet<MaybeString>,
+    pub barcode: MaybeSet<MaybeString>,
+    pub is_organic: MaybeSet<bool>,
+    pub unit: MaybeSet<ConsumableUnit>,
+    pub comments: MaybeSet<MaybeString>,
+    pub created: MaybeSet<MaybeDateTime>,
+    pub destroyed: MaybeSet<MaybeDateTime>,
 }

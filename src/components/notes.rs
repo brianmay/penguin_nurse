@@ -8,7 +8,7 @@ use crate::{
         ValidationError, validate_comments, validate_fixed_offset_date_time,
     },
     functions::notes::{create_note, delete_note, update_note},
-    models::{ChangeNote, Maybe, MaybeString, NewNote, Note, UserId},
+    models::{ChangeNote, Maybe, MaybeSet, MaybeString, NewNote, Note, UserId},
 };
 use classes::classes;
 
@@ -39,9 +39,9 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Note, EditError>
         }
         Operation::Update { note } => {
             let changes = ChangeNote {
-                user_id: None,
-                time: Some(time),
-                comments: Some(comments),
+                user_id: MaybeSet::NoChange,
+                time: MaybeSet::Set(time),
+                comments: MaybeSet::Set(comments),
             };
             update_note(note.id, changes)
                 .await

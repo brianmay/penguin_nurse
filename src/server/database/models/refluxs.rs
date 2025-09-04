@@ -37,9 +37,9 @@ impl From<Reflux> for crate::models::Reflux {
             user_id: models::UserId::new(reflux.user_id),
             time,
             duration: reflux.duration,
-            location: reflux.location.into(),
+            location: reflux.location,
             severity: reflux.severity,
-            comments: reflux.comments.into(),
+            comments: reflux.comments,
             created_at: reflux.created_at,
             updated_at: reflux.updated_at,
         }
@@ -135,12 +135,18 @@ pub struct ChangeReflux<'a> {
 impl<'a> ChangeReflux<'a> {
     pub fn from_front_end(reflux: &'a crate::models::ChangeReflux) -> Self {
         Self {
-            time: reflux.time.map(|time| time.with_timezone(&Utc)),
-            utc_offset: reflux.time.map(|time| time.offset().local_minus_utc()),
-            duration: reflux.duration,
-            location: reflux.location.as_ref().map(|x| x.as_deref()),
-            severity: reflux.severity,
-            comments: reflux.comments.as_ref().map(|x| x.as_deref()),
+            time: reflux
+                .time
+                .map(|time| time.with_timezone(&Utc))
+                .into_option(),
+            utc_offset: reflux
+                .time
+                .map(|time| time.offset().local_minus_utc())
+                .into_option(),
+            duration: reflux.duration.into_option(),
+            location: reflux.location.map_inner_deref().into_option(),
+            severity: reflux.severity.into_option(),
+            comments: reflux.comments.map_inner_deref().into_option(),
         }
     }
 }

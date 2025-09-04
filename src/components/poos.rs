@@ -12,7 +12,7 @@ use crate::{
         validate_fixed_offset_date_time, validate_poo_quantity, validate_urgency,
     },
     functions::poos::{create_poo, delete_poo, update_poo},
-    models::{Bristol, ChangePoo, MaybeString, NewPoo, Poo, UserId},
+    models::{Bristol, ChangePoo, MaybeSet, MaybeString, NewPoo, Poo, UserId},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -57,14 +57,14 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Poo, EditError> 
         }
         Operation::Update { poo } => {
             let changes = ChangePoo {
-                user_id: None,
-                time: Some(time),
-                duration: Some(duration),
-                urgency: Some(urgency),
-                quantity: Some(quantity),
-                bristol: Some(bristol),
-                colour: Some(colour),
-                comments: Some(comments),
+                user_id: MaybeSet::NoChange,
+                time: MaybeSet::Set(time),
+                duration: MaybeSet::Set(duration),
+                urgency: MaybeSet::Set(urgency),
+                quantity: MaybeSet::Set(quantity),
+                bristol: MaybeSet::Set(bristol),
+                colour: MaybeSet::Set(colour),
+                comments: MaybeSet::Set(comments),
             };
             update_poo(poo.id, changes).await.map_err(EditError::Server)
         }

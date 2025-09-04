@@ -47,13 +47,14 @@ pub async fn create_user(user: models::NewUser) -> Result<models::User, ServerFn
 pub async fn update_user(
     id: UserId,
     user: models::ChangeUser,
+    password: Option<String>,
 ) -> Result<models::User, ServerFnError> {
     use crate::server::database::models::users as server;
 
     assert_is_admin().await?;
     let mut conn = get_database_connection().await?;
 
-    let hashed_password = user.password.as_ref().map(password_auth::generate_hash);
+    let hashed_password = password.as_ref().map(password_auth::generate_hash);
 
     let updates: server::UpdateUser =
         server::UpdateUser::from_front_end(&user, hashed_password.as_deref());

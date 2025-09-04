@@ -22,7 +22,7 @@ use crate::{
     models::{
         ChangeConsumption, ChangeConsumptionConsumable, Consumable, Consumption,
         ConsumptionConsumable, ConsumptionConsumableId, ConsumptionItem, ConsumptionType, Maybe,
-        MaybeF64, MaybeString, NewConsumption, NewConsumptionConsumable, UserId,
+        MaybeF64, MaybeSet, MaybeString, NewConsumption, NewConsumptionConsumable, UserId,
     },
 };
 
@@ -62,12 +62,12 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumption, Edi
         }
         Operation::Update { consumption } => {
             let changes = ChangeConsumption {
-                user_id: None,
-                time: Some(time),
-                duration: Some(duration),
-                consumption_type: Some(consumption_type),
-                liquid_mls: Some(liquid_mls),
-                comments: Some(comments),
+                user_id: MaybeSet::NoChange,
+                time: MaybeSet::Set(time),
+                duration: MaybeSet::Set(duration),
+                consumption_type: MaybeSet::Set(consumption_type),
+                liquid_mls: MaybeSet::Set(liquid_mls),
+                comments: MaybeSet::Set(comments),
             };
             update_consumption(consumption.id, changes)
                 .await
@@ -717,9 +717,9 @@ async fn do_save_consumption(
     let comments = validate.comments.read().clone()?;
 
     let updates = ChangeConsumptionConsumable {
-        quantity: Some(quantity),
-        liquid_mls: Some(liquid_mls),
-        comments: Some(comments),
+        quantity: MaybeSet::Set(quantity),
+        liquid_mls: MaybeSet::Set(liquid_mls),
+        comments: MaybeSet::Set(comments),
     };
     update_consumption_consumable(consumption.id, updates)
         .await

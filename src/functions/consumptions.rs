@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 
-use crate::models::{self, ConsumableId, ConsumptionId, UserId};
+use crate::models::{self, ConsumableId, ConsumptionId, MaybeSet, UserId};
 
 #[cfg(feature = "server")]
 use crate::models::ConsumptionWithItems;
@@ -132,7 +132,15 @@ pub async fn update_consumption(
     id: ConsumptionId,
     consumption: models::ChangeConsumption,
 ) -> Result<models::Consumption, ServerFnError> {
-    let _logged_in_user_id = get_user_id().await?;
+    let logged_in_user_id = get_user_id().await?;
+
+    if let MaybeSet::Set(req_user_id) = consumption.user_id
+        && logged_in_user_id != req_user_id
+    {
+        return Err(ServerFnError::ServerError(
+            "User ID does not match the logged in user".to_string(),
+        ));
+    }
 
     let mut conn = get_database_connection().await?;
     let updates = crate::server::database::models::consumptions::ChangeConsumption::from_front_end(
@@ -151,12 +159,16 @@ pub async fn update_consumption(
 
 #[server]
 pub async fn delete_consumption(id: ConsumptionId) -> Result<(), ServerFnError> {
-    let _logged_in_user_id = get_user_id().await?;
+    let logged_in_user_id = get_user_id().await?;
     let mut conn = get_database_connection().await?;
 
-    crate::server::database::models::consumptions::delete_consumption(&mut conn, id.as_inner())
-        .await
-        .map_err(ServerFnError::from)
+    crate::server::database::models::consumptions::delete_consumption(
+        &mut conn,
+        id.as_inner(),
+        logged_in_user_id.as_inner(),
+    )
+    .await
+    .map_err(ServerFnError::from)
 }
 
 #[server]

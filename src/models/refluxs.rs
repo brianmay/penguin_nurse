@@ -3,6 +3,8 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
+use crate::models::MaybeSet;
+
 use super::{UserId, common::MaybeString};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -64,10 +66,10 @@ pub struct NewReflux {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeReflux {
-    pub user_id: Option<UserId>,
-    pub time: Option<chrono::DateTime<chrono::FixedOffset>>,
-    pub duration: Option<chrono::TimeDelta>,
-    pub location: Option<MaybeString>,
-    pub severity: Option<i32>,
-    pub comments: Option<MaybeString>,
+    pub user_id: MaybeSet<UserId>,
+    pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
+    pub duration: MaybeSet<chrono::TimeDelta>,
+    pub location: MaybeSet<MaybeString>,
+    pub severity: MaybeSet<i32>,
+    pub comments: MaybeSet<MaybeString>,
 }

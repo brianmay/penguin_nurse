@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::models::common::MaybeSet;
+
 use super::{Consumable, ConsumptionId, MaybeF64, MaybeString, consumables::ConsumableId};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -70,7 +72,7 @@ pub struct NewConsumptionConsumable {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeConsumptionConsumable {
-    pub quantity: Option<MaybeF64>,
-    pub liquid_mls: Option<MaybeF64>,
-    pub comments: Option<MaybeString>,
+    pub quantity: MaybeSet<MaybeF64>,
+    pub liquid_mls: MaybeSet<MaybeF64>,
+    pub comments: MaybeSet<MaybeString>,
 }

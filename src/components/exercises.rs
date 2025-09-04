@@ -12,8 +12,8 @@ use crate::{
     },
     functions::exercises::{create_exercise, delete_exercise, update_exercise},
     models::{
-        ChangeExercise, Exercise, ExerciseType, Maybe, MaybeDecimal, MaybeI32, MaybeString,
-        NewExercise, UserId,
+        ChangeExercise, Exercise, ExerciseType, Maybe, MaybeDecimal, MaybeI32, MaybeSet,
+        MaybeString, NewExercise, UserId,
     },
 };
 use classes::classes;
@@ -63,15 +63,15 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Exercise, EditEr
         }
         Operation::Update { exercise } => {
             let changes = ChangeExercise {
-                user_id: None,
-                time: Some(time),
-                duration: Some(duration),
-                exercise_type: Some(exercise_type),
-                location: Some(location),
-                distance: Some(distance),
-                calories: Some(calories),
-                rpe: Some(rpe),
-                comments: Some(comments),
+                user_id: MaybeSet::NoChange,
+                time: MaybeSet::Set(time),
+                duration: MaybeSet::Set(duration),
+                exercise_type: MaybeSet::Set(exercise_type),
+                location: MaybeSet::Set(location),
+                distance: MaybeSet::Set(distance),
+                calories: MaybeSet::Set(calories),
+                rpe: MaybeSet::Set(rpe),
+                comments: MaybeSet::Set(comments),
             };
             update_exercise(exercise.id, changes)
                 .await

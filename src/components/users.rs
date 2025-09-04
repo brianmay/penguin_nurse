@@ -11,7 +11,7 @@ use crate::{
         validate_email, validate_full_name, validate_username,
     },
     functions::users::{create_user, delete_user, update_user},
-    models::{ChangeUser, MaybeString, NewUser, User},
+    models::{ChangeUser, MaybeSet, MaybeString, NewUser, User},
 };
 
 #[derive(Debug, Clone)]
@@ -61,14 +61,13 @@ async fn do_update_existing_user(
     let is_admin = validate.is_admin.read().clone()?;
 
     let changes = ChangeUser {
-        username: Some(username),
-        email: Some(email),
-        full_name: Some(full_name),
-        password: None,
-        oidc_id: None,
-        is_admin: Some(is_admin),
+        username: MaybeSet::Set(username),
+        email: MaybeSet::Set(email),
+        full_name: MaybeSet::Set(full_name),
+        oidc_id: MaybeSet::NoChange,
+        is_admin: MaybeSet::Set(is_admin),
     };
-    update_user(user.id, changes)
+    update_user(user.id, changes, None)
         .await
         .map_err(EditError::Server)
 }
@@ -87,14 +86,13 @@ async fn do_change_password(
     let _password_confirm = validate.password_confirm.read().clone()?;
 
     let changes = ChangeUser {
-        username: None,
-        email: None,
-        full_name: None,
-        password: Some(password),
-        oidc_id: None,
-        is_admin: None,
+        username: MaybeSet::NoChange,
+        email: MaybeSet::NoChange,
+        full_name: MaybeSet::NoChange,
+        oidc_id: MaybeSet::NoChange,
+        is_admin: MaybeSet::NoChange,
     };
-    update_user(user.id, changes)
+    update_user(user.id, changes, Some(password))
         .await
         .map_err(EditError::Server)
 }

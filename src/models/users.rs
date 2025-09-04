@@ -1,5 +1,7 @@
 use std::str::FromStr;
 
+use crate::models::MaybeSet;
+
 use super::common::MaybeString;
 use serde::{Deserialize, Serialize};
 
@@ -55,10 +57,10 @@ pub struct NewUser {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ChangeUser {
-    pub username: Option<String>,
-    pub password: Option<String>,
-    pub full_name: Option<String>,
-    pub oidc_id: Option<MaybeString>,
-    pub email: Option<String>,
-    pub is_admin: Option<bool>,
+    pub username: MaybeSet<String>,
+    // pub password: MaybeSet<String>,
+    pub full_name: MaybeSet<String>,
+    pub oidc_id: MaybeSet<MaybeString>,
+    pub email: MaybeSet<String>,
+    pub is_admin: MaybeSet<bool>,
 }

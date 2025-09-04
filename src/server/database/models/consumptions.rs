@@ -77,8 +77,8 @@ impl From<Consumption> for crate::models::Consumption {
             user_id: models::UserId::new(consumption.user_id),
             time,
             duration: consumption.duration,
-            liquid_mls: consumption.liquid_mls.into(),
-            comments: consumption.comments.into(),
+            liquid_mls: consumption.liquid_mls,
+            comments: consumption.comments,
             created_at: consumption.created_at,
             updated_at: consumption.updated_at,
             consumption_type: consumption.consumption_type.into(),
@@ -159,7 +159,7 @@ impl<'a> NewConsumption<'a> {
             utc_offset: consumption.time.offset().local_minus_utc(),
             duration: consumption.duration,
             consumption_type: consumption.consumption_type.into(),
-            liquid_mls: consumption.liquid_mls.into(),
+            liquid_mls: consumption.liquid_mls,
             comments: consumption.comments.as_deref(),
         }
     }
@@ -191,12 +191,18 @@ pub struct ChangeConsumption<'a> {
 impl<'a> ChangeConsumption<'a> {
     pub fn from_front_end(consumption: &'a crate::models::ChangeConsumption) -> Self {
         Self {
-            time: consumption.time.map(|time| time.with_timezone(&Utc)),
-            utc_offset: consumption.time.map(|time| time.offset().local_minus_utc()),
-            duration: consumption.duration,
-            consumption_type: consumption.consumption_type.map(|x| x.into()),
-            liquid_mls: consumption.liquid_mls.map(|x| x.into()),
-            comments: consumption.comments.as_ref().map(|x| x.as_deref()),
+            time: consumption
+                .time
+                .map(|time| time.with_timezone(&Utc))
+                .into_option(),
+            utc_offset: consumption
+                .time
+                .map(|time| time.offset().local_minus_utc())
+                .into_option(),
+            duration: consumption.duration.into_option(),
+            consumption_type: consumption.consumption_type.map_into().into_option(),
+            liquid_mls: consumption.liquid_mls.into_option(),
+            comments: consumption.comments.map_inner_deref().into_option(),
         }
     }
 }
@@ -216,11 +222,13 @@ pub async fn update_consumption(
 pub async fn delete_consumption(
     conn: &mut DatabaseConnection,
     id: i64,
+    user_id: i64,
 ) -> Result<(), diesel::result::Error> {
     use schema::consumptions::id as q_id;
     use schema::consumptions::table;
+    use schema::consumptions::user_id as q_user_id;
 
-    diesel::delete(table.filter(q_id.eq(id)))
+    diesel::delete(table.filter(q_id.eq(id)).filter(q_user_id.eq(user_id)))
         .execute(conn)
         .await?;
     Ok(())

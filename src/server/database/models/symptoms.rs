@@ -64,7 +64,7 @@ impl From<Symptom> for crate::models::Symptom {
             sneezing: symptom.sneezing,
             heart_burn: symptom.heart_burn,
             abdominal_pain: symptom.abdominal_pain,
-            abdominal_pain_location: symptom.abdominal_pain_location.into(),
+            abdominal_pain_location: symptom.abdominal_pain_location,
             diarrhea: symptom.diarrhea,
             constipation: symptom.constipation,
             lower_back_pain: symptom.lower_back_pain,
@@ -83,7 +83,7 @@ impl From<Symptom> for crate::models::Symptom {
             insomnia: symptom.insomnia,
             created_at: symptom.created_at,
             updated_at: symptom.updated_at,
-            comments: symptom.comments.into(),
+            comments: symptom.comments,
         }
     }
 }
@@ -243,37 +243,43 @@ pub struct ChangeSymptom<'a> {
 impl<'a> ChangeSymptom<'a> {
     pub fn from_front_end(symptom: &'a crate::models::ChangeSymptom) -> Self {
         Self {
-            time: symptom.time.map(|time| time.with_timezone(&Utc)),
-            utc_offset: symptom.time.map(|time| time.offset().local_minus_utc()),
-            appetite_loss: symptom.appetite_loss,
-            fever: symptom.fever,
-            cough: symptom.cough,
-            sore_throat: symptom.sore_throat,
-            runny_nose: symptom.runny_nose,
-            sneezing: symptom.sneezing,
-            heart_burn: symptom.heart_burn,
-            abdominal_pain: symptom.abdominal_pain,
+            time: symptom
+                .time
+                .map(|time| time.with_timezone(&Utc))
+                .into_option(),
+            utc_offset: symptom
+                .time
+                .map(|time| time.offset().local_minus_utc())
+                .into_option(),
+            appetite_loss: symptom.appetite_loss.into_option(),
+            fever: symptom.fever.into_option(),
+            cough: symptom.cough.into_option(),
+            sore_throat: symptom.sore_throat.into_option(),
+            runny_nose: symptom.runny_nose.into_option(),
+            sneezing: symptom.sneezing.into_option(),
+            heart_burn: symptom.heart_burn.into_option(),
+            abdominal_pain: symptom.abdominal_pain.into_option(),
             abdominal_pain_location: symptom
                 .abdominal_pain_location
-                .as_ref()
-                .map(|x| x.as_deref()),
-            diarrhea: symptom.diarrhea,
-            constipation: symptom.constipation,
-            lower_back_pain: symptom.lower_back_pain,
-            upper_back_pain: symptom.upper_back_pain,
-            neck_pain: symptom.neck_pain,
-            joint_pain: symptom.joint_pain,
-            headache: symptom.headache,
-            nausea: symptom.nausea,
-            dizziness: symptom.dizziness,
-            stomach_ache: symptom.stomach_ache,
-            chest_pain: symptom.chest_pain,
-            shortness_of_breath: symptom.shortness_of_breath,
-            fatigue: symptom.fatigue,
-            anxiety: symptom.anxiety,
-            depression: symptom.depression,
-            insomnia: symptom.insomnia,
-            comments: symptom.comments.as_ref().map(|x| x.as_deref()),
+                .map_inner_deref()
+                .into_option(),
+            diarrhea: symptom.diarrhea.into_option(),
+            constipation: symptom.constipation.into_option(),
+            lower_back_pain: symptom.lower_back_pain.into_option(),
+            upper_back_pain: symptom.upper_back_pain.into_option(),
+            neck_pain: symptom.neck_pain.into_option(),
+            joint_pain: symptom.joint_pain.into_option(),
+            headache: symptom.headache.into_option(),
+            nausea: symptom.nausea.into_option(),
+            dizziness: symptom.dizziness.into_option(),
+            stomach_ache: symptom.stomach_ache.into_option(),
+            chest_pain: symptom.chest_pain.into_option(),
+            shortness_of_breath: symptom.shortness_of_breath.into_option(),
+            fatigue: symptom.fatigue.into_option(),
+            anxiety: symptom.anxiety.into_option(),
+            depression: symptom.depression.into_option(),
+            insomnia: symptom.insomnia.into_option(),
+            comments: symptom.comments.map_inner_deref().into_option(),
         }
     }
 }

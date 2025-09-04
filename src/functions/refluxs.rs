@@ -1,4 +1,4 @@
-use crate::models::{self, RefluxId, UserId};
+use crate::models::{self, MaybeSet, RefluxId, UserId};
 use chrono::{DateTime, Utc};
 use dioxus::prelude::*;
 
@@ -73,7 +73,7 @@ pub async fn update_reflux(
 ) -> Result<models::Reflux, ServerFnError> {
     let logged_in_user_id = get_user_id().await?;
 
-    if let Some(req_user_id) = reflux.user_id
+    if let MaybeSet::Set(req_user_id) = reflux.user_id
         && logged_in_user_id != req_user_id
     {
         return Err(ServerFnError::ServerError(

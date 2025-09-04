@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::models::MaybeSet;
+
 use super::{Consumable, ConsumableId, MaybeF64, MaybeString};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -65,7 +67,7 @@ pub struct NewNestedConsumable {
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeNestedConsumable {
-    pub quantity: Option<MaybeF64>,
-    pub liquid_mls: Option<MaybeF64>,
-    pub comments: Option<MaybeString>,
+    pub quantity: MaybeSet<MaybeF64>,
+    pub liquid_mls: MaybeSet<MaybeF64>,
+    pub comments: MaybeSet<MaybeString>,
 }

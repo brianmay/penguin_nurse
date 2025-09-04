@@ -1,4 +1,4 @@
-use crate::models::{self, PooId, UserId};
+use crate::models::{self, MaybeSet, PooId, UserId};
 use chrono::{DateTime, Utc};
 use dioxus::prelude::*;
 
@@ -71,7 +71,7 @@ pub async fn create_poo(poo: models::NewPoo) -> Result<models::Poo, ServerFnErro
 pub async fn update_poo(id: PooId, poo: models::ChangePoo) -> Result<models::Poo, ServerFnError> {
     let logged_in_user_id = get_user_id().await?;
 
-    if let Some(req_user_id) = poo.user_id
+    if let MaybeSet::Set(req_user_id) = poo.user_id
         && logged_in_user_id != req_user_id
     {
         return Err(ServerFnError::ServerError(

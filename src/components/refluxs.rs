@@ -9,7 +9,7 @@ use crate::{
         validate_fixed_offset_date_time, validate_location, validate_symptom_intensity,
     },
     functions::refluxs::{create_reflux, delete_reflux, update_reflux},
-    models::{ChangeReflux, Maybe, MaybeString, NewReflux, Reflux, UserId},
+    models::{ChangeReflux, Maybe, MaybeSet, MaybeString, NewReflux, Reflux, UserId},
 };
 use classes::classes;
 
@@ -49,12 +49,12 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Reflux, EditErro
         }
         Operation::Update { reflux } => {
             let changes = ChangeReflux {
-                user_id: None,
-                time: Some(time),
-                duration: Some(duration),
-                location: Some(location),
-                severity: Some(severity),
-                comments: Some(comments),
+                user_id: MaybeSet::NoChange,
+                time: MaybeSet::Set(time),
+                duration: MaybeSet::Set(duration),
+                location: MaybeSet::Set(location),
+                severity: MaybeSet::Set(severity),
+                comments: MaybeSet::Set(comments),
             };
             update_reflux(reflux.id, changes)
                 .await

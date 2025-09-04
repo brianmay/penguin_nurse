@@ -37,15 +37,15 @@ impl From<HealthMetric> for crate::models::HealthMetric {
             id: HealthMetricId::new(health_metric.id),
             user_id: UserId::new(health_metric.user_id),
             time,
-            pulse: health_metric.pulse.into(),
-            blood_glucose: health_metric.blood_glucose.into(),
-            systolic_bp: health_metric.systolic_bp.into(),
-            diastolic_bp: health_metric.diastolic_bp.into(),
-            weight: health_metric.weight.into(),
-            height: health_metric.height.into(),
+            pulse: health_metric.pulse,
+            blood_glucose: health_metric.blood_glucose,
+            systolic_bp: health_metric.systolic_bp,
+            diastolic_bp: health_metric.diastolic_bp,
+            weight: health_metric.weight,
+            height: health_metric.height,
             created_at: health_metric.created_at,
             updated_at: health_metric.updated_at,
-            comments: health_metric.comments.into(),
+            comments: health_metric.comments,
         }
     }
 }
@@ -108,12 +108,12 @@ impl<'a> NewHealthMetric<'a> {
             user_id: health_metric.user_id.as_inner(),
             time: health_metric.time.with_timezone(&Utc),
             utc_offset: health_metric.time.offset().local_minus_utc(),
-            pulse: health_metric.pulse.into(),
+            pulse: health_metric.pulse,
             blood_glucose: health_metric.blood_glucose.as_ref(),
-            systolic_bp: health_metric.systolic_bp.into(),
-            diastolic_bp: health_metric.diastolic_bp.into(),
+            systolic_bp: health_metric.systolic_bp,
+            diastolic_bp: health_metric.diastolic_bp,
             weight: health_metric.weight.as_ref(),
-            height: health_metric.height.into(),
+            height: health_metric.height,
             comments: health_metric.comments.as_deref(),
         }
     }
@@ -148,17 +148,21 @@ pub struct ChangeHealthMetric<'a> {
 impl<'a> ChangeHealthMetric<'a> {
     pub fn from_front_end(health_metric: &'a crate::models::ChangeHealthMetric) -> Self {
         Self {
-            time: health_metric.time.map(|time| time.with_timezone(&Utc)),
+            time: health_metric
+                .time
+                .map(|time| time.with_timezone(&Utc))
+                .into_option(),
             utc_offset: health_metric
                 .time
-                .map(|time| time.offset().local_minus_utc()),
-            pulse: health_metric.pulse.map(|x| x.as_ref().copied()),
-            blood_glucose: health_metric.blood_glucose.as_ref().map(|x| x.as_ref()),
-            systolic_bp: health_metric.systolic_bp.map(|x| x.as_ref().copied()),
-            diastolic_bp: health_metric.diastolic_bp.map(|x| x.as_ref().copied()),
-            weight: health_metric.weight.as_ref().map(|x| x.as_ref()),
-            height: health_metric.height.map(|x| x.as_ref().copied()),
-            comments: health_metric.comments.as_ref().map(|x| x.as_deref()),
+                .map(|time| time.offset().local_minus_utc())
+                .into_option(),
+            pulse: health_metric.pulse.into_option(),
+            blood_glucose: health_metric.blood_glucose.as_inner_ref().into_option(),
+            systolic_bp: health_metric.systolic_bp.into_option(),
+            diastolic_bp: health_metric.diastolic_bp.into_option(),
+            weight: health_metric.weight.as_inner_ref().into_option(),
+            height: health_metric.height.into_option(),
+            comments: health_metric.comments.map_inner_deref().into_option(),
         }
     }
 }

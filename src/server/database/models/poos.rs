@@ -44,7 +44,7 @@ impl From<Poo> for crate::models::Poo {
             quantity: poo.quantity,
             bristol: poo.bristol.try_into().unwrap_or_default(),
             colour: palette::Hsv::new(poo.colour_hue, poo.colour_saturation, poo.colour_value),
-            comments: poo.comments.into(),
+            comments: poo.comments,
             created_at: poo.created_at,
             updated_at: poo.updated_at,
         }
@@ -154,16 +154,19 @@ pub struct ChangePoo<'a> {
 impl<'a> ChangePoo<'a> {
     pub fn from_front_end(poo: &'a crate::models::ChangePoo) -> Self {
         Self {
-            time: poo.time.map(|time| time.with_timezone(&Utc)),
-            utc_offset: poo.time.map(|time| time.offset().local_minus_utc()),
-            duration: poo.duration,
-            urgency: poo.urgency,
-            quantity: poo.quantity,
-            bristol: poo.bristol.as_ref().map(|x| (*x).into()),
-            colour_hue: poo.colour.map(|x| x.hue.into_inner()),
-            colour_saturation: poo.colour.map(|x| x.saturation),
-            colour_value: poo.colour.map(|x| x.value),
-            comments: poo.comments.as_ref().map(|x| x.as_deref()),
+            time: poo.time.map(|time| time.with_timezone(&Utc)).into_option(),
+            utc_offset: poo
+                .time
+                .map(|time| time.offset().local_minus_utc())
+                .into_option(),
+            duration: poo.duration.into_option(),
+            urgency: poo.urgency.into_option(),
+            quantity: poo.quantity.into_option(),
+            bristol: poo.bristol.map_into().into_option(),
+            colour_hue: poo.colour.map(|x| x.hue.into_inner()).into_option(),
+            colour_saturation: poo.colour.map(|x| x.saturation).into_option(),
+            colour_value: poo.colour.map(|x| x.value).into_option(),
+            comments: poo.comments.map_inner_deref().into_option(),
         }
     }
 }

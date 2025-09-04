@@ -28,9 +28,9 @@ impl From<NestedConsumable> for crate::models::NestedConsumable {
                 models::ConsumableId::new(nested_consumable.parent_id),
                 models::ConsumableId::new(nested_consumable.consumable_id),
             ),
-            quantity: nested_consumable.quantity.into(),
-            liquid_mls: nested_consumable.liquid_mls.into(),
-            comments: nested_consumable.comments.into(),
+            quantity: nested_consumable.quantity,
+            liquid_mls: nested_consumable.liquid_mls,
+            comments: nested_consumable.comments,
             created_at: nested_consumable.created_at,
             updated_at: nested_consumable.updated_at,
         }
@@ -104,8 +104,8 @@ impl<'a> NewNestedConsumable<'a> {
         Self {
             parent_id: parent_id.as_inner(),
             consumable_id: consumable_id.as_inner(),
-            quantity: nested_consumable.quantity.into(),
-            liquid_mls: nested_consumable.liquid_mls.into(),
+            quantity: nested_consumable.quantity,
+            liquid_mls: nested_consumable.liquid_mls,
             comments: nested_consumable.comments.as_deref(),
         }
     }
@@ -134,9 +134,9 @@ pub struct ChangeNestedConsumable<'a> {
 impl<'a> ChangeNestedConsumable<'a> {
     pub fn from_front_end(nested_consumable: &'a crate::models::ChangeNestedConsumable) -> Self {
         Self {
-            quantity: nested_consumable.quantity.map(|x| x.into()),
-            liquid_mls: nested_consumable.liquid_mls.map(|x| x.into()),
-            comments: nested_consumable.comments.as_ref().map(|x| x.as_deref()),
+            quantity: nested_consumable.quantity.into_option(),
+            liquid_mls: nested_consumable.liquid_mls.into_option(),
+            comments: nested_consumable.comments.map_inner_deref().into_option(),
         }
     }
 }

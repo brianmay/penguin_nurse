@@ -84,11 +84,11 @@ impl From<Exercise> for crate::models::Exercise {
             user_id: models::UserId::new(exercise.user_id),
             time,
             duration: exercise.duration,
-            location: exercise.location.into(),
-            distance: exercise.distance.into(),
-            calories: exercise.calories.into(),
-            rpe: exercise.rpe.into(),
-            comments: exercise.comments.into(),
+            location: exercise.location,
+            distance: exercise.distance,
+            calories: exercise.calories,
+            rpe: exercise.rpe,
+            comments: exercise.comments,
             created_at: exercise.created_at,
             updated_at: exercise.updated_at,
             exercise_type: exercise.exercise_type.into(),
@@ -157,8 +157,8 @@ impl<'a> NewExercise<'a> {
             duration: exercise.duration,
             location: exercise.location.as_deref(),
             distance: exercise.distance.as_ref(),
-            calories: exercise.calories.into(),
-            rpe: exercise.rpe.into(),
+            calories: exercise.calories,
+            rpe: exercise.rpe,
             exercise_type: exercise.exercise_type.into(),
             comments: exercise.comments.as_deref(),
         }
@@ -194,15 +194,21 @@ pub struct ChangeExercise<'a> {
 impl<'a> ChangeExercise<'a> {
     pub fn from_front_end(exercise: &'a crate::models::ChangeExercise) -> Self {
         Self {
-            time: exercise.time.map(|time| time.with_timezone(&Utc)),
-            utc_offset: exercise.time.map(|time| time.offset().local_minus_utc()),
-            duration: exercise.duration,
-            location: exercise.location.as_ref().map(|x| x.as_deref()),
-            distance: exercise.distance.as_ref().map(|x| x.as_ref()),
-            calories: exercise.calories.as_ref().map(|x| x.as_ref().cloned()),
-            rpe: exercise.rpe.as_ref().map(|x| x.as_ref().cloned()),
-            exercise_type: exercise.exercise_type.map(|x| x.into()),
-            comments: exercise.comments.as_ref().map(|x| x.as_deref()),
+            time: exercise
+                .time
+                .map(|time| time.with_timezone(&Utc))
+                .into_option(),
+            utc_offset: exercise
+                .time
+                .map(|time| time.offset().local_minus_utc())
+                .into_option(),
+            duration: exercise.duration.into_option(),
+            location: exercise.location.map_inner_deref().into_option(),
+            distance: exercise.distance.as_inner_ref().into_option(),
+            calories: exercise.calories.into_option(),
+            rpe: exercise.rpe.into_option(),
+            exercise_type: exercise.exercise_type.map_into().into_option(),
+            comments: exercise.comments.map_inner_deref().into_option(),
         }
     }
 }
