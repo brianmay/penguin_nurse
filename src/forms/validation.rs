@@ -1,14 +1,17 @@
+use bigdecimal::BigDecimal;
 use chrono::{FixedOffset, TimeDelta};
 use palette::Hsv;
+use tap::Pipe;
 
 use crate::models::{
-    Bristol, ConsumableUnit, ConsumptionType, MaybeDateTime, MaybeF64, MaybeString,
+    Bristol, ConsumableUnit, ConsumptionType, ExerciseType, Maybe, MaybeDateTime, MaybeDecimal,
+    MaybeF64, MaybeI32, MaybeString,
 };
 
 use super::{FieldValue, errors::ValidationError};
 
 pub fn validate_field_value<T: FieldValue>(str: &str) -> Result<T, ValidationError> {
-    T::from_string(str).map_err(|_| ValidationError("Invalid value".to_string()))
+    T::from_string(str).map_err(|err| ValidationError(err.to_string()))
 }
 
 pub fn validate_name(str: &str) -> Result<String, ValidationError> {
@@ -32,10 +35,11 @@ pub fn validate_full_name(str: &str) -> Result<String, ValidationError> {
 }
 
 pub fn validate_email(str: &str) -> Result<String, ValidationError> {
+    let str = validate_field_value::<String>(str)?;
     if !str.contains('@') {
         return Err(ValidationError("Email should contain @".to_string()));
     }
-    validate_field_value(str)
+    Ok(str)
 }
 
 pub fn validate_password(str: &str) -> Result<String, ValidationError> {
@@ -43,23 +47,40 @@ pub fn validate_password(str: &str) -> Result<String, ValidationError> {
 }
 
 pub fn validate_1st_password(str: &str) -> Result<String, ValidationError> {
+    let str = validate_field_value::<String>(str)?;
+
     if str.is_empty() {
         return Err(ValidationError("Password cannot be empty".to_string()));
     }
     if str == "password" {
         return Err(ValidationError("Password cannot be 'password'".to_string()));
     }
-    validate_field_value(str)
+    Ok(str)
 }
 
-pub fn validate_2nd_password(str: &str, str2: &str) -> Result<String, ValidationError> {
-    if str != str2 {
+pub fn validate_2nd_password(
+    password_1: &Result<String, ValidationError>,
+    password_2: &str,
+) -> Result<String, ValidationError> {
+    let password_2 = validate_field_value::<String>(password_2)?;
+    let password_1 = password_1
+        .as_ref()
+        .map_err(|_err| ValidationError("Passwords do not match".to_string()))?;
+    if *password_1 != password_2 {
         return Err(ValidationError("Passwords do not match".to_string()));
     }
-    validate_field_value(str)
+    Ok(password_2)
 }
 
 pub fn validate_comments(str: &str) -> Result<MaybeString, ValidationError> {
+    validate_field_value(str)
+}
+
+pub fn validate_location(str: &str) -> Result<MaybeString, ValidationError> {
+    validate_field_value(str)
+}
+
+pub fn validate_distance(str: &str) -> Result<MaybeDecimal, ValidationError> {
     validate_field_value(str)
 }
 
@@ -101,59 +122,135 @@ pub fn validate_consumption_type(str: &str) -> Result<ConsumptionType, Validatio
     validate_field_value(str)
 }
 
+pub fn validate_exercise_type(str: &str) -> Result<ExerciseType, ValidationError> {
+    validate_field_value(str)
+}
+
 pub fn validate_bristol(str: &str) -> Result<Bristol, ValidationError> {
     validate_field_value(str)
 }
 
 pub fn validate_colour_hue(str: &str) -> Result<f32, ValidationError> {
-    match str.parse() {
-        Ok(hue) if (-180.0..=360.0).contains(&hue) => Ok(hue),
-        Ok(_) => Err(ValidationError("Invalid hue".to_string())),
-        Err(err) => Err(ValidationError(format!("Invalid hue: {err}"))),
-    }
+    validate_in_range(str, -180.0, 360.0)
 }
 
 pub fn validate_colour_saturation(str: &str) -> Result<f32, ValidationError> {
-    match str.parse() {
-        Ok(saturation) if (0.0..=1.0).contains(&saturation) => Ok(saturation),
-        Ok(_) => Err(ValidationError("Invalid saturation".to_string())),
-        Err(err) => Err(ValidationError(format!("Invalid saturation: {err}"))),
-    }
+    validate_in_range(str, 0.0, 1.0)
 }
 
 pub fn validate_colour_value(str: &str) -> Result<f32, ValidationError> {
-    match str.parse() {
-        Ok(value) if (0.0..=1.0).contains(&value) => Ok(value),
-        Ok(_) => Err(ValidationError("Invalid value".to_string())),
-        Err(err) => Err(ValidationError(format!("Invalid value: {err}"))),
-    }
+    validate_in_range(str, 0.0, 1.0)
 }
 
 pub fn validate_colour(
     (hue, saturation, value): (String, String, String),
 ) -> Result<Hsv, ValidationError> {
-    let hue = validate_colour_hue(str::trim(&hue))?;
-    let saturation = validate_colour_saturation(str::trim(&saturation))?;
-    let value = validate_colour_value(str::trim(&value))?;
-    Ok(Hsv::new(hue, saturation, value))
-}
+    let hue = validate_colour_hue(str::trim(&hue));
+    let saturation = validate_colour_saturation(str::trim(&saturation));
+    let value = validate_colour_value(str::trim(&value));
 
-pub fn validate_urgency(str: &str) -> Result<i32, ValidationError> {
-    match str.parse() {
-        Ok(urgency) if (0..=5).contains(&urgency) => Ok(urgency),
-        Ok(_) => Err(ValidationError(
-            "Urgency must be between 0 and 5".to_string(),
-        )),
-        Err(err) => Err(ValidationError(format!("Invalid integer: {err}"))),
+    match (hue, saturation, value) {
+        (Ok(hue), Ok(saturation), Ok(value)) => Ok(Hsv::new(hue, saturation, value)),
+        (Err(_err), _, _) | (_, Err(_err), _) | (_, _, Err(_err)) => {
+            Err(ValidationError("Invalid colour".to_string()))
+        }
     }
 }
 
+pub fn validate_urgency(str: &str) -> Result<i32, ValidationError> {
+    validate_in_range(str, 0, 5)
+}
+
 pub fn validate_poo_quantity(str: &str) -> Result<i32, ValidationError> {
-    match str.parse() {
-        Ok(quantity) if (0..=10).contains(&quantity) => Ok(quantity),
-        Ok(_) => Err(ValidationError(
-            "Quantity must be between 0 and 10".to_string(),
+    validate_in_range(str, 0, 10)
+}
+
+pub fn validate_in_range<T>(str: &str, min: T, max: T) -> Result<T, ValidationError>
+where
+    T: FieldValue + PartialOrd + std::fmt::Display,
+{
+    validate_field_value::<T>(str)?.pipe(|v: T| {
+        if (min <= v) && (v <= max) {
+            Ok(v)
+        } else {
+            Err(ValidationError(format!(
+                "Value must be between {} and {}",
+                min, max
+            )))
+        }
+    })
+}
+
+pub fn validate_in_range_maybe<T>(str: &str, min: T, max: T) -> Result<Maybe<T>, ValidationError>
+where
+    T: FieldValue + PartialOrd + std::fmt::Display,
+{
+    validate_field_value::<Maybe<T>>(str)?
+        .map(|v: T| {
+            if (min <= v) && (v <= max) {
+                Ok(v)
+            } else {
+                Err(ValidationError(format!(
+                    "Value must be between {} and {}",
+                    min, max
+                )))
+            }
+        })
+        .transpose()
+}
+
+pub fn validate_pulse(str: &str) -> Result<MaybeI32, ValidationError> {
+    validate_in_range_maybe(str, 30, 220)
+}
+
+pub fn validate_blood_glucose(str: &str) -> Result<MaybeDecimal, ValidationError> {
+    validate_in_range_maybe(str, BigDecimal::from(0), BigDecimal::from(50))
+}
+
+pub fn validate_systolic_bp(str: &str) -> Result<MaybeI32, ValidationError> {
+    validate_in_range_maybe(str, 50, 300)
+}
+
+pub fn validate_diastolic_bp(str: &str) -> Result<MaybeI32, ValidationError> {
+    validate_in_range_maybe(str, 30, 200)
+}
+
+pub fn validate_weight(str: &str) -> Result<MaybeDecimal, ValidationError> {
+    validate_in_range_maybe(str, BigDecimal::from(0), BigDecimal::from(500))
+}
+
+pub fn validate_height(str: &str) -> Result<MaybeI32, ValidationError> {
+    validate_in_range_maybe(str, 30, 300)
+}
+
+pub fn validate_exercise_calories(str: &str) -> Result<Maybe<i32>, ValidationError> {
+    validate_in_range_maybe(str, 0, 10_000)
+}
+
+pub fn validate_exercise_rpe(str: &str) -> Result<Maybe<i32>, ValidationError> {
+    validate_in_range_maybe(str, 1, 10)
+}
+
+pub fn validate_symptom_intensity(str: &str) -> Result<i32, ValidationError> {
+    validate_in_range(str, 0, 10)
+}
+
+pub fn validate_symptom_abdominal_pain_location(
+    abdominal_pain: &Result<i32, ValidationError>,
+    abdominal_pain_location: &str,
+) -> Result<MaybeString, ValidationError> {
+    let abdominal_pain_location = validate_field_value::<MaybeString>(abdominal_pain_location)?;
+    let abdominal_pain = *abdominal_pain
+        .as_ref()
+        .map_err(|_rr| ValidationError("Fix abdominal pain first".to_string()))?;
+
+    match (abdominal_pain, &abdominal_pain_location) {
+        (0, Maybe::Some(_)) => Err(ValidationError(
+            "Abdominal pain location must be empty if abdominal pain is 0".to_string(),
         )),
-        Err(err) => Err(ValidationError(format!("Invalid integer: {err}"))),
+        (x, Maybe::None) if x > 1 => Err(ValidationError(
+            "Abdominal pain location must be set if abdominal pain is greater than 0".to_string(),
+        )),
+        _ => Ok(abdominal_pain_location),
     }
 }

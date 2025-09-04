@@ -10,7 +10,7 @@ edition = "2024"
 dioxus = { version = "0.7.0-rc.0", features = ["router", "fullstack"] }
 chrono = { version = "0.4.41", features = ["serde"] }
 tracing = { version = "0.1.41" }
-diesel = { version = "2.2.12", features = ["postgres", "chrono", "serde_json"], optional = true }
+diesel = { version = "2.2.12", features = ["postgres", "chrono", "serde_json", "numeric"], optional = true }
 axum = { version = "0.8.4", optional = true }
 diesel-async = { version = "0.6.1", features = ["async-connection-wrapper", "mobc", "postgres"], optional = true }
 diesel-derive-enum = { version = "3.0.0-beta.1", features = ["postgres"], optional = true }
@@ -39,6 +39,9 @@ url = { version = "2.5.7", optional = true }
 futures = "0.3.31"
 gloo-timers = { version = "0.3.0", features = ["futures"] }
 classes = "1.0.0"
+# rust_decimal = { version = "1.37.2", features = ["serde"] }
+bigdecimal = { version = "0.4.8", features = ["serde"] }
+pulldown-cmark = "0.13.0"
 
 [features]
 default = []

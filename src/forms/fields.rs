@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
+use classes::classes;
 use dioxus::{prelude::*, signals::Signal};
 use palette::{Hsv, IntoColor, Srgb};
 use std::ops::Deref;
@@ -9,40 +10,144 @@ use crate::{
     components::{
         buttons::{ActionButton, CreateButton},
         consumables::{self, ConsumableUpdate},
+        consumptions::{CONSUMPTION_TYPES, consumption_icon, consumption_id, consumption_title},
+        exercises::{
+            EXERCISE_TYPES, exercise_calories, exercise_icon, exercise_id, exercise_rpe,
+            exercise_title,
+        },
     },
     forms::{Barcode, validate_colour_hue, validate_colour_saturation, validate_colour_value},
     functions::consumables::search_consumables,
-    models::{Consumable, Maybe, MaybeDateTime},
+    models::{Consumable, Maybe, MaybeDateTime, MaybeI32},
 };
 
 use super::FieldValue;
 use super::errors::ValidationError;
 
-fn get_input_classes(is_valid: bool, is_disabled: bool) -> &'static str {
+fn get_label_classes() -> String {
+    classes![
+        "block",
+        "mb-2",
+        "text-sm",
+        "font-medium",
+        "text-gray-900",
+        "dark:text-white"
+    ]
+}
+
+fn get_checkbox_classes(is_valid: bool, is_disabled: bool) -> String {
+    let classes = classes![
+        "bg-gray-100",
+        "checkbox",
+        "dark:bg-gray-700",
+        "dark:focus:ring-blue-500",
+        "dark:ring-offset-gray-800",
+        "dark:text-white",
+        "focus:ring-2",
+        "focus:ring-blue-500",
+        "h-4",
+        "ring-offset-2",
+        "ring-offset-gray-100",
+        "rounded",
+        "text-gray-900",
+        "w-4",
+        "focus:outline-none"
+    ];
+
     if is_disabled {
-        return "border-gray-300 dark:border-gray-600";
+        return classes + " " + &classes!["border-gray-300", "dark:border-gray-600"];
     }
 
     if is_valid {
-        return "border-green-500 dark:border-green-500";
+        return classes + " " + &classes!["border-green-500", "dark:border-green-500"];
     }
 
-    "border-red-500 dark:border-red-500"
+    classes + &classes!["border-red-500", "dark:border-red-500"]
+}
+
+fn get_input_classes(is_valid: bool, is_disabled: bool) -> String {
+    let classes = classes![
+        "bg-gray-50",
+        "block",
+        "border",
+        "dark:bg-gray-700",
+        "dark:focus:ring-blue-500",
+        "dark:ring-offset-gray-800",
+        "dark:placeholder-gray-400",
+        "dark:text-white",
+        "focus:ring-2",
+        "focus:ring-blue-500",
+        "p-2.5",
+        "ring-offset-2",
+        "ring-offset-gray-100",
+        "rounded-lg",
+        "text-gray-900",
+        "w-full",
+        "focus:outline-none"
+    ];
+
+    if is_disabled {
+        return classes + " " + &classes!["border-gray-300", "dark:border-gray-600"];
+    }
+
+    if is_valid {
+        return classes + " " + &classes!["border-green-500", "dark:border-green-500"];
+    }
+
+    classes + " " + &classes!["border-red-500", "dark:border-red-500"]
+}
+
+#[derive(Clone, PartialEq)]
+struct PullDownMenuItem {
+    id: String,
+    label: Element,
+    on_click: Callback<()>,
+}
+
+#[component]
+fn PullDownMenu(items: Vec<PullDownMenuItem>) -> Element {
+    rsx! {
+        div { class: "absolute z-10 shadow-lg bg-gray-50 border border-gray-50 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500",
+            ul { tabindex: "0", class: "p-2 shadow rounded-box",
+                if items.is_empty() {
+                    li { "No entries found." }
+                } else {
+                    for item in items {
+                        li {
+                            key: "{item.id}",
+                            class: "flex px-4 py-2 hover:bg-gray-800 hover:text-gray-100 cursor-pointer gap-4",
+                            onclick: move |_| {
+                                item.on_click.call(());
+                            },
+                            {item.label.clone()}
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[component]
 pub fn FieldMessage<D: 'static + Clone + PartialEq>(
     validate: Memo<Result<D, ValidationError>>,
     disabled: Memo<bool>,
+    message: Option<Element>,
 ) -> Element {
     rsx! {
-            if disabled() {
-                div { class: "text-gray-300", "Inactive" }
-            } else if let Err(err) = validate() {
-                div { class: "text-red-500", "{err}" }
-            } else {
-                div { class: "text-green-500", "Looks good!" }
+        if disabled() {
+            div { class: "text-gray-300", "Inactive" }
+        } else if let Err(err) = validate() {
+            div { class: "text-red-500", "{err}" }
+        } else {
+            div { class: "text-green-500",
+                if message.is_some() {
+                    {message}
+                } else {
+                    "Looks good!"
+                }
             }
+        }
     }
 }
 
@@ -53,18 +158,14 @@ pub fn InputString<D: 'static + Clone + PartialEq>(
     value: Signal<String>,
     validate: Memo<Result<D, ValidationError>>,
     disabled: Memo<bool>,
+    message: Option<Element>,
 ) -> Element {
     rsx! {
         div { class: "mb-5",
-            label {
-                r#for: id,
-                class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
-                "{label}"
-            }
+            label { r#for: id, class: get_label_classes(), "{label}" }
             input {
                 r#type: "text",
-                class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                    .to_string() + get_input_classes(validate().is_ok(), disabled()),
+                class: get_input_classes(validate().is_ok(), disabled()),
                 id,
                 placeholder: "Enter input",
                 value: "{value()}",
@@ -73,7 +174,7 @@ pub fn InputString<D: 'static + Clone + PartialEq>(
                     value.set(e.value());
                 },
             }
-            FieldMessage { validate, disabled }
+            FieldMessage { validate, disabled, message }
         }
     }
 }
@@ -85,18 +186,14 @@ pub fn InputNumber<D: 'static + Clone + PartialEq>(
     value: Signal<String>,
     validate: Memo<Result<D, ValidationError>>,
     disabled: Memo<bool>,
+    message: Option<Element>,
 ) -> Element {
     rsx! {
         div { class: "mb-5",
-            label {
-                r#for: id,
-                class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
-                "{label}"
-            }
+            label { r#for: id, class: get_label_classes(), "{label}" }
             input {
                 r#type: "text",
-                class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                    .to_string() + get_input_classes(validate().is_ok(), disabled()),
+                class: get_input_classes(validate().is_ok(), disabled()),
                 id,
                 r#type: "number",
                 pattern: "[0-9]*",
@@ -108,7 +205,7 @@ pub fn InputNumber<D: 'static + Clone + PartialEq>(
                     value.set(e.value());
                 },
             }
-            FieldMessage { validate, disabled }
+            FieldMessage { validate, disabled, message }
         }
     }
 }
@@ -123,15 +220,10 @@ pub fn InputPassword<D: 'static + Clone + Eq + PartialEq>(
 ) -> Element {
     rsx! {
         div { class: "my-5",
-            label {
-                r#for: id,
-                class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
-                "{label}"
-            }
+            label { r#for: id, class: get_label_classes(), "{label}" }
             input {
                 r#type: "password",
-                class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                    .to_string() + get_input_classes(validate().is_ok(), disabled()),
+                class: get_input_classes(validate().is_ok(), disabled()),
                 id,
                 placeholder: "Enter input",
                 value: value(),
@@ -155,14 +247,9 @@ pub fn InputTextArea<D: 'static + Clone + Eq + PartialEq>(
 ) -> Element {
     rsx! {
         div { class: "mb-5",
-            label {
-                r#for: id,
-                class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
-                "{label}"
-            }
+            label { r#for: id, class: get_label_classes(), "{label}" }
             textarea {
-                class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                    .to_string() + get_input_classes(validate().is_ok(), disabled()),
+                class: get_input_classes(validate().is_ok(), disabled()),
                 id,
                 placeholder: "Enter input",
                 value: "{value()}",
@@ -186,15 +273,10 @@ pub fn InputDateTime(
 ) -> Element {
     rsx! {
         div { class: "mb-5",
-            label {
-                r#for: id,
-                class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
-                "{label}"
-            }
+            label { r#for: id, class: get_label_classes(), "{label}" }
             input {
                 r#type: "text",
-                class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                    .to_string() + get_input_classes(validate().is_ok(), disabled()),
+                class: get_input_classes(validate().is_ok(), disabled()),
                 id,
                 placeholder: "Enter input",
                 value: "{value()}",
@@ -224,15 +306,10 @@ pub fn InputMaybeDateTime(
 ) -> Element {
     rsx! {
         div { class: "mb-5",
-            label {
-                r#for: id,
-                class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
-                "{label}"
-            }
+            label { r#for: id, class: get_label_classes(), "{label}" }
             input {
                 r#type: "text",
-                class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                    .to_string() + get_input_classes(validate().is_ok(), disabled()),
+                class: get_input_classes(validate().is_ok(), disabled()),
                 id,
                 placeholder: "Enter input",
                 value: "{value()}",
@@ -263,15 +340,10 @@ pub fn InputDuration(
 ) -> Element {
     rsx! {
         div { class: "mb-5",
-            label {
-                r#for: id,
-                class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
-                "{label}"
-            }
+            label { r#for: id, class: get_label_classes(), "{label}" }
             input {
                 r#type: "text",
-                class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                    .to_string() + get_input_classes(validate().is_ok(), disabled()),
+                class: get_input_classes(validate().is_ok(), disabled()),
                 id,
                 r#type: "number",
                 pattern: "[0-9]*",
@@ -304,26 +376,232 @@ pub fn InputSelect<D: 'static + Clone + Eq + PartialEq>(
     validate: Memo<Result<D, ValidationError>>,
     value: Signal<String>,
     disabled: Memo<bool>,
-    options: Vec<(&'static str, &'static str)>,
+    options: Vec<(&'static str, Element)>,
+    message: Option<Element>,
 ) -> Element {
+    let mut open = use_signal(|| false);
+    let selected_option = options
+        .iter()
+        .find(|(id, _)| *id == value.read().deref().deref());
+
     rsx! {
         div { class: "form-group",
-            label { r#for: id, "{label}" }
-            select {
-                class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                    .to_string() + get_input_classes(validate().is_ok(), disabled()),
-                id: "input",
-                disabled,
-                oninput: move |e| {
-                    value.set(e.value());
-                },
-                value: value(),
-                option { value: "", label: "Select..." }
-                for (id , label) in options {
-                    option { value: id, label, selected: id == value() }
+            label { class: get_label_classes(), r#for: id, "{label}" }
+            div { class: "relative inline-block text-left w-full",
+                button {
+                    id,
+                    class: "inline-flex gap-4 ".to_string() + " "
+                        + &get_input_classes(validate().is_ok(), disabled()),
+                    onclick: move |_| open.set(!open()),
+                    {
+                        selected_option
+                            .map(|opt| opt.1.clone())
+                            .unwrap_or(rsx! { "Select..." })
+                    }
                 }
+                if open() {
+                    PullDownMenu {
+                        items: options
+                            .iter()
+                            .map(|opt| {
+                                let option_id = opt.0.to_string();
+                                PullDownMenuItem {
+                                    id: option_id.clone(),
+                                    label: opt.1.clone(),
+                                    on_click: Callback::new(move |()| {
+                                        let mut value = value;
+                                        let mut open = open;
+                                        open.set(false);
+                                        value.set(option_id.clone());
+                                    }),
+                                }
+                            })
+                            .collect(),
+                    }
+                }
+                FieldMessage { validate, disabled, message }
             }
-            FieldMessage { validate, disabled }
+        }
+    }
+}
+
+#[component]
+pub fn InputConsumptionType(
+    id: &'static str,
+    label: &'static str,
+    value: Signal<String>,
+    validate: Memo<Result<crate::models::ConsumptionType, ValidationError>>,
+    disabled: Memo<bool>,
+) -> Element {
+    let options = CONSUMPTION_TYPES
+        .iter()
+        .map(|consumption_type| {
+            let id = consumption_id(*consumption_type);
+            let label = rsx! {
+                consumption_icon { consumption_type: *consumption_type }
+                {consumption_title(*consumption_type)}
+            };
+            (id, label)
+        })
+        .collect::<Vec<_>>();
+
+    rsx! {
+        InputSelect {
+            id,
+            label,
+            validate,
+            value,
+            disabled,
+            options,
+        }
+    }
+}
+
+#[component]
+pub fn InputConsumableUnitType(
+    id: &'static str,
+    label: &'static str,
+    value: Signal<String>,
+    validate: Memo<Result<crate::models::ConsumableUnit, ValidationError>>,
+    disabled: Memo<bool>,
+) -> Element {
+    let options = vec![
+        ("millilitres", rsx! {"ml"}),
+        ("grams", rsx! {"g"}),
+        ("international_units", rsx! {"IU"}),
+        ("number", rsx! {"Number"}),
+    ];
+
+    rsx! {
+        InputSelect {
+            id,
+            label,
+            validate,
+            value,
+            disabled,
+            options,
+        }
+    }
+}
+
+#[component]
+pub fn InputPooBristolType(
+    id: &'static str,
+    label: &'static str,
+    value: Signal<String>,
+    validate: Memo<Result<crate::models::Bristol, ValidationError>>,
+    disabled: Memo<bool>,
+) -> Element {
+    let options = vec![
+        ("0", rsx! { "0. No poo" }),
+        ("1", rsx! { "1. Separate hard lumps. Rabbit Droppings." }),
+        ("2", rsx! { "2. Lumpy and sausage-like. Bunch of Grapes." }),
+        ("3", rsx! { "3. Sausage shape with cracks. Corn on Cobb." }),
+        ("4", rsx! { "4. Smooth and soft. Sausage." }),
+        (
+            "5",
+            rsx! { "5. Soft blobs with clear-cut edges. Chicken Nuggets." },
+        ),
+        ("6", rsx! { "6. Mushy. Porridge." }),
+        ("7", rsx! { "7. Watery. Gravy." }),
+    ];
+
+    rsx! {
+        InputSelect {
+            id,
+            label,
+            validate,
+            value,
+            disabled,
+            options,
+        }
+    }
+}
+
+#[component]
+pub fn InputExerciseType(
+    id: &'static str,
+    label: &'static str,
+    value: Signal<String>,
+    validate: Memo<Result<crate::models::ExerciseType, ValidationError>>,
+    disabled: Memo<bool>,
+) -> Element {
+    let options = EXERCISE_TYPES
+        .iter()
+        .map(|exercise_type| {
+            let id = exercise_id(*exercise_type);
+            let label = rsx! {
+                exercise_icon { exercise_type: *exercise_type }
+                {exercise_title(*exercise_type)}
+            };
+            (id, label)
+        })
+        .collect::<Vec<_>>();
+
+    rsx! {
+        InputSelect {
+            id,
+            label,
+            validate,
+            value,
+            disabled,
+            options,
+        }
+    }
+}
+
+#[component]
+pub fn InputExerciseCalories(
+    id: &'static str,
+    label: String,
+    value: Signal<String>,
+    validate: Memo<Result<MaybeI32, ValidationError>>,
+    disabled: Memo<bool>,
+) -> Element {
+    rsx! {
+        InputNumber {
+            id,
+            label,
+            value,
+            validate,
+            disabled,
+            message: rsx! {
+                if let Ok(calories) = validate.read().as_ref() {
+                    div {
+                        exercise_calories { calories: *calories }
+                    }
+                } else {
+                    div { "Enter a value between 0 and 10,000" }
+                }
+            },
+        }
+    }
+}
+
+#[component]
+pub fn InputExerciseRpe(
+    id: &'static str,
+    label: String,
+    value: Signal<String>,
+    validate: Memo<Result<MaybeI32, ValidationError>>,
+    disabled: Memo<bool>,
+) -> Element {
+    rsx! {
+        InputNumber {
+            id,
+            label,
+            value,
+            validate,
+            disabled,
+            message: rsx! {
+                if let Ok(rpe) = validate.read().as_ref() {
+                    div {
+                        exercise_rpe { rpe: *rpe }
+                    }
+                } else {
+                    div { "Enter a value between 1 and 10" }
+                }
+            },
         }
     }
 }
@@ -338,14 +616,10 @@ pub fn InputBoolean(
 ) -> Element {
     rsx! {
         div {
-            label {
-                r#for: id,
-                class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
-                "{label}"
-            }
+            label { r#for: id, class: get_label_classes(), "{label}" }
             input {
                 r#type: "checkbox",
-                class: "checkbox ".to_string() + get_input_classes(true, disabled()),
+                class: get_checkbox_classes(true, disabled()),
                 id,
                 checked: value(),
                 disabled,
@@ -401,23 +675,14 @@ pub fn InputColour(
     let rgb_colour: Option<Srgb> = colour.map(|x| x.into_color());
 
     rsx! {
-        label {
-            r#for: id,
-            class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
-            "{label}"
-        }
+        label { r#for: id, class: get_label_classes(), "{label}" }
 
         div {
             div { class: "mb-5 w-20 ml-10 mr-2 inline-block",
-                label {
-                    r#for: hue_id.clone(),
-                    class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
-                    "Hue"
-                }
+                label { r#for: hue_id.clone(), class: get_label_classes(), "Hue" }
                 input {
                     r#type: "text",
-                    class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                        .to_string() + get_input_classes(validate_hue().is_ok(), disabled()),
+                    class: get_input_classes(validate_hue().is_ok(), disabled()),
                     id: hue_id,
                     r#type: "number",
                     pattern: "[0-9]*",
@@ -435,16 +700,10 @@ pub fn InputColour(
             }
 
             div { class: "mb-5 w-20 mr-2 inline-block",
-                label {
-                    r#for: saturation_id.clone(),
-                    class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
-                    "Saturation"
-                }
+                label { r#for: saturation_id.clone(), class: get_label_classes(), "Saturation" }
                 input {
                     r#type: "text",
-                    class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                        .to_string()
-                        + get_input_classes(validate_saturation().is_ok(), disabled()),
+                    class: get_input_classes(validate_saturation().is_ok(), disabled()),
                     id: saturation_id,
                     r#type: "number",
                     pattern: "[0-9]*",
@@ -462,16 +721,10 @@ pub fn InputColour(
             }
 
             div { class: "mb-5 w-20 mr-2 inline-block",
-                label {
-                    r#for: value_id.clone(),
-                    class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
-                    "Value"
-                }
+                label { r#for: value_id.clone(), class: get_label_classes(), "Value" }
                 input {
                     r#type: "text",
-                    class: "bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
-                        .to_string()
-                        + get_input_classes(validate_value().is_ok(), disabled()),
+                    class: get_input_classes(validate_value().is_ok(), disabled()),
                     id: value_id,
                     r#type: "number",
                     pattern: "[0-9]*",
@@ -568,63 +821,67 @@ pub fn InputConsumable(
                     {consumable.name.clone()}
                 }
             } else {
-                div { class: "mb-5 mr-2 inline-block",
-                    label {
-                        r#for: id,
-                        class: "block mb-2 text-sm font-medium text-gray-900 dark:text-white",
-                        "{label}"
-                    }
-                    input {
-                        class: "form-control",
-                        r#type: "text",
-                        value: query(),
-                        oninput: move |e| query.set(e.value()),
-                        id,
-                        placeholder: "Search...",
-                    }
-                    Barcode {
-                        barcode: query,
-                    }
-                    match list.read().deref() {
-                        Some(Some(Err(err))) => rsx! {
-                            div { class: "alert alert-error",
-                                "Error loading consumables: "
-                                {err.to_string()}
-                            }
-                        },
-                        Some(Some(Ok(list))) if list.is_empty() => rsx! {
-                            p { class: "alert alert-info", "No entries found." }
-                        },
-                        Some(Some(Ok(list))) => rsx! {
-                            ul { class: "menu dropdown-content bg-gray-800 rounded-box z-1 w-52 p-2 shadow-sm",
-                                for consumable in list.iter().cloned() {
-                                    li {
-                                        a {
-                                            onclick: move |_e| {
-                                                value.set(Some(consumable.clone()));
-                                                on_change(Some(consumable.clone()));
-                                                query.set("".to_string());
-                                            },
-                                            {consumable.name.clone()}
-                                            if let Maybe::Some(brand) = &consumable.brand {
-                                                ", "
-                                                {brand.clone()}
+                div { class: "form-group",
+                    label { r#for: id, class: get_label_classes(), "{label}" }
+                    div { class: "relative inline-block text-left w-full",
+                        input {
+                            class: "inline-flex gap-4 ".to_string() + " " + &get_input_classes(true, disabled()),
+                            r#type: "text",
+                            value: query(),
+                            oninput: move |e| query.set(e.value()),
+                            id,
+                            placeholder: "Search...",
+                        }
+                        match list.read().deref() {
+                            Some(Some(Err(err))) => rsx! {
+                                div { class: "alert alert-error",
+                                    "Error loading consumables: "
+                                    {err.to_string()}
+                                }
+                            },
+                            Some(Some(Ok(list))) => rsx! {
+                                PullDownMenu {
+                                    items: list.iter()
+                                        .map(|consumable| {
+                                            let consumable = consumable.clone();
+                                            PullDownMenuItem {
+                                                id: consumable.id.to_string(),
+                                                label: rsx! {
+                                                    span {
+                                                        {consumable.name.clone()}
+                                                        if let Maybe::Some(brand) = &consumable.brand {
+                                                            ", "
+                                                            {brand.clone()}
+                                                        }
+                                                        if let Maybe::Some(dt) = consumable.created {
+                                                            {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
+                                                        }
+                                                    }
+                                                },
+                                                on_click: {
+                                                    let consumable = consumable.clone();
+                                                    Callback::new(move |_| {
+                                                        value.set(Some(consumable.clone()));
+                                                        on_change(Some(consumable.clone()));
+                                                        query.set("".to_string());
+                                                    })
+                                                },
                                             }
-                                            if let Maybe::Some(dt) = consumable.created {
-                                                {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
-                                            }
-                                        }
-                                    }
+                                        })
+                                        .collect(),
+                                }
+                            },
+                            Some(None) => rsx! {},
+                            None => {
+                                rsx! {
+                                    p { class: "alert alert-info", "Loading..." }
                                 }
                             }
-                        },
-                        Some(None) => rsx! {
+                        }
+                        FieldMessage { validate: use_memo(|| Ok(())), disabled }
+                        div { class: "gap-2",
                             CreateButton { on_click: move |_e| create_form.set(true), "Create" }
-                        },
-                        None => {
-                            rsx! {
-                                p { class: "alert alert-info", "Loading..." }
-                            }
+                            Barcode { barcode: query }
                         }
                     }
                 }

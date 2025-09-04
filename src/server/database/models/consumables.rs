@@ -186,8 +186,8 @@ impl<'a> NewConsumable<'a> {
             is_organic: consumable.is_organic,
             unit: consumable.unit.into(),
             comments: consumable.comments.as_deref(),
-            created: consumable.created.into(),
-            destroyed: consumable.destroyed.into(),
+            created: consumable.created.as_ref().copied(),
+            destroyed: consumable.destroyed.as_ref().copied(),
         }
     }
 }

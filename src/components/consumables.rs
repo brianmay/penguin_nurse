@@ -6,11 +6,12 @@ use tap::Pipe;
 use thiserror::Error;
 
 use crate::{
+    components::events::Markdown,
     forms::{
         Barcode, Dialog, EditError, FieldValue, FormCloseButton, FormDeleteButton, FormEditButton,
-        FormSaveCancelButton, InputBoolean, InputConsumable, InputMaybeDateTime, InputNumber,
-        InputSelect, InputString, InputTextArea, Saving, ValidationError, validate_barcode,
-        validate_brand, validate_comments, validate_consumable_millilitres,
+        FormSaveCancelButton, InputBoolean, InputConsumable, InputConsumableUnitType,
+        InputMaybeDateTime, InputNumber, InputString, InputTextArea, Saving, ValidationError,
+        validate_barcode, validate_brand, validate_comments, validate_consumable_millilitres,
         validate_consumable_quantity, validate_consumable_unit, validate_maybe_date_time,
         validate_name,
     },
@@ -226,12 +227,11 @@ pub fn ConsumableUpdate(
                 value: is_organic,
                 disabled,
             }
-            InputSelect {
+            InputConsumableUnitType {
                 id: "unit",
                 label: "Unit",
                 value: unit,
                 validate: validate.unit,
-                options: ConsumableUnit::options(),
                 disabled,
             }
             InputTextArea {
@@ -917,17 +917,23 @@ fn ConsumableNestedForm(
 
 const ORGANIC_SVG: Asset = asset!("/assets/organic.svg");
 
+pub fn organic_icon() -> Element {
+    rsx! {
+        img {
+            class: "w-5 dark:invert inline-block",
+            alt: "organic",
+            src: ORGANIC_SVG,
+        }
+    }
+}
+
 #[component]
 pub fn ConsumableSummary(consumable: Consumable) -> Element {
     rsx! {
         div {
             div {
                 if consumable.is_organic {
-                    img {
-                        class: "w-5  invert inline-block",
-                        alt: "organic",
-                        src: ORGANIC_SVG,
-                    }
+                    organic_icon {}
                 }
                 {consumable.name}
             }
@@ -942,7 +948,7 @@ pub fn ConsumableSummary(consumable: Consumable) -> Element {
             }
             div {
                 if let Maybe::Some(comments) = &consumable.comments {
-                    div { {comments.to_string()} }
+                    Markdown { content: comments.to_string() }
                 }
             }
             div {
@@ -966,11 +972,7 @@ pub fn ConsumableItemSummary(item: ConsumableItem) -> Element {
     rsx! {
         span {
             if item.consumable.is_organic {
-                img {
-                    class: "w-5  invert inline-block",
-                    alt: "organic",
-                    src: ORGANIC_SVG,
-                }
+                organic_icon {}
             }
             if let Maybe::Some(quantity) = item.nested.quantity {
                 span {
@@ -987,17 +989,15 @@ pub fn ConsumableItemSummary(item: ConsumableItem) -> Element {
             if let Maybe::Some(dt) = &item.consumable.created {
                 {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
             }
-            if let Maybe::Some(comments) = &item.nested.comments {
-                " ("
-                {comments.to_string()}
-                ")"
-            }
             if let Maybe::Some(liquid_mls) = item.nested.liquid_mls {
                 span {
                     " Liquid: "
                     {liquid_mls.to_string()}
                     "ml"
                 }
+            }
+            if let Maybe::Some(comments) = &item.nested.comments {
+                Markdown { content: comments.to_string() }
             }
         }
     }

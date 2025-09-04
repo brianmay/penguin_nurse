@@ -10,15 +10,15 @@ use crate::{
         buttons::{ChangeButton, CreateButton},
         consumables::{
             ActiveDialog, ConsumableDialog, ConsumableItemList, ListDialogReference, Operation,
+            organic_icon,
         },
+        events::Markdown,
     },
     forms::Barcode,
     functions::consumables::{get_consumable_by_id, search_consumables_with_nested},
     models::{Consumable, ConsumableId, ConsumableWithItems, Maybe},
     use_user,
 };
-
-const ORGANIC_SVG: Asset = asset!("/assets/organic.svg");
 
 #[component]
 fn EntryRow(
@@ -37,11 +37,7 @@ fn EntryRow(
             onclick: move |_| { selected.set(Some(id)) },
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 if consumable.is_organic {
-                    img {
-                        class: "w-5  invert inline-block",
-                        alt: "organic",
-                        src: ORGANIC_SVG,
-                    }
+                    organic_icon {}
                 }
                 {consumable.name}
             }
@@ -59,7 +55,7 @@ fn EntryRow(
             }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 if let Maybe::Some(comments) = &consumable.comments {
-                    div { {comments.to_string()} }
+                    Markdown { content: comments.to_string() }
                 }
             }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
@@ -79,28 +75,37 @@ fn EntryRow(
         if selected() == Some(id) {
             tr {
                 td { colspan: "6", class: "block sm:table-cell",
-                    div {
-                        class: "flex gap-2",
-                        ChangeButton { on_click: move |_| {
-                                navigator.push(Route::ConsumableList{
-                                    dialog: ListDialogReference::UpdateIngredients{consumable_id: id}
-                                });
+                    div { class: "flex gap-2",
+                        ChangeButton {
+                            on_click: move |_| {
+                                navigator
+                                    .push(Route::ConsumableList {
+                                        dialog: ListDialogReference::UpdateIngredients {
+                                            consumable_id: id,
+                                        },
+                                    });
                             },
                             "Ingredients"
                         }
                         ChangeButton {
                             on_click: move |_| {
-                                navigator.push(Route::ConsumableList{
-                                    dialog: ListDialogReference::UpdateBasic{consumable_id: id}
-                                });
+                                navigator
+                                    .push(Route::ConsumableList {
+                                        dialog: ListDialogReference::UpdateBasic {
+                                            consumable_id: id,
+                                        },
+                                    });
                             },
                             "Edit"
                         }
                         ChangeButton {
                             on_click: move |_| {
-                                navigator.push(Route::ConsumableList{
-                                    dialog: ListDialogReference::Delete{consumable_id: id}
-                                });
+                                navigator
+                                    .push(Route::ConsumableList {
+                                        dialog: ListDialogReference::Delete {
+                                            consumable_id: id,
+                                        },
+                                    });
                             },
                             "Delete"
                         }
@@ -190,9 +195,10 @@ pub fn ConsumableList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> El
             div { class: "mb-2",
                 CreateButton {
                     on_click: move |_| {
-                        navigator.push(Route::ConsumableList{
-                            dialog: ListDialogReference::Create
-                        });
+                        navigator
+                            .push(Route::ConsumableList {
+                                dialog: ListDialogReference::Create,
+                            });
                     },
                     "Create"
                 }
@@ -296,41 +302,47 @@ pub fn ConsumableList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> El
             Some(Ok(dialog)) => rsx! {
                 ConsumableDialog {
                     dialog: dialog.clone(),
-                    on_change: move |_consumable: Consumable| {
-                        list.restart()
-                    },
-                    on_change_ingredients: move |_consumable: Consumable| {
-                        list.restart()
-                    },
+                    on_change: move |_consumable: Consumable| { list.restart() },
+                    on_change_ingredients: move |_consumable: Consumable| { list.restart() },
                     on_delete: move |_consumable| list.restart(),
                     show_update_basic: move |consumable: Consumable| {
                         navigator
                             .push(Route::ConsumableList {
-                                dialog: ListDialogReference::UpdateBasic { consumable_id: consumable.id }
+                                dialog: ListDialogReference::UpdateBasic {
+                                    consumable_id: consumable.id,
+                                },
                             });
                     },
                     show_update_ingredients: move |consumable: Consumable| {
                         navigator
                             .push(Route::ConsumableList {
-                                dialog: ListDialogReference::UpdateIngredients{ consumable_id: consumable.id }
+                                dialog: ListDialogReference::UpdateIngredients {
+                                    consumable_id: consumable.id,
+                                },
                             });
                     },
                     show_ingredient_update_basic: move |(parent, consumable): (Consumable, Consumable)| {
                         navigator
-                            .push(Route::ConsumableList{
-                                dialog: ListDialogReference::IngredientUpdateBasic { parent_id: parent.id, consumable_id: consumable.id}
+                            .push(Route::ConsumableList {
+                                dialog: ListDialogReference::IngredientUpdateBasic {
+                                    parent_id: parent.id,
+                                    consumable_id: consumable.id,
+                                },
                             });
                     },
                     show_ingredient_update_ingredients: move |(parent, consumable): (Consumable, Consumable)| {
                         navigator
-                            .push(Route::ConsumableList{
-                                dialog: ListDialogReference::IngredientUpdateIngredients { parent_id: parent.id, consumable_id: consumable.id}
+                            .push(Route::ConsumableList {
+                                dialog: ListDialogReference::IngredientUpdateIngredients {
+                                    parent_id: parent.id,
+                                    consumable_id: consumable.id,
+                                },
                             });
                     },
                     on_close: move |()| {
                         navigator
                             .push(Route::ConsumableList {
-                                dialog: ListDialogReference::Idle
+                                dialog: ListDialogReference::Idle,
                             });
                     },
                 }

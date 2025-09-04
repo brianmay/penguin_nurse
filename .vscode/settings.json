@@ -1,12 +1,15 @@
 {
     "cSpell.words": [
         "axum",
+        "bigdecimal",
+        "Borken",
         "chrono",
         "Color",
         "conn",
         "creds",
         "describedby",
         "dialog",
+        "diarrhea",
         "dioxus",
         "gloo",
         "ilike",
@@ -14,21 +17,25 @@
         "joinable",
         "linecap",
         "linejoin",
+        "mmol",
         "Mobc",
         "novalidate",
         "onclick",
         "oninput",
         "poos",
         "pred",
+        "refluxs",
         "Srgb",
         "stylesheet",
         "succ",
+        "tabindex",
         "thiserror",
         "Timelike",
         "Timestamptz",
         "timezone",
         "trgm",
-        "userinfo"
+        "userinfo",
+        "xlink"
     ],
     "rust-analyzer.cargo.features": [
         "server"

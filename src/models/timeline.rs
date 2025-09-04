@@ -1,3 +1,5 @@
+use crate::models::{Exercise, HealthMetric, Symptom, WeeUrge};
+
 use super::ConsumptionWithItems;
 use super::entry::{Entry, EntryData, Event};
 use super::poos::Poo;
@@ -21,6 +23,20 @@ impl Timeline {
             event: Event::Start,
             time: wee.time,
             data: EntryData::Wee(wee),
+        });
+    }
+
+    pub fn add_wee_urges(&mut self, wee_urges: Vec<WeeUrge>) {
+        for wee_urge in wee_urges {
+            self.add_wee_urge(wee_urge);
+        }
+    }
+
+    pub fn add_wee_urge(&mut self, wee_urge: WeeUrge) {
+        self.0.push(Entry {
+            event: Event::Start,
+            time: wee_urge.time,
+            data: EntryData::WeeUrge(wee_urge),
         });
     }
 
@@ -49,6 +65,76 @@ impl Timeline {
             event: Event::Start,
             time: consumption.consumption.time,
             data: EntryData::Consumption(consumption),
+        });
+    }
+
+    pub fn add_exercises(&mut self, exercises: Vec<Exercise>) {
+        for exercise in exercises {
+            self.add_exercise(exercise);
+        }
+    }
+
+    pub fn add_exercise(&mut self, exercise: Exercise) {
+        self.0.push(Entry {
+            event: Event::Start,
+            time: exercise.time,
+            data: EntryData::Exercise(exercise),
+        });
+    }
+
+    pub fn add_health_metrics(&mut self, health_metrics: Vec<HealthMetric>) {
+        for health_metric in health_metrics {
+            self.add_health_metric(health_metric);
+        }
+    }
+
+    pub fn add_health_metric(&mut self, health_metric: HealthMetric) {
+        self.0.push(Entry {
+            event: Event::Start,
+            time: health_metric.time,
+            data: EntryData::HealthMetric(health_metric),
+        });
+    }
+
+    pub fn add_symptoms(&mut self, symptoms: Vec<Symptom>) {
+        for symptom in symptoms {
+            self.add_symptom(symptom);
+        }
+    }
+
+    pub fn add_symptom(&mut self, symptom: Symptom) {
+        self.0.push(Entry {
+            event: Event::Start,
+            time: symptom.time,
+            data: EntryData::Symptom(symptom),
+        });
+    }
+
+    pub fn add_refluxs(&mut self, refluxs: Vec<crate::models::Reflux>) {
+        for reflux in refluxs {
+            self.add_reflux(reflux);
+        }
+    }
+
+    pub fn add_reflux(&mut self, reflux: crate::models::Reflux) {
+        self.0.push(Entry {
+            event: Event::Start,
+            time: reflux.time,
+            data: EntryData::Reflux(reflux),
+        });
+    }
+
+    pub fn add_notes(&mut self, notes: Vec<crate::models::Note>) {
+        for note in notes {
+            self.add_note(note);
+        }
+    }
+
+    pub fn add_note(&mut self, note: crate::models::Note) {
+        self.0.push(Entry {
+            event: Event::Start,
+            time: note.time,
+            data: EntryData::Note(note),
         });
     }
 

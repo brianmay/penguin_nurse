@@ -39,15 +39,6 @@ impl FieldValue for ConsumableUnit {
 }
 
 impl ConsumableUnit {
-    pub fn options() -> Vec<(&'static str, &'static str)> {
-        vec![
-            ("millilitres", "ml"),
-            ("grams", "g"),
-            ("international_units", "IU"),
-            ("number", "Number"),
-        ]
-    }
-
     pub fn postfix(&self) -> &'static str {
         match self {
             Self::Millilitres => "ml",
