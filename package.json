@@ -6,7 +6,7 @@
     "daisyui": "^5.0.54",
     "rollup": "^4.50.0",
     "rollup-plugin-copy": "^3.4.0",
-    "tailwindcss": "^4.1.12"
+    "tailwindcss": "^4.1.13"
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.16",
