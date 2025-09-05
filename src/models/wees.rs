@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::MaybeSet;
 
-use super::{UserId, common::MaybeString};
+use super::UserId;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct WeeId(i64);
@@ -42,7 +42,7 @@ pub struct Wee {
     pub urgency: i32,
     pub mls: i32,
     pub colour: palette::Hsv,
-    pub comments: MaybeString,
+    pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -56,7 +56,7 @@ pub struct NewWee {
     pub urgency: i32,
     pub mls: i32,
     pub colour: palette::Hsv,
-    pub comments: MaybeString,
+    pub comments: Option<String>,
 }
 
 #[allow(dead_code)]
@@ -68,5 +68,5 @@ pub struct ChangeWee {
     pub urgency: MaybeSet<i32>,
     pub mls: MaybeSet<i32>,
     pub colour: MaybeSet<palette::Hsv>,
-    pub comments: MaybeSet<MaybeString>,
+    pub comments: MaybeSet<Option<String>>,
 }

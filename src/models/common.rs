@@ -1,15 +1,6 @@
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 // Serializing Option<Option<String>> does not work as expected. This is a workaround.
-
-// Legacy - to be removed.
-pub type Maybe<T> = Option<T>;
-pub type MaybeString = Maybe<String>;
-pub type MaybeDateTime = Maybe<DateTime<Utc>>;
-pub type MaybeF64 = Maybe<f64>;
-pub type MaybeDecimal = Maybe<bigdecimal::BigDecimal>;
-pub type MaybeI32 = Maybe<i32>;
 
 #[derive(Debug, Serialize, Deserialize, Copy, Clone, Eq, PartialEq)]
 pub enum MaybeSet<T> {

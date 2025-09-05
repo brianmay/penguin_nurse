@@ -8,7 +8,7 @@ use crate::{
         validate_symptom_abdominal_pain_location, validate_symptom_intensity,
     },
     functions::symptoms::{create_symptom, delete_symptom, update_symptom},
-    models::{ChangeSymptom, MaybeSet, MaybeString, NewSymptom, Symptom, UserId},
+    models::{ChangeSymptom, MaybeSet, NewSymptom, Symptom, UserId},
 };
 use classes::classes;
 
@@ -29,7 +29,7 @@ struct Validate {
     sneezing: Memo<Result<i32, ValidationError>>,
     heart_burn: Memo<Result<i32, ValidationError>>,
     abdominal_pain: Memo<Result<i32, ValidationError>>,
-    abdominal_pain_location: Memo<Result<MaybeString, ValidationError>>,
+    abdominal_pain_location: Memo<Result<Option<String>, ValidationError>>,
     diarrhea: Memo<Result<i32, ValidationError>>,
     constipation: Memo<Result<i32, ValidationError>>,
     lower_back_pain: Memo<Result<i32, ValidationError>>,
@@ -46,7 +46,7 @@ struct Validate {
     anxiety: Memo<Result<i32, ValidationError>>,
     depression: Memo<Result<i32, ValidationError>>,
     insomnia: Memo<Result<i32, ValidationError>>,
-    comments: Memo<Result<MaybeString, ValidationError>>,
+    comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
 async fn do_save(op: &Operation, validate: &Validate) -> Result<Symptom, EditError> {

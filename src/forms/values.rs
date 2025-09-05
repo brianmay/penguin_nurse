@@ -2,8 +2,6 @@ use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use palette::RgbHue;
 use thiserror::Error;
 
-use crate::models::Maybe;
-
 #[derive(Error, Debug)]
 pub enum FieldValueError {
     #[error("Required value")]
@@ -208,18 +206,18 @@ impl FieldValue for bigdecimal::BigDecimal {
     }
 }
 
-impl<T: FieldValue> FieldValue for Maybe<T> {
+impl<T: FieldValue> FieldValue for Option<T> {
     fn as_string(&self) -> String {
         match self {
-            Maybe::Some(value) => value.as_string(),
-            Maybe::None => "".to_string(),
+            Some(value) => value.as_string(),
+            None => "".to_string(),
         }
     }
     fn from_string(value: &str) -> Result<Self, FieldValueError> {
         if value.is_empty() {
-            Ok(Maybe::None)
+            Ok(None)
         } else {
-            Ok(Maybe::Some(T::from_string(value)?))
+            Ok(Some(T::from_string(value)?))
         }
     }
 }

@@ -8,7 +8,7 @@ use crate::{
     models::MaybeSet,
 };
 
-use super::{UserId, common::MaybeString};
+use super::UserId;
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]
 #[serde(tag = "type")]
@@ -155,7 +155,7 @@ pub struct Poo {
     pub quantity: i32,
     pub bristol: Bristol,
     pub colour: palette::Hsv,
-    pub comments: MaybeString,
+    pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -170,7 +170,7 @@ pub struct NewPoo {
     pub quantity: i32,
     pub bristol: Bristol,
     pub colour: palette::Hsv,
-    pub comments: MaybeString,
+    pub comments: Option<String>,
 }
 
 #[allow(dead_code)]
@@ -183,5 +183,5 @@ pub struct ChangePoo {
     pub quantity: MaybeSet<i32>,
     pub bristol: MaybeSet<Bristol>,
     pub colour: MaybeSet<palette::Hsv>,
-    pub comments: MaybeSet<MaybeString>,
+    pub comments: MaybeSet<Option<String>>,
 }

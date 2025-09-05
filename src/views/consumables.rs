@@ -16,7 +16,7 @@ use crate::{
     },
     forms::Barcode,
     functions::consumables::{get_consumable_by_id, search_consumables_with_nested},
-    models::{Consumable, ConsumableId, ConsumableWithItems, Maybe},
+    models::{Consumable, ConsumableId, ConsumableWithItems},
     use_user,
 };
 
@@ -42,7 +42,7 @@ fn EntryRow(
                 {consumable.name}
             }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                if let Maybe::Some(brand) = &consumable.brand {
+                if let Some(brand) = &consumable.brand {
                     div { {brand.clone()} }
                 }
             }
@@ -54,18 +54,18 @@ fn EntryRow(
                 ConsumableItemList { list: items }
             }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                if let Maybe::Some(comments) = &consumable.comments {
+                if let Some(comments) = &consumable.comments {
                     Markdown { content: comments.to_string() }
                 }
             }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                if let Maybe::Some(created) = &consumable.created {
+                if let Some(created) = &consumable.created {
                     span { class: "sm:hidden", "Created: " }
                     {created.with_timezone(&Local).to_string()}
                 }
             }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                if let Maybe::Some(destroyed) = &consumable.destroyed {
+                if let Some(destroyed) = &consumable.destroyed {
                     span { class: "sm:hidden", "Destroyed: " }
                     {destroyed.with_timezone(&Local).to_string()}
                 }

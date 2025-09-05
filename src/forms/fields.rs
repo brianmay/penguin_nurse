@@ -18,7 +18,7 @@ use crate::{
     },
     forms::{Barcode, validate_colour_hue, validate_colour_saturation, validate_colour_value},
     functions::consumables::search_consumables,
-    models::{Consumable, Maybe, MaybeDateTime, MaybeI32},
+    models::Consumable,
 };
 
 use super::FieldValue;
@@ -297,11 +297,11 @@ pub fn InputDateTime(
 }
 
 #[component]
-pub fn InputMaybeDateTime(
+pub fn InputOptionDateTimeUtc(
     id: &'static str,
     label: &'static str,
     value: Signal<String>,
-    validate: Memo<Result<MaybeDateTime, ValidationError>>,
+    validate: Memo<Result<Option<DateTime<Utc>>, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
     rsx! {
@@ -555,7 +555,7 @@ pub fn InputExerciseCalories(
     id: &'static str,
     label: String,
     value: Signal<String>,
-    validate: Memo<Result<MaybeI32, ValidationError>>,
+    validate: Memo<Result<Option<i32>, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
     rsx! {
@@ -583,7 +583,7 @@ pub fn InputExerciseRpe(
     id: &'static str,
     label: String,
     value: Signal<String>,
-    validate: Memo<Result<MaybeI32, ValidationError>>,
+    validate: Memo<Result<Option<i32>, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
     rsx! {
@@ -849,11 +849,11 @@ pub fn InputConsumable(
                                                 label: rsx! {
                                                     span {
                                                         {consumable.name.clone()}
-                                                        if let Maybe::Some(brand) = &consumable.brand {
+                                                        if let Some(brand) = &consumable.brand {
                                                             ", "
                                                             {brand.clone()}
                                                         }
-                                                        if let Maybe::Some(dt) = consumable.created {
+                                                        if let Some(dt) = consumable.created {
                                                             {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
                                                         }
                                                     }

@@ -8,7 +8,7 @@ use crate::{
         ValidationError, validate_comments, validate_fixed_offset_date_time,
     },
     functions::notes::{create_note, delete_note, update_note},
-    models::{ChangeNote, Maybe, MaybeSet, MaybeString, NewNote, Note, UserId},
+    models::{ChangeNote, MaybeSet, NewNote, Note, UserId},
 };
 use classes::classes;
 
@@ -21,7 +21,7 @@ pub enum Operation {
 #[derive(Debug, Clone)]
 struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    comments: Memo<Result<MaybeString, ValidationError>>,
+    comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
 async fn do_save(op: &Operation, validate: &Validate) -> Result<Note, EditError> {
@@ -215,13 +215,13 @@ pub fn note_duration(duration: chrono::TimeDelta) -> Element {
 }
 
 #[component]
-pub fn note_calories(calories: Maybe<i32>) -> Element {
-    let text = if let Maybe::Some(c) = calories {
+pub fn note_calories(calories: Option<i32>) -> Element {
+    let text = if let Some(c) = calories {
         format!("{} kcal", c)
     } else {
         "N/A".to_string()
     };
-    let classes = if let Maybe::Some(c) = calories {
+    let classes = if let Some(c) = calories {
         if c == 0 {
             classes!["text-error"]
         } else if c <= 300 {
@@ -283,7 +283,7 @@ pub fn NoteSummary(note: Note) -> Element {
             div {
             }
             div {
-                if let Maybe::Some(comments) = &note.comments {
+                if let Some(comments) = &note.comments {
                     Markdown { content: comments.to_string() }
                 }
             }

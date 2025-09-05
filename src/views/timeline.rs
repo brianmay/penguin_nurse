@@ -35,7 +35,7 @@ use crate::{
         wee_urges::{get_wee_urge_by_id, get_wee_urges_for_time_range},
         wees::{get_wee_by_id, get_wees_for_time_range},
     },
-    models::{Consumable, Consumption, Entry, EntryData, EntryId, Maybe, Timeline},
+    models::{Consumable, Consumption, Entry, EntryData, EntryId, Timeline},
     use_user,
 };
 
@@ -84,7 +84,7 @@ fn EntryRow(
                                 div {
                                     event_urgency { urgency: wee.urgency }
                                 }
-                                if let Maybe::Some(comments) = &wee.comments {
+                                if let Some(comments) = &wee.comments {
                                     Markdown { content: comments.to_string() }
                                 }
                             }
@@ -99,7 +99,7 @@ fn EntryRow(
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2" }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             event_urgency { urgency: wee_urge.urgency }
-                            if let Maybe::Some(comments) = &wee_urge.comments {
+                            if let Some(comments) = &wee_urge.comments {
                                 Markdown { content: comments.to_string() }
                             }
                         }
@@ -125,7 +125,7 @@ fn EntryRow(
                                 div {
                                     event_urgency { urgency: poo.urgency }
                                 }
-                                if let Maybe::Some(comments) = &poo.comments {
+                                if let Some(comments) = &poo.comments {
                                     Markdown { content: comments.to_string() }
                                 }
                             }
@@ -147,7 +147,7 @@ fn EntryRow(
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             {consumption.consumption.consumption_type.to_string()}
-                            if let Maybe::Some(liquid_mls) = &consumption.consumption.liquid_mls {
+                            if let Some(liquid_mls) = &consumption.consumption.liquid_mls {
                                 div {
                                     "Liquid: "
                                     {liquid_mls.to_string()}
@@ -157,7 +157,7 @@ fn EntryRow(
                             if !consumption.items.is_empty() {
                                 ConsumptionItemList { list: consumption.items.clone() }
                             }
-                            if let Maybe::Some(comments) = &consumption.consumption.comments {
+                            if let Some(comments) = &consumption.consumption.comments {
                                 div { "Comments:" }
                                 Markdown { content: comments.to_string() }
                             }
@@ -180,32 +180,32 @@ fn EntryRow(
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             {exercise.exercise_type.to_string()}
-                            if let Maybe::Some(location) = &exercise.location {
+                            if let Some(location) = &exercise.location {
                                 div {
                                     "Location: "
                                     {location.to_string()}
                                 }
                             }
-                            if let Maybe::Some(distance) = &exercise.distance {
+                            if let Some(distance) = &exercise.distance {
                                 div {
                                     "Distance: "
                                     {distance.to_string()}
                                     "km"
                                 }
                             }
-                            if let Maybe::Some(calories) = &exercise.calories {
+                            if let Some(calories) = &exercise.calories {
                                 div {
                                     "Calories: "
-                                    exercise_calories { calories: Maybe::Some(*calories) }
+                                    exercise_calories { calories: Some(*calories) }
                                 }
                             }
-                            if let Maybe::Some(rpe) = &exercise.rpe {
+                            if let Some(rpe) = &exercise.rpe {
                                 div {
                                     "RPE: "
-                                    exercise_rpe { rpe: Maybe::Some(*rpe) }
+                                    exercise_rpe { rpe: Some(*rpe) }
                                 }
                             }
-                            if let Maybe::Some(comments) = &exercise.comments {
+                            if let Some(comments) = &exercise.comments {
                                 Markdown { content: comments.to_string() }
                             }
                         }
@@ -220,19 +220,19 @@ fn EntryRow(
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2" }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             div { class: "inline-block align-top",
-                                if let Maybe::Some(pulse) = &health_metric.pulse {
+                                if let Some(pulse) = &health_metric.pulse {
                                     div {
                                         "Pulse: "
                                         {pulse.to_string()}
                                     }
                                 }
-                                if let Maybe::Some(blood_glucose) = &health_metric.blood_glucose {
+                                if let Some(blood_glucose) = &health_metric.blood_glucose {
                                     div {
                                         "Blood Glucose: "
                                         {blood_glucose.to_string()}
                                     }
                                 }
-                                if let (Maybe::Some(systolic_bp), Maybe::Some(diastolic_bp)) = (
+                                if let (Some(systolic_bp), Some(diastolic_bp)) = (
                                     &health_metric.systolic_bp,
                                     &health_metric.diastolic_bp,
                                 )
@@ -244,21 +244,21 @@ fn EntryRow(
                                         {diastolic_bp.to_string()}
                                     }
                                 }
-                                if let Maybe::Some(weight) = &health_metric.weight {
+                                if let Some(weight) = &health_metric.weight {
                                     div {
                                         "Weight: "
                                         {weight.to_string()}
                                         "kg"
                                     }
                                 }
-                                if let Maybe::Some(height) = &health_metric.height {
+                                if let Some(height) = &health_metric.height {
                                     div {
                                         "Height: "
                                         {height.to_string()}
                                         "cm"
                                     }
                                 }
-                                if let Maybe::Some(comments) = &health_metric.comments {
+                                if let Some(comments) = &health_metric.comments {
                                     Markdown { content: comments.to_string() }
                                 }
                             }
@@ -283,7 +283,7 @@ fn EntryRow(
                                 SymptomDisplay {
                                     name: "Abdominal Pain",
                                     intensity: symptom.abdominal_pain,
-                                    extra: if let Maybe::Some(location) = &symptom.abdominal_pain_location { rsx! {
+                                    extra: if let Some(location) = &symptom.abdominal_pain_location { rsx! {
                                         div { class: "inline-block ml-2 align-top",
                                             "Location: "
                                             {location.to_string()}
@@ -309,7 +309,7 @@ fn EntryRow(
                                 SymptomDisplay { name: "Anxiety", intensity: symptom.anxiety }
                                 SymptomDisplay { name: "Depression", intensity: symptom.depression }
                                 SymptomDisplay { name: "Insomnia", intensity: symptom.insomnia }
-                                if let Maybe::Some(comments) = &symptom.comments {
+                                if let Some(comments) = &symptom.comments {
                                     Markdown { content: comments.to_string() }
                                 }
                             }
@@ -327,13 +327,13 @@ fn EntryRow(
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             div { class: "inline-block align-top",
                                 SymptomDisplay { name: "Severity", intensity: reflux.severity }
-                                if let Maybe::Some(location) = &reflux.location {
+                                if let Some(location) = &reflux.location {
                                     div {
                                         "Location: "
                                         {location.to_string()}
                                     }
                                 }
-                                if let Maybe::Some(comments) = &reflux.comments {
+                                if let Some(comments) = &reflux.comments {
                                     Markdown { content: comments.to_string() }
                                 }
                             }
@@ -347,7 +347,7 @@ fn EntryRow(
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2" }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            if let Maybe::Some(comments) = &note.comments {
+                            if let Some(comments) = &note.comments {
                                 Markdown { content: comments.to_string() }
                             }
                         }

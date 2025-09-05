@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::MaybeSet;
 
-use super::{UserId, common::MaybeString};
+use super::UserId;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct NoteId(i64);
@@ -39,7 +39,7 @@ pub struct Note {
     pub id: NoteId,
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub comments: MaybeString,
+    pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -55,12 +55,12 @@ impl Note {
 pub struct NewNote {
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub comments: MaybeString,
+    pub comments: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeNote {
     pub user_id: MaybeSet<UserId>,
     pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
-    pub comments: MaybeSet<MaybeString>,
+    pub comments: MaybeSet<Option<String>>,
 }

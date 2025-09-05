@@ -3,12 +3,9 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
-use crate::models::{MaybeSet, common::MaybeI32};
+use crate::models::MaybeSet;
 
-use super::{
-    UserId,
-    common::{MaybeDecimal, MaybeString},
-};
+use super::UserId;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct HealthMetricId(i64);
@@ -42,13 +39,13 @@ pub struct HealthMetric {
     pub id: HealthMetricId,
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub pulse: MaybeI32,
-    pub blood_glucose: MaybeDecimal,
-    pub systolic_bp: MaybeI32,
-    pub diastolic_bp: MaybeI32,
-    pub weight: MaybeDecimal,
-    pub height: MaybeI32,
-    pub comments: MaybeString,
+    pub pulse: Option<i32>,
+    pub blood_glucose: Option<bigdecimal::BigDecimal>,
+    pub systolic_bp: Option<i32>,
+    pub diastolic_bp: Option<i32>,
+    pub weight: Option<bigdecimal::BigDecimal>,
+    pub height: Option<i32>,
+    pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -64,24 +61,24 @@ impl HealthMetric {
 pub struct NewHealthMetric {
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub pulse: MaybeI32,
-    pub blood_glucose: MaybeDecimal,
-    pub systolic_bp: MaybeI32,
-    pub diastolic_bp: MaybeI32,
-    pub weight: MaybeDecimal,
-    pub height: MaybeI32,
-    pub comments: MaybeString,
+    pub pulse: Option<i32>,
+    pub blood_glucose: Option<bigdecimal::BigDecimal>,
+    pub systolic_bp: Option<i32>,
+    pub diastolic_bp: Option<i32>,
+    pub weight: Option<bigdecimal::BigDecimal>,
+    pub height: Option<i32>,
+    pub comments: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeHealthMetric {
     pub user_id: MaybeSet<UserId>,
     pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
-    pub pulse: MaybeSet<MaybeI32>,
-    pub blood_glucose: MaybeSet<MaybeDecimal>,
-    pub systolic_bp: MaybeSet<MaybeI32>,
-    pub diastolic_bp: MaybeSet<MaybeI32>,
-    pub weight: MaybeSet<MaybeDecimal>,
-    pub height: MaybeSet<MaybeI32>,
-    pub comments: MaybeSet<MaybeString>,
+    pub pulse: MaybeSet<Option<i32>>,
+    pub blood_glucose: MaybeSet<Option<bigdecimal::BigDecimal>>,
+    pub systolic_bp: MaybeSet<Option<i32>>,
+    pub diastolic_bp: MaybeSet<Option<i32>>,
+    pub weight: MaybeSet<Option<bigdecimal::BigDecimal>>,
+    pub height: MaybeSet<Option<i32>>,
+    pub comments: MaybeSet<Option<String>>,
 }

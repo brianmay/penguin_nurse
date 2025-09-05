@@ -11,7 +11,7 @@ use crate::{
         validate_email, validate_full_name, validate_username,
     },
     functions::users::{create_user, delete_user, update_user},
-    models::{ChangeUser, MaybeSet, MaybeString, NewUser, User},
+    models::{ChangeUser, MaybeSet, NewUser, User},
 };
 
 #[derive(Debug, Clone)]
@@ -37,7 +37,7 @@ async fn do_save_new_user(validate: &ValidateSaveNewUser) -> Result<User, EditEr
         email,
         full_name,
         password,
-        oidc_id: MaybeString::None,
+        oidc_id: None,
         is_admin,
     };
     create_user(user_updates).await.map_err(EditError::Server)

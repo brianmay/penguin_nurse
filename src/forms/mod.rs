@@ -18,7 +18,7 @@ pub use errors::{EditError, ValidationError};
 pub use fields::{
     InputBoolean, InputColour, InputConsumable, InputConsumableUnitType, InputConsumptionType,
     InputDateTime, InputDuration, InputExerciseCalories, InputExerciseRpe, InputExerciseType,
-    InputMaybeDateTime, InputNumber, InputPassword, InputPooBristolType, InputString,
+    InputNumber, InputOptionDateTimeUtc, InputPassword, InputPooBristolType, InputString,
     InputTextArea,
 };
 pub use saving::MyForm;

@@ -12,7 +12,7 @@ use crate::{
         validate_millilitres, validate_urgency,
     },
     functions::wees::{create_wee, delete_wee, update_wee},
-    models::{ChangeWee, MaybeSet, MaybeString, NewWee, UserId, Wee},
+    models::{ChangeWee, MaybeSet, NewWee, UserId, Wee},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -28,7 +28,7 @@ struct Validate {
     urgency: Memo<Result<i32, ValidationError>>,
     mls: Memo<Result<i32, ValidationError>>,
     colour: Memo<Result<Hsv, ValidationError>>,
-    comments: Memo<Result<MaybeString, ValidationError>>,
+    comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
 async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> {

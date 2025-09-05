@@ -1,6 +1,6 @@
 use std::{num::ParseIntError, str::FromStr};
 
-use chrono::Local;
+use chrono::{DateTime, Local, Utc};
 use dioxus::{prelude::*, router::ToQueryArgument};
 use tap::Pipe;
 use thiserror::Error;
@@ -9,8 +9,8 @@ use crate::{
     components::events::Markdown,
     forms::{
         Barcode, Dialog, EditError, FieldValue, FormCloseButton, FormDeleteButton, FormEditButton,
-        FormSaveCancelButton, InputBoolean, InputConsumable, InputConsumableUnitType,
-        InputMaybeDateTime, InputNumber, InputString, InputTextArea, Saving, ValidationError,
+        FormSaveCancelButton, InputBoolean, InputConsumable, InputConsumableUnitType, InputNumber,
+        InputOptionDateTimeUtc, InputString, InputTextArea, Saving, ValidationError,
         validate_barcode, validate_brand, validate_comments, validate_consumable_millilitres,
         validate_consumable_quantity, validate_consumable_unit, validate_maybe_date_time,
         validate_name,
@@ -21,8 +21,8 @@ use crate::{
     },
     models::{
         ChangeConsumable, ChangeNestedConsumable, Consumable, ConsumableId, ConsumableItem,
-        ConsumableUnit, Maybe, MaybeDateTime, MaybeF64, MaybeSet, MaybeString, NestedConsumable,
-        NestedConsumableId, NewConsumable, NewNestedConsumable,
+        ConsumableUnit, MaybeSet, NestedConsumable, NestedConsumableId, NewConsumable,
+        NewNestedConsumable,
     },
 };
 
@@ -35,13 +35,13 @@ pub enum Operation {
 #[derive(Debug, Clone)]
 struct Validate {
     name: Memo<Result<String, ValidationError>>,
-    brand: Memo<Result<MaybeString, ValidationError>>,
-    barcode: Memo<Result<MaybeString, ValidationError>>,
+    brand: Memo<Result<Option<String>, ValidationError>>,
+    barcode: Memo<Result<Option<String>, ValidationError>>,
     is_organic: Memo<Result<bool, ValidationError>>,
     unit: Memo<Result<ConsumableUnit, ValidationError>>,
-    comments: Memo<Result<MaybeString, ValidationError>>,
-    created: Memo<Result<MaybeDateTime, ValidationError>>,
-    destroyed: Memo<Result<MaybeDateTime, ValidationError>>,
+    comments: Memo<Result<Option<String>, ValidationError>>,
+    created: Memo<Result<Option<DateTime<Utc>>, ValidationError>>,
+    destroyed: Memo<Result<Option<DateTime<Utc>>, ValidationError>>,
 }
 
 async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumable, EditError> {
@@ -51,8 +51,8 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumable, Edit
     let is_organic = validate.is_organic.read().clone()?;
     let unit = validate.unit.read().clone()?;
     let comments = validate.comments.read().clone()?;
-    let created: MaybeDateTime = validate.created.read().clone()?;
-    let destroyed: MaybeDateTime = validate.destroyed.read().clone()?;
+    let created: Option<DateTime<Utc>> = validate.created.read().clone()?;
+    let destroyed: Option<DateTime<Utc>> = validate.destroyed.read().clone()?;
 
     match op {
         Operation::Create => {
@@ -241,14 +241,14 @@ pub fn ConsumableUpdate(
                 validate: validate.comments,
                 disabled,
             }
-            InputMaybeDateTime {
+            InputOptionDateTimeUtc {
                 id: "created",
                 label: "Created",
                 value: created,
                 validate: validate.created,
                 disabled,
             }
-            InputMaybeDateTime {
+            InputOptionDateTimeUtc {
                 id: "destroyed",
                 label: "Destroyed",
                 value: destroyed,
@@ -611,9 +611,9 @@ pub fn ConsumableUpdateIngredients(
             state.set(State::Saving);
             let updates = NewNestedConsumable {
                 id: NestedConsumableId::new(consumable.id, child.id),
-                quantity: Maybe::None,
-                liquid_mls: Maybe::None,
-                comments: Maybe::None,
+                quantity: None,
+                liquid_mls: None,
+                comments: None,
             };
             let result = create_nested_consumable(updates).await;
             if let Ok(nested) = result.clone() {
@@ -798,9 +798,9 @@ pub fn ConsumableUpdateIngredients(
 
 #[derive(Debug, Clone)]
 struct ValidateNested {
-    quantity: Memo<Result<MaybeF64, ValidationError>>,
-    liquid_mls: Memo<Result<MaybeF64, ValidationError>>,
-    comments: Memo<Result<MaybeString, ValidationError>>,
+    quantity: Memo<Result<Option<f64>, ValidationError>>,
+    liquid_mls: Memo<Result<Option<f64>, ValidationError>>,
+    comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
 async fn do_save_nested(
@@ -938,7 +938,7 @@ pub fn ConsumableSummary(consumable: Consumable) -> Element {
                 {consumable.name}
             }
             div {
-                if let Maybe::Some(brand) = &consumable.brand {
+                if let Some(brand) = &consumable.brand {
                     div { {brand.clone()} }
                 }
             }
@@ -947,18 +947,18 @@ pub fn ConsumableSummary(consumable: Consumable) -> Element {
                 {consumable.unit.to_string()}
             }
             div {
-                if let Maybe::Some(comments) = &consumable.comments {
+                if let Some(comments) = &consumable.comments {
                     Markdown { content: comments.to_string() }
                 }
             }
             div {
-                if let Maybe::Some(created) = &consumable.created {
+                if let Some(created) = &consumable.created {
                     span { class: "sm:hidden", "Created: " }
                     {created.with_timezone(&Local).to_string()}
                 }
             }
             div {
-                if let Maybe::Some(destroyed) = &consumable.destroyed {
+                if let Some(destroyed) = &consumable.destroyed {
                     span { class: "sm:hidden", "Destroyed: " }
                     {destroyed.with_timezone(&Local).to_string()}
                 }
@@ -974,7 +974,7 @@ pub fn ConsumableItemSummary(item: ConsumableItem) -> Element {
             if item.consumable.is_organic {
                 organic_icon {}
             }
-            if let Maybe::Some(quantity) = item.nested.quantity {
+            if let Some(quantity) = item.nested.quantity {
                 span {
                     {quantity.to_string()}
                     {item.consumable.unit.postfix()}
@@ -982,21 +982,21 @@ pub fn ConsumableItemSummary(item: ConsumableItem) -> Element {
                 }
             }
             {item.consumable.name.clone()}
-            if let Maybe::Some(brand) = &item.consumable.brand {
+            if let Some(brand) = &item.consumable.brand {
                 ", "
                 {brand.clone()}
             }
-            if let Maybe::Some(dt) = &item.consumable.created {
+            if let Some(dt) = &item.consumable.created {
                 {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
             }
-            if let Maybe::Some(liquid_mls) = item.nested.liquid_mls {
+            if let Some(liquid_mls) = item.nested.liquid_mls {
                 span {
                     " Liquid: "
                     {liquid_mls.to_string()}
                     "ml"
                 }
             }
-            if let Maybe::Some(comments) = &item.nested.comments {
+            if let Some(comments) = &item.nested.comments {
                 Markdown { content: comments.to_string() }
             }
         }

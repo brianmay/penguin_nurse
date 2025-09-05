@@ -11,10 +11,7 @@ use crate::{
         validate_fixed_offset_date_time, validate_location,
     },
     functions::exercises::{create_exercise, delete_exercise, update_exercise},
-    models::{
-        ChangeExercise, Exercise, ExerciseType, Maybe, MaybeDecimal, MaybeI32, MaybeSet,
-        MaybeString, NewExercise, UserId,
-    },
+    models::{ChangeExercise, Exercise, ExerciseType, MaybeSet, NewExercise, UserId},
 };
 use classes::classes;
 
@@ -28,12 +25,12 @@ pub enum Operation {
 struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
     duration: Memo<Result<TimeDelta, ValidationError>>,
-    location: Memo<Result<MaybeString, ValidationError>>,
-    distance: Memo<Result<MaybeDecimal, ValidationError>>,
-    calories: Memo<Result<MaybeI32, ValidationError>>,
-    rpe: Memo<Result<MaybeI32, ValidationError>>,
+    location: Memo<Result<Option<String>, ValidationError>>,
+    distance: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
+    calories: Memo<Result<Option<i32>, ValidationError>>,
+    rpe: Memo<Result<Option<i32>, ValidationError>>,
     exercise_type: Memo<Result<ExerciseType, ValidationError>>,
-    comments: Memo<Result<MaybeString, ValidationError>>,
+    comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
 async fn do_save(op: &Operation, validate: &Validate) -> Result<Exercise, EditError> {
@@ -390,13 +387,13 @@ pub fn exercise_duration(duration: chrono::TimeDelta) -> Element {
 }
 
 #[component]
-pub fn exercise_calories(calories: Maybe<i32>) -> Element {
-    let text = if let Maybe::Some(c) = calories {
+pub fn exercise_calories(calories: Option<i32>) -> Element {
+    let text = if let Some(c) = calories {
         format!("{} kcal", c)
     } else {
         "N/A".to_string()
     };
-    let classes = if let Maybe::Some(c) = calories {
+    let classes = if let Some(c) = calories {
         if c == 0 {
             classes!["text-error"]
         } else if c <= 300 {
@@ -415,53 +412,51 @@ pub fn exercise_calories(calories: Maybe<i32>) -> Element {
 }
 
 #[component]
-pub fn exercise_rpe(rpe: Maybe<i32>) -> Element {
+pub fn exercise_rpe(rpe: Option<i32>) -> Element {
     let text = match rpe {
-        Maybe::Some(1) => "1 (Very Light)".to_string(),
-        Maybe::Some(2) => "2 (Light Activity)".to_string(),
-        Maybe::Some(3) => "3 (Light Activity)".to_string(),
-        Maybe::Some(4) => "4 (Moderate Activity)".to_string(),
-        Maybe::Some(5) => "5 (Moderate Activity)".to_string(),
-        Maybe::Some(6) => "6 (Moderate Activity)".to_string(),
-        Maybe::Some(7) => "7 (Vigorous Activity)".to_string(),
-        Maybe::Some(8) => "8 (Vigorous Activity)".to_string(),
-        Maybe::Some(9) => "9 (Very Hard Activity)".to_string(),
-        Maybe::Some(10) => "10 (Max Effort Activity)".to_string(),
-        Maybe::Some(i) => format!("{} (Unknown)", i),
-        Maybe::None => "N/A".to_string(),
+        Some(1) => "1 (Very Light)".to_string(),
+        Some(2) => "2 (Light Activity)".to_string(),
+        Some(3) => "3 (Light Activity)".to_string(),
+        Some(4) => "4 (Moderate Activity)".to_string(),
+        Some(5) => "5 (Moderate Activity)".to_string(),
+        Some(6) => "6 (Moderate Activity)".to_string(),
+        Some(7) => "7 (Vigorous Activity)".to_string(),
+        Some(8) => "8 (Vigorous Activity)".to_string(),
+        Some(9) => "9 (Very Hard Activity)".to_string(),
+        Some(10) => "10 (Max Effort Activity)".to_string(),
+        Some(i) => format!("{} (Unknown)", i),
+        None => "N/A".to_string(),
     };
 
     let classes = match rpe {
-        Maybe::Some(1) => classes!["text-blue-800"],
-        Maybe::Some(2..=3) => classes!["text-blue-400"],
-        Maybe::Some(4..=6) => classes!["text-green-400"],
-        Maybe::Some(7..=8) => classes!["text-yellow-400"],
-        Maybe::Some(9) => classes!["text-orange-400"],
-        Maybe::Some(10) => classes!["text-red-800"],
-        Maybe::Some(value) if (7..=10).contains(&value) => classes!["text-error"],
-        Maybe::Some(_) => classes!["text-error"],
-        Maybe::None => classes!["text-success"],
+        Some(1) => classes!["text-blue-800"],
+        Some(2..=3) => classes!["text-blue-400"],
+        Some(4..=6) => classes!["text-green-400"],
+        Some(7..=8) => classes!["text-yellow-400"],
+        Some(9) => classes!["text-orange-400"],
+        Some(10) => classes!["text-red-800"],
+        Some(value) if (7..=10).contains(&value) => classes!["text-error"],
+        Some(_) => classes!["text-error"],
+        None => classes!["text-success"],
     };
 
     let description = match rpe {
-        Maybe::Some(1) => Some("Hardly any exertion, but more then sleeping, watching TV, etc."),
-        Maybe::Some(2..=3) => {
+        Some(1) => Some("Hardly any exertion, but more then sleeping, watching TV, etc."),
+        Some(2..=3) => {
             Some("Feels like you can maintain for hours, easy to breathe and carry a conversation.")
         }
-        Maybe::Some(4..=6) => Some(
+        Some(4..=6) => Some(
             "Breathing heavily, but can still hold a conversation. Still somewhat comfortable, but becoming more challenging.",
         ),
-        Maybe::Some(7..=8) => {
-            Some("Borderline uncomfortable, short of breath, can speak a sentence.")
-        }
-        Maybe::Some(9) => {
+        Some(7..=8) => Some("Borderline uncomfortable, short of breath, can speak a sentence."),
+        Some(9) => {
             Some("Very difficult to maintain. Can barely breathe and speak only a few words.")
         }
-        Maybe::Some(10) => Some(
+        Some(10) => Some(
             "Feels almost impossible to keep going. Completely out of breath, unable to talk. Cannot maintain for more than a few seconds.",
         ),
-        Maybe::Some(value) if (7..=10).contains(&value) => Some("Very Hard to Max Effort Activity"),
-        Maybe::Some(_) | Maybe::None => None,
+        Some(value) if (7..=10).contains(&value) => Some("Very Hard to Max Effort Activity"),
+        Some(_) | None => None,
     };
 
     rsx! {
@@ -523,7 +518,7 @@ pub fn ExerciseSummary(exercise: Exercise) -> Element {
             }
             div {
                 {exercise.exercise_type.to_string()}
-                if let Maybe::Some(comments) = &exercise.comments {
+                if let Some(comments) = &exercise.comments {
                     Markdown { content: comments.to_string() }
                 }
             }

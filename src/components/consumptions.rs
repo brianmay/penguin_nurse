@@ -21,8 +21,8 @@ use crate::{
     },
     models::{
         ChangeConsumption, ChangeConsumptionConsumable, Consumable, Consumption,
-        ConsumptionConsumable, ConsumptionConsumableId, ConsumptionItem, ConsumptionType, Maybe,
-        MaybeF64, MaybeSet, MaybeString, NewConsumption, NewConsumptionConsumable, UserId,
+        ConsumptionConsumable, ConsumptionConsumableId, ConsumptionItem, ConsumptionType, MaybeSet,
+        NewConsumption, NewConsumptionConsumable, UserId,
     },
 };
 
@@ -37,8 +37,8 @@ struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
     duration: Memo<Result<TimeDelta, ValidationError>>,
     consumption_type: Memo<Result<ConsumptionType, ValidationError>>,
-    liquid_mls: Memo<Result<MaybeF64, ValidationError>>,
-    comments: Memo<Result<MaybeString, ValidationError>>,
+    liquid_mls: Memo<Result<Option<f64>, ValidationError>>,
+    comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
 async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumption, EditError> {
@@ -509,9 +509,9 @@ pub fn ConsumptionUpdateIngredients(
             state.set(State::Saving);
             let updates = NewConsumptionConsumable {
                 id: ConsumptionConsumableId::new(consumption.id, child.id),
-                quantity: Maybe::None,
-                liquid_mls: Maybe::None,
-                comments: Maybe::None,
+                quantity: None,
+                liquid_mls: None,
+                comments: None,
             };
             let result = create_consumption_consumable(updates).await;
             if let Ok(nested) = result.clone() {
@@ -703,9 +703,9 @@ pub fn ConsumptionUpdateIngredients(
 
 #[derive(Debug, Clone)]
 struct ValidateConsumption {
-    quantity: Memo<Result<MaybeF64, ValidationError>>,
-    liquid_mls: Memo<Result<MaybeF64, ValidationError>>,
-    comments: Memo<Result<MaybeString, ValidationError>>,
+    quantity: Memo<Result<Option<f64>, ValidationError>>,
+    liquid_mls: Memo<Result<Option<f64>, ValidationError>>,
+    comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
 async fn do_save_consumption(
@@ -832,14 +832,14 @@ pub fn ConsumptionSummary(consumption: Consumption) -> Element {
             }
             div {
                 {consumption.consumption_type.to_string()}
-                if let Maybe::Some(liquid_mls) = &consumption.liquid_mls {
+                if let Some(liquid_mls) = &consumption.liquid_mls {
                     div {
                         "Liquid: "
                         {liquid_mls.to_string()}
                         "ml"
                     }
                 }
-                if let Maybe::Some(comments) = &consumption.comments {
+                if let Some(comments) = &consumption.comments {
                     Markdown { content: comments.to_string() }
                 }
             }
@@ -854,7 +854,7 @@ pub fn ConsumptionItemSummary(item: ConsumptionItem) -> Element {
             if item.consumable.is_organic {
                 organic_icon {}
             }
-            if let Maybe::Some(quantity) = item.nested.quantity {
+            if let Some(quantity) = item.nested.quantity {
                 span {
                     {quantity.to_string()}
                     {item.consumable.unit.postfix()}
@@ -862,21 +862,21 @@ pub fn ConsumptionItemSummary(item: ConsumptionItem) -> Element {
                 }
             }
             {item.consumable.name.clone()}
-            if let Maybe::Some(brand) = &item.consumable.brand {
+            if let Some(brand) = &item.consumable.brand {
                 ", "
                 {brand.clone()}
             }
-            if let Maybe::Some(dt) = &item.consumable.created {
+            if let Some(dt) = &item.consumable.created {
                 {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
             }
-            if let Maybe::Some(liquid_mls) = item.nested.liquid_mls {
+            if let Some(liquid_mls) = item.nested.liquid_mls {
                 span {
                     " Liquid: "
                     {liquid_mls.to_string()}
                     "ml"
                 }
             }
-            if let Maybe::Some(comments) = &item.nested.comments {
+            if let Some(comments) = &item.nested.comments {
                 Markdown { content: comments.to_string() }
             }
         }

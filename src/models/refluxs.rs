@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::MaybeSet;
 
-use super::{UserId, common::MaybeString};
+use super::UserId;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct RefluxId(i64);
@@ -40,9 +40,9 @@ pub struct Reflux {
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
     pub duration: chrono::TimeDelta,
-    pub location: MaybeString,
+    pub location: Option<String>,
     pub severity: i32,
-    pub comments: MaybeString,
+    pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -59,9 +59,9 @@ pub struct NewReflux {
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
     pub duration: chrono::TimeDelta,
-    pub location: MaybeString,
+    pub location: Option<String>,
     pub severity: i32,
-    pub comments: MaybeString,
+    pub comments: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -69,7 +69,7 @@ pub struct ChangeReflux {
     pub user_id: MaybeSet<UserId>,
     pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
     pub duration: MaybeSet<chrono::TimeDelta>,
-    pub location: MaybeSet<MaybeString>,
+    pub location: MaybeSet<Option<String>>,
     pub severity: MaybeSet<i32>,
-    pub comments: MaybeSet<MaybeString>,
+    pub comments: MaybeSet<Option<String>>,
 }

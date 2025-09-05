@@ -9,10 +9,7 @@ use crate::{
         validate_systolic_bp, validate_weight,
     },
     functions::health_metrics::{create_health_metric, delete_health_metric, update_health_metric},
-    models::{
-        ChangeHealthMetric, HealthMetric, Maybe, MaybeDecimal, MaybeI32, MaybeSet, MaybeString,
-        NewHealthMetric, UserId,
-    },
+    models::{ChangeHealthMetric, HealthMetric, MaybeSet, NewHealthMetric, UserId},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -24,13 +21,13 @@ pub enum Operation {
 #[derive(Debug, Clone)]
 struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    pulse: Memo<Result<MaybeI32, ValidationError>>,
-    blood_glucose: Memo<Result<MaybeDecimal, ValidationError>>,
-    systolic_bp: Memo<Result<MaybeI32, ValidationError>>,
-    diastolic_bp: Memo<Result<MaybeI32, ValidationError>>,
-    weight: Memo<Result<MaybeDecimal, ValidationError>>,
-    height: Memo<Result<MaybeI32, ValidationError>>,
-    comments: Memo<Result<MaybeString, ValidationError>>,
+    pulse: Memo<Result<Option<i32>, ValidationError>>,
+    blood_glucose: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
+    systolic_bp: Memo<Result<Option<i32>, ValidationError>>,
+    diastolic_bp: Memo<Result<Option<i32>, ValidationError>>,
+    weight: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
+    height: Memo<Result<Option<i32>, ValidationError>>,
+    comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
 async fn do_save(op: &Operation, validate: &Validate) -> Result<HealthMetric, EditError> {
@@ -128,20 +125,20 @@ pub fn HealthMetricUpdate(
         diastolic_bp: use_memo(move || {
             let v = validate_diastolic_bp(&diastolic_bp());
             match (validate_systolic_bp(), v.as_ref()) {
-                (Ok(Maybe::Some(systolic)), Ok(Maybe::Some(diastolic))) => {
+                (Ok(Some(systolic)), Ok(Some(diastolic))) => {
                     if *diastolic >= systolic {
                         return Err(ValidationError(
                             "Diastolic BP must be less than Systolic BP".to_string(),
                         ));
                     }
                 }
-                (Ok(Maybe::None), Ok(Maybe::None)) => { /* no extra validation needed */ }
-                (Ok(Maybe::None), Ok(Maybe::Some(_))) => {
+                (Ok(None), Ok(None)) => { /* no extra validation needed */ }
+                (Ok(None), Ok(Some(_))) => {
                     return Err(ValidationError(
                         "Diastolic BP cannot be set if Systolic BP is not set".to_string(),
                     ));
                 }
-                (Ok(Maybe::Some(_)), Ok(Maybe::None)) => {
+                (Ok(Some(_)), Ok(None)) => {
                     return Err(ValidationError(
                         "Diastolic BP must be set if Systolic BP is set".to_string(),
                     ));

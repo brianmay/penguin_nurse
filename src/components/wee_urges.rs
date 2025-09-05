@@ -8,7 +8,7 @@ use crate::{
         validate_urgency,
     },
     functions::wee_urges::{create_wee_urge, delete_wee_urge, update_wee_urge},
-    models::{ChangeWeeUrge, MaybeSet, MaybeString, NewWeeUrge, UserId, WeeUrge},
+    models::{ChangeWeeUrge, MaybeSet, NewWeeUrge, UserId, WeeUrge},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -21,7 +21,7 @@ pub enum Operation {
 struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
     urgency: Memo<Result<i32, ValidationError>>,
-    comments: Memo<Result<MaybeString, ValidationError>>,
+    comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
 async fn do_save(op: &Operation, validate: &Validate) -> Result<WeeUrge, EditError> {

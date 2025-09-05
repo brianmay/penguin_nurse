@@ -1,13 +1,14 @@
 use std::{fmt::Display, str::FromStr};
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::forms::{FieldValue, FieldValueError};
-
-use super::{
-    ConsumableItem,
-    common::{MaybeDateTime, MaybeSet, MaybeString},
+use crate::{
+    forms::{FieldValue, FieldValueError},
+    models::MaybeSet,
 };
+
+use super::ConsumableItem;
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ConsumableUnit {
@@ -91,13 +92,13 @@ impl std::fmt::Display for ConsumableId {
 pub struct Consumable {
     pub id: ConsumableId,
     pub name: String,
-    pub brand: MaybeString,
-    pub barcode: MaybeString,
+    pub brand: Option<String>,
+    pub barcode: Option<String>,
     pub is_organic: bool,
     pub unit: ConsumableUnit,
-    pub comments: MaybeString,
-    pub created: MaybeDateTime,
-    pub destroyed: MaybeDateTime,
+    pub comments: Option<String>,
+    pub created: Option<DateTime<Utc>>,
+    pub destroyed: Option<DateTime<Utc>>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -118,23 +119,23 @@ pub struct ConsumableWithItems {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewConsumable {
     pub name: String,
-    pub brand: MaybeString,
-    pub barcode: MaybeString,
+    pub brand: Option<String>,
+    pub barcode: Option<String>,
     pub is_organic: bool,
     pub unit: ConsumableUnit,
-    pub comments: MaybeString,
-    pub created: MaybeDateTime,
-    pub destroyed: MaybeDateTime,
+    pub comments: Option<String>,
+    pub created: Option<DateTime<Utc>>,
+    pub destroyed: Option<DateTime<Utc>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeConsumable {
     pub name: MaybeSet<String>,
-    pub brand: MaybeSet<MaybeString>,
-    pub barcode: MaybeSet<MaybeString>,
+    pub brand: MaybeSet<Option<String>>,
+    pub barcode: MaybeSet<Option<String>>,
     pub is_organic: MaybeSet<bool>,
     pub unit: MaybeSet<ConsumableUnit>,
-    pub comments: MaybeSet<MaybeString>,
-    pub created: MaybeSet<MaybeDateTime>,
-    pub destroyed: MaybeSet<MaybeDateTime>,
+    pub comments: MaybeSet<Option<String>>,
+    pub created: MaybeSet<Option<DateTime<Utc>>>,
+    pub destroyed: MaybeSet<Option<DateTime<Utc>>>,
 }

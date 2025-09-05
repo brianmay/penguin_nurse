@@ -6,13 +6,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     forms::{FieldValue, FieldValueError},
-    models::{MaybeI32, common::MaybeSet},
+    models::common::MaybeSet,
 };
 
-use super::{
-    UserId,
-    common::{MaybeDecimal, MaybeString},
-};
+use super::UserId;
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ExerciseType {
@@ -104,12 +101,12 @@ pub struct Exercise {
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
     pub duration: chrono::TimeDelta,
-    pub location: MaybeString,
-    pub distance: MaybeDecimal,
-    pub calories: MaybeI32,
-    pub rpe: MaybeI32,
+    pub location: Option<String>,
+    pub distance: Option<bigdecimal::BigDecimal>,
+    pub calories: Option<i32>,
+    pub rpe: Option<i32>,
     pub exercise_type: ExerciseType,
-    pub comments: MaybeString,
+    pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -126,12 +123,12 @@ pub struct NewExercise {
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
     pub duration: chrono::TimeDelta,
-    pub location: MaybeString,
-    pub distance: MaybeDecimal,
-    pub calories: MaybeI32,
-    pub rpe: MaybeI32,
+    pub location: Option<String>,
+    pub distance: Option<bigdecimal::BigDecimal>,
+    pub calories: Option<i32>,
+    pub rpe: Option<i32>,
     pub exercise_type: ExerciseType,
-    pub comments: MaybeString,
+    pub comments: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -139,10 +136,10 @@ pub struct ChangeExercise {
     pub user_id: MaybeSet<UserId>,
     pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
     pub duration: MaybeSet<chrono::TimeDelta>,
-    pub location: MaybeSet<MaybeString>,
-    pub distance: MaybeSet<MaybeDecimal>,
-    pub calories: MaybeSet<MaybeI32>,
-    pub rpe: MaybeSet<MaybeI32>,
+    pub location: MaybeSet<Option<String>>,
+    pub distance: MaybeSet<Option<bigdecimal::BigDecimal>>,
+    pub calories: MaybeSet<Option<i32>>,
+    pub rpe: MaybeSet<Option<i32>>,
     pub exercise_type: MaybeSet<ExerciseType>,
-    pub comments: MaybeSet<MaybeString>,
+    pub comments: MaybeSet<Option<String>>,
 }

@@ -1,12 +1,9 @@
 use bigdecimal::BigDecimal;
-use chrono::{FixedOffset, TimeDelta};
+use chrono::{DateTime, FixedOffset, TimeDelta, Utc};
 use palette::Hsv;
 use tap::Pipe;
 
-use crate::models::{
-    Bristol, ConsumableUnit, ConsumptionType, ExerciseType, Maybe, MaybeDateTime, MaybeDecimal,
-    MaybeF64, MaybeI32, MaybeString,
-};
+use crate::models::{Bristol, ConsumableUnit, ConsumptionType, ExerciseType};
 
 use super::{FieldValue, errors::ValidationError};
 
@@ -18,11 +15,11 @@ pub fn validate_name(str: &str) -> Result<String, ValidationError> {
     validate_field_value(str)
 }
 
-pub fn validate_brand(str: &str) -> Result<MaybeString, ValidationError> {
+pub fn validate_brand(str: &str) -> Result<Option<String>, ValidationError> {
     validate_field_value(str)
 }
 
-pub fn validate_barcode(str: &str) -> Result<MaybeString, ValidationError> {
+pub fn validate_barcode(str: &str) -> Result<Option<String>, ValidationError> {
     validate_field_value(str)
 }
 
@@ -72,15 +69,15 @@ pub fn validate_2nd_password(
     Ok(password_2)
 }
 
-pub fn validate_comments(str: &str) -> Result<MaybeString, ValidationError> {
+pub fn validate_comments(str: &str) -> Result<Option<String>, ValidationError> {
     validate_field_value(str)
 }
 
-pub fn validate_location(str: &str) -> Result<MaybeString, ValidationError> {
+pub fn validate_location(str: &str) -> Result<Option<String>, ValidationError> {
     validate_field_value(str)
 }
 
-pub fn validate_distance(str: &str) -> Result<MaybeDecimal, ValidationError> {
+pub fn validate_distance(str: &str) -> Result<Option<bigdecimal::BigDecimal>, ValidationError> {
     validate_field_value(str)
 }
 
@@ -94,7 +91,7 @@ pub fn validate_fixed_offset_date_time(
     validate_field_value(str)
 }
 
-pub fn validate_maybe_date_time(str: &str) -> Result<MaybeDateTime, ValidationError> {
+pub fn validate_maybe_date_time(str: &str) -> Result<Option<DateTime<Utc>>, ValidationError> {
     validate_field_value(str)
 }
 
@@ -106,11 +103,11 @@ pub fn validate_millilitres(str: &str) -> Result<i32, ValidationError> {
     validate_field_value(str)
 }
 
-pub fn validate_consumable_quantity(str: &str) -> Result<MaybeF64, ValidationError> {
+pub fn validate_consumable_quantity(str: &str) -> Result<Option<f64>, ValidationError> {
     validate_field_value(str)
 }
 
-pub fn validate_consumable_millilitres(str: &str) -> Result<MaybeF64, ValidationError> {
+pub fn validate_consumable_millilitres(str: &str) -> Result<Option<f64>, ValidationError> {
     validate_field_value(str)
 }
 
@@ -181,11 +178,11 @@ where
     })
 }
 
-pub fn validate_in_range_maybe<T>(str: &str, min: T, max: T) -> Result<Maybe<T>, ValidationError>
+pub fn validate_in_range_maybe<T>(str: &str, min: T, max: T) -> Result<Option<T>, ValidationError>
 where
     T: FieldValue + PartialOrd + std::fmt::Display,
 {
-    validate_field_value::<Maybe<T>>(str)?
+    validate_field_value::<Option<T>>(str)?
         .map(|v: T| {
             if (min <= v) && (v <= max) {
                 Ok(v)
@@ -199,35 +196,37 @@ where
         .transpose()
 }
 
-pub fn validate_pulse(str: &str) -> Result<MaybeI32, ValidationError> {
+pub fn validate_pulse(str: &str) -> Result<Option<i32>, ValidationError> {
     validate_in_range_maybe(str, 30, 220)
 }
 
-pub fn validate_blood_glucose(str: &str) -> Result<MaybeDecimal, ValidationError> {
+pub fn validate_blood_glucose(
+    str: &str,
+) -> Result<Option<bigdecimal::BigDecimal>, ValidationError> {
     validate_in_range_maybe(str, BigDecimal::from(0), BigDecimal::from(50))
 }
 
-pub fn validate_systolic_bp(str: &str) -> Result<MaybeI32, ValidationError> {
+pub fn validate_systolic_bp(str: &str) -> Result<Option<i32>, ValidationError> {
     validate_in_range_maybe(str, 50, 300)
 }
 
-pub fn validate_diastolic_bp(str: &str) -> Result<MaybeI32, ValidationError> {
+pub fn validate_diastolic_bp(str: &str) -> Result<Option<i32>, ValidationError> {
     validate_in_range_maybe(str, 30, 200)
 }
 
-pub fn validate_weight(str: &str) -> Result<MaybeDecimal, ValidationError> {
+pub fn validate_weight(str: &str) -> Result<Option<bigdecimal::BigDecimal>, ValidationError> {
     validate_in_range_maybe(str, BigDecimal::from(0), BigDecimal::from(500))
 }
 
-pub fn validate_height(str: &str) -> Result<MaybeI32, ValidationError> {
+pub fn validate_height(str: &str) -> Result<Option<i32>, ValidationError> {
     validate_in_range_maybe(str, 30, 300)
 }
 
-pub fn validate_exercise_calories(str: &str) -> Result<Maybe<i32>, ValidationError> {
+pub fn validate_exercise_calories(str: &str) -> Result<Option<i32>, ValidationError> {
     validate_in_range_maybe(str, 0, 10_000)
 }
 
-pub fn validate_exercise_rpe(str: &str) -> Result<Maybe<i32>, ValidationError> {
+pub fn validate_exercise_rpe(str: &str) -> Result<Option<i32>, ValidationError> {
     validate_in_range_maybe(str, 1, 10)
 }
 
@@ -238,17 +237,17 @@ pub fn validate_symptom_intensity(str: &str) -> Result<i32, ValidationError> {
 pub fn validate_symptom_abdominal_pain_location(
     abdominal_pain: &Result<i32, ValidationError>,
     abdominal_pain_location: &str,
-) -> Result<MaybeString, ValidationError> {
-    let abdominal_pain_location = validate_field_value::<MaybeString>(abdominal_pain_location)?;
+) -> Result<Option<String>, ValidationError> {
+    let abdominal_pain_location = validate_field_value::<Option<String>>(abdominal_pain_location)?;
     let abdominal_pain = *abdominal_pain
         .as_ref()
         .map_err(|_rr| ValidationError("Fix abdominal pain first".to_string()))?;
 
     match (abdominal_pain, &abdominal_pain_location) {
-        (0, Maybe::Some(_)) => Err(ValidationError(
+        (0, Some(_)) => Err(ValidationError(
             "Abdominal pain location must be empty if abdominal pain is 0".to_string(),
         )),
-        (x, Maybe::None) if x > 1 => Err(ValidationError(
+        (x, None) if x > 1 => Err(ValidationError(
             "Abdominal pain location must be set if abdominal pain is greater than 0".to_string(),
         )),
         _ => Ok(abdominal_pain_location),

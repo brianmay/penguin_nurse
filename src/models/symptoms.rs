@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::MaybeSet;
 
-use super::{UserId, common::MaybeString};
+use super::UserId;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct SymptomId(i64);
@@ -47,7 +47,7 @@ pub struct Symptom {
     pub sneezing: i32,
     pub heart_burn: i32,
     pub abdominal_pain: i32,
-    pub abdominal_pain_location: MaybeString,
+    pub abdominal_pain_location: Option<String>,
     pub diarrhea: i32,
     pub constipation: i32,
     pub lower_back_pain: i32,
@@ -64,7 +64,7 @@ pub struct Symptom {
     pub anxiety: i32,
     pub depression: i32,
     pub insomnia: i32,
-    pub comments: MaybeString,
+    pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -88,7 +88,7 @@ pub struct NewSymptom {
     pub sneezing: i32,
     pub heart_burn: i32,
     pub abdominal_pain: i32,
-    pub abdominal_pain_location: MaybeString,
+    pub abdominal_pain_location: Option<String>,
     pub diarrhea: i32,
     pub constipation: i32,
     pub lower_back_pain: i32,
@@ -105,7 +105,7 @@ pub struct NewSymptom {
     pub anxiety: i32,
     pub depression: i32,
     pub insomnia: i32,
-    pub comments: MaybeString,
+    pub comments: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -120,7 +120,7 @@ pub struct ChangeSymptom {
     pub sneezing: MaybeSet<i32>,
     pub heart_burn: MaybeSet<i32>,
     pub abdominal_pain: MaybeSet<i32>,
-    pub abdominal_pain_location: MaybeSet<MaybeString>,
+    pub abdominal_pain_location: MaybeSet<Option<String>>,
     pub diarrhea: MaybeSet<i32>,
     pub constipation: MaybeSet<i32>,
     pub lower_back_pain: MaybeSet<i32>,
@@ -137,5 +137,5 @@ pub struct ChangeSymptom {
     pub anxiety: MaybeSet<i32>,
     pub depression: MaybeSet<i32>,
     pub insomnia: MaybeSet<i32>,
-    pub comments: MaybeSet<MaybeString>,
+    pub comments: MaybeSet<Option<String>>,
 }

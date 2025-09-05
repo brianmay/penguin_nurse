@@ -6,10 +6,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     forms::{FieldValue, FieldValueError},
-    models::common::MaybeSet,
+    models::{UserId, common::MaybeSet},
 };
 
-use super::{ConsumptionItem, MaybeF64, UserId, common::MaybeString};
+use super::ConsumptionItem;
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ConsumptionType {
@@ -93,8 +93,8 @@ pub struct Consumption {
     pub time: chrono::DateTime<chrono::FixedOffset>,
     pub duration: chrono::TimeDelta,
     pub consumption_type: ConsumptionType,
-    pub liquid_mls: MaybeF64,
-    pub comments: MaybeString,
+    pub liquid_mls: Option<f64>,
+    pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -123,8 +123,8 @@ pub struct NewConsumption {
     pub time: chrono::DateTime<chrono::FixedOffset>,
     pub duration: chrono::TimeDelta,
     pub consumption_type: ConsumptionType,
-    pub liquid_mls: MaybeF64,
-    pub comments: MaybeString,
+    pub liquid_mls: Option<f64>,
+    pub comments: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -133,6 +133,6 @@ pub struct ChangeConsumption {
     pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
     pub duration: MaybeSet<chrono::TimeDelta>,
     pub consumption_type: MaybeSet<ConsumptionType>,
-    pub liquid_mls: MaybeSet<MaybeF64>,
-    pub comments: MaybeSet<MaybeString>,
+    pub liquid_mls: MaybeSet<Option<f64>>,
+    pub comments: MaybeSet<Option<String>>,
 }

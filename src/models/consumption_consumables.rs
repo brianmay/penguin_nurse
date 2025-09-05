@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
 
+use crate::models::ConsumableId;
 use crate::models::common::MaybeSet;
 
-use super::{Consumable, ConsumptionId, MaybeF64, MaybeString, consumables::ConsumableId};
+use super::{Consumable, ConsumptionId};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ConsumptionConsumableId(ConsumptionId, ConsumableId);
@@ -43,9 +44,9 @@ impl ConsumptionConsumableId {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ConsumptionConsumable {
     pub id: ConsumptionConsumableId,
-    pub quantity: MaybeF64,
-    pub liquid_mls: MaybeF64,
-    pub comments: MaybeString,
+    pub quantity: Option<f64>,
+    pub liquid_mls: Option<f64>,
+    pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -65,14 +66,14 @@ impl ConsumptionItem {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewConsumptionConsumable {
     pub id: ConsumptionConsumableId,
-    pub quantity: MaybeF64,
-    pub liquid_mls: MaybeF64,
-    pub comments: MaybeString,
+    pub quantity: Option<f64>,
+    pub liquid_mls: Option<f64>,
+    pub comments: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeConsumptionConsumable {
-    pub quantity: MaybeSet<MaybeF64>,
-    pub liquid_mls: MaybeSet<MaybeF64>,
-    pub comments: MaybeSet<MaybeString>,
+    pub quantity: MaybeSet<Option<f64>>,
+    pub liquid_mls: MaybeSet<Option<f64>>,
+    pub comments: MaybeSet<Option<String>>,
 }

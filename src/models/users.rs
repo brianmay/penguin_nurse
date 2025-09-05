@@ -2,7 +2,6 @@ use std::str::FromStr;
 
 use crate::models::MaybeSet;
 
-use super::common::MaybeString;
 use serde::{Deserialize, Serialize};
 
 // Types from database::models that frontend requires. This excludes secrets such as the users password.
@@ -38,7 +37,7 @@ pub struct User {
     pub id: UserId,
     pub username: String,
     pub full_name: String,
-    pub oidc_id: MaybeString,
+    pub oidc_id: Option<String>,
     pub email: String,
     pub is_admin: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
@@ -50,7 +49,7 @@ pub struct NewUser {
     pub username: String,
     pub password: String,
     pub full_name: String,
-    pub oidc_id: MaybeString,
+    pub oidc_id: Option<String>,
     pub email: String,
     pub is_admin: bool,
 }
@@ -60,7 +59,7 @@ pub struct ChangeUser {
     pub username: MaybeSet<String>,
     // pub password: MaybeSet<String>,
     pub full_name: MaybeSet<String>,
-    pub oidc_id: MaybeSet<MaybeString>,
+    pub oidc_id: MaybeSet<Option<String>>,
     pub email: MaybeSet<String>,
     pub is_admin: MaybeSet<bool>,
 }

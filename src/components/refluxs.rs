@@ -9,7 +9,7 @@ use crate::{
         validate_fixed_offset_date_time, validate_location, validate_symptom_intensity,
     },
     functions::refluxs::{create_reflux, delete_reflux, update_reflux},
-    models::{ChangeReflux, Maybe, MaybeSet, MaybeString, NewReflux, Reflux, UserId},
+    models::{ChangeReflux, MaybeSet, NewReflux, Reflux, UserId},
 };
 use classes::classes;
 
@@ -23,9 +23,9 @@ pub enum Operation {
 struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
     duration: Memo<Result<TimeDelta, ValidationError>>,
-    location: Memo<Result<MaybeString, ValidationError>>,
+    location: Memo<Result<Option<String>, ValidationError>>,
     severity: Memo<Result<i32, ValidationError>>,
-    comments: Memo<Result<MaybeString, ValidationError>>,
+    comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
 async fn do_save(op: &Operation, validate: &Validate) -> Result<Reflux, EditError> {
@@ -273,13 +273,13 @@ pub fn reflux_duration(duration: chrono::TimeDelta) -> Element {
 }
 
 #[component]
-pub fn reflux_calories(calories: Maybe<i32>) -> Element {
-    let text = if let Maybe::Some(c) = calories {
+pub fn reflux_calories(calories: Option<i32>) -> Element {
+    let text = if let Some(c) = calories {
         format!("{} kcal", c)
     } else {
         "N/A".to_string()
     };
-    let classes = if let Maybe::Some(c) = calories {
+    let classes = if let Some(c) = calories {
         if c == 0 {
             classes!["text-error"]
         } else if c <= 300 {
@@ -344,12 +344,12 @@ pub fn RefluxSummary(reflux: Reflux) -> Element {
             div {
                 span { class: "font-bold", "Severity: " }
                 span { {reflux.severity.to_string()} }
-                if let Maybe::Some(location) = &reflux.location {
+                if let Some(location) = &reflux.location {
                     br {}
                     span { class: "font-bold", "Location: " }
                     span { {location.to_string()} }
                 }
-                if let Maybe::Some(comments) = &reflux.comments {
+                if let Some(comments) = &reflux.comments {
                     Markdown { content: comments.to_string() }
                 }
             }

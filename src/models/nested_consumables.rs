@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::MaybeSet;
 
-use super::{Consumable, ConsumableId, MaybeF64, MaybeString};
+use super::{Consumable, ConsumableId};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct NestedConsumableId(ConsumableId, ConsumableId);
@@ -35,9 +35,9 @@ impl NestedConsumableId {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NestedConsumable {
     pub id: NestedConsumableId,
-    pub quantity: MaybeF64,
-    pub liquid_mls: MaybeF64,
-    pub comments: MaybeString,
+    pub quantity: Option<f64>,
+    pub liquid_mls: Option<f64>,
+    pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -59,15 +59,15 @@ impl ConsumableItem {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewNestedConsumable {
     pub id: NestedConsumableId,
-    pub quantity: MaybeF64,
-    pub liquid_mls: MaybeF64,
-    pub comments: MaybeString,
+    pub quantity: Option<f64>,
+    pub liquid_mls: Option<f64>,
+    pub comments: Option<String>,
 }
 
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeNestedConsumable {
-    pub quantity: MaybeSet<MaybeF64>,
-    pub liquid_mls: MaybeSet<MaybeF64>,
-    pub comments: MaybeSet<MaybeString>,
+    pub quantity: MaybeSet<Option<f64>>,
+    pub liquid_mls: MaybeSet<Option<f64>>,
+    pub comments: MaybeSet<Option<String>>,
 }

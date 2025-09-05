@@ -12,7 +12,7 @@ use crate::{
         validate_fixed_offset_date_time, validate_poo_quantity, validate_urgency,
     },
     functions::poos::{create_poo, delete_poo, update_poo},
-    models::{Bristol, ChangePoo, MaybeSet, MaybeString, NewPoo, Poo, UserId},
+    models::{Bristol, ChangePoo, MaybeSet, NewPoo, Poo, UserId},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -29,7 +29,7 @@ struct Validate {
     quantity: Memo<Result<i32, ValidationError>>,
     bristol: Memo<Result<Bristol, ValidationError>>,
     colour: Memo<Result<Hsv, ValidationError>>,
-    comments: Memo<Result<MaybeString, ValidationError>>,
+    comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
 async fn do_save(op: &Operation, validate: &Validate) -> Result<Poo, EditError> {
