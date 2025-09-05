@@ -4,7 +4,10 @@ use dioxus::prelude::*;
 use palette::Hsv;
 
 use crate::{
-    components::times::time_delta_to_string,
+    components::{
+        events::{Markdown, event_colour, event_date_time_short, event_urgency},
+        times::time_delta_to_string,
+    },
     forms::{
         Colour, Dialog, EditError, FieldValue, FormSaveCancelButton, InputColour, InputDateTime,
         InputDuration, InputNumber, InputTextArea, Saving, ValidationError, validate_colour,
@@ -252,6 +255,7 @@ pub fn WeeDelete(wee: Wee, on_cancel: Callback, on_delete: Callback<Wee>) -> Ele
             {wee.id.to_string()}
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
+        WeeSummary { wee: wee.clone() }
         form {
             novalidate: true,
             action: "javascript:void(0)",
@@ -278,7 +282,7 @@ const WEE_SVG: Asset = asset!("/assets/wee.svg");
 pub fn wee_icon() -> Element {
     let alt = wee_title();
     rsx! {
-        img { class: "w-10 dark:invert inline-block", alt, src: WEE_SVG }
+        img { alt, src: WEE_SVG }
     }
 }
 
@@ -354,6 +358,40 @@ pub fn WeeDialog(
         }
         ActiveDialog::Idle => {
             rsx! {}
+        }
+    }
+}
+
+#[component]
+pub fn WeeSummary(wee: Wee) -> Element {
+    rsx! {
+        div { {wee_title()} }
+        div {
+            event_date_time_short { time: wee.time }
+        }
+        wee_mls { mls: wee.mls }
+        wee_duration { duration: wee.duration }
+        event_urgency { urgency: wee.urgency }
+        event_colour { colour: wee.colour }
+        if let Some(comments) = &wee.comments {
+            Markdown { content: comments.to_string() }
+        }
+    }
+}
+#[component]
+pub fn WeeDetails(wee: Wee) -> Element {
+    rsx! {
+        event_colour { colour: wee.colour }
+        div { class: "inline-block align-top",
+            div {
+                wee_mls { mls: wee.mls }
+            }
+            div {
+                event_urgency { urgency: wee.urgency }
+            }
+        }
+        if let Some(comments) = &wee.comments {
+            Markdown { content: comments.to_string() }
         }
     }
 }

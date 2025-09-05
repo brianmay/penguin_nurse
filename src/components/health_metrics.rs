@@ -2,6 +2,7 @@ use chrono::{DateTime, FixedOffset, Local, Utc};
 use dioxus::prelude::*;
 
 use crate::{
+    components::events::{Markdown, event_date_time_short},
     forms::{
         Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputNumber,
         InputTextArea, Saving, ValidationError, validate_blood_glucose, validate_comments,
@@ -310,6 +311,7 @@ pub fn HealthMetricDelete(
             {health_metric.id.to_string()}
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
+        HealthMetricSummary { health_metric: health_metric.clone() }
         form {
             novalidate: true,
             action: "javascript:void(0)",
@@ -336,7 +338,7 @@ const WEE_SVG: Asset = asset!("/assets/health_metric.svg");
 pub fn health_metric_icon() -> Element {
     let alt = health_metric_title();
     rsx! {
-        img { class: "w-10 dark:invert inline-block", alt, src: WEE_SVG }
+        img { alt, src: WEE_SVG }
     }
 }
 
@@ -380,6 +382,66 @@ pub fn HealthMetricDialog(
         }
         ActiveDialog::Idle => {
             rsx! {}
+        }
+    }
+}
+
+#[component]
+pub fn HealthMetricSummary(health_metric: HealthMetric) -> Element {
+    rsx! {
+        div { {health_metric_title()} }
+        div {
+            event_date_time_short { time: health_metric.time }
+        }
+        if let Some(comments) = &health_metric.comments {
+            Markdown { content: comments.to_string() }
+        }
+    }
+}
+
+#[component]
+pub fn HealthMetricDetails(health_metric: HealthMetric) -> Element {
+    rsx! {
+        if let Some(pulse) = &health_metric.pulse {
+            div {
+                "Pulse: "
+                {pulse.to_string()}
+            }
+        }
+        if let Some(blood_glucose) = &health_metric.blood_glucose {
+            div {
+                "Blood Glucose: "
+                {blood_glucose.to_string()}
+            }
+        }
+        if let (Some(systolic_bp), Some(diastolic_bp)) = (
+            &health_metric.systolic_bp,
+            &health_metric.diastolic_bp,
+        )
+        {
+            div {
+                "Blood Pressure: "
+                {systolic_bp.to_string()}
+                "/"
+                {diastolic_bp.to_string()}
+            }
+        }
+        if let Some(weight) = &health_metric.weight {
+            div {
+                "Weight: "
+                {weight.to_string()}
+                "kg"
+            }
+        }
+        if let Some(height) = &health_metric.height {
+            div {
+                "Height: "
+                {height.to_string()}
+                "cm"
+            }
+        }
+        if let Some(comments) = &health_metric.comments {
+            Markdown { content: comments.to_string() }
         }
     }
 }

@@ -9,18 +9,19 @@ use crate::{
     components::{
         buttons::{ChangeButton, CreateButton, DeleteButton, NavButton},
         consumptions::{
-            self, ConsumptionItemList, consumption_duration, consumption_icon, consumption_title,
+            self, ConsumptionDetails, ConsumptionItemList, consumption_duration, consumption_icon,
+            consumption_title,
         },
-        events::{Markdown, event_colour, event_time, event_urgency},
-        exercises::{exercise_calories, exercise_icon, exercise_rpe, exercise_title},
-        health_metrics::{health_metric_icon, health_metric_title},
-        notes::{note_icon, note_title},
-        poos::{self, poo_bristol, poo_duration, poo_icon, poo_quantity, poo_title},
-        refluxs::{reflux_duration, reflux_icon, reflux_title},
-        symptoms::{SymptomDisplay, symptom_icon, symptom_title},
+        events::event_time,
+        exercises::{ExerciseDetails, exercise_icon, exercise_title},
+        health_metrics::{HealthMetricDetails, health_metric_icon, health_metric_title},
+        notes::{NoteDetails, note_icon, note_title},
+        poos::{self, PooDetails, poo_duration, poo_icon, poo_title},
+        refluxs::{RefluxDetails, reflux_duration, reflux_icon, reflux_title},
+        symptoms::{SymptomDetails, symptom_icon, symptom_title},
         timeline::{ActiveDialog, DialogReference, TimelineDialog},
-        wee_urges::{self, wee_urge_icon, wee_urge_title},
-        wees::{self, wee_duration, wee_icon, wee_mls, wee_title},
+        wee_urges::{self, WeeUrgeDetails, wee_urge_icon, wee_urge_title},
+        wees::{self, WeeDetails, wee_duration, wee_icon, wee_title},
     },
     dt::{display_date, get_date_for_dt, get_utc_times_for_date},
     functions::{
@@ -42,7 +43,7 @@ use crate::{
 #[component]
 pub fn Icon(title: &'static str, icon: Element) -> Element {
     rsx! {
-        div { class: "text-sm", {icon} }
+        div { class: "text-sm w-10 dark:invert inline-block", {icon} }
         div { class: "text-sm", {title} }
     }
 }
@@ -76,18 +77,7 @@ fn EntryRow(
                             wee_duration { duration: wee.duration }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            event_colour { colour: wee.colour }
-                            div { class: "inline-block align-top",
-                                div {
-                                    wee_mls { mls: wee.mls }
-                                }
-                                div {
-                                    event_urgency { urgency: wee.urgency }
-                                }
-                                if let Some(comments) = &wee.comments {
-                                    Markdown { content: comments.to_string() }
-                                }
-                            }
+                            WeeDetails { wee: wee.clone() }
                         }
                     }
                 }
@@ -98,10 +88,7 @@ fn EntryRow(
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2" }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            event_urgency { urgency: wee_urge.urgency }
-                            if let Some(comments) = &wee_urge.comments {
-                                Markdown { content: comments.to_string() }
-                            }
+                            WeeUrgeDetails { wee_urge: wee_urge.clone() }
                         }
                     }
                 }
@@ -114,21 +101,7 @@ fn EntryRow(
                             poo_duration { duration: poo.duration }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            event_colour { colour: poo.colour }
-                            div { class: "inline-block align-top",
-                                div {
-                                    poo_bristol { bristol: poo.bristol }
-                                }
-                                div {
-                                    poo_quantity { quantity: poo.quantity }
-                                }
-                                div {
-                                    event_urgency { urgency: poo.urgency }
-                                }
-                                if let Some(comments) = &poo.comments {
-                                    Markdown { content: comments.to_string() }
-                                }
-                            }
+                            PooDetails { poo: poo.clone() }
                         }
                     }
                 }
@@ -146,20 +119,9 @@ fn EntryRow(
                             consumption_duration { duration: consumption.consumption.duration }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            {consumption.consumption.consumption_type.to_string()}
-                            if let Some(liquid_mls) = &consumption.consumption.liquid_mls {
-                                div {
-                                    "Liquid: "
-                                    {liquid_mls.to_string()}
-                                    "ml"
-                                }
-                            }
+                            ConsumptionDetails { consumption: consumption.consumption.clone() }
                             if !consumption.items.is_empty() {
                                 ConsumptionItemList { list: consumption.items.clone() }
-                            }
-                            if let Some(comments) = &consumption.consumption.comments {
-                                div { "Comments:" }
-                                Markdown { content: comments.to_string() }
                             }
                         }
                     }
@@ -173,41 +135,13 @@ fn EntryRow(
                                     exercise_icon { exercise_type: exercise.exercise_type }
                                 },
                             }
-                        
+
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             wee_duration { duration: exercise.duration }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            {exercise.exercise_type.to_string()}
-                            if let Some(location) = &exercise.location {
-                                div {
-                                    "Location: "
-                                    {location.to_string()}
-                                }
-                            }
-                            if let Some(distance) = &exercise.distance {
-                                div {
-                                    "Distance: "
-                                    {distance.to_string()}
-                                    "km"
-                                }
-                            }
-                            if let Some(calories) = &exercise.calories {
-                                div {
-                                    "Calories: "
-                                    exercise_calories { calories: Some(*calories) }
-                                }
-                            }
-                            if let Some(rpe) = &exercise.rpe {
-                                div {
-                                    "RPE: "
-                                    exercise_rpe { rpe: Some(*rpe) }
-                                }
-                            }
-                            if let Some(comments) = &exercise.comments {
-                                Markdown { content: comments.to_string() }
-                            }
+                            ExerciseDetails { exercise: exercise.clone() }
                         }
                     }
                 }
@@ -215,53 +149,11 @@ fn EntryRow(
                     rsx! {
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             Icon { title: health_metric_title(), icon: health_metric_icon() }
-                        
+
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2" }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            div { class: "inline-block align-top",
-                                if let Some(pulse) = &health_metric.pulse {
-                                    div {
-                                        "Pulse: "
-                                        {pulse.to_string()}
-                                    }
-                                }
-                                if let Some(blood_glucose) = &health_metric.blood_glucose {
-                                    div {
-                                        "Blood Glucose: "
-                                        {blood_glucose.to_string()}
-                                    }
-                                }
-                                if let (Some(systolic_bp), Some(diastolic_bp)) = (
-                                    &health_metric.systolic_bp,
-                                    &health_metric.diastolic_bp,
-                                )
-                                {
-                                    div {
-                                        "Blood Pressure: "
-                                        {systolic_bp.to_string()}
-                                        "/"
-                                        {diastolic_bp.to_string()}
-                                    }
-                                }
-                                if let Some(weight) = &health_metric.weight {
-                                    div {
-                                        "Weight: "
-                                        {weight.to_string()}
-                                        "kg"
-                                    }
-                                }
-                                if let Some(height) = &health_metric.height {
-                                    div {
-                                        "Height: "
-                                        {height.to_string()}
-                                        "cm"
-                                    }
-                                }
-                                if let Some(comments) = &health_metric.comments {
-                                    Markdown { content: comments.to_string() }
-                                }
-                            }
+                            HealthMetricDetails { health_metric: health_metric.clone() }
                         }
                     }
                 }
@@ -272,47 +164,7 @@ fn EntryRow(
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2" }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            div { class: "inline-block align-top",
-                                SymptomDisplay { name: "Appetite Loss", intensity: symptom.appetite_loss }
-                                SymptomDisplay { name: "Fever", intensity: symptom.fever }
-                                SymptomDisplay { name: "Cough", intensity: symptom.cough }
-                                SymptomDisplay { name: "Sore Throat", intensity: symptom.sore_throat }
-                                SymptomDisplay { name: "Runny Nose", intensity: symptom.runny_nose }
-                                SymptomDisplay { name: "Sneezing", intensity: symptom.sneezing }
-                                SymptomDisplay { name: "Heart Burn", intensity: symptom.heart_burn }
-                                SymptomDisplay {
-                                    name: "Abdominal Pain",
-                                    intensity: symptom.abdominal_pain,
-                                    extra: if let Some(location) = &symptom.abdominal_pain_location { rsx! {
-                                        div { class: "inline-block ml-2 align-top",
-                                            "Location: "
-                                            {location.to_string()}
-                                        }
-                                    }.pipe(Some) } else { None },
-                                }
-                                SymptomDisplay { name: "Diarrhea", intensity: symptom.diarrhea }
-                                SymptomDisplay { name: "Constipation", intensity: symptom.constipation }
-                                SymptomDisplay { name: "Lower Back Pain", intensity: symptom.lower_back_pain }
-                                SymptomDisplay { name: "Upper Back Pain", intensity: symptom.upper_back_pain }
-                                SymptomDisplay { name: "Neck Pain", intensity: symptom.neck_pain }
-                                SymptomDisplay { name: "Joint Pain", intensity: symptom.joint_pain }
-                                SymptomDisplay { name: "Headache", intensity: symptom.headache }
-                                SymptomDisplay { name: "Nausea", intensity: symptom.nausea }
-                                SymptomDisplay { name: "Dizziness", intensity: symptom.dizziness }
-                                SymptomDisplay { name: "Stomach Pain", intensity: symptom.stomach_ache }
-                                SymptomDisplay { name: "Chest Pain", intensity: symptom.chest_pain }
-                                SymptomDisplay {
-                                    name: "Shortness of Breath",
-                                    intensity: symptom.shortness_of_breath,
-                                }
-                                SymptomDisplay { name: "Fatigue", intensity: symptom.fatigue }
-                                SymptomDisplay { name: "Anxiety", intensity: symptom.anxiety }
-                                SymptomDisplay { name: "Depression", intensity: symptom.depression }
-                                SymptomDisplay { name: "Insomnia", intensity: symptom.insomnia }
-                                if let Some(comments) = &symptom.comments {
-                                    Markdown { content: comments.to_string() }
-                                }
-                            }
+                            SymptomDetails { symptom: symptom.clone() }
                         }
                     }
                 }
@@ -325,18 +177,7 @@ fn EntryRow(
                             reflux_duration { duration: reflux.duration }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            div { class: "inline-block align-top",
-                                SymptomDisplay { name: "Severity", intensity: reflux.severity }
-                                if let Some(location) = &reflux.location {
-                                    div {
-                                        "Location: "
-                                        {location.to_string()}
-                                    }
-                                }
-                                if let Some(comments) = &reflux.comments {
-                                    Markdown { content: comments.to_string() }
-                                }
-                            }
+                            RefluxDetails { reflux: reflux.clone() }
                         }
                     }
                 }
@@ -347,9 +188,7 @@ fn EntryRow(
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2" }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            if let Some(comments) = &note.comments {
-                                Markdown { content: comments.to_string() }
-                            }
+                            NoteDetails { note: note.clone() }
                         }
                     }
                 }

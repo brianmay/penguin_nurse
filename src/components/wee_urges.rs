@@ -2,6 +2,7 @@ use chrono::{DateTime, FixedOffset, Local, Utc};
 use dioxus::prelude::*;
 
 use crate::{
+    components::events::{Markdown, event_date_time_short, event_urgency},
     forms::{
         Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputNumber,
         InputTextArea, Saving, ValidationError, validate_comments, validate_fixed_offset_date_time,
@@ -216,11 +217,7 @@ const WEE_URGENCY_SVG: Asset = asset!("/assets/wee_urge.svg");
 pub fn wee_urge_icon() -> Element {
     let alt = wee_urge_title();
     rsx! {
-        img {
-            class: "w-10 dark:invert inline-block",
-            alt,
-            src: WEE_URGENCY_SVG,
-        }
+        img { alt, src: WEE_URGENCY_SVG }
     }
 }
 
@@ -260,6 +257,29 @@ pub fn WeeUrgeDialog(
         }
         ActiveDialog::Idle => {
             rsx! {}
+        }
+    }
+}
+
+#[component]
+pub fn WeeUrgeSummary(wee_urge: WeeUrge) -> Element {
+    rsx! {
+        div { {wee_urge_title()} }
+        div {
+            event_date_time_short { time: wee_urge.time }
+        }
+        event_urgency { urgency: wee_urge.urgency }
+        if let Some(comments) = &wee_urge.comments {
+            Markdown { content: comments.to_string() }
+        }
+    }
+}
+#[component]
+pub fn WeeUrgeDetails(wee_urge: WeeUrge) -> Element {
+    rsx! {
+        event_urgency { urgency: wee_urge.urgency }
+        if let Some(comments) = &wee_urge.comments {
+            Markdown { content: comments.to_string() }
         }
     }
 }

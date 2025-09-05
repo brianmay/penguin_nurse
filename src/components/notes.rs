@@ -2,7 +2,10 @@ use chrono::{DateTime, FixedOffset, Local, Utc};
 use dioxus::prelude::*;
 
 use crate::{
-    components::{events::Markdown, times::time_delta_to_string},
+    components::{
+        events::{Markdown, event_date_time_short},
+        times::time_delta_to_string,
+    },
     forms::{
         Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputTextArea, Saving,
         ValidationError, validate_comments, validate_fixed_offset_date_time,
@@ -196,7 +199,7 @@ pub fn note_icon() -> Element {
     let alt = note_title();
     let icon = NOTE_SVG;
     rsx! {
-        img { class: "w-10 dark:invert inline-block", alt, src: icon }
+        img { alt, src: icon }
     }
 }
 
@@ -278,15 +281,21 @@ pub fn NoteDialog(
 #[component]
 pub fn NoteSummary(note: Note) -> Element {
     rsx! {
+        div { {note_title()} }
         div {
-            div { note_icon {} }
-            div {
-            }
-            div {
-                if let Some(comments) = &note.comments {
-                    Markdown { content: comments.to_string() }
-                }
-            }
+            event_date_time_short { time: note.time }
+        }
+        if let Some(comments) = &note.comments {
+            Markdown { content: comments.to_string() }
+        }
+    }
+}
+
+#[component]
+pub fn NoteDetails(note: Note) -> Element {
+    rsx! {
+        if let Some(comments) = &note.comments {
+            Markdown { content: comments.to_string() }
         }
     }
 }

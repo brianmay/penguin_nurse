@@ -2,7 +2,10 @@ use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use dioxus::prelude::*;
 
 use crate::{
-    components::{events::Markdown, times::time_delta_to_string},
+    components::{
+        events::{Markdown, event_date_time_short},
+        times::time_delta_to_string,
+    },
     forms::{
         Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputDuration,
         InputExerciseCalories, InputExerciseRpe, InputExerciseType, InputNumber, InputTextArea,
@@ -330,7 +333,7 @@ pub fn exercise_icon(exercise_type: ExerciseType) -> Element {
     };
     let alt = exercise_title(exercise_type);
     rsx! {
-        img { class: "w-10 dark:invert inline-block", alt, src: icon }
+        img { alt, src: icon }
     }
 }
 
@@ -509,19 +512,53 @@ pub fn ExerciseDialog(
 #[component]
 pub fn ExerciseSummary(exercise: Exercise) -> Element {
     rsx! {
+        div { {exercise_title(exercise.exercise_type)} }
         div {
-            div {
-                exercise_icon { exercise_type: exercise.exercise_type }
+            event_date_time_short { time: exercise.time }
+        }
+        div {
+            exercise_duration { duration: exercise.duration }
+        }
+        div {
+            {exercise.exercise_type.to_string()}
+            if let Some(comments) = &exercise.comments {
+                Markdown { content: comments.to_string() }
             }
+        }
+    }
+}
+
+#[component]
+pub fn ExerciseDetails(exercise: Exercise) -> Element {
+    rsx! {
+        {exercise.exercise_type.to_string()}
+        if let Some(location) = &exercise.location {
             div {
-                exercise_duration { duration: exercise.duration }
+                "Location: "
+                {location.to_string()}
             }
+        }
+        if let Some(distance) = &exercise.distance {
             div {
-                {exercise.exercise_type.to_string()}
-                if let Some(comments) = &exercise.comments {
-                    Markdown { content: comments.to_string() }
-                }
+                "Distance: "
+                {distance.to_string()}
+                "km"
             }
+        }
+        if let Some(calories) = &exercise.calories {
+            div {
+                "Calories: "
+                exercise_calories { calories: Some(*calories) }
+            }
+        }
+        if let Some(rpe) = &exercise.rpe {
+            div {
+                "RPE: "
+                exercise_rpe { rpe: Some(*rpe) }
+            }
+        }
+        if let Some(comments) = &exercise.comments {
+            Markdown { content: comments.to_string() }
         }
     }
 }

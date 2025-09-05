@@ -2,7 +2,11 @@ use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use dioxus::prelude::*;
 
 use crate::{
-    components::{events::Markdown, times::time_delta_to_string},
+    components::{
+        events::{Markdown, event_date_time_short},
+        symptoms::SymptomDisplay,
+        times::time_delta_to_string,
+    },
     forms::{
         Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputDuration,
         InputNumber, InputTextArea, Saving, ValidationError, validate_comments, validate_duration,
@@ -254,7 +258,7 @@ pub fn reflux_icon() -> Element {
     let alt = reflux_title();
     let icon = REFLUX_SVG;
     rsx! {
-        img { class: "w-10 dark:invert inline-block", alt, src: icon }
+        img { alt, src: icon }
     }
 }
 
@@ -336,23 +340,40 @@ pub fn RefluxDialog(
 #[component]
 pub fn RefluxSummary(reflux: Reflux) -> Element {
     rsx! {
+        div { class: "w-10 dark:invert inline-block", reflux_icon {} }
         div {
-            div { reflux_icon {} }
-            div {
-                reflux_duration { duration: reflux.duration }
+            event_date_time_short { time: reflux.time }
+        }
+        div {
+            reflux_duration { duration: reflux.duration }
+        }
+        div {
+            span { class: "font-bold", "Severity: " }
+            span { {reflux.severity.to_string()} }
+            if let Some(location) = &reflux.location {
+                br {}
+                span { class: "font-bold", "Location: " }
+                span { {location.to_string()} }
             }
-            div {
-                span { class: "font-bold", "Severity: " }
-                span { {reflux.severity.to_string()} }
-                if let Some(location) = &reflux.location {
-                    br {}
-                    span { class: "font-bold", "Location: " }
-                    span { {location.to_string()} }
-                }
-                if let Some(comments) = &reflux.comments {
-                    Markdown { content: comments.to_string() }
-                }
+            if let Some(comments) = &reflux.comments {
+                Markdown { content: comments.to_string() }
             }
+        }
+    }
+}
+
+#[component]
+pub fn RefluxDetails(reflux: Reflux) -> Element {
+    rsx! {
+        SymptomDisplay { name: "Severity", intensity: reflux.severity }
+        if let Some(location) = &reflux.location {
+            div {
+                "Location: "
+                {location.to_string()}
+            }
+        }
+        if let Some(comments) = &reflux.comments {
+            Markdown { content: comments.to_string() }
         }
     }
 }

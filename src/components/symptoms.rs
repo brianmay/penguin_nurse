@@ -2,6 +2,7 @@ use chrono::{DateTime, FixedOffset, Local, Utc};
 use dioxus::prelude::*;
 
 use crate::{
+    components::events::{Markdown, event_date_time_short},
     forms::{
         Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputNumber,
         InputTextArea, Saving, ValidationError, validate_comments, validate_fixed_offset_date_time,
@@ -612,6 +613,7 @@ pub fn SymptomDelete(
             {symptom.id.to_string()}
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
+        SymptomSummary { symptom: symptom.clone() }
         form {
             novalidate: true,
             action: "javascript:void(0)",
@@ -638,11 +640,7 @@ const SYMPTOM_SVG: Asset = asset!("/assets/symptom.svg");
 pub fn symptom_icon() -> Element {
     let alt = symptom_title();
     rsx! {
-        img {
-            class: "w-10 dark:invert inline-block",
-            alt,
-            src: SYMPTOM_SVG,
-        }
+        img { alt, src: SYMPTOM_SVG }
     }
 }
 
@@ -748,6 +746,153 @@ pub fn SymptomDisplay(name: String, intensity: i32, extra: Option<Element>) -> E
                 if let Some(extra) = extra {
                     div { {extra} }
                 }
+            }
+        }
+    }
+}
+
+#[component]
+pub fn SymptomSummary(symptom: Symptom) -> Element {
+    rsx! {
+        div { {symptom_title()} }
+        div {
+            event_date_time_short { time: symptom.time }
+        }
+        if let Some(comments) = &symptom.comments {
+            Markdown { content: comments.to_string() }
+        }
+    }
+}
+
+#[component]
+pub fn SymptomDetails(symptom: Symptom) -> Element {
+    rsx! {
+        h3 { class: "text-lg font-bold", {symptom.time.format("%Y-%m-%d %H:%M:%S %:z").to_string()} }
+        SymptomDisplay {
+            name: "Appetite Loss: ".to_string(),
+            intensity: symptom.appetite_loss,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Fever: ".to_string(),
+            intensity: symptom.fever,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Cough: ".to_string(),
+            intensity: symptom.cough,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Sore Throat: ".to_string(),
+            intensity: symptom.sore_throat,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Runny Nose: ".to_string(),
+            intensity: symptom.runny_nose,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Sneezing: ".to_string(),
+            intensity: symptom.sneezing,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Heart Burn: ".to_string(),
+            intensity: symptom.heart_burn,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Abdominal Pain: ".to_string(),
+            intensity: symptom.abdominal_pain,
+            extra: symptom.abdominal_pain_location.map(|location| rsx! {
+                div { class: "inline-block ml-2", {location} }
+            }),
+        }
+        SymptomDisplay {
+            name: "Diarrhea: ".to_string(),
+            intensity: symptom.diarrhea,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Constipation: ".to_string(),
+            intensity: symptom.constipation,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Lower Back Pain: ".to_string(),
+            intensity: symptom.lower_back_pain,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Upper Back Pain: ".to_string(),
+            intensity: symptom.upper_back_pain,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Neck Pain: ".to_string(),
+            intensity: symptom.neck_pain,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Joint Pain: ".to_string(),
+            intensity: symptom.joint_pain,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Headache: ".to_string(),
+            intensity: symptom.headache,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Nausea: ".to_string(),
+            intensity: symptom.nausea,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Dizziness: ".to_string(),
+            intensity: symptom.dizziness,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Stomach Ache: ".to_string(),
+            intensity: symptom.stomach_ache,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Chest Pain: ".to_string(),
+            intensity: symptom.chest_pain,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Shortness of Breath: ".to_string(),
+            intensity: symptom.shortness_of_breath,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Fatigue: ".to_string(),
+            intensity: symptom.fatigue,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Anxiety: ".to_string(),
+            intensity: symptom.anxiety,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Depression: ".to_string(),
+            intensity: symptom.depression,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Insomnia: ".to_string(),
+            intensity: symptom.insomnia,
+            extra: None,
+        }
+        if let Some(comments) = &symptom.comments {
+            div { class: "mt-4",
+                Markdown { content: comments.to_string() }
             }
         }
     }

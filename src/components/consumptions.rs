@@ -1,10 +1,11 @@
 use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use dioxus::prelude::*;
+use itertools::intersperse;
 
 use crate::{
     components::{
-        consumables::{self, ConsumableUpdate, ConsumableUpdateIngredients, organic_icon},
-        events::Markdown,
+        consumables::{self, ConsumableLabel, ConsumableUpdate, ConsumableUpdateIngredients},
+        events::{Markdown, event_date_time_short},
         times::time_delta_to_string,
     },
     forms::{
@@ -289,7 +290,7 @@ pub fn consumption_icon(consumption_type: ConsumptionType) -> Element {
     };
     let alt = consumption_title(consumption_type);
     rsx! {
-        img { class: "w-10 dark:invert inline-block", alt, src: icon }
+        img { alt, src: icon }
     }
 }
 
@@ -823,62 +824,63 @@ fn ConsumableConsumptionForm(
 #[component]
 pub fn ConsumptionSummary(consumption: Consumption) -> Element {
     rsx! {
+        div { {consumption_title(consumption.consumption_type)} }
         div {
-            div {
-                consumption_icon { consumption_type: consumption.consumption_type }
-            }
-            div {
-                consumption_duration { duration: consumption.duration }
-            }
-            div {
-                {consumption.consumption_type.to_string()}
-                if let Some(liquid_mls) = &consumption.liquid_mls {
-                    div {
-                        "Liquid: "
-                        {liquid_mls.to_string()}
-                        "ml"
-                    }
-                }
-                if let Some(comments) = &consumption.comments {
-                    Markdown { content: comments.to_string() }
-                }
-            }
+            event_date_time_short { time: consumption.time }
+        }
+        div {
+            consumption_duration { duration: consumption.duration }
+        }
+        if let Some(comments) = &consumption.comments {
+            Markdown { content: comments.to_string() }
+        }
+    }
+}
+
+#[component]
+pub fn ConsumptionDetails(consumption: Consumption) -> Element {
+    rsx! {
+        div { {consumption.consumption_type.to_string()} }
+        if let Some(comments) = &consumption.comments {
+            Markdown { content: comments.to_string() }
         }
     }
 }
 
 #[component]
 pub fn ConsumptionItemSummary(item: ConsumptionItem) -> Element {
+    let mut quantity_list = Vec::new();
+
+    if let Some(quantity) = item.nested.quantity {
+        quantity_list.push(rsx! {
+            span {
+                {quantity.to_string()}
+                {item.consumable.unit.postfix()}
+            }
+        });
+    }
+
+    if let Some(liquid_mls) = item.nested.liquid_mls {
+        quantity_list.push(rsx! {
+            span {
+                "Liquid: "
+                {liquid_mls.to_string()}
+                "ml"
+            }
+        });
+    }
+
     rsx! {
-        span {
-            if item.consumable.is_organic {
-                organic_icon {}
-            }
-            if let Some(quantity) = item.nested.quantity {
-                span {
-                    {quantity.to_string()}
-                    {item.consumable.unit.postfix()}
-                    " "
-                }
-            }
-            {item.consumable.name.clone()}
-            if let Some(brand) = &item.consumable.brand {
-                ", "
-                {brand.clone()}
-            }
-            if let Some(dt) = &item.consumable.created {
-                {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
-            }
-            if let Some(liquid_mls) = item.nested.liquid_mls {
-                span {
-                    " Liquid: "
-                    {liquid_mls.to_string()}
-                    "ml"
-                }
+        div {
+            if quantity_list.is_empty() {
+                {}
+            } else {
+                div { {intersperse(quantity_list.into_iter(), rsx! { ", " })} }
             }
             if let Some(comments) = &item.nested.comments {
                 Markdown { content: comments.to_string() }
             }
+            ConsumableLabel { consumable: item.consumable }
         }
     }
 }

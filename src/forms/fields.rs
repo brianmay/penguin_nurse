@@ -9,7 +9,7 @@ use tap::Pipe;
 use crate::{
     components::{
         buttons::{ActionButton, CreateButton},
-        consumables::{self, ConsumableUpdate},
+        consumables::{self, ConsumableLabel, ConsumableUpdate},
         consumptions::{CONSUMPTION_TYPES, consumption_icon, consumption_id, consumption_title},
         exercises::{
             EXERCISE_TYPES, exercise_calories, exercise_icon, exercise_id, exercise_rpe,
@@ -100,6 +100,7 @@ fn get_input_classes(is_valid: bool, is_disabled: bool) -> String {
 #[derive(Clone, PartialEq)]
 struct PullDownMenuItem {
     id: String,
+    icon: Element,
     label: Element,
     on_click: Callback<()>,
 }
@@ -119,6 +120,7 @@ fn PullDownMenu(items: Vec<PullDownMenuItem>) -> Element {
                             onclick: move |_| {
                                 item.on_click.call(());
                             },
+                            div { class: "w-10 dark:invert inline-block", {item.icon.clone()} }
                             {item.label.clone()}
                         }
                     }
@@ -369,6 +371,13 @@ pub fn InputDuration(
     }
 }
 
+#[derive(Clone, PartialEq)]
+pub struct InputOption {
+    id: String,
+    icon: Element,
+    label: String,
+}
+
 #[component]
 pub fn InputSelect<D: 'static + Clone + Eq + PartialEq>(
     id: &'static str,
@@ -376,13 +385,13 @@ pub fn InputSelect<D: 'static + Clone + Eq + PartialEq>(
     validate: Memo<Result<D, ValidationError>>,
     value: Signal<String>,
     disabled: Memo<bool>,
-    options: Vec<(&'static str, Element)>,
+    options: Vec<InputOption>,
     message: Option<Element>,
 ) -> Element {
     let mut open = use_signal(|| false);
     let selected_option = options
         .iter()
-        .find(|(id, _)| *id == value.read().deref().deref());
+        .find(|InputOption { id, .. }| *id == value.read().deref().deref());
 
     rsx! {
         div { class: "form-group",
@@ -395,7 +404,10 @@ pub fn InputSelect<D: 'static + Clone + Eq + PartialEq>(
                     onclick: move |_| open.set(!open()),
                     {
                         selected_option
-                            .map(|opt| opt.1.clone())
+                            .map(|opt| rsx! {
+                                div { class: "w-10 dark:invert inline-block", {opt.icon.clone()} }
+                                {opt.label.clone()}
+                            })
                             .unwrap_or(rsx! { "Select..." })
                     }
                 }
@@ -404,10 +416,13 @@ pub fn InputSelect<D: 'static + Clone + Eq + PartialEq>(
                         items: options
                             .iter()
                             .map(|opt| {
-                                let option_id = opt.0.to_string();
+                                let option_id = opt.id.to_string();
                                 PullDownMenuItem {
                                     id: option_id.clone(),
-                                    label: opt.1.clone(),
+                                    icon: opt.icon.clone(),
+                                    label: rsx! {
+                                        {opt.label.clone()}
+                                    },
                                     on_click: Callback::new(move |()| {
                                         let mut value = value;
                                         let mut open = open;
@@ -436,12 +451,12 @@ pub fn InputConsumptionType(
     let options = CONSUMPTION_TYPES
         .iter()
         .map(|consumption_type| {
-            let id = consumption_id(*consumption_type);
-            let label = rsx! {
+            let id = consumption_id(*consumption_type).to_string();
+            let icon = rsx! {
                 consumption_icon { consumption_type: *consumption_type }
-                {consumption_title(*consumption_type)}
             };
-            (id, label)
+            let label = consumption_title(*consumption_type).to_string();
+            InputOption { id, icon, label }
         })
         .collect::<Vec<_>>();
 
@@ -466,10 +481,26 @@ pub fn InputConsumableUnitType(
     disabled: Memo<bool>,
 ) -> Element {
     let options = vec![
-        ("millilitres", rsx! {"ml"}),
-        ("grams", rsx! {"g"}),
-        ("international_units", rsx! {"IU"}),
-        ("number", rsx! {"Number"}),
+        InputOption {
+            id: "millilitres".to_string(),
+            icon: rsx! { "ml" },
+            label: "Millilitres".to_string(),
+        },
+        InputOption {
+            id: "grams".to_string(),
+            icon: rsx! { "g" },
+            label: "Grams".to_string(),
+        },
+        InputOption {
+            id: "international_units".to_string(),
+            icon: rsx! { "IU" },
+            label: "International Units".to_string(),
+        },
+        InputOption {
+            id: "number".to_string(),
+            icon: rsx! { "N" },
+            label: "Number".to_string(),
+        },
     ];
 
     rsx! {
@@ -493,17 +524,46 @@ pub fn InputPooBristolType(
     disabled: Memo<bool>,
 ) -> Element {
     let options = vec![
-        ("0", rsx! { "0. No poo" }),
-        ("1", rsx! { "1. Separate hard lumps. Rabbit Droppings." }),
-        ("2", rsx! { "2. Lumpy and sausage-like. Bunch of Grapes." }),
-        ("3", rsx! { "3. Sausage shape with cracks. Corn on Cobb." }),
-        ("4", rsx! { "4. Smooth and soft. Sausage." }),
-        (
-            "5",
-            rsx! { "5. Soft blobs with clear-cut edges. Chicken Nuggets." },
-        ),
-        ("6", rsx! { "6. Mushy. Porridge." }),
-        ("7", rsx! { "7. Watery. Gravy." }),
+        InputOption {
+            id: "0".to_string(),
+            icon: rsx! { "0" },
+            label: "0. No poo".to_string(),
+        },
+        InputOption {
+            id: "1".to_string(),
+            icon: rsx! { "1" },
+            label: "1. Separate hard lumps. Rabbit Droppings.".to_string(),
+        },
+        InputOption {
+            id: "2".to_string(),
+            icon: rsx! { "2" },
+            label: "2. Lumpy and sausage-like. Bunch of Grapes.".to_string(),
+        },
+        InputOption {
+            id: "3".to_string(),
+            icon: rsx! { "3" },
+            label: "3. Sausage shape with cracks. Corn on Cobb.".to_string(),
+        },
+        InputOption {
+            id: "4".to_string(),
+            icon: rsx! { "4" },
+            label: "4. Smooth and soft. Sausage.".to_string(),
+        },
+        InputOption {
+            id: "5".to_string(),
+            icon: rsx! { "5" },
+            label: "5. Soft blobs with clear-cut edges. Chicken Nuggets.".to_string(),
+        },
+        InputOption {
+            id: "6".to_string(),
+            icon: rsx! { "6" },
+            label: "6. Mushy. Porridge.".to_string(),
+        },
+        InputOption {
+            id: "7".to_string(),
+            icon: rsx! { "7" },
+            label: "7. Watery. Gravy.".to_string(),
+        },
     ];
 
     rsx! {
@@ -529,12 +589,12 @@ pub fn InputExerciseType(
     let options = EXERCISE_TYPES
         .iter()
         .map(|exercise_type| {
-            let id = exercise_id(*exercise_type);
-            let label = rsx! {
+            let id = exercise_id(*exercise_type).to_string();
+            let icon = rsx! {
                 exercise_icon { exercise_type: *exercise_type }
-                {exercise_title(*exercise_type)}
             };
-            (id, label)
+            let label = exercise_title(*exercise_type).to_string();
+            InputOption { id, icon, label }
         })
         .collect::<Vec<_>>();
 
@@ -846,16 +906,12 @@ pub fn InputConsumable(
                                             let consumable = consumable.clone();
                                             PullDownMenuItem {
                                                 id: consumable.id.to_string(),
+                                                icon: rsx! {
+                                                    consumables::consumable_icon {}
+                                                },
                                                 label: rsx! {
-                                                    span {
-                                                        {consumable.name.clone()}
-                                                        if let Some(brand) = &consumable.brand {
-                                                            ", "
-                                                            {brand.clone()}
-                                                        }
-                                                        if let Some(dt) = consumable.created {
-                                                            {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
-                                                        }
+                                                    div {
+                                                        ConsumableLabel { consumable: consumable.clone() }
                                                     }
                                                 },
                                                 on_click: {

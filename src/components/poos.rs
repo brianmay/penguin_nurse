@@ -4,7 +4,10 @@ use dioxus::prelude::*;
 use palette::Hsv;
 
 use crate::{
-    components::times::time_delta_to_string,
+    components::{
+        events::{Markdown, event_colour, event_date_time, event_urgency},
+        times::time_delta_to_string,
+    },
     forms::{
         Colour, Dialog, EditError, FieldValue, FormSaveCancelButton, InputColour, InputDateTime,
         InputDuration, InputNumber, InputPooBristolType, InputTextArea, Saving, ValidationError,
@@ -267,6 +270,7 @@ pub fn PooDelete(poo: Poo, on_cancel: Callback, on_delete: Callback<Poo>) -> Ele
             {poo.id.to_string()}
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
+        PooSummary { poo: poo.clone() }
         form {
             novalidate: true,
             action: "javascript:void(0)",
@@ -293,7 +297,7 @@ const POO_SVG: Asset = asset!("/assets/poo.svg");
 pub fn poo_icon() -> Element {
     let alt = poo_title();
     rsx! {
-        img { class: "w-10 dark:invert inline-block", alt, src: POO_SVG }
+        img { alt, src: POO_SVG }
     }
 }
 
@@ -387,6 +391,42 @@ pub fn PooDialog(
         }
         ActiveDialog::Idle => {
             rsx! {}
+        }
+    }
+}
+
+#[component]
+pub fn PooSummary(poo: Poo) -> Element {
+    rsx! {
+        div { {poo_title()} }
+        div {
+            event_date_time { time: poo.time }
+        }
+        div {
+            poo_duration { duration: poo.duration }
+        }
+        if let Some(comments) = &poo.comments {
+            Markdown { content: comments.to_string() }
+        }
+    }
+}
+#[component]
+pub fn PooDetails(poo: Poo) -> Element {
+    rsx! {
+        event_colour { colour: poo.colour }
+        div { class: "inline-block align-top",
+            div {
+                poo_bristol { bristol: poo.bristol }
+            }
+            div {
+                poo_quantity { quantity: poo.quantity }
+            }
+            div {
+                event_urgency { urgency: poo.urgency }
+            }
+        }
+        if let Some(comments) = &poo.comments {
+            Markdown { content: comments.to_string() }
         }
     }
 }

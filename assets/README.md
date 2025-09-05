@@ -20,3 +20,4 @@
 * [symptom.svg](https://www.svgrepo.com/svg/325885/coughing)
 * [reflux.svg](https://www.svgrepo.com/svg/499219/heartburn) GPL
 * [note.svg](https://www.svgrepo.com/svg/509175/note) MIT License
+* [consumable.svg](https://www.svgrepo.com/svg/482291/food-2) Public Domain

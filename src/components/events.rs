@@ -4,6 +4,23 @@ use dioxus::prelude::*;
 use palette::IntoColor;
 
 #[component]
+pub fn event_date_time_short(time: chrono::DateTime<FixedOffset>) -> Element {
+    let string = time.format("%Y-%m-%d %H:%M").to_string();
+
+    let classes = if time.hour() < 7 {
+        classes!["text-error"]
+    } else if time.hour() < 21 {
+        classes!["text-success"]
+    } else {
+        classes!["text-warning"]
+    };
+
+    rsx! {
+        span { class: classes, {string} }
+    }
+}
+
+#[component]
 pub fn event_time(time: chrono::DateTime<FixedOffset>) -> Element {
     let string = time.format("%H:%M:%S %z").to_string();
 

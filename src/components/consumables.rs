@@ -2,6 +2,7 @@ use std::{num::ParseIntError, str::FromStr};
 
 use chrono::{DateTime, Local, Utc};
 use dioxus::{prelude::*, router::ToQueryArgument};
+use itertools::intersperse;
 use tap::Pipe;
 use thiserror::Error;
 
@@ -916,14 +917,21 @@ fn ConsumableNestedForm(
 }
 
 const ORGANIC_SVG: Asset = asset!("/assets/organic.svg");
+const CONSUMABLE_SVG: Asset = asset!("/assets/consumable.svg");
 
 pub fn organic_icon() -> Element {
     rsx! {
         img {
             class: "w-5 dark:invert inline-block",
-            alt: "organic",
+            alt: "",
             src: ORGANIC_SVG,
         }
+    }
+}
+
+pub fn consumable_icon() -> Element {
+    rsx! {
+        img { alt: "consumable", src: CONSUMABLE_SVG }
     }
 }
 
@@ -931,74 +939,104 @@ pub fn organic_icon() -> Element {
 pub fn ConsumableSummary(consumable: Consumable) -> Element {
     rsx! {
         div {
-            div {
-                if consumable.is_organic {
-                    organic_icon {}
-                }
-                {consumable.name}
+            if consumable.is_organic {
+                organic_icon {}
             }
-            div {
-                if let Some(brand) = &consumable.brand {
-                    div { {brand.clone()} }
-                }
+            {consumable.name}
+        }
+        div {
+            if let Some(brand) = &consumable.brand {
+                div { {brand.clone()} }
             }
-            div {
-                span { class: "sm:hidden", "Unit: " }
-                {consumable.unit.to_string()}
+        }
+        div {
+            span { class: "sm:hidden", "Unit: " }
+            {consumable.unit.to_string()}
+        }
+        div {
+            if let Some(comments) = &consumable.comments {
+                Markdown { content: comments.to_string() }
             }
-            div {
-                if let Some(comments) = &consumable.comments {
-                    Markdown { content: comments.to_string() }
-                }
+        }
+        div {
+            if let Some(created) = &consumable.created {
+                span { class: "sm:hidden", "Created: " }
+                {created.with_timezone(&Local).to_string()}
             }
-            div {
-                if let Some(created) = &consumable.created {
-                    span { class: "sm:hidden", "Created: " }
-                    {created.with_timezone(&Local).to_string()}
-                }
-            }
-            div {
-                if let Some(destroyed) = &consumable.destroyed {
-                    span { class: "sm:hidden", "Destroyed: " }
-                    {destroyed.with_timezone(&Local).to_string()}
-                }
+        }
+        div {
+            if let Some(destroyed) = &consumable.destroyed {
+                span { class: "sm:hidden", "Destroyed: " }
+                {destroyed.with_timezone(&Local).to_string()}
             }
         }
     }
 }
 
 #[component]
-pub fn ConsumableItemSummary(item: ConsumableItem) -> Element {
+pub fn ConsumableLabel(consumable: Consumable) -> Element {
     rsx! {
-        span {
-            if item.consumable.is_organic {
+        if consumable.is_organic {
+            div {
                 organic_icon {}
+                "Organic"
             }
-            if let Some(quantity) = item.nested.quantity {
-                span {
-                    {quantity.to_string()}
-                    {item.consumable.unit.postfix()}
-                    " "
-                }
+        }
+        div { {consumable.name.clone()} }
+        if let Some(brand) = &consumable.brand {
+            div { {brand.clone()} }
+        }
+        if let Some(dt) = &consumable.created {
+            div { {dt.with_timezone(&Local).format("%Y-%m-%d").to_string()} }
+        }
+        if let Some(dt) = &consumable.destroyed {
+            div {
+                "Destroyed: "
+                {dt.with_timezone(&Local).format("%Y-%m-%d").to_string()}
             }
-            {item.consumable.name.clone()}
-            if let Some(brand) = &item.consumable.brand {
-                ", "
-                {brand.clone()}
+        }
+        if let Some(comments) = &consumable.comments {
+            Markdown { content: comments.to_string() }
+        }
+    }
+}
+
+#[component]
+pub fn ConsumableItemSummary(item: ConsumableItem) -> Element {
+    let mut quantity_list = Vec::new();
+
+    if let Some(quantity) = item.nested.quantity {
+        quantity_list.push(rsx! {
+            span {
+                {quantity.to_string()}
+                {item.consumable.unit.postfix()}
             }
-            if let Some(dt) = &item.consumable.created {
-                {dt.with_timezone(&Local).format(" %Y-%m-%d").to_string()}
+        });
+    }
+
+    if let Some(liquid_mls) = item.nested.liquid_mls {
+        quantity_list.push(rsx! {
+            span {
+                "Liquid: "
+                {liquid_mls.to_string()}
+                "ml"
             }
-            if let Some(liquid_mls) = item.nested.liquid_mls {
-                span {
-                    " Liquid: "
-                    {liquid_mls.to_string()}
-                    "ml"
+        });
+    }
+
+    rsx! {
+        div {
+            div {
+                if quantity_list.is_empty() {
+                    {}
+                } else {
+                    div { {intersperse(quantity_list.into_iter(), rsx! { ", " })} }
                 }
             }
             if let Some(comments) = &item.nested.comments {
                 Markdown { content: comments.to_string() }
             }
+            ConsumableLabel { consumable: item.consumable }
         }
     }
 }

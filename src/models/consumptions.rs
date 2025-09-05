@@ -49,12 +49,12 @@ impl FieldValue for ConsumptionType {
 impl Display for ConsumptionType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Digest => "eat/drink",
-            Self::InhaleNose => "inhale nose",
-            Self::InhaleMouth => "inhale mouth",
-            Self::SpitOut => "spit out",
-            Self::Inject => "inject",
-            Self::ApplySkin => "apply skin",
+            Self::Digest => "Digest",
+            Self::InhaleNose => "Inhale nose",
+            Self::InhaleMouth => "Inhale mouth",
+            Self::SpitOut => "Spit out",
+            Self::Inject => "Inject",
+            Self::ApplySkin => "Apply skin",
         }
         .pipe(|s| f.write_str(s))
     }
