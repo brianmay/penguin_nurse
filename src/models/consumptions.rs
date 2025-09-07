@@ -1,17 +1,14 @@
 use chrono::Local;
-use std::{fmt::Display, str::FromStr};
-use tap::Pipe;
+use derive_enum_all_values::AllValues;
+use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    forms::{FieldValue, FieldValueError},
-    models::{UserId, common::MaybeSet},
-};
+use crate::models::{UserId, common::MaybeSet};
 
 use super::ConsumptionItem;
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, AllValues)]
 pub enum ConsumptionType {
     Digest,
     InhaleNose,
@@ -21,33 +18,19 @@ pub enum ConsumptionType {
     ApplySkin,
 }
 
-impl FieldValue for ConsumptionType {
-    fn as_string(&self) -> String {
+impl ConsumptionType {
+    pub fn as_id(&self) -> &'static str {
         match self {
-            Self::Digest => "digest".to_string(),
-            Self::InhaleNose => "inhale_nose".to_string(),
-            Self::InhaleMouth => "inhale_mouth".to_string(),
-            Self::SpitOut => "spit_out".to_string(),
-            Self::Inject => "inject".to_string(),
-            Self::ApplySkin => "apply_skin".to_string(),
+            Self::Digest => "digest",
+            Self::InhaleNose => "inhale_nose",
+            Self::InhaleMouth => "inhale_mouth",
+            Self::SpitOut => "spit_out",
+            Self::Inject => "inject",
+            Self::ApplySkin => "apply_skin",
         }
     }
 
-    fn from_string(value: &str) -> Result<Self, FieldValueError> {
-        match value {
-            "digest" => Ok(Self::Digest),
-            "inhale_nose" => Ok(Self::InhaleNose),
-            "inhale_mouth" => Ok(Self::InhaleMouth),
-            "spit_out" => Ok(Self::SpitOut),
-            "inject" => Ok(Self::Inject),
-            "apply_skin" => Ok(Self::ApplySkin),
-            _ => Err(FieldValueError::InvalidValue),
-        }
-    }
-}
-
-impl Display for ConsumptionType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    pub fn as_title(&self) -> &'static str {
         match self {
             Self::Digest => "Digest",
             Self::InhaleNose => "Inhale nose",
@@ -56,7 +39,6 @@ impl Display for ConsumptionType {
             Self::Inject => "Inject",
             Self::ApplySkin => "Apply skin",
         }
-        .pipe(|s| f.write_str(s))
     }
 }
 

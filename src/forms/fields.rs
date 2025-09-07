@@ -3,22 +3,24 @@ use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use classes::classes;
 use dioxus::{prelude::*, signals::Signal};
 use palette::{Hsv, IntoColor, Srgb};
-use std::ops::Deref;
+use std::{ops::Deref, rc::Rc};
 use tap::Pipe;
 
 use crate::{
     components::{
+        ElementIcon,
         buttons::{ActionButton, CreateButton},
-        consumables::{self, ConsumableLabel, ConsumableUpdate},
-        consumptions::{CONSUMPTION_TYPES, consumption_icon, consumption_id, consumption_title},
-        exercises::{
-            EXERCISE_TYPES, exercise_calories, exercise_icon, exercise_id, exercise_rpe,
-            exercise_title,
-        },
+        consumables::{self, ConsumableLabel, ConsumableUnitIcon, ConsumableUpdate},
+        consumptions::ConsumptionTypeIcon,
+        exercises::{ExerciseTypeIcon, exercise_calories, exercise_rpe},
+        poos::PooBristolIcon,
     },
-    forms::{Barcode, validate_colour_hue, validate_colour_saturation, validate_colour_value},
+    forms::{
+        Barcode, validate_colour_hue, validate_colour_saturation, validate_colour_value,
+        values::FieldLabel,
+    },
     functions::consumables::search_consumables,
-    models::Consumable,
+    models::{Bristol, Consumable, ConsumableUnit, ConsumptionType, ExerciseType},
 };
 
 use super::FieldValue;
@@ -97,39 +99,6 @@ fn get_input_classes(is_valid: bool, is_disabled: bool) -> String {
     classes + " " + &classes!["border-red-500", "dark:border-red-500"]
 }
 
-#[derive(Clone, PartialEq)]
-struct PullDownMenuItem {
-    id: String,
-    icon: Element,
-    label: Element,
-    on_click: Callback<()>,
-}
-
-#[component]
-fn PullDownMenu(items: Vec<PullDownMenuItem>) -> Element {
-    rsx! {
-        div { class: "absolute z-10 shadow-lg bg-gray-50 border border-gray-50 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500",
-            ul { tabindex: "0", class: "p-2 shadow rounded-box",
-                if items.is_empty() {
-                    li { "No entries found." }
-                } else {
-                    for item in items {
-                        li {
-                            key: "{item.id}",
-                            class: "flex px-4 py-2 hover:bg-gray-800 hover:text-gray-100 cursor-pointer gap-4",
-                            onclick: move |_| {
-                                item.on_click.call(());
-                            },
-                            div { class: "w-10 dark:invert inline-block", {item.icon.clone()} }
-                            {item.label.clone()}
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 #[component]
 pub fn FieldMessage<D: 'static + Clone + PartialEq>(
     validate: Memo<Result<D, ValidationError>>,
@@ -148,6 +117,231 @@ pub fn FieldMessage<D: 'static + Clone + PartialEq>(
                 } else {
                     "Looks good!"
                 }
+            }
+        }
+    }
+}
+
+#[derive(Clone, PartialEq)]
+struct PullDownMenuItem<D: 'static + Clone + PartialEq + FieldLabel> {
+    id: String,
+    value: D,
+    icon: Element,
+    label: Element,
+}
+
+#[component]
+fn PullDownMenu<D: 'static + Clone + PartialEq + FieldLabel>(
+    id: String,
+    items: ReadOnlySignal<Vec<PullDownMenuItem<D>>>,
+    on_select: Callback<D>,
+    on_search: Callback<String>,
+    on_close: Callback<()>,
+) -> Element {
+    let focus_idx = use_signal(|| 0usize);
+    let mut elements: Signal<Vec<Option<Rc<MountedData>>>> = use_signal(Vec::new);
+
+    use_effect(move || {
+        let len = items.read().len();
+        elements.write().resize(len, None);
+    });
+
+    let items_len = items.read().len() + 1;
+
+    // Keyboard handling
+    let onkeydown = {
+        let mut focus_idx = focus_idx;
+        let elements = elements;
+
+        move |evt: KeyboardEvent| match evt.key() {
+            Key::ArrowDown => {
+                evt.prevent_default();
+                let next = (focus_idx() + 1) % items_len;
+                focus_idx.set(next);
+
+                if let Some(Some(el)) = elements.read().get(next) {
+                    let el = el.clone();
+                    spawn(async move { _ = el.set_focus(true).await });
+                }
+            }
+            Key::ArrowUp => {
+                evt.prevent_default();
+                let prev = (focus_idx() + items_len - 1) % items_len;
+                focus_idx.set(prev);
+
+                if let Some(Some(el)) = elements.read().get(prev) {
+                    let el = el.clone();
+                    spawn(async move { _ = el.set_focus(true).await });
+                }
+            }
+            Key::Tab => {
+                on_close.call(());
+            }
+            Key::Escape => {
+                evt.prevent_default();
+                on_close.call(());
+            }
+            _ => {}
+        }
+    };
+
+    let set_element = |mut elements: Signal<Vec<Option<Rc<MountedData>>>>,
+                       index: usize,
+                       el: Option<Rc<MountedData>>| {
+        let mut els = elements.write();
+        if index >= els.len() {
+            els.resize(index + 1, None);
+        }
+        els[index] = el;
+    };
+
+    rsx! {
+        div {
+            class: "absolute z-10 shadow-lg bg-gray-50 border border-gray-50 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500",
+            onkeydown,
+            onblur: move |_| {
+                on_close.call(());
+            },
+            input {
+                r#type: "text",
+                class: get_input_classes(true, false),
+                id,
+                placeholder: "Enter input",
+                oninput: move |e| {
+                    on_search.call(e.value());
+                },
+                onmounted: move |e| {
+                    set_element(elements, 0, Some(e.data()));
+                    spawn(async move {
+                        e.set_focus(true).await.unwrap();
+                    });
+                },
+                onfocus: move |_| {
+                    let mut focus_idx = focus_idx;
+                    focus_idx.set(0);
+                },
+                // onkeydown,
+                tabindex: "-1",
+            }
+            ul { class: "p-2 shadow rounded-box",
+                if items.is_empty() {
+                    li { "No entries found." }
+                } else {
+
+                    for (i , item) in items.read().deref().iter().enumerate() {
+                        li {
+                            key: "{item.id}",
+                            class: "flex px-4 py-2 hover:bg-gray-800 hover:text-gray-100 cursor-pointer gap-4",
+                            onclick: {
+                                let value = item.value.clone();
+                                move |_| {
+                                    on_select.call(value.clone());
+                                }
+                            },
+                            tabindex: "-1",
+                            onkeydown: {
+                                let value = item.value.clone();
+                                move |e| {
+                                    if e.key() == Key::Enter || e.key() == Key::Character(" ".to_string()) {
+                                        e.prevent_default();
+                                        on_select.call(value.clone());
+                                    }
+                                }
+                            },
+                            onmounted: {
+                                move |e| {
+                                    set_element(elements, i + 1, Some(e.data()));
+                                }
+                            },
+                            ElementIcon {
+                                title: item.label.clone(),
+                                icon: item.icon.clone(),
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[component]
+fn InputSearch<D: 'static + Clone + Eq + PartialEq + FieldLabel>(
+    id: &'static str,
+    label: &'static str,
+    validate: Memo<Result<D, ValidationError>>,
+    mut value: Signal<Option<D>>,
+    disabled: Memo<bool>,
+    options: Memo<Vec<PullDownMenuItem<D>>>,
+    search: Signal<String>,
+    on_change: Option<Callback<Option<D>>>,
+) -> Element {
+    let mut button: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
+    let mut open = use_signal(|| false);
+    let search_id = format!("{}_search", id);
+
+    use_effect(move || {
+        if open() {
+            search.set(String::new());
+        } else {
+            spawn(async move {
+                if let Some(button) = button.read().as_ref() {
+                    _ = button.set_focus(true).await;
+                }
+            });
+        }
+    });
+
+    rsx! {
+        div { class: "mb-5",
+            label { class: get_label_classes(), r#for: id, "{label}" }
+            div { class: "relative inline-block text-left w-full",
+                button {
+                    id,
+                    class: "inline-flex gap-4 ".to_string() + " "
+                        + &get_input_classes(validate().is_ok(), disabled()),
+                    onclick: move |_| open.set(!open()),
+                    onkeydown: move |evt| {
+                        if evt.key() == Key::ArrowDown || evt.key() == Key::Enter {
+                            evt.prevent_default();
+                            open.set(true);
+                        }
+                    },
+                    onmounted: move |e| {
+                        button.set(Some(e.data()));
+                    },
+                    {
+                        if let Some(selected_option) = value.read().deref() {
+                            { selected_option.as_label() }
+                        } else {
+                            rsx! { "Select..." }
+                        }
+                    }
+                }
+                if open() {
+                    PullDownMenu {
+                        id: search_id,
+                        items: options(),
+                        on_select: {
+                            Callback::new(move |d: D| {
+                                open.set(false);
+                                if let Some(on_change) = &on_change {
+                                    value.set(Some(d.clone()));
+                                    on_change.call(Some(d));
+                                } else {
+                                    value.set(Some(d));
+                                }
+                            })
+                        },
+                        on_search: Callback::new(move |s| {
+                            search.set(s);
+                        }),
+                        on_close: Callback::new(move |_| {
+                            open.set(false);
+                        }),
+                    }
+                }
+                FieldMessage { validate, disabled }
             }
         }
     }
@@ -361,7 +555,7 @@ pub fn InputDuration(
                 ActionButton {
                     on_click: move |_e| {
                         let now: DateTime<FixedOffset> = Utc::now().into();
-                        value.set((now - start_time).as_string());
+                        value.set((now - start_time).as_raw());
                     },
                     "Stop"
                 }
@@ -372,70 +566,52 @@ pub fn InputDuration(
 }
 
 #[derive(Clone, PartialEq)]
-pub struct InputOption {
+pub struct InputOption<D: 'static + Clone + Eq + PartialEq + FieldLabel> {
     id: String,
+    value: D,
     icon: Element,
     label: String,
 }
 
 #[component]
-pub fn InputSelect<D: 'static + Clone + Eq + PartialEq>(
+pub fn InputSelect<D: 'static + Clone + Eq + PartialEq + FieldLabel>(
     id: &'static str,
     label: &'static str,
     validate: Memo<Result<D, ValidationError>>,
-    value: Signal<String>,
+    value: Signal<Option<D>>,
     disabled: Memo<bool>,
-    options: Vec<InputOption>,
-    message: Option<Element>,
+    options: Vec<InputOption<D>>,
 ) -> Element {
-    let mut open = use_signal(|| false);
-    let selected_option = options
-        .iter()
-        .find(|InputOption { id, .. }| *id == value.read().deref().deref());
+    let search = use_signal(String::new);
+    let filtered_options = use_memo(move || {
+        let query = search.read().to_lowercase();
+        options
+            .iter()
+            .filter(|opt| {
+                query.is_empty()
+                    || opt.label.to_lowercase().contains(&query)
+                    || opt.id.to_lowercase() == query
+            })
+            .map(|opt| PullDownMenuItem {
+                id: opt.id.clone(),
+                value: opt.value.clone(),
+                label: rsx! {
+                    {opt.label.clone()}
+                },
+                icon: opt.icon.clone(),
+            })
+            .collect::<Vec<_>>()
+    });
 
     rsx! {
-        div { class: "form-group",
-            label { class: get_label_classes(), r#for: id, "{label}" }
-            div { class: "relative inline-block text-left w-full",
-                button {
-                    id,
-                    class: "inline-flex gap-4 ".to_string() + " "
-                        + &get_input_classes(validate().is_ok(), disabled()),
-                    onclick: move |_| open.set(!open()),
-                    {
-                        selected_option
-                            .map(|opt| rsx! {
-                                div { class: "w-10 dark:invert inline-block", {opt.icon.clone()} }
-                                {opt.label.clone()}
-                            })
-                            .unwrap_or(rsx! { "Select..." })
-                    }
-                }
-                if open() {
-                    PullDownMenu {
-                        items: options
-                            .iter()
-                            .map(|opt| {
-                                let option_id = opt.id.to_string();
-                                PullDownMenuItem {
-                                    id: option_id.clone(),
-                                    icon: opt.icon.clone(),
-                                    label: rsx! {
-                                        {opt.label.clone()}
-                                    },
-                                    on_click: Callback::new(move |()| {
-                                        let mut value = value;
-                                        let mut open = open;
-                                        open.set(false);
-                                        value.set(option_id.clone());
-                                    }),
-                                }
-                            })
-                            .collect(),
-                    }
-                }
-                FieldMessage { validate, disabled, message }
-            }
+        InputSearch {
+            id,
+            label,
+            validate,
+            value,
+            disabled,
+            options: filtered_options,
+            search,
         }
     }
 }
@@ -444,19 +620,24 @@ pub fn InputSelect<D: 'static + Clone + Eq + PartialEq>(
 pub fn InputConsumptionType(
     id: &'static str,
     label: &'static str,
-    value: Signal<String>,
-    validate: Memo<Result<crate::models::ConsumptionType, ValidationError>>,
+    value: Signal<Option<ConsumptionType>>,
+    validate: Memo<Result<ConsumptionType, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
-    let options = CONSUMPTION_TYPES
+    let options = ConsumptionType::all_values()
         .iter()
         .map(|consumption_type| {
-            let id = consumption_id(*consumption_type).to_string();
+            let id = consumption_type.as_id();
             let icon = rsx! {
-                consumption_icon { consumption_type: *consumption_type }
+                ConsumptionTypeIcon { consumption_type: *consumption_type }
             };
-            let label = consumption_title(*consumption_type).to_string();
-            InputOption { id, icon, label }
+            let label = consumption_type.as_title();
+            InputOption {
+                id: id.to_string(),
+                value: *consumption_type,
+                icon,
+                label: label.to_string(),
+            }
         })
         .collect::<Vec<_>>();
 
@@ -476,32 +657,26 @@ pub fn InputConsumptionType(
 pub fn InputConsumableUnitType(
     id: &'static str,
     label: &'static str,
-    value: Signal<String>,
+    value: Signal<Option<ConsumableUnit>>,
     validate: Memo<Result<crate::models::ConsumableUnit, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
-    let options = vec![
-        InputOption {
-            id: "millilitres".to_string(),
-            icon: rsx! { "ml" },
-            label: "Millilitres".to_string(),
-        },
-        InputOption {
-            id: "grams".to_string(),
-            icon: rsx! { "g" },
-            label: "Grams".to_string(),
-        },
-        InputOption {
-            id: "international_units".to_string(),
-            icon: rsx! { "IU" },
-            label: "International Units".to_string(),
-        },
-        InputOption {
-            id: "number".to_string(),
-            icon: rsx! { "N" },
-            label: "Number".to_string(),
-        },
-    ];
+    let options = ConsumableUnit::all_values()
+        .iter()
+        .map(|consumable_unit| {
+            let id = consumable_unit.as_id();
+            let icon = rsx! {
+                ConsumableUnitIcon { consumable_unit: *consumable_unit }
+            };
+            let label = consumable_unit.as_title();
+            InputOption {
+                id: id.to_string(),
+                value: *consumable_unit,
+                icon,
+                label: label.to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
 
     rsx! {
         InputSelect {
@@ -519,52 +694,26 @@ pub fn InputConsumableUnitType(
 pub fn InputPooBristolType(
     id: &'static str,
     label: &'static str,
-    value: Signal<String>,
-    validate: Memo<Result<crate::models::Bristol, ValidationError>>,
+    value: Signal<Option<Bristol>>,
+    validate: Memo<Result<Bristol, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
-    let options = vec![
-        InputOption {
-            id: "0".to_string(),
-            icon: rsx! { "0" },
-            label: "0. No poo".to_string(),
-        },
-        InputOption {
-            id: "1".to_string(),
-            icon: rsx! { "1" },
-            label: "1. Separate hard lumps. Rabbit Droppings.".to_string(),
-        },
-        InputOption {
-            id: "2".to_string(),
-            icon: rsx! { "2" },
-            label: "2. Lumpy and sausage-like. Bunch of Grapes.".to_string(),
-        },
-        InputOption {
-            id: "3".to_string(),
-            icon: rsx! { "3" },
-            label: "3. Sausage shape with cracks. Corn on Cobb.".to_string(),
-        },
-        InputOption {
-            id: "4".to_string(),
-            icon: rsx! { "4" },
-            label: "4. Smooth and soft. Sausage.".to_string(),
-        },
-        InputOption {
-            id: "5".to_string(),
-            icon: rsx! { "5" },
-            label: "5. Soft blobs with clear-cut edges. Chicken Nuggets.".to_string(),
-        },
-        InputOption {
-            id: "6".to_string(),
-            icon: rsx! { "6" },
-            label: "6. Mushy. Porridge.".to_string(),
-        },
-        InputOption {
-            id: "7".to_string(),
-            icon: rsx! { "7" },
-            label: "7. Watery. Gravy.".to_string(),
-        },
-    ];
+    let options = Bristol::all_values()
+        .iter()
+        .map(|bristol| {
+            let id = bristol.as_id();
+            let icon = rsx! {
+                PooBristolIcon { bristol: *bristol }
+            };
+            let label = bristol.as_title();
+            InputOption {
+                id: id.to_string(),
+                value: *bristol,
+                icon,
+                label: label.to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
 
     rsx! {
         InputSelect {
@@ -582,19 +731,24 @@ pub fn InputPooBristolType(
 pub fn InputExerciseType(
     id: &'static str,
     label: &'static str,
-    value: Signal<String>,
-    validate: Memo<Result<crate::models::ExerciseType, ValidationError>>,
+    value: Signal<Option<ExerciseType>>,
+    validate: Memo<Result<ExerciseType, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
-    let options = EXERCISE_TYPES
+    let options = ExerciseType::all_values()
         .iter()
         .map(|exercise_type| {
-            let id = exercise_id(*exercise_type).to_string();
+            let id = exercise_type.as_id();
             let icon = rsx! {
-                exercise_icon { exercise_type: *exercise_type }
+                ExerciseTypeIcon { exercise_type: *exercise_type }
             };
-            let label = exercise_title(*exercise_type).to_string();
-            InputOption { id, icon, label }
+            let label = exercise_type.as_title();
+            InputOption {
+                id: id.to_string(),
+                value: *exercise_type,
+                icon,
+                label: label.to_string(),
+            }
         })
         .collect::<Vec<_>>();
 
@@ -846,101 +1000,104 @@ pub fn InputConsumable(
     on_change: Callback<Option<Consumable>>,
     mut create_form: Signal<bool>,
 ) -> Element {
-    let mut query = use_signal(|| "".to_string());
+    let search = use_signal(String::new);
 
-    let list: Resource<Option<Result<Vec<Consumable>, ServerFnError>>> =
+    let list: Resource<Result<Vec<PullDownMenuItem<Consumable>>, ServerFnError>> =
         use_resource(move || async move {
-            let query = query();
+            let query = search();
             if query.is_empty() {
-                None
-            } else {
-                search_consumables(query, false, false).await.pipe(Some)
+                return Ok(Vec::new());
             }
+
+            search_consumables(query, false, false)
+                .await
+                .unwrap()
+                .into_iter()
+                .map(|consumable| {
+                    let id = consumable.id.to_string();
+                    let icon = rsx! {
+                        consumables::ConsumableIcon {}
+                    };
+                    let label = rsx! {
+                        div {
+                            ConsumableLabel { consumable: consumable.clone() }
+                        }
+                    };
+                    PullDownMenuItem {
+                        id,
+                        value: consumable.clone(),
+                        label,
+                        icon,
+                    }
+                })
+                .collect::<Vec<_>>()
+                .pipe(Ok)
         });
 
-    rsx! {
+    let filtered_options =
+        use_memo(move || list().unwrap_or_else(|| Ok(Vec::new())).unwrap_or_default());
 
-        div {
-            if create_form() {
-                ConsumableUpdate {
-                    op: consumables::Operation::Create {},
-                    on_cancel: move || create_form.set(false),
-                    on_save: move |consumable: Consumable| {
-                        value.set(Some(consumable.clone()));
-                        on_create(consumable);
-                        create_form.set(false);
-                    },
+    let validate = use_memo(move || {
+        if let Some(consumable) = value() {
+            Ok(consumable.clone())
+        } else {
+            Err(ValidationError("No consumable selected".to_string()))
+        }
+    });
+
+    rsx! {
+        if create_form() {
+            ConsumableUpdate {
+                op: consumables::Operation::Create {},
+                on_cancel: move || create_form.set(false),
+                on_save: move |consumable: Consumable| {
+                    value.set(Some(consumable.clone()));
+                    create_form.set(false);
+                    on_create(consumable);
+                },
+            }
+        } else {
+            if let Some(Err(err)) = list.read().deref() {
+                div { class: "alert alert-error",
+                    "Error loading consumables: "
+                    {err.to_string()}
                 }
-            } else if let Some(consumable) = value() {
-                div {
-                    class: "bg-green-500 rounded-sm border-green-100 text-white p-2",
-                    onclick: move |_e| {
-                        value.set(None);
-                        on_change(None);
-                    },
-                    {consumable.name.clone()}
-                }
-            } else {
-                div { class: "form-group",
-                    label { r#for: id, class: get_label_classes(), "{label}" }
-                    div { class: "relative inline-block text-left w-full",
-                        input {
-                            class: "inline-flex gap-4 ".to_string() + " " + &get_input_classes(true, disabled()),
-                            r#type: "text",
-                            value: query(),
-                            oninput: move |e| query.set(e.value()),
-                            id,
-                            placeholder: "Search...",
-                        }
-                        match list.read().deref() {
-                            Some(Some(Err(err))) => rsx! {
-                                div { class: "alert alert-error",
-                                    "Error loading consumables: "
-                                    {err.to_string()}
-                                }
+            }
+
+            // FIXME: Should be we do something to indicate loading state? Spinner?
+            // if let None = list.read().deref() {
+            //     p { class: "alert alert-info", "Loading..." }
+            // }
+
+            {
+                value
+                    .read()
+                    .deref()
+                    .as_ref()
+                    .map(|consumable| rsx! {
+                        div {
+                            class: "bg-green-500 rounded-sm border-green-100 text-white p-2 mb-2",
+                            onclick: move |_e| {
+                                value.set(None);
+                                on_change(None);
                             },
-                            Some(Some(Ok(list))) => rsx! {
-                                PullDownMenu {
-                                    items: list.iter()
-                                        .map(|consumable| {
-                                            let consumable = consumable.clone();
-                                            PullDownMenuItem {
-                                                id: consumable.id.to_string(),
-                                                icon: rsx! {
-                                                    consumables::consumable_icon {}
-                                                },
-                                                label: rsx! {
-                                                    div {
-                                                        ConsumableLabel { consumable: consumable.clone() }
-                                                    }
-                                                },
-                                                on_click: {
-                                                    let consumable = consumable.clone();
-                                                    Callback::new(move |_| {
-                                                        value.set(Some(consumable.clone()));
-                                                        on_change(Some(consumable.clone()));
-                                                        query.set("".to_string());
-                                                    })
-                                                },
-                                            }
-                                        })
-                                        .collect(),
-                                }
-                            },
-                            Some(None) => rsx! {},
-                            None => {
-                                rsx! {
-                                    p { class: "alert alert-info", "Loading..." }
-                                }
-                            }
+                            {consumable.name.clone()}
                         }
-                        FieldMessage { validate: use_memo(|| Ok(())), disabled }
-                        div { class: "gap-2",
-                            CreateButton { on_click: move |_e| create_form.set(true), "Create" }
-                            Barcode { barcode: query }
-                        }
-                    }
-                }
+                    })
+            }
+            InputSearch {
+                id,
+                label,
+                validate,
+                value,
+                disabled,
+                options: filtered_options,
+                search,
+                on_change: Some(on_change),
+            }
+            div { class: "gap-2",
+                CreateButton { on_click: move |_e| create_form.set(true), "Create" }
+                Barcode { barcode: search }
             }
         }
     }

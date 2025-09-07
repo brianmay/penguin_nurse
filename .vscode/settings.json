@@ -16,6 +16,7 @@
         "gloo",
         "ilike",
         "inputmode",
+        "itertools",
         "joinable",
         "linecap",
         "linejoin",

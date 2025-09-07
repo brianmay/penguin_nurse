@@ -83,43 +83,43 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Exercise, EditEr
 #[component]
 pub fn ExerciseUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Exercise>) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_string(),
-        Operation::Update { exercise } => exercise.time.as_string(),
+        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_raw(),
+        Operation::Update { exercise } => exercise.time.as_raw(),
     });
 
     let duration = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { exercise } => exercise.duration.as_string(),
+        Operation::Update { exercise } => exercise.duration.as_raw(),
     });
 
     let exercise_type = use_signal(|| match &op {
-        Operation::Create { .. } => String::new(),
-        Operation::Update { exercise } => exercise.exercise_type.as_string(),
+        Operation::Create { .. } => None,
+        Operation::Update { exercise } => Some(exercise.exercise_type),
     });
 
     let location = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { exercise } => exercise.location.as_string(),
+        Operation::Update { exercise } => exercise.location.as_raw(),
     });
 
     let distance = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { exercise } => exercise.distance.as_string(),
+        Operation::Update { exercise } => exercise.distance.as_raw(),
     });
 
     let calories: Signal<String> = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { exercise } => exercise.calories.as_string(),
+        Operation::Update { exercise } => exercise.calories.as_raw(),
     });
 
     let rpe = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { exercise } => exercise.rpe.as_string(),
+        Operation::Update { exercise } => exercise.rpe.as_raw(),
     });
 
     let comments = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { exercise } => exercise.comments.as_string(),
+        Operation::Update { exercise } => exercise.comments.as_raw(),
     });
 
     let validate = Validate {
@@ -129,7 +129,7 @@ pub fn ExerciseUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Exer
         distance: use_memo(move || validate_distance(&distance())),
         calories: use_memo(move || validate_exercise_calories(&calories())),
         rpe: use_memo(move || validate_exercise_rpe(&rpe())),
-        exercise_type: use_memo(move || validate_exercise_type(&exercise_type())),
+        exercise_type: use_memo(move || validate_exercise_type(exercise_type())),
         comments: use_memo(move || validate_comments(&comments())),
     };
 
@@ -320,7 +320,7 @@ const FLYING_SVG: Asset = asset!("/assets/exercise/flying.svg");
 const OTHER_SVG: Asset = asset!("/assets/exercise/other.svg");
 
 #[component]
-pub fn exercise_icon(exercise_type: ExerciseType) -> Element {
+pub fn ExerciseTypeIcon(exercise_type: ExerciseType) -> Element {
     let icon = match exercise_type {
         ExerciseType::Walking => WALKING_SVG,
         ExerciseType::Running => RUNNING_SVG,
@@ -331,46 +331,9 @@ pub fn exercise_icon(exercise_type: ExerciseType) -> Element {
         ExerciseType::Flying => FLYING_SVG,
         ExerciseType::Other => OTHER_SVG,
     };
-    let alt = exercise_title(exercise_type);
+    let alt = exercise_type.as_title();
     rsx! {
         img { alt, src: icon }
-    }
-}
-
-pub const EXERCISE_TYPES: [ExerciseType; 8] = [
-    ExerciseType::Walking,
-    ExerciseType::Running,
-    ExerciseType::Cycling,
-    ExerciseType::IndoorCycling,
-    ExerciseType::Jumping,
-    ExerciseType::Skipping,
-    ExerciseType::Flying,
-    ExerciseType::Other,
-];
-
-pub fn exercise_id(exercise_type: ExerciseType) -> &'static str {
-    match exercise_type {
-        ExerciseType::Walking => "walking",
-        ExerciseType::Running => "running",
-        ExerciseType::Cycling => "cycling",
-        ExerciseType::IndoorCycling => "indoor_cycling",
-        ExerciseType::Jumping => "jumping",
-        ExerciseType::Skipping => "skipping",
-        ExerciseType::Flying => "flying",
-        ExerciseType::Other => "other",
-    }
-}
-
-pub fn exercise_title(exercise_type: ExerciseType) -> &'static str {
-    match exercise_type {
-        ExerciseType::Walking => "Walking",
-        ExerciseType::Running => "Running",
-        ExerciseType::Cycling => "Cycling",
-        ExerciseType::IndoorCycling => "Indoor Cycling",
-        ExerciseType::Jumping => "Jumping",
-        ExerciseType::Skipping => "Skipping",
-        ExerciseType::Flying => "Flying",
-        ExerciseType::Other => "Other",
     }
 }
 
@@ -512,18 +475,15 @@ pub fn ExerciseDialog(
 #[component]
 pub fn ExerciseSummary(exercise: Exercise) -> Element {
     rsx! {
-        div { {exercise_title(exercise.exercise_type)} }
+        div { {exercise.exercise_type.as_title()} }
         div {
             event_date_time_short { time: exercise.time }
         }
         div {
             exercise_duration { duration: exercise.duration }
         }
-        div {
-            {exercise.exercise_type.to_string()}
-            if let Some(comments) = &exercise.comments {
-                Markdown { content: comments.to_string() }
-            }
+        if let Some(comments) = &exercise.comments {
+            Markdown { content: comments.to_string() }
         }
     }
 }
@@ -531,7 +491,7 @@ pub fn ExerciseSummary(exercise: Exercise) -> Element {
 #[component]
 pub fn ExerciseDetails(exercise: Exercise) -> Element {
     rsx! {
-        {exercise.exercise_type.to_string()}
+        {exercise.exercise_type.as_title()}
         if let Some(location) = &exercise.location {
             div {
                 "Location: "

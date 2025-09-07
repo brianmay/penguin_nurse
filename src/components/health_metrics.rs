@@ -84,36 +84,36 @@ pub fn HealthMetricUpdate(
     on_save: Callback<HealthMetric>,
 ) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_string(),
-        Operation::Update { health_metric } => health_metric.time.as_string(),
+        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_raw(),
+        Operation::Update { health_metric } => health_metric.time.as_raw(),
     });
     let pulse = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { health_metric } => health_metric.pulse.as_string(),
+        Operation::Update { health_metric } => health_metric.pulse.as_raw(),
     });
     let blood_glucose = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { health_metric } => health_metric.blood_glucose.as_string(),
+        Operation::Update { health_metric } => health_metric.blood_glucose.as_raw(),
     });
     let systolic_bp = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { health_metric } => health_metric.systolic_bp.as_string(),
+        Operation::Update { health_metric } => health_metric.systolic_bp.as_raw(),
     });
     let diastolic_bp = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { health_metric } => health_metric.diastolic_bp.as_string(),
+        Operation::Update { health_metric } => health_metric.diastolic_bp.as_raw(),
     });
     let weight = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { health_metric } => health_metric.weight.as_string(),
+        Operation::Update { health_metric } => health_metric.weight.as_raw(),
     });
     let height = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { health_metric } => health_metric.height.as_string(),
+        Operation::Update { health_metric } => health_metric.height.as_raw(),
     });
     let comments = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { health_metric } => health_metric.comments.as_string(),
+        Operation::Update { health_metric } => health_metric.comments.as_raw(),
     });
 
     let validate_systolic_bp = use_memo(move || validate_systolic_bp(&systolic_bp()));
@@ -335,7 +335,7 @@ pub fn HealthMetricDelete(
 const WEE_SVG: Asset = asset!("/assets/health_metric.svg");
 
 #[component]
-pub fn health_metric_icon() -> Element {
+pub fn HealthMetricIcon() -> Element {
     let alt = health_metric_title();
     rsx! {
         img { alt, src: WEE_SVG }

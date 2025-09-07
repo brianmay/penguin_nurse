@@ -43,6 +43,7 @@ classes = "1.0.0"
 bigdecimal = { version = "0.4.8", features = ["serde"] }
 pulldown-cmark = "0.13.0"
 itertools = "0.14.0"
+derive-enum-all-values = "0.2.1"
 
 [features]
 default = []

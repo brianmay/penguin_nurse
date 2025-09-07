@@ -873,6 +873,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "derive-enum-all-values"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4409572e1383f367ef781b3ba286a0210cbc41e7119eb658d453a1bed6cee06"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.106",
+]
+
+[[package]]
 name = "derive_more"
 version = "0.99.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3872,6 +3883,7 @@ dependencies = [
  "bigdecimal",
  "chrono",
  "classes",
+ "derive-enum-all-values",
  "diesel",
  "diesel-async",
  "diesel-derive-enum",

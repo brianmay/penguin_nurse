@@ -1,6 +1,14 @@
 use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
+use dioxus::prelude::*;
 use palette::RgbHue;
 use thiserror::Error;
+
+use crate::components::consumables::{ConsumableIcon, ConsumableLabel, ConsumableUnitIcon};
+use crate::components::consumptions::ConsumptionTypeIcon;
+use crate::components::exercises::ExerciseTypeIcon;
+use crate::components::poos::PooBristolIcon;
+use crate::components::{ElementIcon, StrIcon};
+use crate::models::{Bristol, Consumable, ConsumableUnit, ConsumptionType, ExerciseType};
 
 #[derive(Error, Debug)]
 pub enum FieldValueError {
@@ -12,16 +20,25 @@ pub enum FieldValueError {
 }
 
 pub trait FieldValue: Sized {
-    fn as_string(&self) -> String;
-    fn from_string(value: &str) -> Result<Self, FieldValueError>;
+    type RawValue;
+    type DerefValue: ?Sized;
+    fn as_raw(&self) -> Self::RawValue;
+    fn from_raw(value: &Self::DerefValue) -> Result<Self, FieldValueError>;
+}
+
+pub trait FieldLabel {
+    fn as_label(&self) -> Element;
 }
 
 impl FieldValue for String {
-    fn as_string(&self) -> String {
+    type RawValue = String;
+    type DerefValue = str;
+
+    fn as_raw(&self) -> String {
         self.clone()
     }
 
-    fn from_string(value: &str) -> Result<Self, FieldValueError> {
+    fn from_raw(value: &str) -> Result<Self, FieldValueError> {
         if value.is_empty() {
             Err(FieldValueError::RequiredValue)
         } else {
@@ -31,11 +48,14 @@ impl FieldValue for String {
 }
 
 impl FieldValue for RgbHue<f32> {
-    fn as_string(&self) -> String {
+    type RawValue = String;
+    type DerefValue = str;
+
+    fn as_raw(&self) -> String {
         self.into_inner().to_string()
     }
 
-    fn from_string(value: &str) -> Result<Self, FieldValueError> {
+    fn from_raw(value: &str) -> Result<Self, FieldValueError> {
         if value.is_empty() {
             return Err(FieldValueError::RequiredValue);
         }
@@ -47,11 +67,14 @@ impl FieldValue for RgbHue<f32> {
 }
 
 impl FieldValue for DateTime<Utc> {
-    fn as_string(&self) -> String {
+    type RawValue = String;
+    type DerefValue = str;
+
+    fn as_raw(&self) -> String {
         self.with_timezone(&Local).to_rfc3339()
     }
 
-    fn from_string(value: &str) -> Result<Self, FieldValueError> {
+    fn from_raw(value: &str) -> Result<Self, FieldValueError> {
         if value.is_empty() {
             return Err(FieldValueError::RequiredValue);
         }
@@ -63,11 +86,14 @@ impl FieldValue for DateTime<Utc> {
 }
 
 impl FieldValue for DateTime<FixedOffset> {
-    fn as_string(&self) -> String {
+    type RawValue = String;
+    type DerefValue = str;
+
+    fn as_raw(&self) -> String {
         self.to_rfc3339()
     }
 
-    fn from_string(value: &str) -> Result<Self, FieldValueError> {
+    fn from_raw(value: &str) -> Result<Self, FieldValueError> {
         if value.is_empty() {
             return Err(FieldValueError::RequiredValue);
         }
@@ -79,7 +105,10 @@ impl FieldValue for DateTime<FixedOffset> {
 }
 
 impl FieldValue for TimeDelta {
-    fn as_string(&self) -> String {
+    type RawValue = String;
+    type DerefValue = str;
+
+    fn as_raw(&self) -> String {
         let (negative, total_seconds) = {
             let seconds = self.num_seconds();
             if seconds < 0 {
@@ -95,7 +124,7 @@ impl FieldValue for TimeDelta {
         format!("{sign}{hours:0>2}:{minutes:0>2}:{seconds:0>2}")
     }
 
-    fn from_string(value: &str) -> Result<Self, FieldValueError> {
+    fn from_raw(value: &str) -> Result<Self, FieldValueError> {
         if value.is_empty() {
             return Err(FieldValueError::RequiredValue);
         }
@@ -162,10 +191,13 @@ impl FieldValue for TimeDelta {
 }
 
 impl FieldValue for f32 {
-    fn as_string(&self) -> String {
+    type RawValue = String;
+    type DerefValue = str;
+
+    fn as_raw(&self) -> String {
         self.to_string()
     }
-    fn from_string(value: &str) -> Result<Self, FieldValueError> {
+    fn from_raw(value: &str) -> Result<Self, FieldValueError> {
         if value.is_empty() {
             return Err(FieldValueError::RequiredValue);
         }
@@ -177,10 +209,13 @@ impl FieldValue for f32 {
 }
 
 impl FieldValue for f64 {
-    fn as_string(&self) -> String {
+    type RawValue = String;
+    type DerefValue = str;
+
+    fn as_raw(&self) -> String {
         self.to_string()
     }
-    fn from_string(value: &str) -> Result<Self, FieldValueError> {
+    fn from_raw(value: &str) -> Result<Self, FieldValueError> {
         if value.is_empty() {
             return Err(FieldValueError::RequiredValue);
         }
@@ -192,10 +227,13 @@ impl FieldValue for f64 {
 }
 
 impl FieldValue for bigdecimal::BigDecimal {
-    fn as_string(&self) -> String {
+    type RawValue = String;
+    type DerefValue = str;
+
+    fn as_raw(&self) -> String {
         self.to_string()
     }
-    fn from_string(value: &str) -> Result<Self, FieldValueError> {
+    fn from_raw(value: &str) -> Result<Self, FieldValueError> {
         if value.is_empty() {
             return Err(FieldValueError::RequiredValue);
         }
@@ -206,33 +244,110 @@ impl FieldValue for bigdecimal::BigDecimal {
     }
 }
 
-impl<T: FieldValue> FieldValue for Option<T> {
-    fn as_string(&self) -> String {
+impl<T: FieldValue<RawValue = String, DerefValue = str>> FieldValue for Option<T> {
+    type RawValue = T::RawValue;
+    type DerefValue = T::DerefValue;
+
+    fn as_raw(&self) -> Self::RawValue {
         match self {
-            Some(value) => value.as_string(),
+            Some(value) => value.as_raw(),
             None => "".to_string(),
         }
     }
-    fn from_string(value: &str) -> Result<Self, FieldValueError> {
+    fn from_raw(value: &Self::DerefValue) -> Result<Self, FieldValueError> {
         if value.is_empty() {
             Ok(None)
         } else {
-            Ok(Some(T::from_string(value)?))
+            Ok(Some(T::from_raw(value)?))
         }
     }
 }
 
 impl FieldValue for i32 {
-    fn as_string(&self) -> String {
+    type RawValue = String;
+    type DerefValue = str;
+
+    fn as_raw(&self) -> String {
         self.to_string()
     }
-    fn from_string(value: &str) -> Result<Self, FieldValueError> {
+    fn from_raw(value: &str) -> Result<Self, FieldValueError> {
         if value.is_empty() {
             return Err(FieldValueError::RequiredValue);
         }
         match value.parse() {
             Ok(value) => Ok(value),
             Err(_) => Err(FieldValueError::InvalidValue),
+        }
+    }
+}
+
+impl FieldLabel for ConsumptionType {
+    fn as_label(&self) -> Element {
+        let label = self.as_title();
+        rsx! {
+            StrIcon {
+                title: label,
+                icon: rsx! {
+                    ConsumptionTypeIcon { consumption_type: *self }
+                },
+            }
+        }
+    }
+}
+
+impl FieldLabel for ConsumableUnit {
+    fn as_label(&self) -> Element {
+        let label = self.as_title();
+        rsx! {
+            StrIcon {
+                title: label,
+                icon: rsx! {
+                    ConsumableUnitIcon { consumable_unit: *self }
+                },
+            }
+        }
+    }
+}
+
+impl FieldLabel for ExerciseType {
+    fn as_label(&self) -> Element {
+        let label = self.as_title();
+        rsx! {
+            StrIcon {
+                title: label,
+                icon: rsx! {
+                    ExerciseTypeIcon { exercise_type: *self }
+                },
+            }
+        }
+    }
+}
+
+impl FieldLabel for Bristol {
+    fn as_label(&self) -> Element {
+        let label = self.as_title();
+        rsx! {
+            StrIcon {
+                title: label,
+                icon: rsx! {
+                    PooBristolIcon { bristol: *self }
+                },
+            }
+        }
+    }
+}
+
+impl FieldLabel for Consumable {
+    fn as_label(&self) -> Element {
+        rsx! {
+            ElementIcon {
+                title: rsx! {
+                    ConsumableLabel { consumable: self.clone() }
+                },
+                icon: rsx! {
+                    ConsumableIcon {}
+                },
+            }
         }
     }
 }

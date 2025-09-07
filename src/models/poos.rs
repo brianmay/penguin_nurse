@@ -1,16 +1,14 @@
 use std::str::FromStr;
 
+use derive_enum_all_values::AllValues;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::{
-    forms::{FieldValue, FieldValueError},
-    models::MaybeSet,
-};
+use crate::models::MaybeSet;
 
 use super::UserId;
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default, AllValues)]
 #[serde(tag = "type")]
 pub enum Bristol {
     #[default]
@@ -87,59 +85,30 @@ impl From<Bristol> for i32 {
     }
 }
 
-// impl FromStr for Bristol {
-//     type Err = BristolParseError;
-
-//     fn from_str(s: &str) -> Result<Self, Self::Err> {
-//         match s {
-//             "0" => Ok(Bristol::B0),
-//             "1" => Ok(Bristol::B1),
-//             "2" => Ok(Bristol::B2),
-//             "3" => Ok(Bristol::B3),
-//             "4" => Ok(Bristol::B4),
-//             "5" => Ok(Bristol::B5),
-//             "6" => Ok(Bristol::B6),
-//             "7" => Ok(Bristol::B7),
-//             _ => Err(BristolParseError),
-//         }
-//     }
-// }
-
-impl FieldValue for Bristol {
-    fn as_string(&self) -> String {
-        let v: i32 = (*self).into();
-        v.to_string()
-    }
-    fn from_string(value: &str) -> Result<Self, FieldValueError> {
-        match value {
-            "0" => Ok(Bristol::B0),
-            "1" => Ok(Bristol::B1),
-            "2" => Ok(Bristol::B2),
-            "3" => Ok(Bristol::B3),
-            "4" => Ok(Bristol::B4),
-            "5" => Ok(Bristol::B5),
-            "6" => Ok(Bristol::B6),
-            "7" => Ok(Bristol::B7),
-            _ => Err(FieldValueError::InvalidValue),
+impl Bristol {
+    pub fn as_id(&self) -> &'static str {
+        match self {
+            Bristol::B0 => "0",
+            Bristol::B1 => "1",
+            Bristol::B2 => "2",
+            Bristol::B3 => "3",
+            Bristol::B4 => "4",
+            Bristol::B5 => "5",
+            Bristol::B6 => "6",
+            Bristol::B7 => "7",
         }
     }
-}
 
-impl Bristol {
-    // pub fn as_value(&self) -> i32 {
-    //     (*self).into()
-    // }
-
-    pub fn as_str(&self) -> &'static str {
+    pub fn as_title(&self) -> &'static str {
         match self {
-            Bristol::B0 => "No poo",
-            Bristol::B1 => "Separate hard lumps",
-            Bristol::B2 => "Lumpy and sausage-like",
-            Bristol::B3 => "Sausage shape with cracks",
-            Bristol::B4 => "Smooth and soft",
-            Bristol::B5 => "Soft blobs with clear-cut edges",
-            Bristol::B6 => "Mushy",
-            Bristol::B7 => "Watery",
+            Bristol::B0 => "No poo. Looks like a ghost.",
+            Bristol::B1 => "Separate hard lumps. Looks like rabbit droppings.",
+            Bristol::B2 => "Lumpy and sausage-like. Looks like a bunch of grapes.",
+            Bristol::B3 => "Sausage shape with cracks. Looks like corn on the cob.",
+            Bristol::B4 => "Smooth and soft. Looks like a well-cooked sausage.",
+            Bristol::B5 => "Soft blobs with clear-cut edges. Looks like a chicken nuggets.",
+            Bristol::B6 => "Mushy. Looks like a porridge.",
+            Bristol::B7 => "Watery. Looks like a gravy.",
         }
     }
 }

@@ -84,34 +84,34 @@ pub fn ConsumptionUpdate(
     on_save: Callback<Consumption>,
 ) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_string(),
-        Operation::Update { consumption } => consumption.time.as_string(),
+        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_raw(),
+        Operation::Update { consumption } => consumption.time.as_raw(),
     });
 
     let duration = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { consumption } => consumption.duration.as_string(),
+        Operation::Update { consumption } => consumption.duration.as_raw(),
     });
 
     let consumption_type = use_signal(|| match &op {
-        Operation::Create { .. } => String::new(),
-        Operation::Update { consumption } => consumption.consumption_type.as_string(),
+        Operation::Create { .. } => None,
+        Operation::Update { consumption } => Some(consumption.consumption_type),
     });
 
     let liquid_mls = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { consumption } => consumption.liquid_mls.as_string(),
+        Operation::Update { consumption } => consumption.liquid_mls.as_raw(),
     });
 
     let comments = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { consumption } => consumption.comments.as_string(),
+        Operation::Update { consumption } => consumption.comments.as_raw(),
     });
 
     let validate = Validate {
         time: use_memo(move || validate_fixed_offset_date_time(&time())),
         duration: use_memo(move || validate_duration(&duration())),
-        consumption_type: use_memo(move || validate_consumption_type(&consumption_type())),
+        consumption_type: use_memo(move || validate_consumption_type(consumption_type())),
         liquid_mls: use_memo(move || validate_consumable_millilitres(&liquid_mls())),
         comments: use_memo(move || validate_comments(&comments())),
     };
@@ -279,7 +279,7 @@ const INJECT_SVG: Asset = asset!("/assets/consumption/inject.svg");
 const SKIN_SVG: Asset = asset!("/assets/consumption/skin.svg");
 
 #[component]
-pub fn consumption_icon(consumption_type: ConsumptionType) -> Element {
+pub fn ConsumptionTypeIcon(consumption_type: ConsumptionType) -> Element {
     let icon = match consumption_type {
         ConsumptionType::Digest => DIGEST_SVG,
         ConsumptionType::InhaleNose => NOSE_SVG,
@@ -288,40 +288,9 @@ pub fn consumption_icon(consumption_type: ConsumptionType) -> Element {
         ConsumptionType::Inject => INJECT_SVG,
         ConsumptionType::ApplySkin => SKIN_SVG,
     };
-    let alt = consumption_title(consumption_type);
+    let alt = consumption_type.as_title();
     rsx! {
         img { alt, src: icon }
-    }
-}
-
-pub const CONSUMPTION_TYPES: [ConsumptionType; 6] = [
-    ConsumptionType::Digest,
-    ConsumptionType::InhaleNose,
-    ConsumptionType::InhaleMouth,
-    ConsumptionType::SpitOut,
-    ConsumptionType::Inject,
-    ConsumptionType::ApplySkin,
-];
-
-pub fn consumption_id(consumption_type: ConsumptionType) -> &'static str {
-    match consumption_type {
-        ConsumptionType::Digest => "digest",
-        ConsumptionType::InhaleNose => "inhale_nose",
-        ConsumptionType::InhaleMouth => "inhale_mouth",
-        ConsumptionType::SpitOut => "spit_out",
-        ConsumptionType::Inject => "inject",
-        ConsumptionType::ApplySkin => "apply_skin",
-    }
-}
-
-pub fn consumption_title(consumption_type: ConsumptionType) -> &'static str {
-    match consumption_type {
-        ConsumptionType::Digest => "Digest",
-        ConsumptionType::InhaleNose => "Inhale (Nose)",
-        ConsumptionType::InhaleMouth => "Inhale (Mouth)",
-        ConsumptionType::SpitOut => "Spit Out",
-        ConsumptionType::Inject => "Inject",
-        ConsumptionType::ApplySkin => "Apply to Skin",
     }
 }
 
@@ -734,15 +703,15 @@ fn ConsumableConsumptionForm(
     on_cancel: Callback<()>,
     on_save: Callback<ConsumptionConsumable>,
 ) -> Element {
-    let mut quantity = use_signal(|| consumption.read().quantity.as_string());
-    let mut liquid_mls = use_signal(|| consumption.read().liquid_mls.as_string());
-    let mut comments = use_signal(|| consumption.read().comments.as_string());
+    let mut quantity = use_signal(|| consumption.read().quantity.as_raw());
+    let mut liquid_mls = use_signal(|| consumption.read().liquid_mls.as_raw());
+    let mut comments = use_signal(|| consumption.read().comments.as_raw());
 
     use_effect(move || {
         let nested = consumption.read();
-        quantity.set(nested.quantity.as_string());
-        liquid_mls.set(nested.liquid_mls.as_string());
-        comments.set(nested.comments.as_string());
+        quantity.set(nested.quantity.as_raw());
+        liquid_mls.set(nested.liquid_mls.as_raw());
+        comments.set(nested.comments.as_raw());
     });
 
     let validate = ValidateConsumption {
@@ -824,7 +793,7 @@ fn ConsumableConsumptionForm(
 #[component]
 pub fn ConsumptionSummary(consumption: Consumption) -> Element {
     rsx! {
-        div { {consumption_title(consumption.consumption_type)} }
+        div { {consumption.consumption_type.as_title()} }
         div {
             event_date_time_short { time: consumption.time }
         }
@@ -840,7 +809,7 @@ pub fn ConsumptionSummary(consumption: Consumption) -> Element {
 #[component]
 pub fn ConsumptionDetails(consumption: Consumption) -> Element {
     rsx! {
-        div { {consumption.consumption_type.to_string()} }
+        div { {consumption.consumption_type.as_title()} }
         if let Some(comments) = &consumption.comments {
             Markdown { content: comments.to_string() }
         }

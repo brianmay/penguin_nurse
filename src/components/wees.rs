@@ -73,32 +73,32 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> 
 #[component]
 pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_string(),
-        Operation::Update { wee } => wee.time.as_string(),
+        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_raw(),
+        Operation::Update { wee } => wee.time.as_raw(),
     });
     let duration = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { wee } => wee.duration.as_string(),
+        Operation::Update { wee } => wee.duration.as_raw(),
     });
     let urgency = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { wee } => wee.urgency.as_string(),
+        Operation::Update { wee } => wee.urgency.as_raw(),
     });
     let mls = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { wee } => wee.mls.as_string(),
+        Operation::Update { wee } => wee.mls.as_raw(),
     });
     let colour = use_signal(|| match &op {
         Operation::Create { .. } => (String::new(), String::new(), String::new()),
         Operation::Update { wee } => (
-            wee.colour.hue.as_string(),
-            wee.colour.saturation.as_string(),
-            wee.colour.value.as_string(),
+            wee.colour.hue.as_raw(),
+            wee.colour.saturation.as_raw(),
+            wee.colour.value.as_raw(),
         ),
     });
     let comments = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { wee } => wee.comments.as_string(),
+        Operation::Update { wee } => wee.comments.as_raw(),
     });
 
     let validate = Validate {
@@ -279,7 +279,7 @@ pub fn WeeDelete(wee: Wee, on_cancel: Callback, on_delete: Callback<Wee>) -> Ele
 const WEE_SVG: Asset = asset!("/assets/wee.svg");
 
 #[component]
-pub fn wee_icon() -> Element {
+pub fn WeeIcon() -> Element {
     let alt = wee_title();
     rsx! {
         img { alt, src: WEE_SVG }
@@ -291,7 +291,7 @@ pub fn wee_title() -> &'static str {
 }
 
 #[component]
-pub fn wee_duration(duration: chrono::TimeDelta) -> Element {
+pub fn WeeDuration(duration: chrono::TimeDelta) -> Element {
     let text = time_delta_to_string(duration);
 
     let classes = if duration.num_seconds() == 0 {
@@ -310,7 +310,7 @@ pub fn wee_duration(duration: chrono::TimeDelta) -> Element {
 }
 
 #[component]
-pub fn wee_mls(mls: i32) -> Element {
+pub fn WeeMls(mls: i32) -> Element {
     let classes = if mls == 0 {
         classes!["text-error"]
     } else if mls < 100 {
@@ -369,8 +369,8 @@ pub fn WeeSummary(wee: Wee) -> Element {
         div {
             event_date_time_short { time: wee.time }
         }
-        wee_mls { mls: wee.mls }
-        wee_duration { duration: wee.duration }
+        WeeMls { mls: wee.mls }
+        WeeDuration { duration: wee.duration }
         event_urgency { urgency: wee.urgency }
         event_colour { colour: wee.colour }
         if let Some(comments) = &wee.comments {
@@ -384,7 +384,7 @@ pub fn WeeDetails(wee: Wee) -> Element {
         event_colour { colour: wee.colour }
         div { class: "inline-block align-top",
             div {
-                wee_mls { mls: wee.mls }
+                WeeMls { mls: wee.mls }
             }
             div {
                 event_urgency { urgency: wee.urgency }
