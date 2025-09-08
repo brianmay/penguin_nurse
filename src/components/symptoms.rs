@@ -154,8 +154,8 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Symptom, EditErr
 #[component]
 pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Symptom>) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_string(),
-        Operation::Update { symptom } => symptom.time.as_string(),
+        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_raw(),
+        Operation::Update { symptom } => symptom.time.as_raw(),
     });
     let appetite_loss = use_signal(|| match &op {
         Operation::Create { .. } => "0".to_string(),
@@ -262,7 +262,7 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
     });
     let comments = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { symptom } => symptom.comments.as_string(),
+        Operation::Update { symptom } => symptom.comments.as_raw(),
     });
 
     let validate = {

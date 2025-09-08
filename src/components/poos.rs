@@ -77,31 +77,31 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Poo, EditError> 
 #[component]
 pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_string(),
-        Operation::Update { poo } => poo.time.as_string(),
+        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_raw(),
+        Operation::Update { poo } => poo.time.as_raw(),
     });
     let duration = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { poo } => poo.duration.as_string(),
+        Operation::Update { poo } => poo.duration.as_raw(),
     });
     let urgency = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { poo } => poo.urgency.as_string(),
+        Operation::Update { poo } => poo.urgency.as_raw(),
     });
     let quantity = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { poo } => poo.quantity.as_string(),
+        Operation::Update { poo } => poo.quantity.as_raw(),
     });
     let bristol = use_signal(|| match &op {
-        Operation::Create { .. } => String::new(),
-        Operation::Update { poo } => poo.bristol.as_string(),
+        Operation::Create { .. } => None,
+        Operation::Update { poo } => Some(poo.bristol),
     });
     let colour = use_signal(|| match &op {
         Operation::Create { .. } => (String::new(), String::new(), String::new()),
         Operation::Update { poo } => (
-            poo.colour.hue.as_string(),
-            poo.colour.saturation.as_string(),
-            poo.colour.value.as_string(),
+            poo.colour.hue.as_raw(),
+            poo.colour.saturation.as_raw(),
+            poo.colour.value.as_raw(),
         ),
     });
     let comments = use_signal(|| match &op {
@@ -114,7 +114,7 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
         duration: use_memo(move || validate_duration(&duration())),
         urgency: use_memo(move || validate_urgency(&urgency())),
         quantity: use_memo(move || validate_poo_quantity(&quantity())),
-        bristol: use_memo(move || validate_bristol(&bristol())),
+        bristol: use_memo(move || validate_bristol(bristol())),
         colour: use_memo(move || validate_colour(colour())),
         comments: use_memo(move || validate_comments(&comments())),
     };
@@ -294,7 +294,7 @@ pub fn PooDelete(poo: Poo, on_cancel: Callback, on_delete: Callback<Poo>) -> Ele
 const POO_SVG: Asset = asset!("/assets/poo.svg");
 
 #[component]
-pub fn poo_icon() -> Element {
+pub fn PooIcon() -> Element {
     let alt = poo_title();
     rsx! {
         img { alt, src: POO_SVG }
@@ -306,7 +306,7 @@ pub fn poo_title() -> &'static str {
 }
 
 #[component]
-pub fn poo_duration(duration: chrono::TimeDelta) -> Element {
+pub fn PooDuration(duration: chrono::TimeDelta) -> Element {
     let text = time_delta_to_string(duration);
 
     let classes = if duration.num_seconds() == 0 {
@@ -325,8 +325,8 @@ pub fn poo_duration(duration: chrono::TimeDelta) -> Element {
 }
 
 #[component]
-pub fn poo_bristol(bristol: Bristol) -> Element {
-    let bristol_string = bristol.as_str();
+pub fn PooBristol(bristol: Bristol) -> Element {
+    let bristol_string = bristol.as_title();
 
     let classes = match bristol {
         Bristol::B0 => classes!["text-error"],
@@ -345,7 +345,24 @@ pub fn poo_bristol(bristol: Bristol) -> Element {
 }
 
 #[component]
-pub fn poo_quantity(quantity: i32) -> Element {
+pub fn PooBristolIcon(bristol: Bristol) -> Element {
+    let icon = match bristol {
+        Bristol::B0 => "B0",
+        Bristol::B1 => "B1",
+        Bristol::B2 => "B2",
+        Bristol::B3 => "B3",
+        Bristol::B4 => "B4",
+        Bristol::B5 => "B5",
+        Bristol::B6 => "B6",
+        Bristol::B7 => "B7",
+    };
+    rsx! {
+        div { class: "text-sm w-10 dark:invert inline-block", {icon} }
+    }
+}
+
+#[component]
+pub fn PooQuantity(quantity: i32) -> Element {
     let classes = if quantity == 0 {
         classes!["text-error"]
     } else if quantity < 2 {
@@ -403,23 +420,24 @@ pub fn PooSummary(poo: Poo) -> Element {
             event_date_time { time: poo.time }
         }
         div {
-            poo_duration { duration: poo.duration }
+            PooDuration { duration: poo.duration }
         }
         if let Some(comments) = &poo.comments {
             Markdown { content: comments.to_string() }
         }
     }
 }
+
 #[component]
 pub fn PooDetails(poo: Poo) -> Element {
     rsx! {
         event_colour { colour: poo.colour }
         div { class: "inline-block align-top",
             div {
-                poo_bristol { bristol: poo.bristol }
+                PooBristol { bristol: poo.bristol }
             }
             div {
-                poo_quantity { quantity: poo.quantity }
+                PooQuantity { quantity: poo.quantity }
             }
             div {
                 event_urgency { urgency: poo.urgency }

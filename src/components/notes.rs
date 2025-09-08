@@ -56,13 +56,13 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Note, EditError>
 #[component]
 pub fn NoteUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Note>) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_string(),
-        Operation::Update { note } => note.time.as_string(),
+        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_raw(),
+        Operation::Update { note } => note.time.as_raw(),
     });
 
     let comments = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { note } => note.comments.as_string(),
+        Operation::Update { note } => note.comments.as_raw(),
     });
 
     let validate = Validate {

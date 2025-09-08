@@ -1,17 +1,14 @@
 use chrono::Local;
-use std::{fmt::Display, str::FromStr};
-use tap::Pipe;
+use derive_enum_all_values::AllValues;
+use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    forms::{FieldValue, FieldValueError},
-    models::common::MaybeSet,
-};
+use crate::models::common::MaybeSet;
 
 use super::UserId;
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, AllValues)]
 pub enum ExerciseType {
     Walking,
     Running,
@@ -23,51 +20,33 @@ pub enum ExerciseType {
     Other,
 }
 
-impl FieldValue for ExerciseType {
-    fn as_string(&self) -> String {
-        match self {
-            Self::Walking => "walking".to_string(),
-            Self::Running => "running".to_string(),
-            Self::Cycling => "cycling".to_string(),
-            Self::IndoorCycling => "indoor_cycling".to_string(),
-            Self::Jumping => "jumping".to_string(),
-            Self::Skipping => "skipping".to_string(),
-            Self::Flying => "flying".to_string(),
-            Self::Other => "other".to_string(),
-        }
-    }
-
-    fn from_string(value: &str) -> Result<Self, FieldValueError> {
-        match value {
-            "walking" => Ok(Self::Walking),
-            "running" => Ok(Self::Running),
-            "cycling" => Ok(Self::Cycling),
-            "indoor_cycling" => Ok(Self::IndoorCycling),
-            "jumping" => Ok(Self::Jumping),
-            "skipping" => Ok(Self::Skipping),
-            "flying" => Ok(Self::Flying),
-            "other" => Ok(Self::Other),
-            _ => Err(FieldValueError::InvalidValue),
-        }
-    }
-}
-
-impl Display for ExerciseType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl ExerciseType {
+    pub fn as_id(&self) -> &'static str {
         match self {
             Self::Walking => "walking",
             Self::Running => "running",
             Self::Cycling => "cycling",
-            Self::IndoorCycling => "indoor cycling",
+            Self::IndoorCycling => "indoor_cycling",
             Self::Jumping => "jumping",
             Self::Skipping => "skipping",
             Self::Flying => "flying",
             Self::Other => "other",
         }
-        .pipe(|s| f.write_str(s))
+    }
+
+    pub fn as_title(&self) -> &'static str {
+        match self {
+            Self::Walking => "Walking",
+            Self::Running => "Running",
+            Self::Cycling => "Cycling",
+            Self::IndoorCycling => "Indoor Cycling",
+            Self::Jumping => "Jumping",
+            Self::Skipping => "Skipping",
+            Self::Flying => "Flying",
+            Self::Other => "Other",
+        }
     }
 }
-
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ExerciseId(i64);
 

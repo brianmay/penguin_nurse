@@ -15,3 +15,21 @@ pub mod wee_urges;
 pub mod wees;
 
 mod times;
+
+use dioxus::prelude::*;
+
+#[component]
+pub fn StrIcon(title: &'static str, icon: Element) -> Element {
+    rsx! {
+        div { class: "text-sm w-10 dark:invert inline-block", {icon} }
+        span { class: "text-sm my-auto text-left", {title} }
+    }
+}
+
+#[component]
+pub fn ElementIcon(title: Element, icon: Element) -> Element {
+    rsx! {
+        div { class: "text-sm w-10 dark:invert inline-block", {icon} }
+        span { class: "text-sm my-auto text-left", {title} }
+    }
+}

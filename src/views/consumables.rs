@@ -10,7 +10,7 @@ use crate::{
         buttons::{ChangeButton, CreateButton},
         consumables::{
             ActiveDialog, ConsumableDialog, ConsumableItemList, ListDialogReference, Operation,
-            organic_icon,
+            OrganicIcon,
         },
         events::Markdown,
     },
@@ -37,7 +37,7 @@ fn EntryRow(
             onclick: move |_| { selected.set(Some(id)) },
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 if consumable.is_organic {
-                    organic_icon {}
+                    OrganicIcon {}
                 }
                 {consumable.name}
             }

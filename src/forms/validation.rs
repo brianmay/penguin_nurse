@@ -7,8 +7,10 @@ use crate::models::{Bristol, ConsumableUnit, ConsumptionType, ExerciseType};
 
 use super::{FieldValue, errors::ValidationError};
 
-pub fn validate_field_value<T: FieldValue>(str: &str) -> Result<T, ValidationError> {
-    T::from_string(str).map_err(|err| ValidationError(err.to_string()))
+pub fn validate_field_value<T: FieldValue<RawValue = String, DerefValue = str>>(
+    str: &str,
+) -> Result<T, ValidationError> {
+    T::from_raw(str).map_err(|err| ValidationError(err.to_string()))
 }
 
 pub fn validate_name(str: &str) -> Result<String, ValidationError> {
@@ -111,20 +113,26 @@ pub fn validate_consumable_millilitres(str: &str) -> Result<Option<f64>, Validat
     validate_field_value(str)
 }
 
-pub fn validate_consumable_unit(str: &str) -> Result<ConsumableUnit, ValidationError> {
-    validate_field_value(str)
+pub fn validate_consumable_unit(
+    unit: Option<ConsumableUnit>,
+) -> Result<ConsumableUnit, ValidationError> {
+    unit.ok_or_else(|| ValidationError("Unit is required".to_string()))
 }
 
-pub fn validate_consumption_type(str: &str) -> Result<ConsumptionType, ValidationError> {
-    validate_field_value(str)
+pub fn validate_consumption_type(
+    consumption_type: Option<ConsumptionType>,
+) -> Result<ConsumptionType, ValidationError> {
+    consumption_type.ok_or_else(|| ValidationError("Consumption type is required".to_string()))
 }
 
-pub fn validate_exercise_type(str: &str) -> Result<ExerciseType, ValidationError> {
-    validate_field_value(str)
+pub fn validate_exercise_type(
+    exercise_type: Option<ExerciseType>,
+) -> Result<ExerciseType, ValidationError> {
+    exercise_type.ok_or_else(|| ValidationError("Exercise type is required".to_string()))
 }
 
-pub fn validate_bristol(str: &str) -> Result<Bristol, ValidationError> {
-    validate_field_value(str)
+pub fn validate_bristol(bristol_type: Option<Bristol>) -> Result<Bristol, ValidationError> {
+    bristol_type.ok_or_else(|| ValidationError("Bristol type is required".to_string()))
 }
 
 pub fn validate_colour_hue(str: &str) -> Result<f32, ValidationError> {
@@ -164,7 +172,7 @@ pub fn validate_poo_quantity(str: &str) -> Result<i32, ValidationError> {
 
 pub fn validate_in_range<T>(str: &str, min: T, max: T) -> Result<T, ValidationError>
 where
-    T: FieldValue + PartialOrd + std::fmt::Display,
+    T: FieldValue<RawValue = String, DerefValue = str> + PartialOrd + std::fmt::Display,
 {
     validate_field_value::<T>(str)?.pipe(|v: T| {
         if (min <= v) && (v <= max) {
@@ -180,7 +188,7 @@ where
 
 pub fn validate_in_range_maybe<T>(str: &str, min: T, max: T) -> Result<Option<T>, ValidationError>
 where
-    T: FieldValue + PartialOrd + std::fmt::Display,
+    T: FieldValue<RawValue = String, DerefValue = str> + PartialOrd + std::fmt::Display,
 {
     validate_field_value::<Option<T>>(str)?
         .map(|v: T| {

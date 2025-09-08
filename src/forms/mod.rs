@@ -39,4 +39,3 @@ pub use validation::{
 
 mod values;
 pub use values::FieldValue;
-pub use values::FieldValueError;

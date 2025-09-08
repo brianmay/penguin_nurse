@@ -57,16 +57,16 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<WeeUrge, EditErr
 #[component]
 pub fn WeeUrgeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<WeeUrge>) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_string(),
-        Operation::Update { wee_urge } => wee_urge.time.as_string(),
+        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_raw(),
+        Operation::Update { wee_urge } => wee_urge.time.as_raw(),
     });
     let urgency = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { wee_urge } => wee_urge.urgency.as_string(),
+        Operation::Update { wee_urge } => wee_urge.urgency.as_raw(),
     });
     let comments = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { wee_urge } => wee_urge.comments.as_string(),
+        Operation::Update { wee_urge } => wee_urge.comments.as_raw(),
     });
 
     let validate = Validate {
@@ -214,7 +214,7 @@ pub fn WeeUrgeDelete(
 const WEE_URGENCY_SVG: Asset = asset!("/assets/wee_urge.svg");
 
 #[component]
-pub fn wee_urge_icon() -> Element {
+pub fn WeeUrgeIcon() -> Element {
     let alt = wee_urge_title();
     rsx! {
         img { alt, src: WEE_URGENCY_SVG }

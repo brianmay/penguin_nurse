@@ -7,21 +7,22 @@ use tap::Pipe;
 use crate::{
     Route,
     components::{
+        StrIcon,
         buttons::{ChangeButton, CreateButton, DeleteButton, NavButton},
         consumptions::{
-            self, ConsumptionDetails, ConsumptionItemList, consumption_duration, consumption_icon,
-            consumption_title,
+            self, ConsumptionDetails, ConsumptionItemList, ConsumptionTypeIcon,
+            consumption_duration,
         },
         events::event_time,
-        exercises::{ExerciseDetails, exercise_icon, exercise_title},
-        health_metrics::{HealthMetricDetails, health_metric_icon, health_metric_title},
+        exercises::{ExerciseDetails, ExerciseTypeIcon},
+        health_metrics::{HealthMetricDetails, HealthMetricIcon, health_metric_title},
         notes::{NoteDetails, note_icon, note_title},
-        poos::{self, PooDetails, poo_duration, poo_icon, poo_title},
+        poos::{self, PooDetails, PooDuration, PooIcon, poo_title},
         refluxs::{RefluxDetails, reflux_duration, reflux_icon, reflux_title},
         symptoms::{SymptomDetails, symptom_icon, symptom_title},
         timeline::{ActiveDialog, DialogReference, TimelineDialog},
-        wee_urges::{self, WeeUrgeDetails, wee_urge_icon, wee_urge_title},
-        wees::{self, WeeDetails, wee_duration, wee_icon, wee_title},
+        wee_urges::{self, WeeUrgeDetails, WeeUrgeIcon, wee_urge_title},
+        wees::{self, WeeDetails, WeeDuration, WeeIcon, wee_title},
     },
     dt::{display_date, get_date_for_dt, get_utc_times_for_date},
     functions::{
@@ -39,14 +40,6 @@ use crate::{
     models::{Consumable, Consumption, Entry, EntryData, EntryId, Timeline},
     use_user,
 };
-
-#[component]
-pub fn Icon(title: &'static str, icon: Element) -> Element {
-    rsx! {
-        div { class: "text-sm w-10 dark:invert inline-block", {icon} }
-        div { class: "text-sm", {title} }
-    }
-}
 
 #[component]
 fn EntryRow(
@@ -71,10 +64,10 @@ fn EntryRow(
                 EntryData::Wee(wee) => {
                     rsx! {
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            Icon { title: wee_title(), icon: wee_icon() }
+                            StrIcon { title: wee_title(), icon: WeeIcon() }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            wee_duration { duration: wee.duration }
+                            WeeDuration { duration: wee.duration }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             WeeDetails { wee: wee.clone() }
@@ -84,7 +77,7 @@ fn EntryRow(
                 EntryData::WeeUrge(wee_urge) => {
                     rsx! {
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            Icon { title: wee_urge_title(), icon: wee_urge_icon() }
+                            StrIcon { title: wee_urge_title(), icon: WeeUrgeIcon() }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2" }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
@@ -95,10 +88,10 @@ fn EntryRow(
                 EntryData::Poo(poo) => {
                     rsx! {
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            Icon { title: poo_title(), icon: poo_icon() }
+                            StrIcon { title: poo_title(), icon: PooIcon() }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            poo_duration { duration: poo.duration }
+                            PooDuration { duration: poo.duration }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             PooDetails { poo: poo.clone() }
@@ -108,10 +101,10 @@ fn EntryRow(
                 EntryData::Consumption(consumption) => {
                     rsx! {
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            Icon {
-                                title: consumption_title(consumption.consumption.consumption_type),
+                            StrIcon {
+                                title: &consumption.consumption.consumption_type.as_title(),
                                 icon: rsx! {
-                                    consumption_icon { consumption_type: consumption.consumption.consumption_type }
+                                    ConsumptionTypeIcon { consumption_type: consumption.consumption.consumption_type }
                                 },
                             }
                         }
@@ -129,16 +122,16 @@ fn EntryRow(
                 EntryData::Exercise(exercise) => {
                     rsx! {
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            Icon {
-                                title: exercise_title(exercise.exercise_type),
+                            StrIcon {
+                                title: &exercise.exercise_type.as_title(),
                                 icon: rsx! {
-                                    exercise_icon { exercise_type: exercise.exercise_type }
+                                    ExerciseTypeIcon { exercise_type: exercise.exercise_type }
                                 },
                             }
 
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            wee_duration { duration: exercise.duration }
+                            WeeDuration { duration: exercise.duration }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             ExerciseDetails { exercise: exercise.clone() }
@@ -148,7 +141,7 @@ fn EntryRow(
                 EntryData::HealthMetric(health_metric) => {
                     rsx! {
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            Icon { title: health_metric_title(), icon: health_metric_icon() }
+                            StrIcon { title: health_metric_title(), icon: HealthMetricIcon() }
 
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2" }
@@ -160,7 +153,7 @@ fn EntryRow(
                 EntryData::Symptom(symptom) => {
                     rsx! {
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            Icon { title: symptom_title(), icon: symptom_icon() }
+                            StrIcon { title: symptom_title(), icon: symptom_icon() }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2" }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
@@ -171,7 +164,7 @@ fn EntryRow(
                 EntryData::Reflux(reflux) => {
                     rsx! {
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            Icon { title: reflux_title(), icon: reflux_icon() }
+                            StrIcon { title: reflux_title(), icon: reflux_icon() }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             reflux_duration { duration: reflux.duration }
@@ -184,7 +177,7 @@ fn EntryRow(
                 EntryData::Note(note) => {
                     rsx! {
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            Icon { title: note_title(), icon: note_icon() }
+                            StrIcon { title: note_title(), icon: note_icon() }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2" }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",

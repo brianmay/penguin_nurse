@@ -222,9 +222,9 @@ pub fn UserCreate(on_cancel: Callback, on_save: Callback<User>) -> Element {
 pub fn UserUpdate(user: User, on_cancel: Callback, on_save: Callback<User>) -> Element {
     let user = Arc::new(user);
 
-    let username = use_signal(|| user.username.as_string());
-    let email = use_signal(|| user.email.as_string());
-    let full_name = use_signal(|| user.full_name.as_string());
+    let username = use_signal(|| user.username.as_raw());
+    let email = use_signal(|| user.email.as_raw());
+    let full_name = use_signal(|| user.full_name.as_raw());
     let is_admin = use_signal(|| user.is_admin);
 
     let validate = ValidateUpdateExistingUser {

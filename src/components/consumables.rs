@@ -95,17 +95,17 @@ pub fn ConsumableUpdate(
 ) -> Element {
     let name = use_signal(|| match &op {
         Operation::Create => String::new(),
-        Operation::Update { consumable } => consumable.name.as_string(),
+        Operation::Update { consumable } => consumable.name.as_raw(),
     });
 
     let brand = use_signal(|| match &op {
         Operation::Create => String::new(),
-        Operation::Update { consumable } => consumable.brand.as_string(),
+        Operation::Update { consumable } => consumable.brand.as_raw(),
     });
 
     let barcode = use_signal(|| match &op {
         Operation::Create => String::new(),
-        Operation::Update { consumable } => consumable.barcode.as_string(),
+        Operation::Update { consumable } => consumable.barcode.as_raw(),
     });
 
     let is_organic = use_signal(|| match &op {
@@ -114,23 +114,23 @@ pub fn ConsumableUpdate(
     });
 
     let unit = use_signal(|| match &op {
-        Operation::Create => String::new(),
-        Operation::Update { consumable } => consumable.unit.as_string(),
+        Operation::Create => None,
+        Operation::Update { consumable } => Some(consumable.unit),
     });
 
     let comments = use_signal(|| match &op {
         Operation::Create => String::new(),
-        Operation::Update { consumable } => consumable.comments.as_string(),
+        Operation::Update { consumable } => consumable.comments.as_raw(),
     });
 
     let created = use_signal(|| match &op {
         Operation::Create => String::new(),
-        Operation::Update { consumable } => consumable.created.as_string(),
+        Operation::Update { consumable } => consumable.created.as_raw(),
     });
 
     let destroyed = use_signal(|| match &op {
         Operation::Create => String::new(),
-        Operation::Update { consumable } => consumable.destroyed.as_string(),
+        Operation::Update { consumable } => consumable.destroyed.as_raw(),
     });
 
     let validate = Validate {
@@ -138,7 +138,7 @@ pub fn ConsumableUpdate(
         brand: use_memo(move || validate_brand(&brand())),
         barcode: use_memo(move || validate_barcode(&barcode())),
         is_organic: use_memo(move || Ok(is_organic())),
-        unit: use_memo(move || validate_consumable_unit(&unit())),
+        unit: use_memo(move || validate_consumable_unit(unit())),
         comments: use_memo(move || validate_comments(&comments())),
         created: use_memo(move || validate_maybe_date_time(&created())),
         destroyed: use_memo(move || validate_maybe_date_time(&destroyed())),
@@ -829,15 +829,15 @@ fn ConsumableNestedForm(
     on_cancel: Callback<()>,
     on_save: Callback<NestedConsumable>,
 ) -> Element {
-    let mut quantity = use_signal(|| nested.read().quantity.as_string());
-    let mut liquid_mls = use_signal(|| nested.read().liquid_mls.as_string());
-    let mut comments = use_signal(|| nested.read().comments.as_string());
+    let mut quantity = use_signal(|| nested.read().quantity.as_raw());
+    let mut liquid_mls = use_signal(|| nested.read().liquid_mls.as_raw());
+    let mut comments = use_signal(|| nested.read().comments.as_raw());
 
     use_effect(move || {
         let nested = nested.read();
-        quantity.set(nested.quantity.as_string());
-        liquid_mls.set(nested.liquid_mls.as_string());
-        comments.set(nested.comments.as_string());
+        quantity.set(nested.quantity.as_raw());
+        liquid_mls.set(nested.liquid_mls.as_raw());
+        comments.set(nested.comments.as_raw());
     });
 
     let validate = ValidateNested {
@@ -919,7 +919,8 @@ fn ConsumableNestedForm(
 const ORGANIC_SVG: Asset = asset!("/assets/organic.svg");
 const CONSUMABLE_SVG: Asset = asset!("/assets/consumable.svg");
 
-pub fn organic_icon() -> Element {
+#[component]
+pub fn OrganicIcon() -> Element {
     rsx! {
         img {
             class: "w-5 dark:invert inline-block",
@@ -929,7 +930,8 @@ pub fn organic_icon() -> Element {
     }
 }
 
-pub fn consumable_icon() -> Element {
+#[component]
+pub fn ConsumableIcon() -> Element {
     rsx! {
         img { alt: "consumable", src: CONSUMABLE_SVG }
     }
@@ -940,7 +942,7 @@ pub fn ConsumableSummary(consumable: Consumable) -> Element {
     rsx! {
         div {
             if consumable.is_organic {
-                organic_icon {}
+                OrganicIcon {}
             }
             {consumable.name}
         }
@@ -978,7 +980,7 @@ pub fn ConsumableLabel(consumable: Consumable) -> Element {
     rsx! {
         if consumable.is_organic {
             div {
-                organic_icon {}
+                OrganicIcon {}
                 "Organic"
             }
         }
@@ -1053,5 +1055,18 @@ pub fn ConsumableItemList(list: Vec<ConsumableItem>, show_links: Option<bool>) -
                 }
             }
         }
+    }
+}
+
+#[component]
+pub fn ConsumableUnitIcon(consumable_unit: ConsumableUnit) -> Element {
+    let text = match consumable_unit {
+        ConsumableUnit::Millilitres => "ML",
+        ConsumableUnit::Grams => "G",
+        ConsumableUnit::InternationalUnits => "IU",
+        ConsumableUnit::Number => "#",
+    };
+    rsx! {
+        div { class: "text-sm w-10 dark:invert inline-block", {text} }
     }
 }

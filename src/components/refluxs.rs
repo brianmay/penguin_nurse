@@ -70,18 +70,18 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Reflux, EditErro
 #[component]
 pub fn RefluxUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Reflux>) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_string(),
-        Operation::Update { reflux } => reflux.time.as_string(),
+        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_raw(),
+        Operation::Update { reflux } => reflux.time.as_raw(),
     });
 
     let duration = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { reflux } => reflux.duration.as_string(),
+        Operation::Update { reflux } => reflux.duration.as_raw(),
     });
 
     let location = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { reflux } => reflux.location.as_string(),
+        Operation::Update { reflux } => reflux.location.as_raw(),
     });
 
     let severity = use_signal(|| match &op {
@@ -91,7 +91,7 @@ pub fn RefluxUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Reflux
 
     let comments = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { reflux } => reflux.comments.as_string(),
+        Operation::Update { reflux } => reflux.comments.as_raw(),
     });
 
     let validate = Validate {

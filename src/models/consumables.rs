@@ -1,16 +1,14 @@
 use std::{fmt::Display, str::FromStr};
 
 use chrono::{DateTime, Utc};
+use derive_enum_all_values::AllValues;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    forms::{FieldValue, FieldValueError},
-    models::MaybeSet,
-};
+use crate::models::MaybeSet;
 
 use super::ConsumableItem;
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, AllValues)]
 pub enum ConsumableUnit {
     Millilitres,
     Grams,
@@ -18,28 +16,25 @@ pub enum ConsumableUnit {
     Number,
 }
 
-impl FieldValue for ConsumableUnit {
-    fn as_string(&self) -> String {
-        match self {
-            Self::Millilitres => "millilitres".to_string(),
-            Self::Grams => "grams".to_string(),
-            Self::InternationalUnits => "international_units".to_string(),
-            Self::Number => "number".to_string(),
-        }
-    }
-
-    fn from_string(value: &str) -> Result<Self, FieldValueError> {
-        match value {
-            "millilitres" => Ok(Self::Millilitres),
-            "grams" => Ok(Self::Grams),
-            "international_units" => Ok(Self::InternationalUnits),
-            "number" => Ok(Self::Number),
-            _ => Err(FieldValueError::InvalidValue),
-        }
-    }
-}
-
 impl ConsumableUnit {
+    pub fn as_id(&self) -> &'static str {
+        match self {
+            Self::Millilitres => "millilitres",
+            Self::Grams => "grams",
+            Self::InternationalUnits => "international_units",
+            Self::Number => "number",
+        }
+    }
+
+    pub fn as_title(&self) -> &'static str {
+        match self {
+            Self::Millilitres => "Millilitres",
+            Self::Grams => "Grams",
+            Self::InternationalUnits => "International Units",
+            Self::Number => "Number",
+        }
+    }
+
     pub fn postfix(&self) -> &'static str {
         match self {
             Self::Millilitres => "ml",
