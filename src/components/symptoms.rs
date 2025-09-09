@@ -5,8 +5,9 @@ use crate::{
     components::events::{Markdown, event_date_time_short},
     forms::{
         Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputNumber,
-        InputTextArea, Saving, ValidationError, validate_comments, validate_fixed_offset_date_time,
-        validate_symptom_abdominal_pain_location, validate_symptom_intensity,
+        InputString, InputTextArea, Saving, ValidationError, validate_comments,
+        validate_fixed_offset_date_time, validate_symptom_abdominal_pain_location,
+        validate_symptom_intensity,
     },
     functions::symptoms::{create_symptom, delete_symptom, update_symptom},
     models::{ChangeSymptom, MaybeSet, NewSymptom, Symptom, UserId},
@@ -440,7 +441,7 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
                 validate: validate.abdominal_pain,
                 disabled,
             }
-            InputNumber {
+            InputString {
                 id: "abdominal_pain_location",
                 label: "Abdominal Pain Location",
                 value: abdominal_pain_location,
