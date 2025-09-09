@@ -1,6 +1,9 @@
-use crate::models::{self, MaybeSet, UserId, WeeUrgeId};
+use crate::models::{self, UserId, WeeUrgeId};
 use chrono::{DateTime, Utc};
 use dioxus::prelude::*;
+
+#[cfg(feature = "server")]
+use crate::models::MaybeSet;
 
 #[cfg(feature = "server")]
 use super::common::{get_database_connection, get_user_id};

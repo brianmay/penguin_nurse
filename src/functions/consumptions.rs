@@ -1,9 +1,9 @@
 use dioxus::prelude::*;
 
-use crate::models::{self, ConsumableId, ConsumptionId, MaybeSet, UserId};
+use crate::models::{self, ConsumableId, ConsumptionId, UserId};
 
 #[cfg(feature = "server")]
-use crate::models::ConsumptionWithItems;
+use crate::models::{ConsumptionWithItems, MaybeSet};
 
 #[cfg(feature = "server")]
 use super::common::{get_database_connection, get_user_id};

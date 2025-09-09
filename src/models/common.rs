@@ -9,6 +9,7 @@ pub enum MaybeSet<T> {
 }
 
 impl<T> MaybeSet<T> {
+    #[cfg(feature = "server")]
     pub fn as_deref(&self) -> MaybeSet<&T::Target>
     where
         T: std::ops::Deref,
@@ -19,6 +20,7 @@ impl<T> MaybeSet<T> {
         }
     }
 
+    #[cfg(feature = "server")]
     pub fn as_ref(&self) -> MaybeSet<&T> {
         match self {
             Self::Set(value) => MaybeSet::Set(value),
@@ -26,6 +28,7 @@ impl<T> MaybeSet<T> {
         }
     }
 
+    #[cfg(feature = "server")]
     pub fn into_option(self) -> Option<T> {
         match self {
             MaybeSet::Set(value) => Some(value),
@@ -33,6 +36,7 @@ impl<T> MaybeSet<T> {
         }
     }
 
+    #[cfg(feature = "server")]
     pub fn map<U, F: FnOnce(T) -> U>(self, f: F) -> MaybeSet<U> {
         match self {
             MaybeSet::Set(value) => MaybeSet::Set(f(value)),
@@ -40,6 +44,7 @@ impl<T> MaybeSet<T> {
         }
     }
 
+    #[cfg(feature = "server")]
     pub fn map_into<U>(self) -> MaybeSet<U>
     where
         U: From<T>,
@@ -49,6 +54,7 @@ impl<T> MaybeSet<T> {
 }
 
 impl<T> MaybeSet<Option<T>> {
+    #[cfg(feature = "server")]
     pub fn map_inner_deref(&self) -> MaybeSet<Option<&T::Target>>
     where
         T: std::ops::Deref,
@@ -56,6 +62,7 @@ impl<T> MaybeSet<Option<T>> {
         self.as_ref().map(|x| x.as_deref())
     }
 
+    #[cfg(feature = "server")]
     pub fn map_inner_into<U>(self) -> MaybeSet<Option<U>>
     where
         U: From<T>,
@@ -63,6 +70,7 @@ impl<T> MaybeSet<Option<T>> {
         self.map(|x| x.map(|y| y.into()))
     }
 
+    #[cfg(feature = "server")]
     pub fn as_inner_ref(&self) -> MaybeSet<Option<&T>> {
         self.as_ref().map(|x| x.as_ref())
     }
