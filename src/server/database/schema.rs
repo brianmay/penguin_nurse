@@ -211,6 +211,15 @@ diesel::table! {
         comments -> Nullable<Text>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        shoulder_pain -> Int4,
+        hand_pain -> Int4,
+        foot_pain -> Int4,
+        wrist_pain -> Int4,
+        dental_pain -> Int4,
+        eye_pain -> Int4,
+        ear_pain -> Int4,
+        feeling_hot -> Int4,
+        feeling_cold -> Int4,
     }
 }
 

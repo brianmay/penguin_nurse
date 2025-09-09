@@ -14,6 +14,7 @@ use crate::{
 };
 use classes::classes;
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Operation {
     Create { user_id: UserId },
@@ -48,6 +49,15 @@ struct Validate {
     anxiety: Memo<Result<i32, ValidationError>>,
     depression: Memo<Result<i32, ValidationError>>,
     insomnia: Memo<Result<i32, ValidationError>>,
+    shoulder_pain: Memo<Result<i32, ValidationError>>,
+    hand_pain: Memo<Result<i32, ValidationError>>,
+    foot_pain: Memo<Result<i32, ValidationError>>,
+    wrist_pain: Memo<Result<i32, ValidationError>>,
+    dental_pain: Memo<Result<i32, ValidationError>>,
+    eye_pain: Memo<Result<i32, ValidationError>>,
+    ear_pain: Memo<Result<i32, ValidationError>>,
+    feeling_hot: Memo<Result<i32, ValidationError>>,
+    feeling_cold: Memo<Result<i32, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
@@ -78,6 +88,15 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Symptom, EditErr
     let anxiety = validate.anxiety.read().clone()?;
     let depression = validate.depression.read().clone()?;
     let insomnia = validate.insomnia.read().clone()?;
+    let shoulder_pain = validate.shoulder_pain.read().clone()?;
+    let hand_pain = validate.hand_pain.read().clone()?;
+    let foot_pain = validate.foot_pain.read().clone()?;
+    let wrist_pain = validate.wrist_pain.read().clone()?;
+    let dental_pain = validate.dental_pain.read().clone()?;
+    let eye_pain = validate.eye_pain.read().clone()?;
+    let ear_pain = validate.ear_pain.read().clone()?;
+    let feeling_hot = validate.feeling_hot.read().clone()?;
+    let feeling_cold = validate.feeling_cold.read().clone()?;
     let comments = validate.comments.read().clone()?;
 
     match op {
@@ -110,6 +129,15 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Symptom, EditErr
                 anxiety,
                 depression,
                 insomnia,
+                shoulder_pain,
+                hand_pain,
+                foot_pain,
+                wrist_pain,
+                dental_pain,
+                eye_pain,
+                ear_pain,
+                feeling_hot,
+                feeling_cold,
                 comments,
             };
             create_symptom(updates).await.map_err(EditError::Server)
@@ -143,6 +171,15 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Symptom, EditErr
                 anxiety: MaybeSet::Set(anxiety),
                 depression: MaybeSet::Set(depression),
                 insomnia: MaybeSet::Set(insomnia),
+                shoulder_pain: MaybeSet::Set(shoulder_pain),
+                hand_pain: MaybeSet::Set(hand_pain),
+                foot_pain: MaybeSet::Set(foot_pain),
+                wrist_pain: MaybeSet::Set(wrist_pain),
+                dental_pain: MaybeSet::Set(dental_pain),
+                eye_pain: MaybeSet::Set(eye_pain),
+                ear_pain: MaybeSet::Set(ear_pain),
+                feeling_hot: MaybeSet::Set(feeling_hot),
+                feeling_cold: MaybeSet::Set(feeling_cold),
                 comments: MaybeSet::Set(comments),
             };
             update_symptom(symptom.id, changes)
@@ -261,6 +298,42 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
         Operation::Create { .. } => "0".to_string(),
         Operation::Update { symptom } => symptom.insomnia.to_string(),
     });
+    let shoulder_pain = use_signal(|| match &op {
+        Operation::Create { .. } => "0".to_string(),
+        Operation::Update { symptom } => symptom.shoulder_pain.to_string(),
+    });
+    let hand_pain = use_signal(|| match &op {
+        Operation::Create { .. } => "0".to_string(),
+        Operation::Update { symptom } => symptom.hand_pain.to_string(),
+    });
+    let foot_pain = use_signal(|| match &op {
+        Operation::Create { .. } => "0".to_string(),
+        Operation::Update { symptom } => symptom.foot_pain.to_string(),
+    });
+    let wrist_pain = use_signal(|| match &op {
+        Operation::Create { .. } => "0".to_string(),
+        Operation::Update { symptom } => symptom.wrist_pain.to_string(),
+    });
+    let dental_pain = use_signal(|| match &op {
+        Operation::Create { .. } => "0".to_string(),
+        Operation::Update { symptom } => symptom.dental_pain.to_string(),
+    });
+    let eye_pain = use_signal(|| match &op {
+        Operation::Create { .. } => "0".to_string(),
+        Operation::Update { symptom } => symptom.eye_pain.to_string(),
+    });
+    let ear_pain = use_signal(|| match &op {
+        Operation::Create { .. } => "0".to_string(),
+        Operation::Update { symptom } => symptom.ear_pain.to_string(),
+    });
+    let feeling_hot = use_signal(|| match &op {
+        Operation::Create { .. } => "0".to_string(),
+        Operation::Update { symptom } => symptom.feeling_hot.to_string(),
+    });
+    let feeling_cold = use_signal(|| match &op {
+        Operation::Create { .. } => "0".to_string(),
+        Operation::Update { symptom } => symptom.feeling_cold.to_string(),
+    });
     let comments = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
         Operation::Update { symptom } => symptom.comments.as_raw(),
@@ -302,6 +375,15 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
             anxiety: use_memo(move || validate_symptom_intensity(&anxiety())),
             depression: use_memo(move || validate_symptom_intensity(&depression())),
             insomnia: use_memo(move || validate_symptom_intensity(&insomnia())),
+            shoulder_pain: use_memo(move || validate_symptom_intensity(&shoulder_pain())),
+            hand_pain: use_memo(move || validate_symptom_intensity(&hand_pain())),
+            foot_pain: use_memo(move || validate_symptom_intensity(&foot_pain())),
+            wrist_pain: use_memo(move || validate_symptom_intensity(&wrist_pain())),
+            dental_pain: use_memo(move || validate_symptom_intensity(&dental_pain())),
+            eye_pain: use_memo(move || validate_symptom_intensity(&eye_pain())),
+            ear_pain: use_memo(move || validate_symptom_intensity(&ear_pain())),
+            feeling_hot: use_memo(move || validate_symptom_intensity(&feeling_hot())),
+            feeling_cold: use_memo(move || validate_symptom_intensity(&feeling_cold())),
             comments: use_memo(move || validate_comments(&comments())),
         }
     };
@@ -337,6 +419,15 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
             || validate.anxiety.read().is_err()
             || validate.depression.read().is_err()
             || validate.insomnia.read().is_err()
+            || validate.shoulder_pain.read().is_err()
+            || validate.hand_pain.read().is_err()
+            || validate.foot_pain.read().is_err()
+            || validate.wrist_pain.read().is_err()
+            || validate.dental_pain.read().is_err()
+            || validate.eye_pain.read().is_err()
+            || validate.ear_pain.read().is_err()
+            || validate.feeling_hot.read().is_err()
+            || validate.feeling_cold.read().is_err()
             || validate.comments.read().is_err()
             || disabled()
     });
@@ -558,6 +649,69 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
                 label: "Insomnia (0-10)",
                 value: insomnia,
                 validate: validate.insomnia,
+                disabled,
+            }
+            InputNumber {
+                id: "shoulder_pain",
+                label: "Shoulder Pain (0-10)",
+                value: shoulder_pain,
+                validate: validate.shoulder_pain,
+                disabled,
+            }
+            InputNumber {
+                id: "hand_pain",
+                label: "Hand Pain (0-10)",
+                value: hand_pain,
+                validate: validate.hand_pain,
+                disabled,
+            }
+            InputNumber {
+                id: "foot_pain",
+                label: "Foot Pain (0-10)",
+                value: foot_pain,
+                validate: validate.foot_pain,
+                disabled,
+            }
+            InputNumber {
+                id: "wrist_pain",
+                label: "Wrist Pain (0-10)",
+                value: wrist_pain,
+                validate: validate.wrist_pain,
+                disabled,
+            }
+            InputNumber {
+                id: "dental_pain",
+                label: "Dental Pain (0-10)",
+                value: dental_pain,
+                validate: validate.dental_pain,
+                disabled,
+            }
+            InputNumber {
+                id: "eye_pain",
+                label: "Eye Pain (0-10)",
+                value: eye_pain,
+                validate: validate.eye_pain,
+                disabled,
+            }
+            InputNumber {
+                id: "ear_pain",
+                label: "Ear Pain (0-10)",
+                value: ear_pain,
+                validate: validate.ear_pain,
+                disabled,
+            }
+            InputNumber {
+                id: "feeling_hot",
+                label: "Feeling Hot (0-10)",
+                value: feeling_hot,
+                validate: validate.feeling_hot,
+                disabled,
+            }
+            InputNumber {
+                id: "feeling_cold",
+                label: "Feeling Cold (0-10)",
+                value: feeling_cold,
+                validate: validate.feeling_cold,
                 disabled,
             }
             InputTextArea {
@@ -889,6 +1043,51 @@ pub fn SymptomDetails(symptom: Symptom) -> Element {
         SymptomDisplay {
             name: "Insomnia: ".to_string(),
             intensity: symptom.insomnia,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Shoulder Pain: ".to_string(),
+            intensity: symptom.shoulder_pain,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Hand Pain: ".to_string(),
+            intensity: symptom.hand_pain,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Foot Pain: ".to_string(),
+            intensity: symptom.foot_pain,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Wrist Pain: ".to_string(),
+            intensity: symptom.wrist_pain,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Dental Pain: ".to_string(),
+            intensity: symptom.dental_pain,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Eye Pain: ".to_string(),
+            intensity: symptom.eye_pain,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Ear Pain: ".to_string(),
+            intensity: symptom.ear_pain,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Feeling Hot: ".to_string(),
+            intensity: symptom.feeling_hot,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Feeling Cold: ".to_string(),
+            intensity: symptom.feeling_cold,
             extra: None,
         }
         if let Some(comments) = &symptom.comments {

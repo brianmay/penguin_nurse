@@ -42,6 +42,15 @@ pub struct Symptom {
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub shoulder_pain: i32,
+    pub hand_pain: i32,
+    pub foot_pain: i32,
+    pub wrist_pain: i32,
+    pub dental_pain: i32,
+    pub eye_pain: i32,
+    pub ear_pain: i32,
+    pub feeling_hot: i32,
+    pub feeling_cold: i32,
 }
 
 const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
@@ -83,6 +92,15 @@ impl From<Symptom> for crate::models::Symptom {
             insomnia: symptom.insomnia,
             created_at: symptom.created_at,
             updated_at: symptom.updated_at,
+            shoulder_pain: symptom.shoulder_pain,
+            hand_pain: symptom.hand_pain,
+            foot_pain: symptom.foot_pain,
+            wrist_pain: symptom.wrist_pain,
+            dental_pain: symptom.dental_pain,
+            eye_pain: symptom.eye_pain,
+            ear_pain: symptom.ear_pain,
+            feeling_hot: symptom.feeling_hot,
+            feeling_cold: symptom.feeling_cold,
             comments: symptom.comments,
         }
     }
@@ -156,6 +174,15 @@ pub struct NewSymptom<'a> {
     anxiety: i32,
     depression: i32,
     insomnia: i32,
+    shoulder_pain: i32,
+    hand_pain: i32,
+    foot_pain: i32,
+    wrist_pain: i32,
+    dental_pain: i32,
+    eye_pain: i32,
+    ear_pain: i32,
+    feeling_hot: i32,
+    feeling_cold: i32,
     comments: Option<&'a str>,
 }
 
@@ -190,6 +217,15 @@ impl<'a> NewSymptom<'a> {
             anxiety: symptom.anxiety,
             depression: symptom.depression,
             insomnia: symptom.insomnia,
+            shoulder_pain: symptom.shoulder_pain,
+            hand_pain: symptom.hand_pain,
+            foot_pain: symptom.foot_pain,
+            wrist_pain: symptom.wrist_pain,
+            dental_pain: symptom.dental_pain,
+            eye_pain: symptom.eye_pain,
+            ear_pain: symptom.ear_pain,
+            feeling_hot: symptom.feeling_hot,
+            feeling_cold: symptom.feeling_cold,
             comments: symptom.comments.as_deref(),
         }
     }
@@ -237,6 +273,15 @@ pub struct ChangeSymptom<'a> {
     anxiety: Option<i32>,
     depression: Option<i32>,
     insomnia: Option<i32>,
+    shoulder_pain: Option<i32>,
+    hand_pain: Option<i32>,
+    foot_pain: Option<i32>,
+    wrist_pain: Option<i32>,
+    dental_pain: Option<i32>,
+    eye_pain: Option<i32>,
+    ear_pain: Option<i32>,
+    feeling_hot: Option<i32>,
+    feeling_cold: Option<i32>,
     comments: Option<Option<&'a str>>,
 }
 
@@ -279,6 +324,15 @@ impl<'a> ChangeSymptom<'a> {
             anxiety: symptom.anxiety.into_option(),
             depression: symptom.depression.into_option(),
             insomnia: symptom.insomnia.into_option(),
+            shoulder_pain: symptom.shoulder_pain.into_option(),
+            hand_pain: symptom.hand_pain.into_option(),
+            foot_pain: symptom.foot_pain.into_option(),
+            wrist_pain: symptom.wrist_pain.into_option(),
+            dental_pain: symptom.dental_pain.into_option(),
+            eye_pain: symptom.eye_pain.into_option(),
+            ear_pain: symptom.ear_pain.into_option(),
+            feeling_hot: symptom.feeling_hot.into_option(),
+            feeling_cold: symptom.feeling_cold.into_option(),
             comments: symptom.comments.map_inner_deref().into_option(),
         }
     }
