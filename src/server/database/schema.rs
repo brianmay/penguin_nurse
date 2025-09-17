@@ -187,7 +187,6 @@ diesel::table! {
         fever -> Int4,
         cough -> Int4,
         sore_throat -> Int4,
-        runny_nose -> Int4,
         sneezing -> Int4,
         heart_burn -> Int4,
         abdominal_pain -> Int4,
@@ -220,6 +219,8 @@ diesel::table! {
         ear_pain -> Int4,
         feeling_hot -> Int4,
         feeling_cold -> Int4,
+        nasal_symptom -> Int4,
+        nasal_symptom_description -> Nullable<Text>,
     }
 }
 
@@ -272,6 +273,7 @@ diesel::table! {
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
         utc_offset -> Int4,
+        leakage -> Int4,
     }
 }
 

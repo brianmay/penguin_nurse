@@ -5,7 +5,7 @@ use itertools::intersperse;
 use crate::{
     components::{
         consumables::{self, ConsumableLabel, ConsumableUpdate, ConsumableUpdateIngredients},
-        events::{Markdown, event_date_time_short},
+        events::{Markdown, EventDateTimeShort},
         times::time_delta_to_string,
     },
     forms::{
@@ -795,7 +795,7 @@ pub fn ConsumptionSummary(consumption: Consumption) -> Element {
     rsx! {
         div { {consumption.consumption_type.as_title()} }
         div {
-            event_date_time_short { time: consumption.time }
+            EventDateTimeShort { time: consumption.time }
         }
         div {
             consumption_duration { duration: consumption.duration }

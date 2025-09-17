@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 
 use crate::{
     components::{
-        events::{Markdown, event_date_time_short},
+        events::{Markdown, EventDateTimeShort},
         times::time_delta_to_string,
     },
     forms::{
@@ -283,7 +283,7 @@ pub fn NoteSummary(note: Note) -> Element {
     rsx! {
         div { {note_title()} }
         div {
-            event_date_time_short { time: note.time }
+            EventDateTimeShort { time: note.time }
         }
         if let Some(comments) = &note.comments {
             Markdown { content: comments.to_string() }

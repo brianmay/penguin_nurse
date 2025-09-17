@@ -5,17 +5,17 @@ use palette::Hsv;
 
 use crate::{
     components::{
-        events::{Markdown, event_colour, event_date_time, event_urgency},
+        events::{EventTime, Markdown, UrgencyLabel, event_colour},
         times::time_delta_to_string,
     },
     forms::{
         Colour, Dialog, EditError, FieldValue, FormSaveCancelButton, InputColour, InputDateTime,
-        InputDuration, InputNumber, InputPooBristolType, InputTextArea, Saving, ValidationError,
-        validate_bristol, validate_colour, validate_comments, validate_duration,
+        InputDuration, InputNumber, InputPooBristolType, InputTextArea, InputUrgency, Saving,
+        ValidationError, validate_bristol, validate_colour, validate_comments, validate_duration,
         validate_fixed_offset_date_time, validate_poo_quantity, validate_urgency,
     },
     functions::poos::{create_poo, delete_poo, update_poo},
-    models::{Bristol, ChangePoo, MaybeSet, NewPoo, Poo, UserId},
+    models::{Bristol, ChangePoo, MaybeSet, NewPoo, Poo, Urgency, UserId},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -28,7 +28,7 @@ pub enum Operation {
 struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
     duration: Memo<Result<TimeDelta, ValidationError>>,
-    urgency: Memo<Result<i32, ValidationError>>,
+    urgency: Memo<Result<Urgency, ValidationError>>,
     quantity: Memo<Result<i32, ValidationError>>,
     bristol: Memo<Result<Bristol, ValidationError>>,
     colour: Memo<Result<Hsv, ValidationError>>,
@@ -85,8 +85,8 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
         Operation::Update { poo } => poo.duration.as_raw(),
     });
     let urgency = use_signal(|| match &op {
-        Operation::Create { .. } => String::new(),
-        Operation::Update { poo } => poo.urgency.as_raw(),
+        Operation::Create { .. } => None,
+        Operation::Update { poo } => Some(poo.urgency),
     });
     let quantity = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
@@ -112,7 +112,7 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
     let validate = Validate {
         time: use_memo(move || validate_fixed_offset_date_time(&time())),
         duration: use_memo(move || validate_duration(&duration())),
-        urgency: use_memo(move || validate_urgency(&urgency())),
+        urgency: use_memo(move || validate_urgency(urgency())),
         quantity: use_memo(move || validate_poo_quantity(&quantity())),
         bristol: use_memo(move || validate_bristol(bristol())),
         colour: use_memo(move || validate_colour(colour())),
@@ -185,7 +185,7 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
                 validate: validate.duration,
                 disabled,
             }
-            InputNumber {
+            InputUrgency {
                 id: "urgency",
                 label: "Urgency",
                 value: urgency,
@@ -347,14 +347,14 @@ pub fn PooBristol(bristol: Bristol) -> Element {
 #[component]
 pub fn PooBristolIcon(bristol: Bristol) -> Element {
     let icon = match bristol {
-        Bristol::B0 => "B0",
-        Bristol::B1 => "B1",
-        Bristol::B2 => "B2",
-        Bristol::B3 => "B3",
-        Bristol::B4 => "B4",
-        Bristol::B5 => "B5",
-        Bristol::B6 => "B6",
-        Bristol::B7 => "B7",
+        Bristol::B0 => "0",
+        Bristol::B1 => "1",
+        Bristol::B2 => "2",
+        Bristol::B3 => "3",
+        Bristol::B4 => "4",
+        Bristol::B5 => "5",
+        Bristol::B6 => "6",
+        Bristol::B7 => "7",
     };
     rsx! {
         div { class: "text-sm w-10 dark:invert inline-block", {icon} }
@@ -417,7 +417,7 @@ pub fn PooSummary(poo: Poo) -> Element {
     rsx! {
         div { {poo_title()} }
         div {
-            event_date_time { time: poo.time }
+            EventTime { time: poo.time }
         }
         div {
             PooDuration { duration: poo.duration }
@@ -440,7 +440,7 @@ pub fn PooDetails(poo: Poo) -> Element {
                 PooQuantity { quantity: poo.quantity }
             }
             div {
-                event_urgency { urgency: poo.urgency }
+                UrgencyLabel { urgency: poo.urgency }
             }
         }
         if let Some(comments) = &poo.comments {

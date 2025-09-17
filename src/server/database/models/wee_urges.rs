@@ -32,7 +32,7 @@ impl From<WeeUrge> for crate::models::WeeUrge {
             id: WeeUrgeId::new(wee_urge.id),
             user_id: UserId::new(wee_urge.user_id),
             time,
-            urgency: wee_urge.urgency,
+            urgency: wee_urge.urgency.try_into().unwrap_or_default(),
             created_at: wee_urge.created_at,
             updated_at: wee_urge.updated_at,
             comments: wee_urge.comments,
@@ -93,7 +93,7 @@ impl<'a> NewWeeUrge<'a> {
             user_id: wee_urge.user_id.as_inner(),
             time: wee_urge.time.with_timezone(&Utc),
             utc_offset: wee_urge.time.offset().local_minus_utc(),
-            urgency: wee_urge.urgency,
+            urgency: wee_urge.urgency.into(),
             comments: wee_urge.comments.as_deref(),
         }
     }
@@ -128,7 +128,7 @@ impl<'a> ChangeWeeUrge<'a> {
                 .time
                 .map(|time| time.offset().local_minus_utc())
                 .into_option(),
-            urgency: wee.urgency.into_option(),
+            urgency: wee.urgency.map_into().into_option(),
             comments: wee.comments.map_inner_deref().into_option(),
         }
     }

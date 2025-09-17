@@ -64,6 +64,7 @@ pub use timeline::Timeline;
 
 mod common;
 pub use common::MaybeSet;
+pub use common::Urgency;
 
 mod consumables;
 pub use consumables::ChangeConsumable;

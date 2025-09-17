@@ -19,7 +19,7 @@ pub use fields::{
     InputBoolean, InputColour, InputConsumable, InputConsumableUnitType, InputConsumptionType,
     InputDateTime, InputDuration, InputExerciseCalories, InputExerciseRpe, InputExerciseType,
     InputNumber, InputOptionDateTimeUtc, InputPassword, InputPooBristolType, InputString,
-    InputTextArea,
+    InputSymptomIntensity, InputTextArea, InputUrgency,
 };
 pub use saving::MyForm;
 pub use saving::Saving;
@@ -32,7 +32,7 @@ pub use validation::{
     validate_email, validate_exercise_calories, validate_exercise_rpe, validate_exercise_type,
     validate_fixed_offset_date_time, validate_full_name, validate_height, validate_location,
     validate_maybe_date_time, validate_millilitres, validate_name, validate_password,
-    validate_poo_quantity, validate_pulse, validate_symptom_abdominal_pain_location,
+    validate_poo_quantity, validate_pulse, validate_symptom_extra_details,
     validate_symptom_intensity, validate_systolic_bp, validate_urgency, validate_username,
     validate_weight,
 };

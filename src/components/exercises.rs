@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 
 use crate::{
     components::{
-        events::{Markdown, event_date_time_short},
+        events::{Markdown, EventDateTimeShort},
         times::time_delta_to_string,
     },
     forms::{
@@ -477,7 +477,7 @@ pub fn ExerciseSummary(exercise: Exercise) -> Element {
     rsx! {
         div { {exercise.exercise_type.as_title()} }
         div {
-            event_date_time_short { time: exercise.time }
+            EventDateTimeShort { time: exercise.time }
         }
         div {
             exercise_duration { duration: exercise.duration }

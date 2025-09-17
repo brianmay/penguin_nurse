@@ -5,17 +5,19 @@ use palette::Hsv;
 
 use crate::{
     components::{
-        events::{Markdown, event_colour, event_date_time_short, event_urgency},
+        events::{EventDateTimeShort, Markdown, UrgencyLabel, event_colour},
+        symptoms::SymptomIntensity,
         times::time_delta_to_string,
     },
     forms::{
         Colour, Dialog, EditError, FieldValue, FormSaveCancelButton, InputColour, InputDateTime,
-        InputDuration, InputNumber, InputTextArea, Saving, ValidationError, validate_colour,
-        validate_comments, validate_duration, validate_fixed_offset_date_time,
-        validate_millilitres, validate_urgency,
+        InputDuration, InputNumber, InputSymptomIntensity, InputTextArea, InputUrgency, Saving,
+        ValidationError, validate_colour, validate_comments, validate_duration,
+        validate_fixed_offset_date_time, validate_millilitres, validate_symptom_intensity,
+        validate_urgency,
     },
     functions::wees::{create_wee, delete_wee, update_wee},
-    models::{ChangeWee, MaybeSet, NewWee, UserId, Wee},
+    models::{ChangeWee, MaybeSet, NewWee, Urgency, UserId, Wee},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -28,7 +30,8 @@ pub enum Operation {
 struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
     duration: Memo<Result<TimeDelta, ValidationError>>,
-    urgency: Memo<Result<i32, ValidationError>>,
+    urgency: Memo<Result<Urgency, ValidationError>>,
+    leakage: Memo<Result<i32, ValidationError>>,
     mls: Memo<Result<i32, ValidationError>>,
     colour: Memo<Result<Hsv, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
@@ -38,6 +41,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> 
     let time = validate.time.read().clone()?;
     let duration = validate.duration.read().clone()?;
     let urgency = validate.urgency.read().clone()?;
+    let leakage = validate.leakage.read().clone()?;
     let mls = validate.mls.read().clone()?;
     let colour = validate.colour.read().clone()?;
     let comments = validate.comments.read().clone()?;
@@ -49,6 +53,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> 
                 time,
                 duration,
                 urgency,
+                leakage,
                 mls,
                 colour,
                 comments,
@@ -61,6 +66,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> 
                 time: MaybeSet::Set(time),
                 duration: MaybeSet::Set(duration),
                 urgency: MaybeSet::Set(urgency),
+                leakage: MaybeSet::Set(leakage),
                 mls: MaybeSet::Set(mls),
                 colour: MaybeSet::Set(colour),
                 comments: MaybeSet::Set(comments),
@@ -81,8 +87,12 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
         Operation::Update { wee } => wee.duration.as_raw(),
     });
     let urgency = use_signal(|| match &op {
+        Operation::Create { .. } => None,
+        Operation::Update { wee } => Some(wee.urgency),
+    });
+    let leakage = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { wee } => wee.urgency.as_raw(),
+        Operation::Update { wee } => wee.leakage.as_raw(),
     });
     let mls = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
@@ -104,7 +114,8 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
     let validate = Validate {
         time: use_memo(move || validate_fixed_offset_date_time(&time())),
         duration: use_memo(move || validate_duration(&duration())),
-        urgency: use_memo(move || validate_urgency(&urgency())),
+        urgency: use_memo(move || validate_urgency(urgency())),
+        leakage: use_memo(move || validate_symptom_intensity(&leakage())),
         mls: use_memo(move || validate_millilitres(&mls())),
         colour: use_memo(move || validate_colour(colour())),
         comments: use_memo(move || validate_comments(&comments())),
@@ -118,6 +129,7 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
         validate.time.read().is_err()
             || validate.duration.read().is_err()
             || validate.urgency.read().is_err()
+            || validate.leakage.read().is_err()
             || validate.mls.read().is_err()
             || validate.colour.read().is_err()
             || validate.comments.read().is_err()
@@ -176,11 +188,18 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
                 validate: validate.duration,
                 disabled,
             }
-            InputNumber {
+            InputUrgency {
                 id: "urgency",
                 label: "Urgency",
                 value: urgency,
                 validate: validate.urgency,
+                disabled,
+            }
+            InputSymptomIntensity {
+                id: "leakage",
+                label: "Leakage",
+                value: leakage,
+                validate: validate.leakage,
                 disabled,
             }
             InputNumber {
@@ -367,11 +386,12 @@ pub fn WeeSummary(wee: Wee) -> Element {
     rsx! {
         div { {wee_title()} }
         div {
-            event_date_time_short { time: wee.time }
+            EventDateTimeShort { time: wee.time }
         }
         WeeMls { mls: wee.mls }
         WeeDuration { duration: wee.duration }
-        event_urgency { urgency: wee.urgency }
+        UrgencyLabel { urgency: wee.urgency }
+        SymptomIntensity { intensity: wee.leakage }
         event_colour { colour: wee.colour }
         if let Some(comments) = &wee.comments {
             Markdown { content: comments.to_string() }
@@ -387,7 +407,10 @@ pub fn WeeDetails(wee: Wee) -> Element {
                 WeeMls { mls: wee.mls }
             }
             div {
-                event_urgency { urgency: wee.urgency }
+                UrgencyLabel { urgency: wee.urgency }
+            }
+            div {
+                SymptomIntensity { intensity: wee.leakage }
             }
         }
         if let Some(comments) = &wee.comments {

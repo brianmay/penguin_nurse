@@ -1,4 +1,6 @@
+use derive_enum_all_values::AllValues;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 // Serializing Option<Option<String>> does not work as expected. This is a workaround.
 
@@ -73,5 +75,74 @@ impl<T> MaybeSet<Option<T>> {
     #[cfg(feature = "server")]
     pub fn as_inner_ref(&self) -> MaybeSet<Option<&T>> {
         self.as_ref().map(|x| x.as_ref())
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default, AllValues)]
+#[serde(tag = "type")]
+pub enum Urgency {
+    #[default]
+    U0,
+    U1,
+    U2,
+    U3,
+    U4,
+    U5,
+}
+
+#[derive(Error, Debug)]
+#[error("Failed to parse Urgency")]
+pub struct UrgencyParseError;
+
+impl TryFrom<i32> for Urgency {
+    type Error = UrgencyParseError;
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Urgency::U0),
+            1 => Ok(Urgency::U1),
+            2 => Ok(Urgency::U2),
+            3 => Ok(Urgency::U3),
+            4 => Ok(Urgency::U4),
+            5 => Ok(Urgency::U5),
+            _ => Err(UrgencyParseError),
+        }
+    }
+}
+
+impl From<Urgency> for i32 {
+    fn from(value: Urgency) -> Self {
+        match value {
+            Urgency::U0 => 0,
+            Urgency::U1 => 1,
+            Urgency::U2 => 2,
+            Urgency::U3 => 3,
+            Urgency::U4 => 4,
+            Urgency::U5 => 5,
+        }
+    }
+}
+
+impl Urgency {
+    pub fn as_id(&self) -> &'static str {
+        match self {
+            Urgency::U0 => "0",
+            Urgency::U1 => "1",
+            Urgency::U2 => "2",
+            Urgency::U3 => "3",
+            Urgency::U4 => "4",
+            Urgency::U5 => "5",
+        }
+    }
+
+    pub fn as_title(&self) -> &'static str {
+        match self {
+            Urgency::U0 => "No urgency",
+            Urgency::U1 => "Extremely mild urgency",
+            Urgency::U2 => "Mild urgency",
+            Urgency::U3 => "Normal urgency",
+            Urgency::U4 => "Severe urgency",
+            Urgency::U5 => "Extreme urgency",
+        }
     }
 }

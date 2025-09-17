@@ -3,7 +3,7 @@ use chrono::{DateTime, FixedOffset, TimeDelta, Utc};
 use palette::Hsv;
 use tap::Pipe;
 
-use crate::models::{Bristol, ConsumableUnit, ConsumptionType, ExerciseType};
+use crate::models::{Bristol, ConsumableUnit, ConsumptionType, ExerciseType, Urgency};
 
 use super::{FieldValue, errors::ValidationError};
 
@@ -162,8 +162,8 @@ pub fn validate_colour(
     }
 }
 
-pub fn validate_urgency(str: &str) -> Result<i32, ValidationError> {
-    validate_in_range(str, 0, 5)
+pub fn validate_urgency(urgency: Option<Urgency>) -> Result<Urgency, ValidationError> {
+    urgency.ok_or_else(|| ValidationError("Urgency is required".to_string()))
 }
 
 pub fn validate_poo_quantity(str: &str) -> Result<i32, ValidationError> {
@@ -242,22 +242,22 @@ pub fn validate_symptom_intensity(str: &str) -> Result<i32, ValidationError> {
     validate_in_range(str, 0, 10)
 }
 
-pub fn validate_symptom_abdominal_pain_location(
-    abdominal_pain: &Result<i32, ValidationError>,
-    abdominal_pain_location: &str,
+pub fn validate_symptom_extra_details(
+    symptom_intensity: &Result<i32, ValidationError>,
+    extra_details: &str,
 ) -> Result<Option<String>, ValidationError> {
-    let abdominal_pain_location = validate_field_value::<Option<String>>(abdominal_pain_location)?;
-    let abdominal_pain = *abdominal_pain
+    let extra_details = validate_field_value::<Option<String>>(extra_details)?;
+    let symptom_intensity = *symptom_intensity
         .as_ref()
-        .map_err(|_rr| ValidationError("Fix abdominal pain first".to_string()))?;
+        .map_err(|_rr| ValidationError("Fix symptom intensity first".to_string()))?;
 
-    match (abdominal_pain, &abdominal_pain_location) {
+    match (symptom_intensity, &extra_details) {
         (0, Some(_)) => Err(ValidationError(
-            "Abdominal pain location must be empty if abdominal pain is 0".to_string(),
+            "Extra details must be empty if symptom intensity is 0".to_string(),
         )),
         (x, None) if x > 1 => Err(ValidationError(
-            "Abdominal pain location must be set if abdominal pain is greater than 0".to_string(),
+            "Extra details must be set if symptom intensity is greater than 0".to_string(),
         )),
-        _ => Ok(abdominal_pain_location),
+        _ => Ok(extra_details),
     }
 }

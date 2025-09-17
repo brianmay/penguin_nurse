@@ -3,14 +3,15 @@ use dioxus::prelude::*;
 
 use crate::{
     components::{
-        events::{Markdown, event_date_time_short},
+        events::{Markdown, EventDateTimeShort},
         symptoms::SymptomDisplay,
         times::time_delta_to_string,
     },
     forms::{
         Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputDuration,
-        InputNumber, InputTextArea, Saving, ValidationError, validate_comments, validate_duration,
-        validate_fixed_offset_date_time, validate_location, validate_symptom_intensity,
+        InputSymptomIntensity, InputTextArea, Saving, ValidationError, validate_comments,
+        validate_duration, validate_fixed_offset_date_time, validate_location,
+        validate_symptom_intensity,
     },
     functions::refluxs::{create_reflux, delete_reflux, update_reflux},
     models::{ChangeReflux, MaybeSet, NewReflux, Reflux, UserId},
@@ -174,9 +175,9 @@ pub fn RefluxUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Reflux
                 validate: validate.location,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "severity",
-                label: "Severity (0-10)",
+                label: "Severity",
                 value: severity,
                 validate: validate.severity,
                 disabled,
@@ -342,7 +343,7 @@ pub fn RefluxSummary(reflux: Reflux) -> Element {
     rsx! {
         div { class: "w-10 dark:invert inline-block", reflux_icon {} }
         div {
-            event_date_time_short { time: reflux.time }
+            EventDateTimeShort { time: reflux.time }
         }
         div {
             reflux_duration { duration: reflux.duration }

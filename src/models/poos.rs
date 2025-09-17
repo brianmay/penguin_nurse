@@ -4,23 +4,9 @@ use derive_enum_all_values::AllValues;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::models::MaybeSet;
+use crate::models::{MaybeSet, common::Urgency};
 
 use super::UserId;
-
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default, AllValues)]
-#[serde(tag = "type")]
-pub enum Bristol {
-    #[default]
-    B0,
-    B1,
-    B2,
-    B3,
-    B4,
-    B5,
-    B6,
-    B7,
-}
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PooId(i64);
@@ -46,6 +32,20 @@ impl std::fmt::Display for PooId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.0.fmt(f)
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, Default, AllValues)]
+#[serde(tag = "type")]
+pub enum Bristol {
+    #[default]
+    B0,
+    B1,
+    B2,
+    B3,
+    B4,
+    B5,
+    B6,
+    B7,
 }
 
 #[derive(Error, Debug)]
@@ -120,7 +120,7 @@ pub struct Poo {
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
     pub duration: chrono::Duration,
-    pub urgency: i32,
+    pub urgency: Urgency,
     pub quantity: i32,
     pub bristol: Bristol,
     pub colour: palette::Hsv,
@@ -135,7 +135,7 @@ pub struct NewPoo {
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
     pub duration: chrono::Duration,
-    pub urgency: i32,
+    pub urgency: Urgency,
     pub quantity: i32,
     pub bristol: Bristol,
     pub colour: palette::Hsv,
@@ -148,7 +148,7 @@ pub struct ChangePoo {
     pub user_id: MaybeSet<UserId>,
     pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
     pub duration: MaybeSet<chrono::Duration>,
-    pub urgency: MaybeSet<i32>,
+    pub urgency: MaybeSet<Urgency>,
     pub quantity: MaybeSet<i32>,
     pub bristol: MaybeSet<Bristol>,
     pub colour: MaybeSet<palette::Hsv>,

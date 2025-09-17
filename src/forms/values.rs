@@ -5,10 +5,11 @@ use thiserror::Error;
 
 use crate::components::consumables::{ConsumableIcon, ConsumableLabel, ConsumableUnitIcon};
 use crate::components::consumptions::ConsumptionTypeIcon;
+use crate::components::events::{UrgencyIcon, UrgencyLabel};
 use crate::components::exercises::ExerciseTypeIcon;
 use crate::components::poos::PooBristolIcon;
 use crate::components::{ElementIcon, StrIcon};
-use crate::models::{Bristol, Consumable, ConsumableUnit, ConsumptionType, ExerciseType};
+use crate::models::{Bristol, Consumable, ConsumableUnit, ConsumptionType, ExerciseType, Urgency};
 
 #[derive(Error, Debug)]
 pub enum FieldValueError {
@@ -317,6 +318,21 @@ impl FieldLabel for ExerciseType {
                 title: label,
                 icon: rsx! {
                     ExerciseTypeIcon { exercise_type: *self }
+                },
+            }
+        }
+    }
+}
+
+impl FieldLabel for Urgency {
+    fn as_label(&self) -> Element {
+        rsx! {
+            ElementIcon {
+                title: rsx! {
+                    UrgencyLabel { urgency: *self }
+                },
+                icon: rsx! {
+                    UrgencyIcon { urgency: *self }
                 },
             }
         }

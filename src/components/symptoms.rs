@@ -2,11 +2,11 @@ use chrono::{DateTime, FixedOffset, Local, Utc};
 use dioxus::prelude::*;
 
 use crate::{
-    components::events::{Markdown, event_date_time_short},
+    components::events::{EventDateTimeShort, Markdown},
     forms::{
-        Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputNumber,
-        InputString, InputTextArea, Saving, ValidationError, validate_comments,
-        validate_fixed_offset_date_time, validate_symptom_abdominal_pain_location,
+        Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputString,
+        InputSymptomIntensity, InputTextArea, Saving, ValidationError, validate_comments,
+        validate_fixed_offset_date_time, validate_symptom_extra_details,
         validate_symptom_intensity,
     },
     functions::symptoms::{create_symptom, delete_symptom, update_symptom},
@@ -28,7 +28,8 @@ struct Validate {
     fever: Memo<Result<i32, ValidationError>>,
     cough: Memo<Result<i32, ValidationError>>,
     sore_throat: Memo<Result<i32, ValidationError>>,
-    runny_nose: Memo<Result<i32, ValidationError>>,
+    nasal_symptom: Memo<Result<i32, ValidationError>>,
+    nasal_symptom_description: Memo<Result<Option<String>, ValidationError>>,
     sneezing: Memo<Result<i32, ValidationError>>,
     heart_burn: Memo<Result<i32, ValidationError>>,
     abdominal_pain: Memo<Result<i32, ValidationError>>,
@@ -67,7 +68,8 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Symptom, EditErr
     let fever = validate.fever.read().clone()?;
     let cough = validate.cough.read().clone()?;
     let sore_throat = validate.sore_throat.read().clone()?;
-    let runny_nose = validate.runny_nose.read().clone()?;
+    let nasal_symptom = validate.nasal_symptom.read().clone()?;
+    let nasal_symptom_description = validate.nasal_symptom_description.read().clone()?;
     let sneezing = validate.sneezing.read().clone()?;
     let heart_burn = validate.heart_burn.read().clone()?;
     let abdominal_pain = validate.abdominal_pain.read().clone()?;
@@ -107,7 +109,8 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Symptom, EditErr
                 fever,
                 cough,
                 sore_throat,
-                runny_nose,
+                nasal_symptom,
+                nasal_symptom_description,
                 sneezing,
                 heart_burn,
                 abdominal_pain,
@@ -150,7 +153,8 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Symptom, EditErr
                 fever: MaybeSet::Set(fever),
                 cough: MaybeSet::Set(cough),
                 sore_throat: MaybeSet::Set(sore_throat),
-                runny_nose: MaybeSet::Set(runny_nose),
+                nasal_symptom: MaybeSet::Set(nasal_symptom),
+                nasal_symptom_description: MaybeSet::Set(nasal_symptom_description),
                 sneezing: MaybeSet::Set(sneezing),
                 heart_burn: MaybeSet::Set(heart_burn),
                 abdominal_pain: MaybeSet::Set(abdominal_pain),
@@ -211,9 +215,16 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
         Operation::Create { .. } => "0".to_string(),
         Operation::Update { symptom } => symptom.sore_throat.to_string(),
     });
-    let runny_nose = use_signal(|| match &op {
+    let nasal_symptom = use_signal(|| match &op {
         Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.runny_nose.to_string(),
+        Operation::Update { symptom } => symptom.nasal_symptom.to_string(),
+    });
+    let nasal_symptom_description = use_signal(|| match &op {
+        Operation::Create { .. } => String::new(),
+        Operation::Update { symptom } => symptom
+            .nasal_symptom_description
+            .as_ref()
+            .map_or(String::new(), |s| s.to_string()),
     });
     let sneezing = use_signal(|| match &op {
         Operation::Create { .. } => "0".to_string(),
@@ -340,6 +351,7 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
     });
 
     let validate = {
+        let v_nasal_symptom = use_memo(move || validate_symptom_intensity(&nasal_symptom()));
         let v_abdominal_pain = use_memo(move || validate_symptom_intensity(&abdominal_pain()));
         Validate {
             time: use_memo(move || validate_fixed_offset_date_time(&time())),
@@ -347,15 +359,15 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
             fever: use_memo(move || validate_symptom_intensity(&fever())),
             cough: use_memo(move || validate_symptom_intensity(&cough())),
             sore_throat: use_memo(move || validate_symptom_intensity(&sore_throat())),
-            runny_nose: use_memo(move || validate_symptom_intensity(&runny_nose())),
+            nasal_symptom: v_nasal_symptom,
+            nasal_symptom_description: use_memo(move || {
+                validate_symptom_extra_details(&v_nasal_symptom(), &nasal_symptom_description())
+            }),
             sneezing: use_memo(move || validate_symptom_intensity(&sneezing())),
             heart_burn: use_memo(move || validate_symptom_intensity(&heart_burn())),
             abdominal_pain: v_abdominal_pain,
             abdominal_pain_location: use_memo(move || {
-                validate_symptom_abdominal_pain_location(
-                    &v_abdominal_pain(),
-                    &abdominal_pain_location(),
-                )
+                validate_symptom_extra_details(&v_abdominal_pain(), &abdominal_pain_location())
             }),
             diarrhea: use_memo(move || validate_symptom_intensity(&diarrhea())),
             constipation: use_memo(move || validate_symptom_intensity(&constipation())),
@@ -398,7 +410,8 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
             || validate.fever.read().is_err()
             || validate.cough.read().is_err()
             || validate.sore_throat.read().is_err()
-            || validate.runny_nose.read().is_err()
+            || validate.nasal_symptom.read().is_err()
+            || validate.nasal_symptom_description.read().is_err()
             || validate.sneezing.read().is_err()
             || validate.heart_burn.read().is_err()
             || validate.abdominal_pain.read().is_err()
@@ -476,58 +489,65 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
                 validate: validate.time,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "appetite_loss",
-                label: "Appetite Loss (0-10)",
+                label: "Appetite Loss",
                 value: appetite_loss,
                 validate: validate.appetite_loss,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "fever",
-                label: "Fever (0-10)",
+                label: "Fever",
                 value: fever,
                 validate: validate.fever,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "cough",
-                label: "Cough (0-10)",
+                label: "Cough",
                 value: cough,
                 validate: validate.cough,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "sore_throat",
-                label: "Sore Throat (0-10)",
+                label: "Sore Throat",
                 value: sore_throat,
                 validate: validate.sore_throat,
                 disabled,
             }
-            InputNumber {
-                id: "runny_nose",
-                label: "Runny Nose (0-10)",
-                value: runny_nose,
-                validate: validate.runny_nose,
+            InputSymptomIntensity {
+                id: "nasal_symptom",
+                label: "Nasal Symptom",
+                value: nasal_symptom,
+                validate: validate.nasal_symptom,
                 disabled,
             }
-            InputNumber {
+            InputString {
+                id: "nasal_symptom_description",
+                label: "Nasal Symptom Description",
+                value: nasal_symptom_description,
+                validate: validate.nasal_symptom_description,
+                disabled,
+            }
+            InputSymptomIntensity {
                 id: "sneezing",
-                label: "Sneezing (0-10)",
+                label: "Sneezing",
                 value: sneezing,
                 validate: validate.sneezing,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "heart_burn",
-                label: "Heart Burn (0-10)",
+                label: "Heart Burn",
                 value: heart_burn,
                 validate: validate.heart_burn,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "abdominal_pain",
-                label: "Abdominal Pain (0-10)",
+                label: "Abdominal Pain",
                 value: abdominal_pain,
                 validate: validate.abdominal_pain,
                 disabled,
@@ -539,177 +559,177 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
                 validate: validate.abdominal_pain_location,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "diarrhea",
-                label: "Diarrhea (0-10)",
+                label: "Diarrhea",
                 value: diarrhea,
                 validate: validate.diarrhea,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "constipation",
-                label: "Constipation (0-10)",
+                label: "Constipation",
                 value: constipation,
                 validate: validate.constipation,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "lower_back_pain",
-                label: "Lower Back Pain (0-10)",
+                label: "Lower Back Pain",
                 value: lower_back_pain,
                 validate: validate.lower_back_pain,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "upper_back_pain",
-                label: "Upper Back Pain (0-10)",
+                label: "Upper Back Pain",
                 value: upper_back_pain,
                 validate: validate.upper_back_pain,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "neck_pain",
-                label: "Neck Pain (0-10)",
+                label: "Neck Pain",
                 value: neck_pain,
                 validate: validate.neck_pain,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "joint_pain",
-                label: "Joint Pain (0-10)",
+                label: "Joint Pain",
                 value: joint_pain,
                 validate: validate.joint_pain,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "headache",
-                label: "Headache (0-10)",
+                label: "Headache",
                 value: headache,
                 validate: validate.headache,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "nausea",
-                label: "Nausea (0-10)",
+                label: "Nausea",
                 value: nausea,
                 validate: validate.nausea,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "dizziness",
-                label: "Dizziness (0-10)",
+                label: "Dizziness",
                 value: dizziness,
                 validate: validate.dizziness,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "stomach_ache",
-                label: "Stomach Ache (0-10)",
+                label: "Stomach Ache",
                 value: stomach_ache,
                 validate: validate.stomach_ache,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "chest_pain",
-                label: "Chest Pain (0-10)",
+                label: "Chest Pain",
                 value: chest_pain,
                 validate: validate.chest_pain,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "shortness_of_breath",
-                label: "Shortness of Breath (0-10)",
+                label: "Shortness of Breath",
                 value: shortness_of_breath,
                 validate: validate.shortness_of_breath,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "fatigue",
-                label: "Fatigue (0-10)",
+                label: "Fatigue",
                 value: fatigue,
                 validate: validate.fatigue,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "anxiety",
-                label: "Anxiety (0-10)",
+                label: "Anxiety",
                 value: anxiety,
                 validate: validate.anxiety,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "depression",
-                label: "Depression (0-10)",
+                label: "Depression",
                 value: depression,
                 validate: validate.depression,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "insomnia",
-                label: "Insomnia (0-10)",
+                label: "Insomnia",
                 value: insomnia,
                 validate: validate.insomnia,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "shoulder_pain",
-                label: "Shoulder Pain (0-10)",
+                label: "Shoulder Pain",
                 value: shoulder_pain,
                 validate: validate.shoulder_pain,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "hand_pain",
-                label: "Hand Pain (0-10)",
+                label: "Hand Pain",
                 value: hand_pain,
                 validate: validate.hand_pain,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "foot_pain",
-                label: "Foot Pain (0-10)",
+                label: "Foot Pain",
                 value: foot_pain,
                 validate: validate.foot_pain,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "wrist_pain",
-                label: "Wrist Pain (0-10)",
+                label: "Wrist Pain",
                 value: wrist_pain,
                 validate: validate.wrist_pain,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "dental_pain",
-                label: "Dental Pain (0-10)",
+                label: "Dental Pain",
                 value: dental_pain,
                 validate: validate.dental_pain,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "eye_pain",
-                label: "Eye Pain (0-10)",
+                label: "Eye Pain",
                 value: eye_pain,
                 validate: validate.eye_pain,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "ear_pain",
-                label: "Ear Pain (0-10)",
+                label: "Ear Pain",
                 value: ear_pain,
                 validate: validate.ear_pain,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "feeling_hot",
-                label: "Feeling Hot (0-10)",
+                label: "Feeling Hot",
                 value: feeling_hot,
                 validate: validate.feeling_hot,
                 disabled,
             }
-            InputNumber {
+            InputSymptomIntensity {
                 id: "feeling_cold",
-                label: "Feeling Cold (0-10)",
+                label: "Feeling Cold",
                 value: feeling_cold,
                 validate: validate.feeling_cold,
                 disabled,
@@ -911,7 +931,7 @@ pub fn SymptomSummary(symptom: Symptom) -> Element {
     rsx! {
         div { {symptom_title()} }
         div {
-            event_date_time_short { time: symptom.time }
+            EventDateTimeShort { time: symptom.time }
         }
         if let Some(comments) = &symptom.comments {
             Markdown { content: comments.to_string() }
@@ -944,9 +964,11 @@ pub fn SymptomDetails(symptom: Symptom) -> Element {
             extra: None,
         }
         SymptomDisplay {
-            name: "Runny Nose: ".to_string(),
-            intensity: symptom.runny_nose,
-            extra: None,
+            name: "Nasal Symptom: ".to_string(),
+            intensity: symptom.nasal_symptom,
+            extra: symptom.nasal_symptom_description.map(|desc| rsx! {
+                div { class: "inline-block ml-2", {desc} }
+            }),
         }
         SymptomDisplay {
             name: "Sneezing: ".to_string(),

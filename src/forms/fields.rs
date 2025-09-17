@@ -12,6 +12,7 @@ use crate::{
         buttons::{ActionButton, CreateButton},
         consumables::{self, ConsumableLabel, ConsumableUnitIcon, ConsumableUpdate},
         consumptions::ConsumptionTypeIcon,
+        events::UrgencyIcon,
         exercises::{ExerciseTypeIcon, exercise_calories, exercise_rpe},
         poos::PooBristolIcon,
     },
@@ -20,7 +21,7 @@ use crate::{
         values::FieldLabel,
     },
     functions::consumables::search_consumables,
-    models::{Bristol, Consumable, ConsumableUnit, ConsumptionType, ExerciseType},
+    models::{Bristol, Consumable, ConsumableUnit, ConsumptionType, ExerciseType, Urgency},
 };
 
 use super::FieldValue;
@@ -135,43 +136,46 @@ fn PullDownMenu<D: 'static + Clone + PartialEq + FieldLabel>(
     id: String,
     items: ReadOnlySignal<Vec<PullDownMenuItem<D>>>,
     on_select: Callback<D>,
-    on_search: Callback<String>,
+    search: Signal<String>,
     on_close: Callback<()>,
 ) -> Element {
-    let focus_idx = use_signal(|| 0usize);
+    let mut focus_idx = use_signal(|| 0);
     let mut elements: Signal<Vec<Option<Rc<MountedData>>>> = use_signal(Vec::new);
 
     use_effect(move || {
-        let len = items.read().len();
+        let len = items.read().len() + 1; // +1 for the input element
         elements.write().resize(len, None);
     });
 
-    let items_len = items.read().len() + 1;
+    use_effect(move || {
+        let idx = focus_idx();
+        if let Some(Some(el)) = elements.read().get(idx).cloned() {
+            let el = el.clone();
+            spawn(async move { _ = el.set_focus(true).await });
+        }
+    });
 
     // Keyboard handling
-    let onkeydown = {
-        let mut focus_idx = focus_idx;
-        let elements = elements;
-
+    let onkeydown_input = {
         move |evt: KeyboardEvent| match evt.key() {
             Key::ArrowDown => {
                 evt.prevent_default();
-                let next = (focus_idx() + 1) % items_len;
-                focus_idx.set(next);
-
-                if let Some(Some(el)) = elements.read().get(next) {
-                    let el = el.clone();
-                    spawn(async move { _ = el.set_focus(true).await });
+                let items_len = items.read().len() + 1;
+                if items_len > 0 {
+                    focus_idx.set(1);
                 }
             }
             Key::ArrowUp => {
                 evt.prevent_default();
-                let prev = (focus_idx() + items_len - 1) % items_len;
-                focus_idx.set(prev);
-
-                if let Some(Some(el)) = elements.read().get(prev) {
-                    let el = el.clone();
-                    spawn(async move { _ = el.set_focus(true).await });
+                let items_len = items.read().len() + 1;
+                if items_len > 0 {
+                    focus_idx.set(items_len - 1);
+                }
+            }
+            Key::Enter => {
+                evt.prevent_default();
+                if let Some(item) = items.read().first() {
+                    on_select.call(item.value.clone());
                 }
             }
             Key::Tab => {
@@ -179,7 +183,38 @@ fn PullDownMenu<D: 'static + Clone + PartialEq + FieldLabel>(
             }
             Key::Escape => {
                 evt.prevent_default();
+                tracing::debug!("Escape pressed");
                 on_close.call(());
+            }
+            _ => {}
+        }
+    };
+    let onkeydown_list = {
+        let items_len = items.read().len() + 1;
+        move |evt: KeyboardEvent| match evt.key() {
+            Key::ArrowDown => {
+                evt.prevent_default();
+                let idx = focus_idx();
+                let next = (idx + 1) % items_len;
+                focus_idx.set(next);
+            }
+            Key::ArrowUp => {
+                evt.prevent_default();
+                let idx = focus_idx();
+                let prev = (idx + items_len - 1) % items_len;
+                focus_idx.set(prev);
+            }
+            Key::Tab => {
+                on_close.call(());
+            }
+            Key::Escape => {
+                evt.prevent_default();
+                on_close.call(());
+            }
+            Key::Character(c) => {
+                evt.prevent_default();
+                search.set(c);
+                focus_idx.set(0);
             }
             _ => {}
         }
@@ -198,7 +233,6 @@ fn PullDownMenu<D: 'static + Clone + PartialEq + FieldLabel>(
     rsx! {
         div {
             class: "absolute z-10 shadow-lg bg-gray-50 border border-gray-50 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500",
-            onkeydown,
             onblur: move |_| {
                 on_close.call(());
             },
@@ -207,23 +241,21 @@ fn PullDownMenu<D: 'static + Clone + PartialEq + FieldLabel>(
                 class: get_input_classes(true, false),
                 id,
                 placeholder: "Enter input",
+                value: search(),
                 oninput: move |e| {
-                    on_search.call(e.value());
+                    search.set(e.value());
                 },
                 onmounted: move |e| {
                     set_element(elements, 0, Some(e.data()));
-                    spawn(async move {
-                        e.set_focus(true).await.unwrap();
-                    });
-                },
-                onfocus: move |_| {
-                    let mut focus_idx = focus_idx;
                     focus_idx.set(0);
                 },
-                // onkeydown,
+                onfocus: move |_| {
+                    focus_idx.set(0);
+                },
+                onkeydown: onkeydown_input,
                 tabindex: "-1",
             }
-            ul { class: "p-2 shadow rounded-box",
+            ul { class: "p-2 shadow rounded-box", onkeydown: onkeydown_list,
                 if items.is_empty() {
                     li { "No entries found." }
                 } else {
@@ -333,10 +365,9 @@ fn InputSearch<D: 'static + Clone + Eq + PartialEq + FieldLabel>(
                                 }
                             })
                         },
-                        on_search: Callback::new(move |s| {
-                            search.set(s);
-                        }),
+                        search,
                         on_close: Callback::new(move |_| {
+                            tracing::debug!("Closing pull down menu");
                             open.set(false);
                         }),
                     }
@@ -402,6 +433,25 @@ pub fn InputNumber<D: 'static + Clone + PartialEq>(
                 },
             }
             FieldMessage { validate, disabled, message }
+        }
+    }
+}
+
+#[component]
+pub fn InputSymptomIntensity(
+    id: &'static str,
+    label: &'static str,
+    value: Signal<String>,
+    validate: Memo<Result<i32, ValidationError>>,
+    disabled: Memo<bool>,
+) -> Element {
+    rsx! {
+        InputNumber {
+            id,
+            label: label.to_string() + " (0-10)",
+            value,
+            validate,
+            disabled,
         }
     }
 }
@@ -672,6 +722,43 @@ pub fn InputConsumableUnitType(
             InputOption {
                 id: id.to_string(),
                 value: *consumable_unit,
+                icon,
+                label: label.to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+
+    rsx! {
+        InputSelect {
+            id,
+            label,
+            validate,
+            value,
+            disabled,
+            options,
+        }
+    }
+}
+
+#[component]
+pub fn InputUrgency(
+    id: &'static str,
+    label: &'static str,
+    value: Signal<Option<Urgency>>,
+    validate: Memo<Result<Urgency, ValidationError>>,
+    disabled: Memo<bool>,
+) -> Element {
+    let options = Urgency::all_values()
+        .iter()
+        .map(|urgency| {
+            let id = urgency.as_id();
+            let icon = rsx! {
+                UrgencyIcon { urgency: *urgency }
+            };
+            let label = urgency.as_title();
+            InputOption {
+                id: id.to_string(),
+                value: *urgency,
                 icon,
                 label: label.to_string(),
             }

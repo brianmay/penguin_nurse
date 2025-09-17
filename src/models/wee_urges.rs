@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
-use crate::models::MaybeSet;
+use crate::models::{MaybeSet, Urgency};
 
 use super::UserId;
 
@@ -39,7 +39,7 @@ pub struct WeeUrge {
     pub id: WeeUrgeId,
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub urgency: i32,
+    pub urgency: Urgency,
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
@@ -50,7 +50,7 @@ pub struct WeeUrge {
 pub struct NewWeeUrge {
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub urgency: i32,
+    pub urgency: Urgency,
     pub comments: Option<String>,
 }
 
@@ -59,6 +59,6 @@ pub struct NewWeeUrge {
 pub struct ChangeWeeUrge {
     pub user_id: MaybeSet<UserId>,
     pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
-    pub urgency: MaybeSet<i32>,
+    pub urgency: MaybeSet<Urgency>,
     pub comments: MaybeSet<Option<String>>,
 }

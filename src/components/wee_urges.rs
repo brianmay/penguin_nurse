@@ -2,14 +2,14 @@ use chrono::{DateTime, FixedOffset, Local, Utc};
 use dioxus::prelude::*;
 
 use crate::{
-    components::events::{Markdown, event_date_time_short, event_urgency},
+    components::events::{EventDateTimeShort, Markdown, UrgencyLabel},
     forms::{
-        Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputNumber,
-        InputTextArea, Saving, ValidationError, validate_comments, validate_fixed_offset_date_time,
+        Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputTextArea,
+        InputUrgency, Saving, ValidationError, validate_comments, validate_fixed_offset_date_time,
         validate_urgency,
     },
     functions::wee_urges::{create_wee_urge, delete_wee_urge, update_wee_urge},
-    models::{ChangeWeeUrge, MaybeSet, NewWeeUrge, UserId, WeeUrge},
+    models::{ChangeWeeUrge, MaybeSet, NewWeeUrge, Urgency, UserId, WeeUrge},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -21,7 +21,7 @@ pub enum Operation {
 #[derive(Debug, Clone)]
 struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    urgency: Memo<Result<i32, ValidationError>>,
+    urgency: Memo<Result<Urgency, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
@@ -61,8 +61,8 @@ pub fn WeeUrgeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<WeeUr
         Operation::Update { wee_urge } => wee_urge.time.as_raw(),
     });
     let urgency = use_signal(|| match &op {
-        Operation::Create { .. } => String::new(),
-        Operation::Update { wee_urge } => wee_urge.urgency.as_raw(),
+        Operation::Create { .. } => None,
+        Operation::Update { wee_urge } => Some(wee_urge.urgency),
     });
     let comments = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
@@ -71,7 +71,7 @@ pub fn WeeUrgeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<WeeUr
 
     let validate = Validate {
         time: use_memo(move || validate_fixed_offset_date_time(&time())),
-        urgency: use_memo(move || validate_urgency(&urgency())),
+        urgency: use_memo(move || validate_urgency(urgency())),
         comments: use_memo(move || validate_comments(&comments())),
     };
 
@@ -130,7 +130,7 @@ pub fn WeeUrgeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<WeeUr
                 validate: validate.time,
                 disabled,
             }
-            InputNumber {
+            InputUrgency {
                 id: "urgency",
                 label: "Urgency",
                 value: urgency,
@@ -266,9 +266,9 @@ pub fn WeeUrgeSummary(wee_urge: WeeUrge) -> Element {
     rsx! {
         div { {wee_urge_title()} }
         div {
-            event_date_time_short { time: wee_urge.time }
+            EventDateTimeShort { time: wee_urge.time }
         }
-        event_urgency { urgency: wee_urge.urgency }
+        UrgencyLabel { urgency: wee_urge.urgency }
         if let Some(comments) = &wee_urge.comments {
             Markdown { content: comments.to_string() }
         }
@@ -277,7 +277,7 @@ pub fn WeeUrgeSummary(wee_urge: WeeUrge) -> Element {
 #[component]
 pub fn WeeUrgeDetails(wee_urge: WeeUrge) -> Element {
     rsx! {
-        event_urgency { urgency: wee_urge.urgency }
+        UrgencyLabel { urgency: wee_urge.urgency }
         if let Some(comments) = &wee_urge.comments {
             Markdown { content: comments.to_string() }
         }

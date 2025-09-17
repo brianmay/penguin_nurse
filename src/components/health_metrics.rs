@@ -2,7 +2,7 @@ use chrono::{DateTime, FixedOffset, Local, Utc};
 use dioxus::prelude::*;
 
 use crate::{
-    components::events::{Markdown, event_date_time_short},
+    components::events::{Markdown, EventDateTimeShort},
     forms::{
         Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputNumber,
         InputTextArea, Saving, ValidationError, validate_blood_glucose, validate_comments,
@@ -391,7 +391,7 @@ pub fn HealthMetricSummary(health_metric: HealthMetric) -> Element {
     rsx! {
         div { {health_metric_title()} }
         div {
-            event_date_time_short { time: health_metric.time }
+            EventDateTimeShort { time: health_metric.time }
         }
         if let Some(comments) = &health_metric.comments {
             Markdown { content: comments.to_string() }

@@ -23,6 +23,7 @@ pub struct Wee {
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub utc_offset: i32,
+    pub leakage: i32,
 }
 
 const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
@@ -37,7 +38,8 @@ impl From<Wee> for crate::models::Wee {
             user_id: UserId::new(wee.user_id),
             time,
             duration: wee.duration,
-            urgency: wee.urgency,
+            urgency: wee.urgency.try_into().unwrap_or_default(),
+            leakage: wee.leakage,
             mls: wee.mls,
             colour: palette::Hsv::new(wee.colour_hue, wee.colour_saturation, wee.colour_value),
             created_at: wee.created_at,
@@ -92,6 +94,7 @@ pub struct NewWee<'a> {
     utc_offset: i32,
     duration: chrono::Duration,
     urgency: i32,
+    leakage: i32,
     mls: i32,
     colour_hue: f32,
     colour_saturation: f32,
@@ -106,7 +109,8 @@ impl<'a> NewWee<'a> {
             time: wee.time.with_timezone(&Utc),
             utc_offset: wee.time.offset().local_minus_utc(),
             duration: wee.duration,
-            urgency: wee.urgency,
+            urgency: wee.urgency.into(),
+            leakage: wee.leakage,
             mls: wee.mls,
             colour_hue: wee.colour.hue.into_inner(),
             colour_saturation: wee.colour.saturation,
@@ -135,6 +139,7 @@ pub struct ChangeWee<'a> {
     utc_offset: Option<i32>,
     duration: Option<chrono::Duration>,
     urgency: Option<i32>,
+    leakage: Option<i32>,
     mls: Option<i32>,
     colour_hue: Option<f32>,
     colour_saturation: Option<f32>,
@@ -151,7 +156,8 @@ impl<'a> ChangeWee<'a> {
                 .map(|time| time.offset().local_minus_utc())
                 .into_option(),
             duration: wee.duration.into_option(),
-            urgency: wee.urgency.into_option(),
+            urgency: wee.urgency.map_into().into_option(),
+            leakage: wee.leakage.into_option(),
             mls: wee.mls.into_option(),
             colour_hue: wee.colour.map(|x| x.hue.into_inner()).into_option(),
             colour_saturation: wee.colour.map(|x| x.saturation).into_option(),

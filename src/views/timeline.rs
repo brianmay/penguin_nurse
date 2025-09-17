@@ -13,7 +13,7 @@ use crate::{
             self, ConsumptionDetails, ConsumptionItemList, ConsumptionTypeIcon,
             consumption_duration,
         },
-        events::event_time,
+        events::EventTime,
         exercises::{ExerciseDetails, ExerciseTypeIcon},
         health_metrics::{HealthMetricDetails, HealthMetricIcon, health_metric_title},
         notes::{NoteDetails, note_icon, note_title},
@@ -58,7 +58,7 @@ fn EntryRow(
             class: "hover:bg-gray-500 border-blue-300 mt-2 mb-2 p-2 border-2 w-full sm:w-auto sm:border-none inline-block sm:table-row",
             onclick: move |_| selected.set(Some(id)),
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                event_time { time: entry.time }
+                EventTime { time: entry.time }
             }
             match &entry.data {
                 EntryData::Wee(wee) => {

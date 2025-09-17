@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
-use crate::models::MaybeSet;
+use crate::models::{MaybeSet, common::Urgency};
 
 use super::UserId;
 
@@ -39,7 +39,8 @@ pub struct Wee {
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
     pub duration: chrono::Duration,
-    pub urgency: i32,
+    pub urgency: Urgency,
+    pub leakage: i32,
     pub mls: i32,
     pub colour: palette::Hsv,
     pub comments: Option<String>,
@@ -53,7 +54,8 @@ pub struct NewWee {
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
     pub duration: chrono::Duration,
-    pub urgency: i32,
+    pub urgency: Urgency,
+    pub leakage: i32,
     pub mls: i32,
     pub colour: palette::Hsv,
     pub comments: Option<String>,
@@ -65,7 +67,8 @@ pub struct ChangeWee {
     pub user_id: MaybeSet<UserId>,
     pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
     pub duration: MaybeSet<chrono::Duration>,
-    pub urgency: MaybeSet<i32>,
+    pub urgency: MaybeSet<Urgency>,
+    pub leakage: MaybeSet<i32>,
     pub mls: MaybeSet<i32>,
     pub colour: MaybeSet<palette::Hsv>,
     pub comments: MaybeSet<Option<String>>,

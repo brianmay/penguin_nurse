@@ -3,8 +3,10 @@ use classes::classes;
 use dioxus::prelude::*;
 use palette::IntoColor;
 
+use crate::models::Urgency;
+
 #[component]
-pub fn event_date_time_short(time: chrono::DateTime<FixedOffset>) -> Element {
+pub fn EventDateTimeShort(time: chrono::DateTime<FixedOffset>) -> Element {
     let string = time.format("%Y-%m-%d %H:%M").to_string();
 
     let classes = if time.hour() < 7 {
@@ -21,7 +23,7 @@ pub fn event_date_time_short(time: chrono::DateTime<FixedOffset>) -> Element {
 }
 
 #[component]
-pub fn event_time(time: chrono::DateTime<FixedOffset>) -> Element {
+pub fn EventTime(time: chrono::DateTime<FixedOffset>) -> Element {
     let string = time.format("%H:%M:%S %z").to_string();
 
     let classes = if time.hour() < 7 {
@@ -38,42 +40,32 @@ pub fn event_time(time: chrono::DateTime<FixedOffset>) -> Element {
 }
 
 #[component]
-pub fn event_date_time(time: chrono::DateTime<FixedOffset>) -> Element {
-    let string = time.to_string();
-
-    let classes = if time.hour() < 7 {
-        classes!["text-error"]
-    } else if time.hour() < 21 {
-        classes!["text-success"]
-    } else {
-        classes!["text-warning"]
+pub fn UrgencyIcon(urgency: Urgency) -> Element {
+    let (icon, classes) = match urgency {
+        Urgency::U0 => ("0", classes!["text-success"]),
+        Urgency::U1 => ("1", classes!["text-success"]),
+        Urgency::U2 => ("2", classes!["text-success"]),
+        Urgency::U3 => ("3", classes!["text-success"]),
+        Urgency::U4 => ("4", classes!["text-warning"]),
+        Urgency::U5 => ("5", classes!["text-error"]),
     };
 
     rsx! {
-        span { class: classes, {string} }
+        div { class: classes + "text-sm w-10 dark:invert inline-block", {icon} }
     }
 }
 
 #[component]
-pub fn event_urgency(urgency: i32) -> Element {
-    let text = match urgency {
-        0 => "No urgency",
-        1 => "Low urgency",
-        2 => "Medium urgency",
-        3 => "High urgency",
-        4 => "Very high urgency",
-        5 => "Critical urgency",
-        _ => "Unknown urgency",
-    };
+pub fn UrgencyLabel(urgency: Urgency) -> Element {
+    let text = urgency.as_title();
 
     let classes = match urgency {
-        0 => classes!["text-success"],
-        1 => classes!["text-success"],
-        2 => classes!["text-success"],
-        3 => classes!["text-success"],
-        4 => classes!["text-warning"],
-        5 => classes!["text-error"],
-        _ => classes!["text-error"],
+        Urgency::U0 => classes!["text-success"],
+        Urgency::U1 => classes!["text-success"],
+        Urgency::U2 => classes!["text-success"],
+        Urgency::U3 => classes!["text-success"],
+        Urgency::U4 => classes!["text-warning"],
+        Urgency::U5 => classes!["text-error"],
     };
 
     rsx! {
