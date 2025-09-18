@@ -12,7 +12,7 @@ use crate::{
         buttons::{ActionButton, CreateButton},
         consumables::{self, ConsumableLabel, ConsumableUnitIcon, ConsumableUpdate},
         consumptions::ConsumptionTypeIcon,
-        events::UrgencyIcon,
+        events::{UrgencyIcon, UrgencyLabel},
         exercises::{ExerciseTypeIcon, exercise_calories, exercise_rpe},
         poos::PooBristolIcon,
     },
@@ -620,7 +620,8 @@ pub struct InputOption<D: 'static + Clone + Eq + PartialEq + FieldLabel> {
     id: String,
     value: D,
     icon: Element,
-    label: String,
+    title: String,
+    label: Element,
 }
 
 #[component]
@@ -639,15 +640,13 @@ pub fn InputSelect<D: 'static + Clone + Eq + PartialEq + FieldLabel>(
             .iter()
             .filter(|opt| {
                 query.is_empty()
-                    || opt.label.to_lowercase().contains(&query)
+                    || opt.title.to_lowercase().contains(&query)
                     || opt.id.to_lowercase() == query
             })
             .map(|opt| PullDownMenuItem {
                 id: opt.id.clone(),
                 value: opt.value.clone(),
-                label: rsx! {
-                    {opt.label.clone()}
-                },
+                label: opt.label.clone(),
                 icon: opt.icon.clone(),
             })
             .collect::<Vec<_>>()
@@ -686,7 +685,8 @@ pub fn InputConsumptionType(
                 id: id.to_string(),
                 value: *consumption_type,
                 icon,
-                label: label.to_string(),
+                title: label.to_string(),
+                label: rsx! { "{label}" },
             }
         })
         .collect::<Vec<_>>();
@@ -723,7 +723,8 @@ pub fn InputConsumableUnitType(
                 id: id.to_string(),
                 value: *consumable_unit,
                 icon,
-                label: label.to_string(),
+                title: label.to_string(),
+                label: rsx! { "{label}" },
             }
         })
         .collect::<Vec<_>>();
@@ -760,7 +761,10 @@ pub fn InputUrgency(
                 id: id.to_string(),
                 value: *urgency,
                 icon,
-                label: label.to_string(),
+                title: label.to_string(),
+                label: rsx! {
+                    UrgencyLabel { urgency: *urgency }
+                },
             }
         })
         .collect::<Vec<_>>();
@@ -797,7 +801,8 @@ pub fn InputPooBristolType(
                 id: id.to_string(),
                 value: *bristol,
                 icon,
-                label: label.to_string(),
+                title: label.to_string(),
+                label: rsx! { "{label}" },
             }
         })
         .collect::<Vec<_>>();
@@ -834,7 +839,8 @@ pub fn InputExerciseType(
                 id: id.to_string(),
                 value: *exercise_type,
                 icon,
-                label: label.to_string(),
+                title: label.to_string(),
+                label: rsx! { "{label}" },
             }
         })
         .collect::<Vec<_>>();
