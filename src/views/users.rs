@@ -216,7 +216,7 @@ pub fn UserDetail(
                                 dialog: DetailsDialogReference::Idle,
                             });
                     },
-                    reload: move || (maybe_user.restart()),
+                    reload: move || maybe_user.restart(),
                 }
             }
         }
@@ -351,7 +351,7 @@ pub fn UserList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> Element 
             Some(Ok(dialog)) => rsx! {
                 UserDialog {
                     dialog: dialog.clone(),
-                    reload: move || (users.restart()),
+                    reload: move || users.restart(),
                     on_close: move |()| {
                         navigator
                             .push(Route::UserList {
