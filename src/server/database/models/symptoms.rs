@@ -52,6 +52,7 @@ pub struct Symptom {
     pub feeling_cold: i32,
     pub nasal_symptom: i32,
     pub nasal_symptom_description: Option<String>,
+    pub feeling_thirsty: i32,
 }
 
 const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
@@ -103,6 +104,7 @@ impl From<Symptom> for crate::models::Symptom {
             ear_pain: symptom.ear_pain,
             feeling_hot: symptom.feeling_hot,
             feeling_cold: symptom.feeling_cold,
+            feeling_thirsty: symptom.feeling_thirsty,
             comments: symptom.comments,
         }
     }
@@ -186,6 +188,7 @@ pub struct NewSymptom<'a> {
     ear_pain: i32,
     feeling_hot: i32,
     feeling_cold: i32,
+    feeling_thirsty: i32,
     comments: Option<&'a str>,
 }
 
@@ -230,6 +233,7 @@ impl<'a> NewSymptom<'a> {
             ear_pain: symptom.ear_pain,
             feeling_hot: symptom.feeling_hot,
             feeling_cold: symptom.feeling_cold,
+            feeling_thirsty: symptom.feeling_thirsty,
             comments: symptom.comments.as_deref(),
         }
     }
@@ -287,6 +291,7 @@ pub struct ChangeSymptom<'a> {
     ear_pain: Option<i32>,
     feeling_hot: Option<i32>,
     feeling_cold: Option<i32>,
+    feeling_thirsty: Option<i32>,
     comments: Option<Option<&'a str>>,
 }
 
@@ -342,6 +347,7 @@ impl<'a> ChangeSymptom<'a> {
             ear_pain: symptom.ear_pain.into_option(),
             feeling_hot: symptom.feeling_hot.into_option(),
             feeling_cold: symptom.feeling_cold.into_option(),
+            feeling_thirsty: symptom.feeling_thirsty.into_option(),
             comments: symptom.comments.map_inner_deref().into_option(),
         }
     }

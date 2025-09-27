@@ -59,6 +59,7 @@ struct Validate {
     ear_pain: Memo<Result<i32, ValidationError>>,
     feeling_hot: Memo<Result<i32, ValidationError>>,
     feeling_cold: Memo<Result<i32, ValidationError>>,
+    feeling_thirsty: Memo<Result<i32, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
@@ -99,6 +100,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Symptom, EditErr
     let ear_pain = validate.ear_pain.read().clone()?;
     let feeling_hot = validate.feeling_hot.read().clone()?;
     let feeling_cold = validate.feeling_cold.read().clone()?;
+    let feeling_thirsty = validate.feeling_thirsty.read().clone()?;
     let comments = validate.comments.read().clone()?;
 
     match op {
@@ -141,6 +143,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Symptom, EditErr
                 ear_pain,
                 feeling_hot,
                 feeling_cold,
+                feeling_thirsty,
                 comments,
             };
             create_symptom(updates).await.map_err(EditError::Server)
@@ -184,6 +187,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Symptom, EditErr
                 ear_pain: MaybeSet::Set(ear_pain),
                 feeling_hot: MaybeSet::Set(feeling_hot),
                 feeling_cold: MaybeSet::Set(feeling_cold),
+                feeling_thirsty: MaybeSet::Set(feeling_thirsty),
                 comments: MaybeSet::Set(comments),
             };
             update_symptom(symptom.id, changes)
@@ -345,6 +349,10 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
         Operation::Create { .. } => "0".to_string(),
         Operation::Update { symptom } => symptom.feeling_cold.to_string(),
     });
+    let feeling_thirsty = use_signal(|| match &op {
+        Operation::Create { .. } => "0".to_string(),
+        Operation::Update { symptom } => symptom.feeling_thirsty.to_string(),
+    });
     let comments = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
         Operation::Update { symptom } => symptom.comments.as_raw(),
@@ -396,6 +404,7 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
             ear_pain: use_memo(move || validate_symptom_intensity(&ear_pain())),
             feeling_hot: use_memo(move || validate_symptom_intensity(&feeling_hot())),
             feeling_cold: use_memo(move || validate_symptom_intensity(&feeling_cold())),
+            feeling_thirsty: use_memo(move || validate_symptom_intensity(&feeling_thirsty())),
             comments: use_memo(move || validate_comments(&comments())),
         }
     };
@@ -441,6 +450,7 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
             || validate.ear_pain.read().is_err()
             || validate.feeling_hot.read().is_err()
             || validate.feeling_cold.read().is_err()
+            || validate.feeling_thirsty.read().is_err()
             || validate.comments.read().is_err()
             || disabled()
     });
@@ -732,6 +742,13 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
                 label: "Feeling Cold",
                 value: feeling_cold,
                 validate: validate.feeling_cold,
+                disabled,
+            }
+            InputSymptomIntensity {
+                id: "feeling_thirsty",
+                label: "Feeling Thirsty",
+                value: feeling_thirsty,
+                validate: validate.feeling_thirsty,
                 disabled,
             }
             InputTextArea {

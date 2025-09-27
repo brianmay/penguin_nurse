@@ -221,6 +221,7 @@ diesel::table! {
         feeling_cold -> Int4,
         nasal_symptom -> Int4,
         nasal_symptom_description -> Nullable<Text>,
+        feeling_thirsty -> Int4,
     }
 }
 

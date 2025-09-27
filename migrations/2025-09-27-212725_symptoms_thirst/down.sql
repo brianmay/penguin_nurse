@@ -1,0 +1,1 @@
+ALTER TABLE symptoms DROP COLUMN IF EXISTS feeling_thirsty;

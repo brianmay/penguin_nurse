@@ -74,6 +74,7 @@ pub struct Symptom {
     pub ear_pain: i32,
     pub feeling_hot: i32,
     pub feeling_cold: i32,
+    pub feeling_thirsty: i32,
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
@@ -125,6 +126,7 @@ pub struct NewSymptom {
     pub ear_pain: i32,
     pub feeling_hot: i32,
     pub feeling_cold: i32,
+    pub feeling_thirsty: i32,
     pub comments: Option<String>,
 }
 
@@ -167,5 +169,6 @@ pub struct ChangeSymptom {
     pub ear_pain: MaybeSet<i32>,
     pub feeling_hot: MaybeSet<i32>,
     pub feeling_cold: MaybeSet<i32>,
+    pub feeling_thirsty: MaybeSet<i32>,
     pub comments: MaybeSet<Option<String>>,
 }
