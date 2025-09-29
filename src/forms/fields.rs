@@ -298,10 +298,10 @@ fn PullDownMenu<D: 'static + Clone + PartialEq + FieldLabel>(
 }
 
 #[component]
-fn InputSearch<D: 'static + Clone + Eq + PartialEq + FieldLabel>(
+fn InputSearch<D: 'static + Clone + Eq + FieldLabel, T: 'static + Clone + Eq>(
     id: &'static str,
     label: &'static str,
-    validate: Memo<Result<D, ValidationError>>,
+    validate: Memo<Result<T, ValidationError>>,
     mut value: Signal<Option<D>>,
     disabled: Memo<bool>,
     options: Memo<Vec<PullDownMenuItem<D>>>,
@@ -1130,13 +1130,7 @@ pub fn InputConsumable(
     let filtered_options =
         use_memo(move || list().unwrap_or_else(|| Ok(Vec::new())).unwrap_or_default());
 
-    let validate = use_memo(move || {
-        if let Some(consumable) = value() {
-            Ok(consumable.clone())
-        } else {
-            Err(ValidationError("No consumable selected".to_string()))
-        }
-    });
+    let validate = use_memo(move || Ok(value()));
 
     rsx! {
         if create_form() {
