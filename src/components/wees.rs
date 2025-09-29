@@ -6,7 +6,7 @@ use palette::Hsv;
 use crate::{
     components::{
         events::{EventDateTimeShort, Markdown, UrgencyLabel, event_colour},
-        symptoms::SymptomIntensity,
+        symptoms::{SymptomDisplay, SymptomIntensity},
         times::time_delta_to_string,
     },
     forms::{
@@ -409,8 +409,10 @@ pub fn WeeDetails(wee: Wee) -> Element {
             div {
                 UrgencyLabel { urgency: wee.urgency }
             }
-            div {
-                SymptomIntensity { intensity: wee.leakage }
+            SymptomDisplay {
+                name: "Leakage".to_string(),
+                intensity: wee.leakage,
+                extra: None,
             }
         }
         if let Some(comments) = &wee.comments {

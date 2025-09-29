@@ -961,172 +961,177 @@ pub fn SymptomDetails(symptom: Symptom) -> Element {
     rsx! {
         h3 { class: "text-lg font-bold", {symptom.time.format("%Y-%m-%d %H:%M:%S %:z").to_string()} }
         SymptomDisplay {
-            name: "Appetite Loss: ".to_string(),
+            name: "Appetite Loss".to_string(),
             intensity: symptom.appetite_loss,
             extra: None,
         }
         SymptomDisplay {
-            name: "Fever: ".to_string(),
+            name: "Fever".to_string(),
             intensity: symptom.fever,
             extra: None,
         }
         SymptomDisplay {
-            name: "Cough: ".to_string(),
+            name: "Cough".to_string(),
             intensity: symptom.cough,
             extra: None,
         }
         SymptomDisplay {
-            name: "Sore Throat: ".to_string(),
+            name: "Sore Throat".to_string(),
             intensity: symptom.sore_throat,
             extra: None,
         }
         SymptomDisplay {
-            name: "Nasal Symptom: ".to_string(),
+            name: "Nasal Symptom".to_string(),
             intensity: symptom.nasal_symptom,
             extra: symptom.nasal_symptom_description.map(|desc| rsx! {
                 div { class: "inline-block ml-2", {desc} }
             }),
         }
         SymptomDisplay {
-            name: "Sneezing: ".to_string(),
+            name: "Sneezing".to_string(),
             intensity: symptom.sneezing,
             extra: None,
         }
         SymptomDisplay {
-            name: "Heart Burn: ".to_string(),
+            name: "Heart Burn".to_string(),
             intensity: symptom.heart_burn,
             extra: None,
         }
         SymptomDisplay {
-            name: "Abdominal Pain: ".to_string(),
+            name: "Abdominal Pain".to_string(),
             intensity: symptom.abdominal_pain,
             extra: symptom.abdominal_pain_location.map(|location| rsx! {
                 div { class: "inline-block ml-2", {location} }
             }),
         }
         SymptomDisplay {
-            name: "Diarrhea: ".to_string(),
+            name: "Diarrhea".to_string(),
             intensity: symptom.diarrhea,
             extra: None,
         }
         SymptomDisplay {
-            name: "Constipation: ".to_string(),
+            name: "Constipation".to_string(),
             intensity: symptom.constipation,
             extra: None,
         }
         SymptomDisplay {
-            name: "Lower Back Pain: ".to_string(),
+            name: "Lower Back Pain".to_string(),
             intensity: symptom.lower_back_pain,
             extra: None,
         }
         SymptomDisplay {
-            name: "Upper Back Pain: ".to_string(),
+            name: "Upper Back Pain".to_string(),
             intensity: symptom.upper_back_pain,
             extra: None,
         }
         SymptomDisplay {
-            name: "Neck Pain: ".to_string(),
+            name: "Neck Pain".to_string(),
             intensity: symptom.neck_pain,
             extra: None,
         }
         SymptomDisplay {
-            name: "Joint Pain: ".to_string(),
+            name: "Joint Pain".to_string(),
             intensity: symptom.joint_pain,
             extra: None,
         }
         SymptomDisplay {
-            name: "Headache: ".to_string(),
+            name: "Headache".to_string(),
             intensity: symptom.headache,
             extra: None,
         }
         SymptomDisplay {
-            name: "Nausea: ".to_string(),
+            name: "Nausea".to_string(),
             intensity: symptom.nausea,
             extra: None,
         }
         SymptomDisplay {
-            name: "Dizziness: ".to_string(),
+            name: "Dizziness".to_string(),
             intensity: symptom.dizziness,
             extra: None,
         }
         SymptomDisplay {
-            name: "Stomach Ache: ".to_string(),
+            name: "Stomach Ache".to_string(),
             intensity: symptom.stomach_ache,
             extra: None,
         }
         SymptomDisplay {
-            name: "Chest Pain: ".to_string(),
+            name: "Chest Pain".to_string(),
             intensity: symptom.chest_pain,
             extra: None,
         }
         SymptomDisplay {
-            name: "Shortness of Breath: ".to_string(),
+            name: "Shortness of Breath".to_string(),
             intensity: symptom.shortness_of_breath,
             extra: None,
         }
         SymptomDisplay {
-            name: "Fatigue: ".to_string(),
+            name: "Fatigue".to_string(),
             intensity: symptom.fatigue,
             extra: None,
         }
         SymptomDisplay {
-            name: "Anxiety: ".to_string(),
+            name: "Anxiety".to_string(),
             intensity: symptom.anxiety,
             extra: None,
         }
         SymptomDisplay {
-            name: "Depression: ".to_string(),
+            name: "Depression".to_string(),
             intensity: symptom.depression,
             extra: None,
         }
         SymptomDisplay {
-            name: "Insomnia: ".to_string(),
+            name: "Insomnia".to_string(),
             intensity: symptom.insomnia,
             extra: None,
         }
         SymptomDisplay {
-            name: "Shoulder Pain: ".to_string(),
+            name: "Shoulder Pain".to_string(),
             intensity: symptom.shoulder_pain,
             extra: None,
         }
         SymptomDisplay {
-            name: "Hand Pain: ".to_string(),
+            name: "Hand Pain".to_string(),
             intensity: symptom.hand_pain,
             extra: None,
         }
         SymptomDisplay {
-            name: "Foot Pain: ".to_string(),
+            name: "Foot Pain".to_string(),
             intensity: symptom.foot_pain,
             extra: None,
         }
         SymptomDisplay {
-            name: "Wrist Pain: ".to_string(),
+            name: "Wrist Pain".to_string(),
             intensity: symptom.wrist_pain,
             extra: None,
         }
         SymptomDisplay {
-            name: "Dental Pain: ".to_string(),
+            name: "Dental Pain".to_string(),
             intensity: symptom.dental_pain,
             extra: None,
         }
         SymptomDisplay {
-            name: "Eye Pain: ".to_string(),
+            name: "Eye Pain".to_string(),
             intensity: symptom.eye_pain,
             extra: None,
         }
         SymptomDisplay {
-            name: "Ear Pain: ".to_string(),
+            name: "Ear Pain".to_string(),
             intensity: symptom.ear_pain,
             extra: None,
         }
         SymptomDisplay {
-            name: "Feeling Hot: ".to_string(),
+            name: "Feeling Hot".to_string(),
             intensity: symptom.feeling_hot,
             extra: None,
         }
         SymptomDisplay {
-            name: "Feeling Cold: ".to_string(),
+            name: "Feeling Cold".to_string(),
             intensity: symptom.feeling_cold,
+            extra: None,
+        }
+        SymptomDisplay {
+            name: "Feeling Thirsty".to_string(),
+            intensity: symptom.feeling_thirsty,
             extra: None,
         }
         if let Some(comments) = &symptom.comments {
