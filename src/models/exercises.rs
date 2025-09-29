@@ -47,6 +47,90 @@ impl ExerciseType {
         }
     }
 }
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, AllValues)]
+pub enum ExerciseRpe {
+    Rpe1,
+    Rpe2,
+    Rpe3,
+    Rpe4,
+    Rpe5,
+    Rpe6,
+    Rpe7,
+    Rpe8,
+    Rpe9,
+    Rpe10,
+}
+
+impl ExerciseRpe {
+    pub fn as_id(&self) -> &'static str {
+        match self {
+            Self::Rpe1 => "1",
+            Self::Rpe2 => "2",
+            Self::Rpe3 => "3",
+            Self::Rpe4 => "4",
+            Self::Rpe5 => "5",
+            Self::Rpe6 => "6",
+            Self::Rpe7 => "7",
+            Self::Rpe8 => "8",
+            Self::Rpe9 => "9",
+            Self::Rpe10 => "10",
+        }
+    }
+
+    pub fn as_title(&self) -> &'static str {
+        match self {
+            Self::Rpe1 => "Very light",
+            Self::Rpe2 => "Light",
+            Self::Rpe3 => "Moderate",
+            Self::Rpe4 => "Somewhat hard",
+            Self::Rpe5 => "Hard",
+            Self::Rpe6 => "Harder",
+            Self::Rpe7 => "Very hard",
+            Self::Rpe8 => "Very, very hard",
+            Self::Rpe9 => "Extremely hard",
+            Self::Rpe10 => "Maximal effort",
+        }
+    }
+}
+
+impl TryFrom<i32> for ExerciseRpe {
+    type Error = ();
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        match value {
+            1 => Ok(ExerciseRpe::Rpe1),
+            2 => Ok(ExerciseRpe::Rpe2),
+            3 => Ok(ExerciseRpe::Rpe3),
+            4 => Ok(ExerciseRpe::Rpe4),
+            5 => Ok(ExerciseRpe::Rpe5),
+            6 => Ok(ExerciseRpe::Rpe6),
+            7 => Ok(ExerciseRpe::Rpe7),
+            8 => Ok(ExerciseRpe::Rpe8),
+            9 => Ok(ExerciseRpe::Rpe9),
+            10 => Ok(ExerciseRpe::Rpe10),
+            _ => Err(()),
+        }
+    }
+}
+
+impl From<ExerciseRpe> for i32 {
+    fn from(value: ExerciseRpe) -> Self {
+        match value {
+            ExerciseRpe::Rpe1 => 1,
+            ExerciseRpe::Rpe2 => 2,
+            ExerciseRpe::Rpe3 => 3,
+            ExerciseRpe::Rpe4 => 4,
+            ExerciseRpe::Rpe5 => 5,
+            ExerciseRpe::Rpe6 => 6,
+            ExerciseRpe::Rpe7 => 7,
+            ExerciseRpe::Rpe8 => 8,
+            ExerciseRpe::Rpe9 => 9,
+            ExerciseRpe::Rpe10 => 10,
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ExerciseId(i64);
 
@@ -83,7 +167,7 @@ pub struct Exercise {
     pub location: Option<String>,
     pub distance: Option<bigdecimal::BigDecimal>,
     pub calories: Option<i32>,
-    pub rpe: Option<i32>,
+    pub rpe: Option<ExerciseRpe>,
     pub exercise_type: ExerciseType,
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
@@ -105,7 +189,7 @@ pub struct NewExercise {
     pub location: Option<String>,
     pub distance: Option<bigdecimal::BigDecimal>,
     pub calories: Option<i32>,
-    pub rpe: Option<i32>,
+    pub rpe: Option<ExerciseRpe>,
     pub exercise_type: ExerciseType,
     pub comments: Option<String>,
 }
@@ -118,7 +202,7 @@ pub struct ChangeExercise {
     pub location: MaybeSet<Option<String>>,
     pub distance: MaybeSet<Option<bigdecimal::BigDecimal>>,
     pub calories: MaybeSet<Option<i32>>,
-    pub rpe: MaybeSet<Option<i32>>,
+    pub rpe: MaybeSet<Option<ExerciseRpe>>,
     pub exercise_type: MaybeSet<ExerciseType>,
     pub comments: MaybeSet<Option<String>>,
 }

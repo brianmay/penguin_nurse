@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 
 use crate::{
     components::{
-        events::{Markdown, EventDateTimeShort},
+        events::{EventDateTimeShort, Markdown},
         times::time_delta_to_string,
     },
     forms::{
@@ -14,7 +14,7 @@ use crate::{
         validate_fixed_offset_date_time, validate_location,
     },
     functions::exercises::{create_exercise, delete_exercise, update_exercise},
-    models::{ChangeExercise, Exercise, ExerciseType, MaybeSet, NewExercise, UserId},
+    models::{ChangeExercise, Exercise, ExerciseRpe, ExerciseType, MaybeSet, NewExercise, UserId},
 };
 use classes::classes;
 
@@ -31,7 +31,7 @@ struct Validate {
     location: Memo<Result<Option<String>, ValidationError>>,
     distance: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
     calories: Memo<Result<Option<i32>, ValidationError>>,
-    rpe: Memo<Result<Option<i32>, ValidationError>>,
+    rpe: Memo<Result<Option<ExerciseRpe>, ValidationError>>,
     exercise_type: Memo<Result<ExerciseType, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
@@ -113,8 +113,8 @@ pub fn ExerciseUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Exer
     });
 
     let rpe = use_signal(|| match &op {
-        Operation::Create { .. } => String::new(),
-        Operation::Update { exercise } => exercise.rpe.as_raw(),
+        Operation::Create { .. } => None,
+        Operation::Update { exercise } => exercise.rpe,
     });
 
     let comments = use_signal(|| match &op {
@@ -217,7 +217,7 @@ pub fn ExerciseUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Exer
             }
             InputExerciseCalories {
                 id: "calories",
-                label: "Calories (0-10000)",
+                label: "Calories (0-10000 kcal)",
                 value: calories,
                 validate: validate.calories,
                 disabled,
@@ -338,7 +338,26 @@ pub fn ExerciseTypeIcon(exercise_type: ExerciseType) -> Element {
 }
 
 #[component]
-pub fn exercise_duration(duration: chrono::TimeDelta) -> Element {
+pub fn ExerciseRpeIcon(rpe: ExerciseRpe) -> Element {
+    let icon = match rpe {
+        ExerciseRpe::Rpe1 => "1",
+        ExerciseRpe::Rpe2 => "2",
+        ExerciseRpe::Rpe3 => "3",
+        ExerciseRpe::Rpe4 => "4",
+        ExerciseRpe::Rpe5 => "5",
+        ExerciseRpe::Rpe6 => "6",
+        ExerciseRpe::Rpe7 => "7",
+        ExerciseRpe::Rpe8 => "8",
+        ExerciseRpe::Rpe9 => "9",
+        ExerciseRpe::Rpe10 => "10",
+    };
+    rsx! {
+        div { class: "text-sm w-10 dark:invert inline-block", {icon} }
+    }
+}
+
+#[component]
+pub fn ExerciseDuration(duration: chrono::TimeDelta) -> Element {
     let text = time_delta_to_string(duration);
 
     rsx! {
@@ -353,7 +372,7 @@ pub fn exercise_duration(duration: chrono::TimeDelta) -> Element {
 }
 
 #[component]
-pub fn exercise_calories(calories: Option<i32>) -> Element {
+pub fn ExerciseCalories(calories: Option<i32>) -> Element {
     let text = if let Some(c) = calories {
         format!("{} kcal", c)
     } else {
@@ -378,51 +397,44 @@ pub fn exercise_calories(calories: Option<i32>) -> Element {
 }
 
 #[component]
-pub fn exercise_rpe(rpe: Option<i32>) -> Element {
-    let text = match rpe {
-        Some(1) => "1 (Very Light)".to_string(),
-        Some(2) => "2 (Light Activity)".to_string(),
-        Some(3) => "3 (Light Activity)".to_string(),
-        Some(4) => "4 (Moderate Activity)".to_string(),
-        Some(5) => "5 (Moderate Activity)".to_string(),
-        Some(6) => "6 (Moderate Activity)".to_string(),
-        Some(7) => "7 (Vigorous Activity)".to_string(),
-        Some(8) => "8 (Vigorous Activity)".to_string(),
-        Some(9) => "9 (Very Hard Activity)".to_string(),
-        Some(10) => "10 (Max Effort Activity)".to_string(),
-        Some(i) => format!("{} (Unknown)", i),
-        None => "N/A".to_string(),
-    };
+pub fn ExerciseRpeLabel(rpe: Option<ExerciseRpe>) -> Element {
+    let text = rpe
+        .map(|rpe| rpe.as_title().to_string())
+        .unwrap_or_else(|| "N/A".to_string());
 
     let classes = match rpe {
-        Some(1) => classes!["text-blue-800"],
-        Some(2..=3) => classes!["text-blue-400"],
-        Some(4..=6) => classes!["text-green-400"],
-        Some(7..=8) => classes!["text-yellow-400"],
-        Some(9) => classes!["text-orange-400"],
-        Some(10) => classes!["text-red-800"],
-        Some(value) if (7..=10).contains(&value) => classes!["text-error"],
-        Some(_) => classes!["text-error"],
+        Some(ExerciseRpe::Rpe1 | ExerciseRpe::Rpe2 | ExerciseRpe::Rpe3) => {
+            classes!["text-blue-400"]
+        }
+        Some(ExerciseRpe::Rpe4 | ExerciseRpe::Rpe5 | ExerciseRpe::Rpe6) => {
+            classes!["text-green-400"]
+        }
+        Some(ExerciseRpe::Rpe7 | ExerciseRpe::Rpe8) => classes!["text-yellow-400"],
+        Some(ExerciseRpe::Rpe9) => classes!["text-orange-400"],
+        Some(ExerciseRpe::Rpe10) => classes!["text-red-800"],
         None => classes!["text-success"],
     };
 
     let description = match rpe {
-        Some(1) => Some("Hardly any exertion, but more then sleeping, watching TV, etc."),
-        Some(2..=3) => {
+        Some(ExerciseRpe::Rpe1) => {
+            Some("Hardly any exertion, but more then sleeping, watching TV, etc.")
+        }
+        Some(ExerciseRpe::Rpe2 | ExerciseRpe::Rpe3) => {
             Some("Feels like you can maintain for hours, easy to breathe and carry a conversation.")
         }
-        Some(4..=6) => Some(
+        Some(ExerciseRpe::Rpe4 | ExerciseRpe::Rpe5 | ExerciseRpe::Rpe6) => Some(
             "Breathing heavily, but can still hold a conversation. Still somewhat comfortable, but becoming more challenging.",
         ),
-        Some(7..=8) => Some("Borderline uncomfortable, short of breath, can speak a sentence."),
-        Some(9) => {
+        Some(ExerciseRpe::Rpe7 | ExerciseRpe::Rpe8) => {
+            Some("Borderline uncomfortable, short of breath, can speak a sentence.")
+        }
+        Some(ExerciseRpe::Rpe9) => {
             Some("Very difficult to maintain. Can barely breathe and speak only a few words.")
         }
-        Some(10) => Some(
+        Some(ExerciseRpe::Rpe10) => Some(
             "Feels almost impossible to keep going. Completely out of breath, unable to talk. Cannot maintain for more than a few seconds.",
         ),
-        Some(value) if (7..=10).contains(&value) => Some("Very Hard to Max Effort Activity"),
-        Some(_) | None => None,
+        None => None,
     };
 
     rsx! {
@@ -480,7 +492,7 @@ pub fn ExerciseSummary(exercise: Exercise) -> Element {
             EventDateTimeShort { time: exercise.time }
         }
         div {
-            exercise_duration { duration: exercise.duration }
+            ExerciseDuration { duration: exercise.duration }
         }
         if let Some(comments) = &exercise.comments {
             Markdown { content: comments.to_string() }
@@ -508,13 +520,13 @@ pub fn ExerciseDetails(exercise: Exercise) -> Element {
         if let Some(calories) = &exercise.calories {
             div {
                 "Calories: "
-                exercise_calories { calories: Some(*calories) }
+                ExerciseCalories { calories: Some(*calories) }
             }
         }
         if let Some(rpe) = &exercise.rpe {
             div {
                 "RPE: "
-                exercise_rpe { rpe: Some(*rpe) }
+                ExerciseRpeLabel { rpe: Some(*rpe) }
             }
         }
         if let Some(comments) = &exercise.comments {

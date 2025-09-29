@@ -27,6 +27,7 @@ mod exercises;
 pub use exercises::ChangeExercise;
 pub use exercises::Exercise;
 pub use exercises::ExerciseId;
+pub use exercises::ExerciseRpe;
 pub use exercises::ExerciseType;
 pub use exercises::NewExercise;
 

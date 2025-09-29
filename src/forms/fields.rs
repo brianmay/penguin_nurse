@@ -13,7 +13,7 @@ use crate::{
         consumables::{self, ConsumableLabel, ConsumableUnitIcon, ConsumableUpdate},
         consumptions::ConsumptionTypeIcon,
         events::{UrgencyIcon, UrgencyLabel},
-        exercises::{ExerciseTypeIcon, exercise_calories, exercise_rpe},
+        exercises::{ExerciseRpeIcon, ExerciseRpeLabel, ExerciseTypeIcon},
         poos::PooBristolIcon,
     },
     forms::{
@@ -21,7 +21,9 @@ use crate::{
         values::FieldLabel,
     },
     functions::consumables::search_consumables,
-    models::{Bristol, Consumable, ConsumableUnit, ConsumptionType, ExerciseType, Urgency},
+    models::{
+        Bristol, Consumable, ConsumableUnit, ConsumptionType, ExerciseRpe, ExerciseType, Urgency,
+    },
 };
 
 use super::FieldValue;
@@ -104,7 +106,6 @@ fn get_input_classes(is_valid: bool, is_disabled: bool) -> String {
 pub fn FieldMessage<D: 'static + Clone + PartialEq>(
     validate: Memo<Result<D, ValidationError>>,
     disabled: Memo<bool>,
-    message: Option<Element>,
 ) -> Element {
     rsx! {
         if disabled() {
@@ -112,13 +113,7 @@ pub fn FieldMessage<D: 'static + Clone + PartialEq>(
         } else if let Err(err) = validate() {
             div { class: "text-red-500", "{err}" }
         } else {
-            div { class: "text-green-500",
-                if message.is_some() {
-                    {message}
-                } else {
-                    "Looks good!"
-                }
-            }
+            div { class: "text-green-500", "Looks good!" }
         }
     }
 }
@@ -126,7 +121,7 @@ pub fn FieldMessage<D: 'static + Clone + PartialEq>(
 #[derive(Clone, PartialEq)]
 struct PullDownMenuItem<D: 'static + Clone + PartialEq + FieldLabel> {
     id: String,
-    value: D,
+    value: Option<D>,
     icon: Element,
     label: Element,
 }
@@ -135,7 +130,7 @@ struct PullDownMenuItem<D: 'static + Clone + PartialEq + FieldLabel> {
 fn PullDownMenu<D: 'static + Clone + PartialEq + FieldLabel>(
     id: String,
     items: ReadOnlySignal<Vec<PullDownMenuItem<D>>>,
-    on_select: Callback<D>,
+    on_select: Callback<Option<D>>,
     search: Signal<String>,
     on_close: Callback<()>,
 ) -> Element {
@@ -355,13 +350,13 @@ fn InputSearch<D: 'static + Clone + Eq + FieldLabel, T: 'static + Clone + Eq>(
                         id: search_id,
                         items: options(),
                         on_select: {
-                            Callback::new(move |d: D| {
+                            Callback::new(move |d: Option<D>| {
                                 open.set(false);
                                 if let Some(on_change) = &on_change {
-                                    value.set(Some(d.clone()));
-                                    on_change.call(Some(d));
+                                    value.set(d.clone());
+                                    on_change.call(d);
                                 } else {
-                                    value.set(Some(d));
+                                    value.set(d);
                                 }
                             })
                         },
@@ -385,7 +380,6 @@ pub fn InputString<D: 'static + Clone + PartialEq>(
     value: Signal<String>,
     validate: Memo<Result<D, ValidationError>>,
     disabled: Memo<bool>,
-    message: Option<Element>,
 ) -> Element {
     rsx! {
         div { class: "mb-5",
@@ -401,7 +395,7 @@ pub fn InputString<D: 'static + Clone + PartialEq>(
                     value.set(e.value());
                 },
             }
-            FieldMessage { validate, disabled, message }
+            FieldMessage { validate, disabled }
         }
     }
 }
@@ -413,7 +407,6 @@ pub fn InputNumber<D: 'static + Clone + PartialEq>(
     value: Signal<String>,
     validate: Memo<Result<D, ValidationError>>,
     disabled: Memo<bool>,
-    message: Option<Element>,
 ) -> Element {
     rsx! {
         div { class: "mb-5",
@@ -432,7 +425,7 @@ pub fn InputNumber<D: 'static + Clone + PartialEq>(
                     value.set(e.value());
                 },
             }
-            FieldMessage { validate, disabled, message }
+            FieldMessage { validate, disabled }
         }
     }
 }
@@ -618,17 +611,17 @@ pub fn InputDuration(
 #[derive(Clone, PartialEq)]
 pub struct InputOption<D: 'static + Clone + Eq + PartialEq + FieldLabel> {
     id: String,
-    value: D,
+    value: Option<D>,
     icon: Element,
     title: String,
     label: Element,
 }
 
 #[component]
-pub fn InputSelect<D: 'static + Clone + Eq + PartialEq + FieldLabel>(
+pub fn InputSelect<D: 'static + Clone + Eq + FieldLabel, T: 'static + Clone + Eq>(
     id: &'static str,
     label: &'static str,
-    validate: Memo<Result<D, ValidationError>>,
+    validate: Memo<Result<T, ValidationError>>,
     value: Signal<Option<D>>,
     disabled: Memo<bool>,
     options: Vec<InputOption<D>>,
@@ -683,7 +676,7 @@ pub fn InputConsumptionType(
             let label = consumption_type.as_title();
             InputOption {
                 id: id.to_string(),
-                value: *consumption_type,
+                value: Some(*consumption_type),
                 icon,
                 title: label.to_string(),
                 label: rsx! { "{label}" },
@@ -721,7 +714,7 @@ pub fn InputConsumableUnitType(
             let label = consumable_unit.as_title();
             InputOption {
                 id: id.to_string(),
-                value: *consumable_unit,
+                value: Some(*consumable_unit),
                 icon,
                 title: label.to_string(),
                 label: rsx! { "{label}" },
@@ -759,7 +752,7 @@ pub fn InputUrgency(
             let label = urgency.as_title();
             InputOption {
                 id: id.to_string(),
-                value: *urgency,
+                value: Some(*urgency),
                 icon,
                 title: label.to_string(),
                 label: rsx! {
@@ -799,7 +792,7 @@ pub fn InputPooBristolType(
             let label = bristol.as_title();
             InputOption {
                 id: id.to_string(),
-                value: *bristol,
+                value: Some(*bristol),
                 icon,
                 title: label.to_string(),
                 label: rsx! { "{label}" },
@@ -837,13 +830,64 @@ pub fn InputExerciseType(
             let label = exercise_type.as_title();
             InputOption {
                 id: id.to_string(),
-                value: *exercise_type,
+                value: Some(*exercise_type),
                 icon,
                 title: label.to_string(),
                 label: rsx! { "{label}" },
             }
         })
         .collect::<Vec<_>>();
+
+    rsx! {
+        InputSelect {
+            id,
+            label,
+            validate,
+            value,
+            disabled,
+            options,
+        }
+    }
+}
+
+#[component]
+pub fn InputExerciseRpe(
+    id: &'static str,
+    label: &'static str,
+    value: Signal<Option<ExerciseRpe>>,
+    validate: Memo<Result<Option<ExerciseRpe>, ValidationError>>,
+    disabled: Memo<bool>,
+) -> Element {
+    let mut options = ExerciseRpe::all_values()
+        .iter()
+        .map(|rpe| {
+            let id = rpe.as_id();
+            let icon = rsx! {
+                ExerciseRpeIcon { rpe: *rpe }
+            };
+            let label = rpe.as_title();
+            InputOption {
+                id: id.to_string(),
+                value: Some(*rpe),
+                icon,
+                title: label.to_string(),
+                label: rsx! {
+                    ExerciseRpeLabel { rpe: *rpe }
+                },
+            }
+        })
+        .collect::<Vec<_>>();
+
+    options.insert(
+        0,
+        InputOption {
+            id: "none".to_string(),
+            value: None,
+            icon: rsx! {},
+            title: "None".to_string(),
+            label: rsx! { "None" },
+        },
+    );
 
     rsx! {
         InputSelect {
@@ -872,43 +916,6 @@ pub fn InputExerciseCalories(
             value,
             validate,
             disabled,
-            message: rsx! {
-                if let Ok(calories) = validate.read().as_ref() {
-                    div {
-                        exercise_calories { calories: *calories }
-                    }
-                } else {
-                    div { "Enter a value between 0 and 10,000" }
-                }
-            },
-        }
-    }
-}
-
-#[component]
-pub fn InputExerciseRpe(
-    id: &'static str,
-    label: String,
-    value: Signal<String>,
-    validate: Memo<Result<Option<i32>, ValidationError>>,
-    disabled: Memo<bool>,
-) -> Element {
-    rsx! {
-        InputNumber {
-            id,
-            label,
-            value,
-            validate,
-            disabled,
-            message: rsx! {
-                if let Ok(rpe) = validate.read().as_ref() {
-                    div {
-                        exercise_rpe { rpe: *rpe }
-                    }
-                } else {
-                    div { "Enter a value between 1 and 10" }
-                }
-            },
         }
     }
 }
@@ -1118,7 +1125,7 @@ pub fn InputConsumable(
                     };
                     PullDownMenuItem {
                         id,
-                        value: consumable.clone(),
+                        value: Some(consumable.clone()),
                         label,
                         icon,
                     }

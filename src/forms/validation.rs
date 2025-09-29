@@ -3,7 +3,7 @@ use chrono::{DateTime, FixedOffset, TimeDelta, Utc};
 use palette::Hsv;
 use tap::Pipe;
 
-use crate::models::{Bristol, ConsumableUnit, ConsumptionType, ExerciseType, Urgency};
+use crate::models::{Bristol, ConsumableUnit, ConsumptionType, ExerciseRpe, ExerciseType, Urgency};
 
 use super::{FieldValue, errors::ValidationError};
 
@@ -234,8 +234,10 @@ pub fn validate_exercise_calories(str: &str) -> Result<Option<i32>, ValidationEr
     validate_in_range_maybe(str, 0, 10_000)
 }
 
-pub fn validate_exercise_rpe(str: &str) -> Result<Option<i32>, ValidationError> {
-    validate_in_range_maybe(str, 1, 10)
+pub fn validate_exercise_rpe(
+    rpe: &Option<ExerciseRpe>,
+) -> Result<Option<ExerciseRpe>, ValidationError> {
+    Ok(*rpe)
 }
 
 pub fn validate_symptom_intensity(str: &str) -> Result<i32, ValidationError> {

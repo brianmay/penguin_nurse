@@ -325,7 +325,7 @@ pub fn PooDuration(duration: chrono::TimeDelta) -> Element {
 }
 
 #[component]
-pub fn PooBristol(bristol: Bristol) -> Element {
+pub fn PooBristolLabel(bristol: Bristol) -> Element {
     let bristol_string = bristol.as_title();
 
     let classes = match bristol {
@@ -434,7 +434,7 @@ pub fn PooDetails(poo: Poo) -> Element {
         event_colour { colour: poo.colour }
         div { class: "inline-block align-top",
             div {
-                PooBristol { bristol: poo.bristol }
+                PooBristolLabel { bristol: poo.bristol }
             }
             div {
                 PooQuantity { quantity: poo.quantity }

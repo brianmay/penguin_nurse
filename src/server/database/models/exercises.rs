@@ -87,7 +87,9 @@ impl From<Exercise> for crate::models::Exercise {
             location: exercise.location,
             distance: exercise.distance,
             calories: exercise.calories,
-            rpe: exercise.rpe,
+            rpe: exercise
+                .rpe
+                .map(|rpe| rpe.try_into().unwrap_or(models::ExerciseRpe::Rpe1)),
             comments: exercise.comments,
             created_at: exercise.created_at,
             updated_at: exercise.updated_at,
@@ -158,7 +160,7 @@ impl<'a> NewExercise<'a> {
             location: exercise.location.as_deref(),
             distance: exercise.distance.as_ref(),
             calories: exercise.calories,
-            rpe: exercise.rpe,
+            rpe: exercise.rpe.map(|rpe| rpe.into()),
             exercise_type: exercise.exercise_type.into(),
             comments: exercise.comments.as_deref(),
         }
@@ -206,7 +208,7 @@ impl<'a> ChangeExercise<'a> {
             location: exercise.location.map_inner_deref().into_option(),
             distance: exercise.distance.as_inner_ref().into_option(),
             calories: exercise.calories.into_option(),
-            rpe: exercise.rpe.into_option(),
+            rpe: exercise.rpe.map_inner_into().into_option(),
             exercise_type: exercise.exercise_type.map_into().into_option(),
             comments: exercise.comments.map_inner_deref().into_option(),
         }
