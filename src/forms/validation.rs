@@ -255,7 +255,7 @@ pub fn validate_symptom_extra_details(
         (0, Some(_)) => Err(ValidationError(
             "Extra details must be empty if symptom intensity is 0".to_string(),
         )),
-        (_, None) => Err(ValidationError(
+        (x, None) if x > 0 => Err(ValidationError(
             "Extra details must be set if symptom intensity is greater than 0".to_string(),
         )),
         _ => Ok(extra_details),
