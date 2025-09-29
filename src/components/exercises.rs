@@ -411,7 +411,7 @@ pub fn ExerciseRpeLabel(rpe: Option<ExerciseRpe>) -> Element {
         }
         Some(ExerciseRpe::Rpe7 | ExerciseRpe::Rpe8) => classes!["text-yellow-400"],
         Some(ExerciseRpe::Rpe9) => classes!["text-orange-400"],
-        Some(ExerciseRpe::Rpe10) => classes!["text-red-800"],
+        Some(ExerciseRpe::Rpe10) => classes!["text-red-400"],
         None => classes!["text-success"],
     };
 
