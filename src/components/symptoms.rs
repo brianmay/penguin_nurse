@@ -441,15 +441,6 @@ pub const SYMPTOM_DEFS: &[SymptomMeta] = &[
         set_change: |cs, v| cs.hand_pain = MaybeSet::Set(v),
     },
     SymptomMeta {
-        id: "foot_pain",
-        label: "Foot Pain",
-        category: SymptomCategory::Musculoskeletal,
-        accessor: |s| s.foot_pain,
-        extra: None,
-        set_new: |ns, v| ns.foot_pain = v,
-        set_change: |cs, v| cs.foot_pain = MaybeSet::Set(v),
-    },
-    SymptomMeta {
         id: "wrist_pain",
         label: "Wrist Pain",
         category: SymptomCategory::Musculoskeletal,
@@ -457,6 +448,15 @@ pub const SYMPTOM_DEFS: &[SymptomMeta] = &[
         extra: None,
         set_new: |ns, v| ns.wrist_pain = v,
         set_change: |cs, v| cs.wrist_pain = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "foot_pain",
+        label: "Foot Pain",
+        category: SymptomCategory::Musculoskeletal,
+        accessor: |s| s.foot_pain,
+        extra: None,
+        set_new: |ns, v| ns.foot_pain = v,
+        set_change: |cs, v| cs.foot_pain = MaybeSet::Set(v),
     },
     SymptomMeta {
         id: "dental_pain",
