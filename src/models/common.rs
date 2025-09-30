@@ -4,9 +4,10 @@ use thiserror::Error;
 
 // Serializing Option<Option<String>> does not work as expected. This is a workaround.
 
-#[derive(Debug, Serialize, Deserialize, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, Eq, PartialEq, Default)]
 pub enum MaybeSet<T> {
     Set(T),
+    #[default]
     NoChange,
 }
 

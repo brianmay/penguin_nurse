@@ -130,7 +130,53 @@ pub struct NewSymptom {
     pub comments: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+impl NewSymptom {
+    pub fn default(user_id: UserId, time: chrono::DateTime<chrono::FixedOffset>) -> Self {
+        Self {
+            user_id,
+            time,
+            appetite_loss: 0,
+            fever: 0,
+            cough: 0,
+            sore_throat: 0,
+            nasal_symptom: 0,
+            nasal_symptom_description: None,
+            sneezing: 0,
+            heart_burn: 0,
+            abdominal_pain: 0,
+            abdominal_pain_location: None,
+            diarrhea: 0,
+            constipation: 0,
+            lower_back_pain: 0,
+            upper_back_pain: 0,
+            neck_pain: 0,
+            joint_pain: 0,
+            headache: 0,
+            nausea: 0,
+            dizziness: 0,
+            stomach_ache: 0,
+            chest_pain: 0,
+            shortness_of_breath: 0,
+            fatigue: 0,
+            anxiety: 0,
+            depression: 0,
+            insomnia: 0,
+            shoulder_pain: 0,
+            hand_pain: 0,
+            foot_pain: 0,
+            wrist_pain: 0,
+            dental_pain: 0,
+            eye_pain: 0,
+            ear_pain: 0,
+            feeling_hot: 0,
+            feeling_cold: 0,
+            feeling_thirsty: 0,
+            comments: None,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
 pub struct ChangeSymptom {
     pub user_id: MaybeSet<UserId>,
     pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,

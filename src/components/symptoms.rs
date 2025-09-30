@@ -1,4 +1,5 @@
 use chrono::{DateTime, FixedOffset, Local, Utc};
+use derive_enum_all_values::AllValues;
 use dioxus::prelude::*;
 
 use crate::{
@@ -21,175 +22,566 @@ pub enum Operation {
     Update { symptom: Symptom },
 }
 
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, AllValues)]
+pub enum SymptomCategory {
+    General,
+    Respiratory,
+    Digestive,
+    Musculoskeletal,
+    HeadFaceMouth,
+    Cardiovascular,
+    Neurological,
+    MentalHealth,
+}
+
+impl SymptomCategory {
+    pub fn as_title(&self) -> &'static str {
+        match self {
+            SymptomCategory::General => "General / Systemic",
+            SymptomCategory::Respiratory => "Respiratory / ENT",
+            SymptomCategory::Digestive => "Digestive / GI",
+            SymptomCategory::Musculoskeletal => "Musculoskeletal",
+            SymptomCategory::HeadFaceMouth => "Head / Face / Mouth",
+            SymptomCategory::Cardiovascular => "Cardiovascular",
+            SymptomCategory::Neurological => "Neurological",
+            SymptomCategory::MentalHealth => "Mental Health / Sleep",
+        }
+    }
+}
+impl std::fmt::Display for SymptomCategory {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_title())
+    }
+}
+
+pub struct SymptomExtraMeta {
+    pub id: &'static str,
+    pub label: &'static str,
+    pub accessor: fn(&Symptom) -> Option<&String>,
+    pub set_new: fn(&mut NewSymptom, Option<&String>),
+    pub set_change: fn(&mut ChangeSymptom, Option<&String>),
+}
+
+pub struct SymptomMeta {
+    pub id: &'static str,          // stable identifier
+    pub label: &'static str,       // human-friendly name
+    pub category: SymptomCategory, // grouping
+    pub accessor: fn(&Symptom) -> i32,
+    pub set_new: fn(&mut NewSymptom, i32),
+    pub set_change: fn(&mut ChangeSymptom, i32),
+    pub extra: Option<SymptomExtraMeta>,
+}
+
+#[derive(Clone)]
+pub struct SymptomExtraInput {
+    pub id: &'static str,
+    pub label: &'static str,
+    pub value: Signal<String>,
+    pub validate: Memo<Result<Option<String>, ValidationError>>,
+    pub meta: &'static SymptomExtraMeta,
+}
+
+#[derive(Clone)]
+pub struct SymptomInput {
+    pub id: &'static str,
+    pub label: &'static str,
+    pub category: SymptomCategory,
+    pub meta: &'static SymptomMeta,
+    pub value: Signal<String>,
+    pub validate: Memo<Result<i32, ValidationError>>,
+    pub extra: Option<SymptomExtraInput>,
+}
+
+fn build_form_inputs(op: &Operation) -> (Vec<SymptomInput>, Memo<bool>) {
+    let inputs: Vec<_> = SYMPTOM_DEFS
+        .iter()
+        .map(|meta| {
+            let initial = match op {
+                Operation::Create { .. } => "0".to_string(),
+                Operation::Update { symptom } => (meta.accessor)(symptom).to_string(),
+            };
+
+            let value = use_signal(|| initial);
+            let validate = use_memo(move || validate_symptom_intensity(&value()));
+
+            let extra = meta.extra.as_ref().map(|extra_meta| {
+                let initial = match op {
+                    Operation::Create { .. } => "".to_string(),
+                    Operation::Update { symptom } => {
+                        (extra_meta.accessor)(symptom).cloned().unwrap_or_default()
+                    }
+                };
+                let extra_value = use_signal(|| initial);
+                let extra_validate = use_memo({
+                    move || validate_symptom_extra_details(&validate(), &extra_value())
+                });
+                SymptomExtraInput {
+                    id: extra_meta.id,
+                    label: extra_meta.label,
+                    value: extra_value,
+                    validate: extra_validate,
+                    meta: extra_meta,
+                }
+            });
+
+            SymptomInput {
+                id: meta.id,
+                label: meta.label,
+                category: meta.category,
+                meta,
+                value,
+                validate,
+                extra,
+            }
+        })
+        .collect();
+
+    let has_errors = {
+        let deps: Vec<Memo<_>> = inputs.iter().map(|i| i.validate).collect();
+        use_memo(move || {
+            deps.iter().any(|v| v().is_err()) // true if any field is invalid
+        })
+    };
+
+    (inputs, has_errors)
+}
+
+fn inputs_to_new_symptom(
+    inputs: &[SymptomInput],
+    user_id: UserId,
+    time: DateTime<FixedOffset>,
+    comments: Option<String>,
+) -> Result<NewSymptom, ValidationError> {
+    let mut s = NewSymptom {
+        comments,
+        ..NewSymptom::default(user_id, time)
+    };
+
+    for input in inputs {
+        let v = input.validate.read().clone()?;
+        (input.meta.set_new)(&mut s, v);
+        if let Some(extra) = &input.extra {
+            let v = extra.validate.read().clone()?;
+            (extra.meta.set_new)(&mut s, v.as_ref());
+        }
+    }
+
+    Ok(s)
+}
+
+fn inputs_to_change_symptom(
+    inputs: &[SymptomInput],
+    time: DateTime<FixedOffset>,
+    comments: Option<String>,
+) -> Result<ChangeSymptom, ValidationError> {
+    let mut s = ChangeSymptom {
+        time: MaybeSet::Set(time),
+        comments: MaybeSet::Set(comments),
+        ..ChangeSymptom::default()
+    };
+
+    for input in inputs {
+        let v = input.validate.read().clone()?;
+
+        (input.meta.set_change)(&mut s, v);
+        if let Some(extra) = &input.extra {
+            let v = extra.validate.read().clone()?;
+            (extra.meta.set_change)(&mut s, v.as_ref());
+        }
+    }
+
+    Ok(s)
+}
+
+pub const SYMPTOM_DEFS: &[SymptomMeta] = &[
+    SymptomMeta {
+        id: "appetite_loss",
+        label: "Appetite Loss",
+        category: SymptomCategory::General,
+        accessor: |s| s.appetite_loss,
+        extra: None,
+        set_new: |ns, v| ns.appetite_loss = v,
+        set_change: |cs, v| cs.appetite_loss = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "fever",
+        label: "Fever",
+        category: SymptomCategory::General,
+        accessor: |s| s.fever,
+        extra: None,
+        set_new: |ns, v| ns.fever = v,
+        set_change: |cs, v| cs.fever = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "cough",
+        label: "Cough",
+        category: SymptomCategory::Respiratory,
+        accessor: |s| s.cough,
+        extra: None,
+        set_new: |ns, v| ns.cough = v,
+        set_change: |cs, v| cs.cough = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "sore_throat",
+        label: "Sore Throat",
+        category: SymptomCategory::Respiratory,
+        accessor: |s| s.sore_throat,
+        extra: None,
+        set_new: |ns, v| ns.sore_throat = v,
+        set_change: |cs, v| cs.sore_throat = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "nasal_symptom",
+        label: "Nasal Symptom",
+        category: SymptomCategory::Respiratory,
+        accessor: |s| s.nasal_symptom,
+        set_new: |ns, v| ns.nasal_symptom = v,
+        set_change: |cs, v| cs.nasal_symptom = MaybeSet::Set(v),
+        extra: Some(SymptomExtraMeta {
+            id: "nasal_symptom_description",
+            label: "Nasal Symptom Description",
+            accessor: |s| s.nasal_symptom_description.as_ref(),
+            set_new: |ns, v| ns.nasal_symptom_description = v.cloned(),
+            set_change: |cs, v| cs.nasal_symptom_description = MaybeSet::Set(v.cloned()),
+        }),
+    },
+    SymptomMeta {
+        id: "sneezing",
+        label: "Sneezing",
+        category: SymptomCategory::Respiratory,
+        accessor: |s| s.sneezing,
+        set_new: |ns, v| ns.sneezing = v,
+        set_change: |cs, v| cs.sneezing = MaybeSet::Set(v),
+        extra: None,
+    },
+    SymptomMeta {
+        id: "heart_burn",
+        label: "Heart Burn",
+        category: SymptomCategory::Digestive,
+        accessor: |s| s.heart_burn,
+        set_new: |ns, v| ns.heart_burn = v,
+        set_change: |cs, v| cs.heart_burn = MaybeSet::Set(v),
+        extra: None,
+    },
+    SymptomMeta {
+        id: "abdominal_pain",
+        label: "Abdominal Pain",
+        category: SymptomCategory::Digestive,
+        accessor: |s| s.abdominal_pain,
+        set_new: |ns, v| ns.abdominal_pain = v,
+        set_change: |cs, v| cs.abdominal_pain = MaybeSet::Set(v),
+        extra: Some(SymptomExtraMeta {
+            id: "abdominal_pain_location",
+            label: "Abdominal Pain Location",
+            accessor: |s| s.abdominal_pain_location.as_ref(),
+            set_new: |ns, v| ns.abdominal_pain_location = v.cloned(),
+            set_change: |cs, v| cs.abdominal_pain_location = MaybeSet::Set(v.cloned()),
+        }),
+    },
+    SymptomMeta {
+        id: "diarrhea",
+        label: "Diarrhea",
+        category: SymptomCategory::Digestive,
+        accessor: |s| s.diarrhea,
+        extra: None,
+        set_new: |ns, v| ns.diarrhea = v,
+        set_change: |cs, v| cs.diarrhea = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "constipation",
+        label: "Constipation",
+        category: SymptomCategory::Digestive,
+        accessor: |s| s.constipation,
+        extra: None,
+        set_new: |ns, v| ns.constipation = v,
+        set_change: |cs, v| cs.constipation = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "lower_back_pain",
+        label: "Lower Back Pain",
+        category: SymptomCategory::Musculoskeletal,
+        accessor: |s| s.lower_back_pain,
+        extra: None,
+        set_new: |ns, v| ns.lower_back_pain = v,
+        set_change: |cs, v| cs.lower_back_pain = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "upper_back_pain",
+        label: "Upper Back Pain",
+        category: SymptomCategory::Musculoskeletal,
+        accessor: |s| s.upper_back_pain,
+        extra: None,
+        set_new: |ns, v| ns.upper_back_pain = v,
+        set_change: |cs, v| cs.upper_back_pain = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "neck_pain",
+        label: "Neck Pain",
+        category: SymptomCategory::Musculoskeletal,
+        accessor: |s| s.neck_pain,
+        extra: None,
+        set_new: |ns, v| ns.neck_pain = v,
+        set_change: |cs, v| cs.neck_pain = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "joint_pain",
+        label: "Joint Pain",
+        category: SymptomCategory::Musculoskeletal,
+        accessor: |s| s.joint_pain,
+        extra: None,
+        set_new: |ns, v| ns.joint_pain = v,
+        set_change: |cs, v| cs.joint_pain = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "headache",
+        label: "Headache",
+        category: SymptomCategory::HeadFaceMouth,
+        accessor: |s| s.headache,
+        extra: None,
+        set_new: |ns, v| ns.headache = v,
+        set_change: |cs, v| cs.headache = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "nausea",
+        label: "Nausea",
+        category: SymptomCategory::Digestive,
+        accessor: |s| s.nausea,
+        extra: None,
+        set_new: |ns, v| ns.nausea = v,
+        set_change: |cs, v| cs.nausea = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "dizziness",
+        label: "Dizziness",
+        category: SymptomCategory::Neurological,
+        accessor: |s| s.dizziness,
+        extra: None,
+        set_new: |ns, v| ns.dizziness = v,
+        set_change: |cs, v| cs.dizziness = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "stomach_ache",
+        label: "Stomach Ache",
+        category: SymptomCategory::Digestive,
+        accessor: |s| s.stomach_ache,
+        extra: None,
+        set_new: |ns, v| ns.stomach_ache = v,
+        set_change: |cs, v| cs.stomach_ache = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "chest_pain",
+        label: "Chest Pain",
+        category: SymptomCategory::Cardiovascular,
+        accessor: |s| s.chest_pain,
+        extra: None,
+        set_new: |ns, v| ns.chest_pain = v,
+        set_change: |cs, v| cs.chest_pain = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "shortness_of_breath",
+        label: "Shortness of Breath",
+        category: SymptomCategory::Respiratory,
+        accessor: |s: &Symptom| s.shortness_of_breath,
+        extra: None,
+        set_new: |ns, v| ns.shortness_of_breath = v,
+        set_change: |cs, v| cs.shortness_of_breath = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "fatigue",
+        label: "Fatigue",
+        category: SymptomCategory::General,
+        accessor: |s| s.fatigue,
+        extra: None,
+        set_new: |ns, v| ns.fatigue = v,
+        set_change: |cs, v| cs.fatigue = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "anxiety",
+        label: "Anxiety",
+        category: SymptomCategory::MentalHealth,
+        accessor: |s| s.anxiety,
+        extra: None,
+        set_new: |ns, v| ns.anxiety = v,
+        set_change: |cs, v| cs.anxiety = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "depression",
+        label: "Depression",
+        category: SymptomCategory::MentalHealth,
+        accessor: |s| s.depression,
+        extra: None,
+        set_new: |ns, v| ns.depression = v,
+        set_change: |cs, v| cs.depression = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "insomnia",
+        label: "Insomnia",
+        category: SymptomCategory::MentalHealth,
+        accessor: |s| s.insomnia,
+        extra: None,
+        set_new: |ns, v| ns.insomnia = v,
+        set_change: |cs, v| cs.insomnia = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "shoulder_pain",
+        label: "Shoulder Pain",
+        category: SymptomCategory::Musculoskeletal,
+        accessor: |s| s.shoulder_pain,
+        extra: None,
+        set_new: |ns, v| ns.shoulder_pain = v,
+        set_change: |cs, v| cs.shoulder_pain = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "hand_pain",
+        label: "Hand Pain",
+        category: SymptomCategory::Musculoskeletal,
+        accessor: |s| s.hand_pain,
+        extra: None,
+        set_new: |ns, v| ns.hand_pain = v,
+        set_change: |cs, v| cs.hand_pain = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "foot_pain",
+        label: "Foot Pain",
+        category: SymptomCategory::Musculoskeletal,
+        accessor: |s| s.foot_pain,
+        extra: None,
+        set_new: |ns, v| ns.foot_pain = v,
+        set_change: |cs, v| cs.foot_pain = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "wrist_pain",
+        label: "Wrist Pain",
+        category: SymptomCategory::Musculoskeletal,
+        accessor: |s| s.wrist_pain,
+        extra: None,
+        set_new: |ns, v| ns.wrist_pain = v,
+        set_change: |cs, v| cs.wrist_pain = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "dental_pain",
+        label: "Dental Pain",
+        category: SymptomCategory::HeadFaceMouth,
+        accessor: |s| s.dental_pain,
+        extra: None,
+        set_new: |ns, v| ns.dental_pain = v,
+        set_change: |cs, v| cs.dental_pain = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "eye_pain",
+        label: "Eye Pain",
+        category: SymptomCategory::HeadFaceMouth,
+        accessor: |s| s.eye_pain,
+        extra: None,
+        set_new: |ns, v| ns.eye_pain = v,
+        set_change: |cs, v| cs.eye_pain = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "ear_pain",
+        label: "Ear Pain",
+        category: SymptomCategory::HeadFaceMouth,
+        accessor: |s| s.ear_pain,
+        extra: None,
+        set_new: |ns, v| ns.ear_pain = v,
+        set_change: |cs, v| cs.ear_pain = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "feeling_hot",
+        label: "Feeling Hot",
+        category: SymptomCategory::General,
+        accessor: |s| s.feeling_hot,
+        extra: None,
+        set_new: |ns, v| ns.feeling_hot = v,
+        set_change: |cs, v| cs.feeling_hot = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "feeling_cold",
+        label: "Feeling Cold",
+        category: SymptomCategory::General,
+        accessor: |s| s.feeling_cold,
+        extra: None,
+        set_new: |ns, v| ns.feeling_cold = v,
+        set_change: |cs, v| cs.feeling_cold = MaybeSet::Set(v),
+    },
+    SymptomMeta {
+        id: "feeling_thirsty",
+        label: "Feeling Thirsty",
+        category: SymptomCategory::General,
+        accessor: |s| s.feeling_thirsty,
+        extra: None,
+        set_new: |ns, v| ns.feeling_thirsty = v,
+        set_change: |cs, v| cs.feeling_thirsty = MaybeSet::Set(v),
+    },
+];
+
+#[derive(Debug, Clone)]
+pub struct SymptomExtraField<'a> {
+    pub label: &'static str,
+    pub value: Option<&'a String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct SymptomField<'a> {
+    pub label: &'static str,
+    pub intensity: i32,
+    pub extra: Option<SymptomExtraField<'a>>,
+    // pub category: SymptomCategory,
+}
+
+pub fn collect_symptom_fields<'a>(
+    symptom: &'a Symptom,
+    category: SymptomCategory,
+) -> Vec<SymptomField<'a>> {
+    SYMPTOM_DEFS
+        .iter()
+        .filter(|meta| meta.category == category)
+        .filter_map(|meta| {
+            let intensity = (meta.accessor)(symptom);
+            let extra = meta.extra.as_ref().map(|e| SymptomExtraField {
+                label: e.label,
+                value: (e.accessor)(symptom),
+            });
+
+            let has_value =
+                intensity > 0 || extra.as_ref().map(|s| s.value.is_some()).unwrap_or(false);
+
+            if has_value {
+                Some(SymptomField {
+                    label: meta.label,
+                    intensity,
+                    extra,
+                    // category,
+                })
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
 #[derive(Debug, Clone)]
 struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    appetite_loss: Memo<Result<i32, ValidationError>>,
-    fever: Memo<Result<i32, ValidationError>>,
-    cough: Memo<Result<i32, ValidationError>>,
-    sore_throat: Memo<Result<i32, ValidationError>>,
-    nasal_symptom: Memo<Result<i32, ValidationError>>,
-    nasal_symptom_description: Memo<Result<Option<String>, ValidationError>>,
-    sneezing: Memo<Result<i32, ValidationError>>,
-    heart_burn: Memo<Result<i32, ValidationError>>,
-    abdominal_pain: Memo<Result<i32, ValidationError>>,
-    abdominal_pain_location: Memo<Result<Option<String>, ValidationError>>,
-    diarrhea: Memo<Result<i32, ValidationError>>,
-    constipation: Memo<Result<i32, ValidationError>>,
-    lower_back_pain: Memo<Result<i32, ValidationError>>,
-    upper_back_pain: Memo<Result<i32, ValidationError>>,
-    neck_pain: Memo<Result<i32, ValidationError>>,
-    joint_pain: Memo<Result<i32, ValidationError>>,
-    headache: Memo<Result<i32, ValidationError>>,
-    nausea: Memo<Result<i32, ValidationError>>,
-    dizziness: Memo<Result<i32, ValidationError>>,
-    stomach_ache: Memo<Result<i32, ValidationError>>,
-    chest_pain: Memo<Result<i32, ValidationError>>,
-    shortness_of_breath: Memo<Result<i32, ValidationError>>,
-    fatigue: Memo<Result<i32, ValidationError>>,
-    anxiety: Memo<Result<i32, ValidationError>>,
-    depression: Memo<Result<i32, ValidationError>>,
-    insomnia: Memo<Result<i32, ValidationError>>,
-    shoulder_pain: Memo<Result<i32, ValidationError>>,
-    hand_pain: Memo<Result<i32, ValidationError>>,
-    foot_pain: Memo<Result<i32, ValidationError>>,
-    wrist_pain: Memo<Result<i32, ValidationError>>,
-    dental_pain: Memo<Result<i32, ValidationError>>,
-    eye_pain: Memo<Result<i32, ValidationError>>,
-    ear_pain: Memo<Result<i32, ValidationError>>,
-    feeling_hot: Memo<Result<i32, ValidationError>>,
-    feeling_cold: Memo<Result<i32, ValidationError>>,
-    feeling_thirsty: Memo<Result<i32, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
-async fn do_save(op: &Operation, validate: &Validate) -> Result<Symptom, EditError> {
+async fn do_save(
+    op: &Operation,
+    validate: &Validate,
+    input: &[SymptomInput],
+) -> Result<Symptom, EditError> {
     let time = validate.time.read().clone()?;
-    let appetite_loss = validate.appetite_loss.read().clone()?;
-    let fever = validate.fever.read().clone()?;
-    let cough = validate.cough.read().clone()?;
-    let sore_throat = validate.sore_throat.read().clone()?;
-    let nasal_symptom = validate.nasal_symptom.read().clone()?;
-    let nasal_symptom_description = validate.nasal_symptom_description.read().clone()?;
-    let sneezing = validate.sneezing.read().clone()?;
-    let heart_burn = validate.heart_burn.read().clone()?;
-    let abdominal_pain = validate.abdominal_pain.read().clone()?;
-    let abdominal_pain_location = validate.abdominal_pain_location.read().clone()?;
-    let diarrhea = validate.diarrhea.read().clone()?;
-    let constipation = validate.constipation.read().clone()?;
-    let lower_back_pain = validate.lower_back_pain.read().clone()?;
-    let upper_back_pain = validate.upper_back_pain.read().clone()?;
-    let neck_pain = validate.neck_pain.read().clone()?;
-    let joint_pain = validate.joint_pain.read().clone()?;
-    let headache = validate.headache.read().clone()?;
-    let nausea = validate.nausea.read().clone()?;
-    let dizziness = validate.dizziness.read().clone()?;
-    let stomach_ache = validate.stomach_ache.read().clone()?;
-    let chest_pain = validate.chest_pain.read().clone()?;
-    let shortness_of_breath = validate.shortness_of_breath.read().clone()?;
-    let fatigue = validate.fatigue.read().clone()?;
-    let anxiety = validate.anxiety.read().clone()?;
-    let depression = validate.depression.read().clone()?;
-    let insomnia = validate.insomnia.read().clone()?;
-    let shoulder_pain = validate.shoulder_pain.read().clone()?;
-    let hand_pain = validate.hand_pain.read().clone()?;
-    let foot_pain = validate.foot_pain.read().clone()?;
-    let wrist_pain = validate.wrist_pain.read().clone()?;
-    let dental_pain = validate.dental_pain.read().clone()?;
-    let eye_pain = validate.eye_pain.read().clone()?;
-    let ear_pain = validate.ear_pain.read().clone()?;
-    let feeling_hot = validate.feeling_hot.read().clone()?;
-    let feeling_cold = validate.feeling_cold.read().clone()?;
-    let feeling_thirsty = validate.feeling_thirsty.read().clone()?;
     let comments = validate.comments.read().clone()?;
 
     match op {
         Operation::Create { user_id } => {
-            let updates = NewSymptom {
-                user_id: *user_id,
-                appetite_loss,
-                fever,
-                cough,
-                sore_throat,
-                nasal_symptom,
-                nasal_symptom_description,
-                sneezing,
-                heart_burn,
-                abdominal_pain,
-                abdominal_pain_location,
-                diarrhea,
-                constipation,
-                time,
-                lower_back_pain,
-                upper_back_pain,
-                neck_pain,
-                joint_pain,
-                headache,
-                nausea,
-                dizziness,
-                stomach_ache,
-                chest_pain,
-                shortness_of_breath,
-                fatigue,
-                anxiety,
-                depression,
-                insomnia,
-                shoulder_pain,
-                hand_pain,
-                foot_pain,
-                wrist_pain,
-                dental_pain,
-                eye_pain,
-                ear_pain,
-                feeling_hot,
-                feeling_cold,
-                feeling_thirsty,
-                comments,
-            };
+            let updates = inputs_to_new_symptom(input, *user_id, time, comments)
+                .map_err(EditError::Validation)?;
             create_symptom(updates).await.map_err(EditError::Server)
         }
         Operation::Update { symptom } => {
-            let changes = ChangeSymptom {
-                user_id: MaybeSet::NoChange,
-                time: MaybeSet::Set(time),
-                appetite_loss: MaybeSet::Set(appetite_loss),
-                fever: MaybeSet::Set(fever),
-                cough: MaybeSet::Set(cough),
-                sore_throat: MaybeSet::Set(sore_throat),
-                nasal_symptom: MaybeSet::Set(nasal_symptom),
-                nasal_symptom_description: MaybeSet::Set(nasal_symptom_description),
-                sneezing: MaybeSet::Set(sneezing),
-                heart_burn: MaybeSet::Set(heart_burn),
-                abdominal_pain: MaybeSet::Set(abdominal_pain),
-                abdominal_pain_location: MaybeSet::Set(abdominal_pain_location),
-                diarrhea: MaybeSet::Set(diarrhea),
-                constipation: MaybeSet::Set(constipation),
-                lower_back_pain: MaybeSet::Set(lower_back_pain),
-                upper_back_pain: MaybeSet::Set(upper_back_pain),
-                neck_pain: MaybeSet::Set(neck_pain),
-                joint_pain: MaybeSet::Set(joint_pain),
-                headache: MaybeSet::Set(headache),
-                nausea: MaybeSet::Set(nausea),
-                dizziness: MaybeSet::Set(dizziness),
-                stomach_ache: MaybeSet::Set(stomach_ache),
-                chest_pain: MaybeSet::Set(chest_pain),
-                shortness_of_breath: MaybeSet::Set(shortness_of_breath),
-                fatigue: MaybeSet::Set(fatigue),
-                anxiety: MaybeSet::Set(anxiety),
-                depression: MaybeSet::Set(depression),
-                insomnia: MaybeSet::Set(insomnia),
-                shoulder_pain: MaybeSet::Set(shoulder_pain),
-                hand_pain: MaybeSet::Set(hand_pain),
-                foot_pain: MaybeSet::Set(foot_pain),
-                wrist_pain: MaybeSet::Set(wrist_pain),
-                dental_pain: MaybeSet::Set(dental_pain),
-                eye_pain: MaybeSet::Set(eye_pain),
-                ear_pain: MaybeSet::Set(ear_pain),
-                feeling_hot: MaybeSet::Set(feeling_hot),
-                feeling_cold: MaybeSet::Set(feeling_cold),
-                feeling_thirsty: MaybeSet::Set(feeling_thirsty),
-                comments: MaybeSet::Set(comments),
-            };
+            let changes =
+                inputs_to_change_symptom(input, time, comments).map_err(EditError::Validation)?;
             update_symptom(symptom.id, changes)
                 .await
                 .map_err(EditError::Server)
@@ -203,208 +595,15 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
         Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_raw(),
         Operation::Update { symptom } => symptom.time.as_raw(),
     });
-    let appetite_loss = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.appetite_loss.to_string(),
-    });
-    let fever = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.fever.to_string(),
-    });
-    let cough = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.cough.to_string(),
-    });
-    let sore_throat = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.sore_throat.to_string(),
-    });
-    let nasal_symptom = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.nasal_symptom.to_string(),
-    });
-    let nasal_symptom_description = use_signal(|| match &op {
-        Operation::Create { .. } => String::new(),
-        Operation::Update { symptom } => symptom
-            .nasal_symptom_description
-            .as_ref()
-            .map_or(String::new(), |s| s.to_string()),
-    });
-    let sneezing = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.sneezing.to_string(),
-    });
-    let heart_burn = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.heart_burn.to_string(),
-    });
-    let abdominal_pain = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.abdominal_pain.to_string(),
-    });
-    let abdominal_pain_location = use_signal(|| match &op {
-        Operation::Create { .. } => String::new(),
-        Operation::Update { symptom } => symptom
-            .abdominal_pain_location
-            .as_ref()
-            .map_or(String::new(), |s| s.to_string()),
-    });
-    let diarrhea = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.diarrhea.to_string(),
-    });
-    let constipation = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.constipation.to_string(),
-    });
-    let lower_back_pain = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.lower_back_pain.to_string(),
-    });
-    let upper_back_pain = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.upper_back_pain.to_string(),
-    });
-    let neck_pain = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.neck_pain.to_string(),
-    });
-    let joint_pain = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.joint_pain.to_string(),
-    });
-    let headache = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.headache.to_string(),
-    });
-    let nausea = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.nausea.to_string(),
-    });
-    let dizziness = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.dizziness.to_string(),
-    });
-    let stomach_ache = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.stomach_ache.to_string(),
-    });
-    let chest_pain = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.chest_pain.to_string(),
-    });
-    let shortness_of_breath = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.shortness_of_breath.to_string(),
-    });
-    let fatigue = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.fatigue.to_string(),
-    });
-    let anxiety = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.anxiety.to_string(),
-    });
-    let depression = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.depression.to_string(),
-    });
-    let insomnia = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.insomnia.to_string(),
-    });
-    let shoulder_pain = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.shoulder_pain.to_string(),
-    });
-    let hand_pain = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.hand_pain.to_string(),
-    });
-    let foot_pain = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.foot_pain.to_string(),
-    });
-    let wrist_pain = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.wrist_pain.to_string(),
-    });
-    let dental_pain = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.dental_pain.to_string(),
-    });
-    let eye_pain = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.eye_pain.to_string(),
-    });
-    let ear_pain = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.ear_pain.to_string(),
-    });
-    let feeling_hot = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.feeling_hot.to_string(),
-    });
-    let feeling_cold = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.feeling_cold.to_string(),
-    });
-    let feeling_thirsty = use_signal(|| match &op {
-        Operation::Create { .. } => "0".to_string(),
-        Operation::Update { symptom } => symptom.feeling_thirsty.to_string(),
-    });
     let comments = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
         Operation::Update { symptom } => symptom.comments.as_raw(),
     });
+    let (inputs, has_errors) = build_form_inputs(&op);
 
     let validate = {
-        let v_nasal_symptom = use_memo(move || validate_symptom_intensity(&nasal_symptom()));
-        let v_abdominal_pain = use_memo(move || validate_symptom_intensity(&abdominal_pain()));
         Validate {
             time: use_memo(move || validate_fixed_offset_date_time(&time())),
-            appetite_loss: use_memo(move || validate_symptom_intensity(&appetite_loss())),
-            fever: use_memo(move || validate_symptom_intensity(&fever())),
-            cough: use_memo(move || validate_symptom_intensity(&cough())),
-            sore_throat: use_memo(move || validate_symptom_intensity(&sore_throat())),
-            nasal_symptom: v_nasal_symptom,
-            nasal_symptom_description: use_memo(move || {
-                validate_symptom_extra_details(&v_nasal_symptom(), &nasal_symptom_description())
-            }),
-            sneezing: use_memo(move || validate_symptom_intensity(&sneezing())),
-            heart_burn: use_memo(move || validate_symptom_intensity(&heart_burn())),
-            abdominal_pain: v_abdominal_pain,
-            abdominal_pain_location: use_memo(move || {
-                validate_symptom_extra_details(&v_abdominal_pain(), &abdominal_pain_location())
-            }),
-            diarrhea: use_memo(move || validate_symptom_intensity(&diarrhea())),
-            constipation: use_memo(move || validate_symptom_intensity(&constipation())),
-            lower_back_pain: use_memo(move || validate_symptom_intensity(&lower_back_pain())),
-            upper_back_pain: use_memo(move || validate_symptom_intensity(&upper_back_pain())),
-            neck_pain: use_memo(move || validate_symptom_intensity(&neck_pain())),
-            joint_pain: use_memo(move || validate_symptom_intensity(&joint_pain())),
-            headache: use_memo(move || validate_symptom_intensity(&headache())),
-            nausea: use_memo(move || validate_symptom_intensity(&nausea())),
-            dizziness: use_memo(move || validate_symptom_intensity(&dizziness())),
-            stomach_ache: use_memo(move || validate_symptom_intensity(&stomach_ache())),
-            chest_pain: use_memo(move || validate_symptom_intensity(&chest_pain())),
-            shortness_of_breath: use_memo(move || {
-                validate_symptom_intensity(&shortness_of_breath())
-            }),
-            fatigue: use_memo(move || validate_symptom_intensity(&fatigue())),
-            anxiety: use_memo(move || validate_symptom_intensity(&anxiety())),
-            depression: use_memo(move || validate_symptom_intensity(&depression())),
-            insomnia: use_memo(move || validate_symptom_intensity(&insomnia())),
-            shoulder_pain: use_memo(move || validate_symptom_intensity(&shoulder_pain())),
-            hand_pain: use_memo(move || validate_symptom_intensity(&hand_pain())),
-            foot_pain: use_memo(move || validate_symptom_intensity(&foot_pain())),
-            wrist_pain: use_memo(move || validate_symptom_intensity(&wrist_pain())),
-            dental_pain: use_memo(move || validate_symptom_intensity(&dental_pain())),
-            eye_pain: use_memo(move || validate_symptom_intensity(&eye_pain())),
-            ear_pain: use_memo(move || validate_symptom_intensity(&ear_pain())),
-            feeling_hot: use_memo(move || validate_symptom_intensity(&feeling_hot())),
-            feeling_cold: use_memo(move || validate_symptom_intensity(&feeling_cold())),
-            feeling_thirsty: use_memo(move || validate_symptom_intensity(&feeling_thirsty())),
             comments: use_memo(move || validate_comments(&comments())),
         }
     };
@@ -413,57 +612,19 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
 
     // disable form while waiting for response
     let disabled = use_memo(move || saving.read().is_saving());
-    let disabled_save = use_memo(move || {
-        validate.time.read().is_err()
-            || validate.appetite_loss.read().is_err()
-            || validate.fever.read().is_err()
-            || validate.cough.read().is_err()
-            || validate.sore_throat.read().is_err()
-            || validate.nasal_symptom.read().is_err()
-            || validate.nasal_symptom_description.read().is_err()
-            || validate.sneezing.read().is_err()
-            || validate.heart_burn.read().is_err()
-            || validate.abdominal_pain.read().is_err()
-            || validate.abdominal_pain_location.read().is_err()
-            || validate.diarrhea.read().is_err()
-            || validate.constipation.read().is_err()
-            || validate.lower_back_pain.read().is_err()
-            || validate.upper_back_pain.read().is_err()
-            || validate.neck_pain.read().is_err()
-            || validate.joint_pain.read().is_err()
-            || validate.headache.read().is_err()
-            || validate.nausea.read().is_err()
-            || validate.dizziness.read().is_err()
-            || validate.stomach_ache.read().is_err()
-            || validate.chest_pain.read().is_err()
-            || validate.shortness_of_breath.read().is_err()
-            || validate.fatigue.read().is_err()
-            || validate.anxiety.read().is_err()
-            || validate.depression.read().is_err()
-            || validate.insomnia.read().is_err()
-            || validate.shoulder_pain.read().is_err()
-            || validate.hand_pain.read().is_err()
-            || validate.foot_pain.read().is_err()
-            || validate.wrist_pain.read().is_err()
-            || validate.dental_pain.read().is_err()
-            || validate.eye_pain.read().is_err()
-            || validate.ear_pain.read().is_err()
-            || validate.feeling_hot.read().is_err()
-            || validate.feeling_cold.read().is_err()
-            || validate.feeling_thirsty.read().is_err()
-            || validate.comments.read().is_err()
-            || disabled()
-    });
+    let disabled_save = use_memo(move || has_errors() || disabled());
 
     let op_clone = op.clone();
     let validate_clone = validate.clone();
+    let inputs_clone = inputs.clone();
     let on_save = use_callback(move |()| {
         let op = op_clone.clone();
         let validate = validate_clone.clone();
+        let inputs = inputs_clone.clone();
         spawn(async move {
             saving.set(Saving::Yes);
 
-            let result = do_save(&op, &validate).await;
+            let result = do_save(&op, &validate, &inputs).await;
 
             match result {
                 Ok(symptom) => {
@@ -499,258 +660,6 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
                 validate: validate.time,
                 disabled,
             }
-            InputSymptomIntensity {
-                id: "appetite_loss",
-                label: "Appetite Loss",
-                value: appetite_loss,
-                validate: validate.appetite_loss,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "fever",
-                label: "Fever",
-                value: fever,
-                validate: validate.fever,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "cough",
-                label: "Cough",
-                value: cough,
-                validate: validate.cough,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "sore_throat",
-                label: "Sore Throat",
-                value: sore_throat,
-                validate: validate.sore_throat,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "nasal_symptom",
-                label: "Nasal Symptom",
-                value: nasal_symptom,
-                validate: validate.nasal_symptom,
-                disabled,
-            }
-            InputString {
-                id: "nasal_symptom_description",
-                label: "Nasal Symptom Description",
-                value: nasal_symptom_description,
-                validate: validate.nasal_symptom_description,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "sneezing",
-                label: "Sneezing",
-                value: sneezing,
-                validate: validate.sneezing,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "heart_burn",
-                label: "Heart Burn",
-                value: heart_burn,
-                validate: validate.heart_burn,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "abdominal_pain",
-                label: "Abdominal Pain",
-                value: abdominal_pain,
-                validate: validate.abdominal_pain,
-                disabled,
-            }
-            InputString {
-                id: "abdominal_pain_location",
-                label: "Abdominal Pain Location",
-                value: abdominal_pain_location,
-                validate: validate.abdominal_pain_location,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "diarrhea",
-                label: "Diarrhea",
-                value: diarrhea,
-                validate: validate.diarrhea,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "constipation",
-                label: "Constipation",
-                value: constipation,
-                validate: validate.constipation,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "lower_back_pain",
-                label: "Lower Back Pain",
-                value: lower_back_pain,
-                validate: validate.lower_back_pain,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "upper_back_pain",
-                label: "Upper Back Pain",
-                value: upper_back_pain,
-                validate: validate.upper_back_pain,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "neck_pain",
-                label: "Neck Pain",
-                value: neck_pain,
-                validate: validate.neck_pain,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "joint_pain",
-                label: "Joint Pain",
-                value: joint_pain,
-                validate: validate.joint_pain,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "headache",
-                label: "Headache",
-                value: headache,
-                validate: validate.headache,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "nausea",
-                label: "Nausea",
-                value: nausea,
-                validate: validate.nausea,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "dizziness",
-                label: "Dizziness",
-                value: dizziness,
-                validate: validate.dizziness,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "stomach_ache",
-                label: "Stomach Ache",
-                value: stomach_ache,
-                validate: validate.stomach_ache,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "chest_pain",
-                label: "Chest Pain",
-                value: chest_pain,
-                validate: validate.chest_pain,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "shortness_of_breath",
-                label: "Shortness of Breath",
-                value: shortness_of_breath,
-                validate: validate.shortness_of_breath,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "fatigue",
-                label: "Fatigue",
-                value: fatigue,
-                validate: validate.fatigue,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "anxiety",
-                label: "Anxiety",
-                value: anxiety,
-                validate: validate.anxiety,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "depression",
-                label: "Depression",
-                value: depression,
-                validate: validate.depression,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "insomnia",
-                label: "Insomnia",
-                value: insomnia,
-                validate: validate.insomnia,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "shoulder_pain",
-                label: "Shoulder Pain",
-                value: shoulder_pain,
-                validate: validate.shoulder_pain,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "hand_pain",
-                label: "Hand Pain",
-                value: hand_pain,
-                validate: validate.hand_pain,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "foot_pain",
-                label: "Foot Pain",
-                value: foot_pain,
-                validate: validate.foot_pain,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "wrist_pain",
-                label: "Wrist Pain",
-                value: wrist_pain,
-                validate: validate.wrist_pain,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "dental_pain",
-                label: "Dental Pain",
-                value: dental_pain,
-                validate: validate.dental_pain,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "eye_pain",
-                label: "Eye Pain",
-                value: eye_pain,
-                validate: validate.eye_pain,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "ear_pain",
-                label: "Ear Pain",
-                value: ear_pain,
-                validate: validate.ear_pain,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "feeling_hot",
-                label: "Feeling Hot",
-                value: feeling_hot,
-                validate: validate.feeling_hot,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "feeling_cold",
-                label: "Feeling Cold",
-                value: feeling_cold,
-                validate: validate.feeling_cold,
-                disabled,
-            }
-            InputSymptomIntensity {
-                id: "feeling_thirsty",
-                label: "Feeling Thirsty",
-                value: feeling_thirsty,
-                validate: validate.feeling_thirsty,
-                disabled,
-            }
             InputTextArea {
                 id: "comments",
                 label: "Comments",
@@ -758,7 +667,36 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
                 validate: validate.comments,
                 disabled,
             }
-
+            for category in SymptomCategory::all_values() {
+                {
+                    let fields: Vec<_> = inputs.iter().filter(|i| i.category == *category).collect();
+                    rsx! {
+                        if !fields.is_empty() {
+                            fieldset { class: "fieldset border-2 rounded-md p-4 mb-4",
+                                legend { class: "fieldset-legend px-2", "{category}" }
+                                for field in fields {
+                                    InputSymptomIntensity {
+                                        id: field.id,
+                                        label: field.label,
+                                        value: field.value,
+                                        validate: field.validate,
+                                        disabled,
+                                    }
+                                    if let Some(extra) = &field.extra {
+                                        InputString {
+                                            id: extra.id,
+                                            label: extra.label,
+                                            value: extra.value,
+                                            validate: extra.validate,
+                                            disabled,
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             FormSaveCancelButton {
                 disabled: disabled_save,
                 on_save: move |()| on_save(()),
@@ -958,181 +896,39 @@ pub fn SymptomSummary(symptom: Symptom) -> Element {
 
 #[component]
 pub fn SymptomDetails(symptom: Symptom) -> Element {
+    //  extra: symptom.nasal_symptom_description.map(|desc| rsx! {
+    //         div { class: "inline-block ml-2", {desc} }
+    //     }),
     rsx! {
         h3 { class: "text-lg font-bold", {symptom.time.format("%Y-%m-%d %H:%M:%S %:z").to_string()} }
-        SymptomDisplay {
-            name: "Appetite Loss".to_string(),
-            intensity: symptom.appetite_loss,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Fever".to_string(),
-            intensity: symptom.fever,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Cough".to_string(),
-            intensity: symptom.cough,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Sore Throat".to_string(),
-            intensity: symptom.sore_throat,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Nasal Symptom".to_string(),
-            intensity: symptom.nasal_symptom,
-            extra: symptom.nasal_symptom_description.map(|desc| rsx! {
-                div { class: "inline-block ml-2", {desc} }
-            }),
-        }
-        SymptomDisplay {
-            name: "Sneezing".to_string(),
-            intensity: symptom.sneezing,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Heart Burn".to_string(),
-            intensity: symptom.heart_burn,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Abdominal Pain".to_string(),
-            intensity: symptom.abdominal_pain,
-            extra: symptom.abdominal_pain_location.map(|location| rsx! {
-                div { class: "inline-block ml-2", {location} }
-            }),
-        }
-        SymptomDisplay {
-            name: "Diarrhea".to_string(),
-            intensity: symptom.diarrhea,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Constipation".to_string(),
-            intensity: symptom.constipation,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Lower Back Pain".to_string(),
-            intensity: symptom.lower_back_pain,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Upper Back Pain".to_string(),
-            intensity: symptom.upper_back_pain,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Neck Pain".to_string(),
-            intensity: symptom.neck_pain,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Joint Pain".to_string(),
-            intensity: symptom.joint_pain,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Headache".to_string(),
-            intensity: symptom.headache,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Nausea".to_string(),
-            intensity: symptom.nausea,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Dizziness".to_string(),
-            intensity: symptom.dizziness,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Stomach Ache".to_string(),
-            intensity: symptom.stomach_ache,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Chest Pain".to_string(),
-            intensity: symptom.chest_pain,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Shortness of Breath".to_string(),
-            intensity: symptom.shortness_of_breath,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Fatigue".to_string(),
-            intensity: symptom.fatigue,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Anxiety".to_string(),
-            intensity: symptom.anxiety,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Depression".to_string(),
-            intensity: symptom.depression,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Insomnia".to_string(),
-            intensity: symptom.insomnia,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Shoulder Pain".to_string(),
-            intensity: symptom.shoulder_pain,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Hand Pain".to_string(),
-            intensity: symptom.hand_pain,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Foot Pain".to_string(),
-            intensity: symptom.foot_pain,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Wrist Pain".to_string(),
-            intensity: symptom.wrist_pain,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Dental Pain".to_string(),
-            intensity: symptom.dental_pain,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Eye Pain".to_string(),
-            intensity: symptom.eye_pain,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Ear Pain".to_string(),
-            intensity: symptom.ear_pain,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Feeling Hot".to_string(),
-            intensity: symptom.feeling_hot,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Feeling Cold".to_string(),
-            intensity: symptom.feeling_cold,
-            extra: None,
-        }
-        SymptomDisplay {
-            name: "Feeling Thirsty".to_string(),
-            intensity: symptom.feeling_thirsty,
-            extra: None,
+        for category in SymptomCategory::all_values() {
+            {
+                let fields = collect_symptom_fields(&symptom, *category);
+                rsx! {
+                    if !fields.is_empty() {
+                        fieldset { class: "fieldset border-2 rounded-md px-4 pb-4 mb-4",
+                            legend { class: "fieldset-legend px-2", "{category}" }
+                            for field in fields {
+                                SymptomDisplay {
+                                    name: field.label.to_string(),
+                                    intensity: field.intensity,
+                                    extra: rsx! {
+                                        if let Some(extra) = field.extra.as_ref() {
+                                            if let Some(value) = extra.value {
+                                                div {
+                                                    {extra.label}
+                                                    {": "}
+                                                    span { {value.clone()} }
+                                                }
+                                            }
+                                        }
+                                    },
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
         if let Some(comments) = &symptom.comments {
             div { class: "mt-4",
