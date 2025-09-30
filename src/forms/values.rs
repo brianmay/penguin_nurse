@@ -42,6 +42,7 @@ impl FieldValue for String {
     }
 
     fn from_raw(value: &str) -> Result<Self, FieldValueError> {
+        let value = value.trim();
         if value.is_empty() {
             Err(FieldValueError::RequiredValue)
         } else {
@@ -59,6 +60,7 @@ impl FieldValue for RgbHue<f32> {
     }
 
     fn from_raw(value: &str) -> Result<Self, FieldValueError> {
+        let value = value.trim();
         if value.is_empty() {
             return Err(FieldValueError::RequiredValue);
         }
@@ -78,6 +80,7 @@ impl FieldValue for DateTime<Utc> {
     }
 
     fn from_raw(value: &str) -> Result<Self, FieldValueError> {
+        let value = value.trim();
         if value.is_empty() {
             return Err(FieldValueError::RequiredValue);
         }
@@ -97,6 +100,7 @@ impl FieldValue for DateTime<FixedOffset> {
     }
 
     fn from_raw(value: &str) -> Result<Self, FieldValueError> {
+        let value = value.trim();
         if value.is_empty() {
             return Err(FieldValueError::RequiredValue);
         }
@@ -128,6 +132,7 @@ impl FieldValue for TimeDelta {
     }
 
     fn from_raw(value: &str) -> Result<Self, FieldValueError> {
+        let value = value.trim();
         if value.is_empty() {
             return Err(FieldValueError::RequiredValue);
         }
@@ -201,6 +206,7 @@ impl FieldValue for f32 {
         self.to_string()
     }
     fn from_raw(value: &str) -> Result<Self, FieldValueError> {
+        let value = value.trim();
         if value.is_empty() {
             return Err(FieldValueError::RequiredValue);
         }
@@ -219,6 +225,7 @@ impl FieldValue for f64 {
         self.to_string()
     }
     fn from_raw(value: &str) -> Result<Self, FieldValueError> {
+        let value = value.trim();
         if value.is_empty() {
             return Err(FieldValueError::RequiredValue);
         }
@@ -237,6 +244,7 @@ impl FieldValue for bigdecimal::BigDecimal {
         self.to_string()
     }
     fn from_raw(value: &str) -> Result<Self, FieldValueError> {
+        let value = value.trim();
         if value.is_empty() {
             return Err(FieldValueError::RequiredValue);
         }
@@ -258,6 +266,7 @@ impl<T: FieldValue<RawValue = String, DerefValue = str>> FieldValue for Option<T
         }
     }
     fn from_raw(value: &Self::DerefValue) -> Result<Self, FieldValueError> {
+        let value = value.trim();
         if value.is_empty() {
             Ok(None)
         } else {
@@ -274,6 +283,7 @@ impl FieldValue for i32 {
         self.to_string()
     }
     fn from_raw(value: &str) -> Result<Self, FieldValueError> {
+        let value = value.trim();
         if value.is_empty() {
             return Err(FieldValueError::RequiredValue);
         }
