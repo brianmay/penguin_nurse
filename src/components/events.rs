@@ -1,21 +1,28 @@
-use chrono::{FixedOffset, Timelike};
+use chrono::FixedOffset;
 use classes::classes;
 use dioxus::prelude::*;
 use palette::IntoColor;
 
 use crate::models::Urgency;
 
-#[component]
-pub fn EventDateTimeShort(time: chrono::DateTime<FixedOffset>) -> Element {
-    let string = time.format("%Y-%m-%d %H:%M").to_string();
+const DAY_START_TIME: chrono::NaiveTime = chrono::NaiveTime::from_hms_opt(6, 30, 0).unwrap();
+const DAY_END_TIME: chrono::NaiveTime = chrono::NaiveTime::from_hms_opt(21, 0, 0).unwrap();
 
-    let classes = if time.hour() < 7 {
+fn get_classes_for_time(date_time: chrono::DateTime<FixedOffset>) -> String {
+    let time = date_time.time();
+    if time < DAY_START_TIME {
         classes!["text-error"]
-    } else if time.hour() < 21 {
+    } else if time < DAY_END_TIME {
         classes!["text-success"]
     } else {
         classes!["text-warning"]
-    };
+    }
+}
+
+#[component]
+pub fn EventDateTimeShort(time: chrono::DateTime<FixedOffset>) -> Element {
+    let string = time.format("%Y-%m-%d %H:%M").to_string();
+    let classes = get_classes_for_time(time);
 
     rsx! {
         span { class: classes, {string} }
@@ -25,14 +32,7 @@ pub fn EventDateTimeShort(time: chrono::DateTime<FixedOffset>) -> Element {
 #[component]
 pub fn EventTime(time: chrono::DateTime<FixedOffset>) -> Element {
     let string = time.format("%H:%M:%S %z").to_string();
-
-    let classes = if time.hour() < 7 {
-        classes!["text-error"]
-    } else if time.hour() < 21 {
-        classes!["text-success"]
-    } else {
-        classes!["text-warning"]
-    };
+    let classes = get_classes_for_time(time);
 
     rsx! {
         span { class: classes, {string} }
