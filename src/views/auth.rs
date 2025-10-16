@@ -9,6 +9,8 @@ use crate::{
 };
 use dioxus::prelude::*;
 
+use dioxus_fullstack::{ServerFnError, server};
+use dioxus_router::{NavigationTarget, navigator};
 #[cfg(feature = "server")]
 use tracing::error;
 
@@ -268,7 +270,7 @@ pub fn Logout() -> Element {
                                         on_cancel: move |_| {
                                             let navigator = navigator();
                                             navigator.push(Route::Home {});
-                                        }
+                                        },
                                     }
                                 }
                             }
@@ -296,8 +298,7 @@ pub fn Logout() -> Element {
 #[server]
 async fn login_with_password(username: String, password: String) -> Result<User, ServerFnError> {
     use crate::server::auth::{Credentials, Session};
-
-    let mut session: Session = extract().await?;
+    let mut session: Session = FullstackContext::extract().await?;
 
     let creds = Credentials {
         username,
@@ -309,23 +310,17 @@ async fn login_with_password(username: String, password: String) -> Result<User,
         Ok(Some(user)) => user,
         Ok(None) => {
             error!("Invalid credentials");
-            return Err(ServerFnError::ServerError(
-                "Invalid credentials".to_string(),
-            ));
+            return Err(ServerFnError::new("Invalid credentials"));
         }
         Err(err) => {
             error!("Error authenticating user: {:?}", err);
-            return Err(ServerFnError::ServerError(
-                "Invalid server error".to_string(),
-            ));
+            return Err(ServerFnError::new("Invalid server error"));
         }
     };
 
     if let Err(err) = session.login(&user).await {
         error!("Error logging in user: {:?}", err);
-        return Err(ServerFnError::ServerError(
-            "Invalid server error".to_string(),
-        ));
+        return Err(ServerFnError::new("Invalid server error"));
     }
 
     Ok(user.into())
@@ -335,8 +330,11 @@ async fn login_with_password(username: String, password: String) -> Result<User,
 async fn do_logout() -> Result<(), ServerFnError> {
     use crate::server::auth::Session;
 
-    let mut session: Session = extract().await?;
-    session.logout().await?;
+    let mut session: Session = FullstackContext::extract().await?;
+    session.logout().await.map_err(|e| {
+        error!("Error logging out: {:?}", e);
+        ServerFnError::new("Error logging out")
+    })?;
     Ok(())
 }
 
@@ -344,7 +342,7 @@ async fn do_logout() -> Result<(), ServerFnError> {
 pub async fn get_user() -> Result<Option<User>, ServerFnError> {
     use crate::server::auth::Session;
 
-    let session: Session = extract().await?;
+    let session: Session = FullstackContext::extract().await?;
     session.user.clone().map(|x| x.into()).pipe(Ok)
 }
 
@@ -353,7 +351,7 @@ pub async fn is_oidc_enabled() -> Result<bool, ServerFnError> {
     use crate::server::OidcClientState;
     use axum::Extension;
 
-    let Extension(client): Extension<OidcClientState> = extract().await?;
+    let Extension(client): Extension<OidcClientState> = FullstackContext::extract().await?;
     Ok(client.load().is_some())
 }
 
@@ -362,13 +360,11 @@ pub async fn login_with_oidc() -> Result<String, ServerFnError> {
     use crate::server::OidcClientState;
     use axum::Extension;
 
-    let Extension(oidc_client): Extension<OidcClientState> = extract().await?;
+    let Extension(oidc_client): Extension<OidcClientState> = FullstackContext::extract().await?;
 
     let oidc_client = oidc_client.load();
     let Some(oidc_client) = oidc_client.as_ref() else {
-        return Err(ServerFnError::ServerError(
-            "OIDC not initialized".to_string(),
-        ));
+        return Err(ServerFnError::new("OIDC not initialized"));
     };
     let auth_url = oidc_client.get_auth_url("/");
     Ok(auth_url)

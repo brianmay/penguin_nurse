@@ -1,12 +1,13 @@
 use crate::models::{self, PooId, UserId};
 use chrono::{DateTime, Utc};
 use dioxus::prelude::*;
+use dioxus_fullstack::{ServerFnError, server};
 
 #[cfg(feature = "server")]
 use crate::models::MaybeSet;
 
 #[cfg(feature = "server")]
-use super::common::{get_database_connection, get_user_id};
+use super::common::{AppError, get_database_connection, get_user_id};
 
 #[server]
 pub async fn get_poos_for_time_range(
@@ -14,11 +15,13 @@ pub async fn get_poos_for_time_range(
     start: DateTime<Utc>,
     end: DateTime<Utc>,
 ) -> Result<Vec<models::Poo>, ServerFnError> {
+    use dioxus_fullstack::ServerFnError;
+
     let logged_in_user_id = get_user_id().await?;
 
     if user_id != logged_in_user_id {
-        return Err(ServerFnError::ServerError(
-            "User ID does not match the logged in user".to_string(),
+        return Err(ServerFnError::new(
+            "User ID does not match the logged in user",
         ));
     }
 
@@ -31,6 +34,7 @@ pub async fn get_poos_for_time_range(
     )
     .await
     .map(|x| x.into_iter().map(|y| y.into()).collect())
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -46,6 +50,7 @@ pub async fn get_poo_by_id(id: PooId) -> Result<Option<models::Poo>, ServerFnErr
     )
     .await
     .map(|x| x.map(|y| y.into()))
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -56,8 +61,8 @@ pub async fn create_poo(poo: models::NewPoo) -> Result<models::Poo, ServerFnErro
     let logged_in_user_id = get_user_id().await?;
 
     if poo.user_id != logged_in_user_id {
-        return Err(ServerFnError::ServerError(
-            "User ID does not match the logged in user".to_string(),
+        return Err(ServerFnError::new(
+            "User ID does not match the logged in user",
         ));
     }
 
@@ -67,6 +72,7 @@ pub async fn create_poo(poo: models::NewPoo) -> Result<models::Poo, ServerFnErro
     crate::server::database::models::poos::create_poo(&mut conn, new_poo)
         .await
         .map(|x| x.into())
+        .map_err(AppError::from)
         .map_err(ServerFnError::from)
 }
 
@@ -77,8 +83,8 @@ pub async fn update_poo(id: PooId, poo: models::ChangePoo) -> Result<models::Poo
     if let MaybeSet::Set(req_user_id) = poo.user_id
         && logged_in_user_id != req_user_id
     {
-        return Err(ServerFnError::ServerError(
-            "User ID does not match the logged in user".to_string(),
+        return Err(ServerFnError::new(
+            "User ID does not match the logged in user",
         ));
     }
 
@@ -88,6 +94,7 @@ pub async fn update_poo(id: PooId, poo: models::ChangePoo) -> Result<models::Poo
     crate::server::database::models::poos::update_poo(&mut conn, id.as_inner(), updates)
         .await
         .map(|x| x.into())
+        .map_err(AppError::from)
         .map_err(ServerFnError::from)
 }
 
@@ -102,5 +109,6 @@ pub async fn delete_poo(id: PooId) -> Result<(), ServerFnError> {
         logged_in_user_id.as_inner(),
     )
     .await
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }

@@ -2,6 +2,8 @@ use std::ops::Deref;
 
 use chrono::Local;
 use dioxus::prelude::*;
+use dioxus_fullstack::ServerFnError;
+use dioxus_router::navigator;
 use tap::Pipe;
 
 use crate::{
@@ -117,7 +119,7 @@ fn EntryRow(
 }
 
 #[component]
-pub fn ConsumableList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> Element {
+pub fn ConsumableList(dialog: ReadSignal<Option<ListDialogReference>>) -> Element {
     let user = use_user().ok().flatten();
 
     let Some(_user) = user.as_ref() else {
@@ -139,45 +141,45 @@ pub fn ConsumableList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> El
         match dialog {
             ListDialogReference::Create => ActiveDialog::Change(Operation::Create).pipe(Ok),
             ListDialogReference::UpdateBasic { consumable_id } => {
-                let consumable = get_consumable_by_id(consumable_id).await?.ok_or(
-                    ServerFnError::<String>::ServerError("Cannot find consumable".to_string()),
-                )?;
+                let consumable = get_consumable_by_id(consumable_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find consumable"))?;
                 ActiveDialog::Change(Operation::Update { consumable }).pipe(Ok)
             }
             ListDialogReference::UpdateIngredients { consumable_id } => {
-                let consumable = get_consumable_by_id(consumable_id).await?.ok_or(
-                    ServerFnError::<String>::ServerError("Cannot find consumable".to_string()),
-                )?;
+                let consumable = get_consumable_by_id(consumable_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find consumable"))?;
                 ActiveDialog::Ingredients(consumable).pipe(Ok)
             }
             ListDialogReference::IngredientUpdateBasic {
                 parent_id,
                 consumable_id,
             } => {
-                let parent = get_consumable_by_id(parent_id).await?.ok_or(
-                    ServerFnError::<String>::ServerError("Cannot find consumable".to_string()),
-                )?;
-                let consumable = get_consumable_by_id(consumable_id).await?.ok_or(
-                    ServerFnError::<String>::ServerError("Cannot find consumable".to_string()),
-                )?;
+                let parent = get_consumable_by_id(parent_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find consumable"))?;
+                let consumable = get_consumable_by_id(consumable_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find consumable"))?;
                 ActiveDialog::NestedIngredient(parent, consumable).pipe(Ok)
             }
             ListDialogReference::IngredientUpdateIngredients {
                 parent_id,
                 consumable_id,
             } => {
-                let parent = get_consumable_by_id(parent_id).await?.ok_or(
-                    ServerFnError::<String>::ServerError("Cannot find consumable".to_string()),
-                )?;
-                let consumable = get_consumable_by_id(consumable_id).await?.ok_or(
-                    ServerFnError::<String>::ServerError("Cannot find consumable".to_string()),
-                )?;
+                let parent = get_consumable_by_id(parent_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find consumable"))?;
+                let consumable = get_consumable_by_id(consumable_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find consumable"))?;
                 ActiveDialog::NestedIngredients(parent, consumable).pipe(Ok)
             }
             ListDialogReference::Delete { consumable_id } => {
-                let consumable = get_consumable_by_id(consumable_id).await?.ok_or(
-                    ServerFnError::<String>::ServerError("Cannot find consumable".to_string()),
-                )?;
+                let consumable = get_consumable_by_id(consumable_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find consumable"))?;
                 ActiveDialog::Delete(consumable).pipe(Ok)
             }
             ListDialogReference::Idle => Ok(ActiveDialog::Idle),

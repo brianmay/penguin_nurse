@@ -7,7 +7,15 @@ edition = "2024"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dioxus = { version = "0.7.0-rc.0", features = ["router", "fullstack"] }
+# dioxus = { git = "https://github.com/DioxusLabs/dioxus", branch = "main" }
+# dioxus-router = { git = "https://github.com/DioxusLabs/dioxus", branch = "main" }
+# dioxus-fullstack = { git = "https://github.com/DioxusLabs/dioxus", branch = "main" }
+dioxus = { version = "0.7.0" , features = ["router", "fullstack"] }
+dioxus-router = { version = "0.7.0" }
+dioxus-fullstack = { version = "0.7.0" }
+
+dioxus-cli-config = { version = "*", optional = true }
+
 chrono = { version = "0.4.42", features = ["serde"] }
 tracing = { version = "0.1.41" }
 diesel = { version = "2.2.12", features = ["postgres", "chrono", "serde_json", "numeric", "64-column-tables"], optional = true }
@@ -15,7 +23,6 @@ axum = { version = "0.8.6", optional = true }
 diesel-async = { version = "0.7.0", features = ["async-connection-wrapper", "mobc", "postgres"], optional = true }
 diesel-derive-enum = { version = "3.0.0-beta.1", features = ["postgres"], optional = true }
 diesel_migrations = { version = "2.2.0", features = ["postgres"], optional = true }
-dioxus-cli-config = { version = "*", optional = true }
 tokio = { version = "1.48.0", optional = true }
 tracing-subscriber = { version = "0.3.20", optional = true }
 tower-sessions = { version = "0.14.0", optional = true }
@@ -46,11 +53,11 @@ itertools = "0.14.0"
 derive-enum-all-values = "0.2.1"
 
 [features]
-default = []
+default = ["web"]
 web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
-server = ["dioxus/server", "dioxus-cli-config", "tokio", "axum", "diesel", "diesel-async", "diesel-derive-enum", "diesel_migrations", "tracing-subscriber", "tokio", "tower-sessions", "tower-sessions-core", "mobc", "axum-login", "password-auth", "openid", "arc-swap", "url"]
+server = ["dioxus/server", "dioxus-cli-config", "tokio", "axum", "diesel", "diesel-async", "diesel-derive-enum", "diesel_migrations", "tracing-subscriber", "tower-sessions", "tower-sessions-core", "mobc", "axum-login", "password-auth", "openid", "arc-swap", "url"]
 
 [profile.wasm-dev]
 inherits = "dev"

@@ -13,9 +13,9 @@
   dioxus-cli,
 }:
 
-rustPlatform.buildRustPackage {
+rustPlatform.buildRustPackage rec {
   pname = "dioxus-cli";
-  version = "0.7.0-rc.0";
+  version = "0.7.0";
 
   # src = fetchCrate {
   #   inherit pname version;
@@ -25,16 +25,12 @@ rustPlatform.buildRustPackage {
   src = fetchFromGitHub {
     owner = "DioxusLabs";
     repo = "dioxus";
-    rev = "80731da25a698b655b1679e2e9deaa2959740d58";
-    hash = "sha256-1J0YPSJUvdS+LR2OrukkFPO25FFJDWhN5WfQPXTLOr4=";
+    rev = "v${version}";
+    hash = "sha256-MRdSvpvEaAJZSH/wjbjrlP4JxChCqeSpCkqRhig334c=";
   };
 
-  cargoHash = "sha256-969tEQeQEiWDyDuNGnCN4p/184ZKu6HqYtNuxpHGems=";
+  cargoHash = "sha256-TuJs3afMbLEocBqCskaFYgASn+913xBAgXusGDfCgCU=";
   # cargoHash = lib.fakeHash;
-  # cargoPatches = [
-  #   # TODO: Remove once https://github.com/DioxusLabs/dioxus/issues/3659 is fixed upstream.
-  #   ./fix-wasm-opt-target-dir.patch
-  # ];
 
   cargoBuildFlags = [
     "-p"
@@ -67,8 +63,8 @@ rustPlatform.buildRustPackage {
   postPatch = ''
     # sed -i '/dioxus-examples/d' Cargo.toml
     # wasm-opt-sys build.rs tries to verify C++17 support, but the check appears to be faulty.
-    substituteInPlace $cargoDepsCopy/wasm-opt-sys-*/build.rs \
-      --replace-fail 'check_cxx17_support()?;' '// check_cxx17_support()?;'
+    # substituteInPlace $cargoDepsCopy/wasm-opt-sys-*/build.rs \
+    #   --replace-fail 'check_cxx17_support()?;' '// check_cxx17_support()?;'
   '';
 
   nativeCheckInputs = [ rustfmt ];

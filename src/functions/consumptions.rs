@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use dioxus_fullstack::{ServerFnError, server};
 
 use crate::models::{self, ConsumableId, ConsumptionId, UserId};
 
@@ -6,7 +7,7 @@ use crate::models::{self, ConsumableId, ConsumptionId, UserId};
 use crate::models::{ConsumptionWithItems, MaybeSet};
 
 #[cfg(feature = "server")]
-use super::common::{get_database_connection, get_user_id};
+use super::common::{AppError, get_database_connection, get_user_id};
 
 #[server]
 pub async fn get_consumptions_for_time_range(
@@ -33,8 +34,8 @@ pub async fn get_consumptions_for_time_range(
 
     let logged_in_user_id = get_user_id().await?;
     if user_id != logged_in_user_id {
-        return Err(ServerFnError::ServerError(
-            "User ID does not match the logged in user".to_string(),
+        return Err(ServerFnError::new(
+            "User ID does not match the logged in user",
         ));
     }
 
@@ -53,6 +54,7 @@ pub async fn get_consumptions_for_time_range(
             })
             .collect()
     })
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -73,6 +75,7 @@ pub async fn get_child_consumables(
             .map(|(a, b)| models::ConsumptionItem::new(a.into(), b.into()))
             .collect()
     })
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -89,6 +92,7 @@ pub async fn get_parent_consumables(
     )
     .await
     .map(|x| x.into_iter().map(|(a, b)| (a.into(), b.into())).collect())
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -107,6 +111,7 @@ pub async fn get_consumption_by_id(
     )
     .await
     .map(|x| x.map(|y| y.into()))
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -124,6 +129,7 @@ pub async fn create_consumption(
     crate::server::database::models::consumptions::create_consumption(&mut conn, &new_consumption)
         .await
         .map(|x| x.into())
+        .map_err(AppError::from)
         .map_err(ServerFnError::from)
 }
 
@@ -137,8 +143,8 @@ pub async fn update_consumption(
     if let MaybeSet::Set(req_user_id) = consumption.user_id
         && logged_in_user_id != req_user_id
     {
-        return Err(ServerFnError::ServerError(
-            "User ID does not match the logged in user".to_string(),
+        return Err(ServerFnError::new(
+            "User ID does not match the logged in user",
         ));
     }
 
@@ -154,6 +160,7 @@ pub async fn update_consumption(
     )
     .await
     .map(|x| x.into())
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -168,6 +175,7 @@ pub async fn delete_consumption(id: ConsumptionId) -> Result<(), ServerFnError> 
         logged_in_user_id.as_inner(),
     )
     .await
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -189,6 +197,7 @@ pub async fn create_consumption_consumable(
     )
     .await
     .map(|x| x.into())
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -206,6 +215,7 @@ pub async fn delete_consumption_consumable(
         consumable_id.as_inner(),
     )
     .await
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -231,5 +241,6 @@ pub async fn update_consumption_consumable(
     )
     .await
     .map(|x| x.into())
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
