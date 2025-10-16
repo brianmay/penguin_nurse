@@ -1,11 +1,12 @@
 use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use dioxus::prelude::*;
+use dioxus_fullstack::ServerFnError;
 use itertools::intersperse;
 
 use crate::{
     components::{
         consumables::{self, ConsumableLabel, ConsumableUpdate, ConsumableUpdateIngredients},
-        events::{Markdown, EventDateTimeShort},
+        events::{EventDateTimeShort, Markdown},
         times::time_delta_to_string,
     },
     forms::{
@@ -437,7 +438,7 @@ enum State {
 
 #[component]
 pub fn ConsumptionUpdateIngredients(
-    consumption: ReadOnlySignal<Consumption>,
+    consumption: ReadSignal<Consumption>,
     on_close: Callback<()>,
     on_change: Callback<Consumption>,
     show_update_basic: Callback<Consumption>,
@@ -698,8 +699,8 @@ async fn do_save_consumption(
 
 #[component]
 fn ConsumableConsumptionForm(
-    consumption: ReadOnlySignal<ConsumptionConsumable>,
-    consumable: ReadOnlySignal<Consumable>,
+    consumption: ReadSignal<ConsumptionConsumable>,
+    consumable: ReadSignal<Consumable>,
     on_cancel: Callback<()>,
     on_save: Callback<ConsumptionConsumable>,
 ) -> Element {

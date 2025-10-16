@@ -1,12 +1,13 @@
 use crate::models::{self, UserId, WeeUrgeId};
 use chrono::{DateTime, Utc};
 use dioxus::prelude::*;
+use dioxus_fullstack::{ServerFnError, server};
 
 #[cfg(feature = "server")]
 use crate::models::MaybeSet;
 
 #[cfg(feature = "server")]
-use super::common::{get_database_connection, get_user_id};
+use super::common::{AppError, get_database_connection, get_user_id};
 
 #[server]
 pub async fn get_wee_urges_for_time_range(
@@ -16,8 +17,8 @@ pub async fn get_wee_urges_for_time_range(
 ) -> Result<Vec<models::WeeUrge>, ServerFnError> {
     let logged_in_user_id = get_user_id().await?;
     if user_id != logged_in_user_id {
-        return Err(ServerFnError::ServerError(
-            "User ID does not match the logged in user".to_string(),
+        return Err(ServerFnError::new(
+            "User ID does not match the logged in user",
         ));
     }
 
@@ -30,6 +31,7 @@ pub async fn get_wee_urges_for_time_range(
     )
     .await
     .map(|x| x.into_iter().map(|y| y.into()).collect())
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -45,6 +47,7 @@ pub async fn get_wee_urge_by_id(id: WeeUrgeId) -> Result<Option<models::WeeUrge>
     )
     .await
     .map(|x| x.map(|y| y.into()))
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -57,8 +60,8 @@ pub async fn create_wee_urge(
     let logged_in_user_id = get_user_id().await?;
 
     if wee_urge.user_id != logged_in_user_id {
-        return Err(ServerFnError::ServerError(
-            "User ID does not match the logged in user".to_string(),
+        return Err(ServerFnError::new(
+            "User ID does not match the logged in user",
         ));
     }
 
@@ -68,6 +71,7 @@ pub async fn create_wee_urge(
     crate::server::database::models::wee_urges::create_wee_urge(&mut conn, &new_wee_urge)
         .await
         .map(|x| x.into())
+        .map_err(AppError::from)
         .map_err(ServerFnError::from)
 }
 
@@ -81,8 +85,8 @@ pub async fn update_wee_urge(
     if let MaybeSet::Set(req_user_id) = wee_urge.user_id
         && logged_in_user_id != req_user_id
     {
-        return Err(ServerFnError::ServerError(
-            "User ID does not match the logged in user".to_string(),
+        return Err(ServerFnError::new(
+            "User ID does not match the logged in user",
         ));
     }
 
@@ -93,6 +97,7 @@ pub async fn update_wee_urge(
     crate::server::database::models::wee_urges::update_wee_urge(&mut conn, id.as_inner(), &updates)
         .await
         .map(|x| x.into())
+        .map_err(AppError::from)
         .map_err(ServerFnError::from)
 }
 
@@ -107,5 +112,6 @@ pub async fn delete_wee_urge(id: WeeUrgeId) -> Result<(), ServerFnError> {
         logged_in_user_id.as_inner(),
     )
     .await
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }

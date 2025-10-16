@@ -1,5 +1,5 @@
 use chrono::{DateTime, Local, NaiveDate, NaiveTime, TimeZone, Utc};
-use dioxus::prelude::ServerFnError;
+use dioxus_fullstack::ServerFnError;
 use tap::Pipe;
 use tracing::error;
 
@@ -11,7 +11,7 @@ pub fn get_utc_times_for_date(
     let today = date;
     let tomorrow = today.succ_opt().ok_or_else(|| {
         error!("Failed to get tomorrow's date for date: {:?}", today);
-        ServerFnError::<String>::ServerError("Failed to get tomorrow's date".to_string())
+        ServerFnError::new("Failed to get tomorrow's date".to_string())
     })?;
 
     let start = today
@@ -23,12 +23,12 @@ pub fn get_utc_times_for_date(
 
     let start = start.single().ok_or_else(|| {
         error!("Failed to convert start time to UTC for date: {:?}", today);
-        ServerFnError::<String>::ServerError("Failed to convert start time".to_string())
+        ServerFnError::new("Failed to convert start time".to_string())
     })?;
 
     let end = end.single().ok_or_else(|| {
         error!("Failed to convert end time to UTC for date: {:?}", tomorrow);
-        ServerFnError::<String>::ServerError("Failed to convert end time".to_string())
+        ServerFnError::new("Failed to convert end time".to_string())
     })?;
 
     let start = start.with_timezone(&Utc);

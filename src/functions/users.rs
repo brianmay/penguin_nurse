@@ -1,9 +1,10 @@
 use dioxus::prelude::*;
+use dioxus_fullstack::{ServerFnError, server};
 
 use crate::models::{self, UserId};
 
 #[cfg(feature = "server")]
-use super::common::{assert_is_admin, get_database_connection};
+use super::common::{AppError, assert_is_admin, get_database_connection};
 
 #[server]
 pub async fn get_users() -> Result<Vec<models::User>, ServerFnError> {
@@ -13,6 +14,7 @@ pub async fn get_users() -> Result<Vec<models::User>, ServerFnError> {
     crate::server::database::models::users::get_users(&mut conn)
         .await
         .map(|x| x.into_iter().map(|y| y.into()).collect())
+        .map_err(AppError::from)
         .map_err(ServerFnError::from)
 }
 
@@ -24,6 +26,7 @@ pub async fn get_user_by_id(id: UserId) -> Result<Option<models::User>, ServerFn
     crate::server::database::models::users::get_user_by_id(&mut conn, id.as_inner())
         .await
         .map(|x| x.map(|y| y.into()))
+        .map_err(AppError::from)
         .map_err(ServerFnError::from)
 }
 
@@ -40,6 +43,7 @@ pub async fn create_user(user: models::NewUser) -> Result<models::User, ServerFn
     crate::server::database::models::users::create_user(&mut conn, new_user)
         .await
         .map(|x| x.into())
+        .map_err(AppError::from)
         .map_err(ServerFnError::from)
 }
 
@@ -62,6 +66,7 @@ pub async fn update_user(
     crate::server::database::models::users::update_user(&mut conn, id.as_inner(), updates)
         .await
         .map(|x| x.into())
+        .map_err(AppError::from)
         .map_err(ServerFnError::from)
 }
 
@@ -72,5 +77,6 @@ pub async fn delete_user(id: UserId) -> Result<(), ServerFnError> {
 
     crate::server::database::models::users::delete_user(&mut conn, id.as_inner())
         .await
+        .map_err(AppError::from)
         .map_err(ServerFnError::from)
 }

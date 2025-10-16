@@ -1,8 +1,12 @@
 use crate::models::{self, ConsumableId};
 use dioxus::prelude::*;
+use dioxus_fullstack::{ServerFnError, server};
 
 #[cfg(feature = "server")]
-use super::common::{get_database_connection, get_user_id};
+use super::common::{AppError, get_database_connection, get_user_id};
+
+#[cfg(feature = "server")]
+use tap::Pipe;
 
 #[server]
 pub async fn search_consumables_with_nested(
@@ -43,9 +47,10 @@ pub async fn search_consumables_with_nested(
             .map(|(consumption, items)| {
                 models::ConsumableWithItems::new(consumption.into(), items_to_front_end(items))
             })
-            .collect()
+            .collect::<Vec<_>>()
     })
-    .map_err(ServerFnError::from)
+    .map_err(AppError::from)?
+    .pipe(Ok)
 }
 
 #[server]
@@ -65,6 +70,7 @@ pub async fn search_consumables(
     )
     .await
     .map(|x| x.into_iter().map(|y| y.into()).collect())
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -85,6 +91,7 @@ pub async fn get_child_consumables(
             .map(|(a, b)| models::ConsumableItem::new(a.into(), b.into()))
             .collect()
     })
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -101,6 +108,7 @@ pub async fn get_parent_consumables(
     )
     .await
     .map(|x| x.into_iter().map(|(a, b)| (a.into(), b.into())).collect())
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -115,6 +123,7 @@ pub async fn get_consumable_by_id(
     crate::server::database::models::consumables::get_consumable_by_id(&mut conn, id.as_inner())
         .await
         .map(|x| x.map(|y| y.into()))
+        .map_err(AppError::from)
         .map_err(ServerFnError::from)
 }
 
@@ -132,6 +141,7 @@ pub async fn create_consumable(
     crate::server::database::models::consumables::create_consumable(&mut conn, &new_consumable)
         .await
         .map(|x| x.into())
+        .map_err(AppError::from)
         .map_err(ServerFnError::from)
 }
 
@@ -153,6 +163,7 @@ pub async fn update_consumable(
     )
     .await
     .map(|x| x.into())
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -163,6 +174,7 @@ pub async fn delete_consumable(id: ConsumableId) -> Result<(), ServerFnError> {
 
     crate::server::database::models::consumables::delete_consumable(&mut conn, id.as_inner())
         .await
+        .map_err(AppError::from)
         .map_err(ServerFnError::from)
 }
 
@@ -184,6 +196,7 @@ pub async fn create_nested_consumable(
     )
     .await
     .map(|x| x.into())
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -199,6 +212,7 @@ pub async fn delete_nested_consumable(id: models::NestedConsumableId) -> Result<
         consumable_id.as_inner(),
     )
     .await
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -224,5 +238,6 @@ pub async fn update_nested_consumable(
     )
     .await
     .map(|x| x.into())
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }

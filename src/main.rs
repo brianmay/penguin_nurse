@@ -4,6 +4,8 @@ use chrono::NaiveDate;
 use dioxus::prelude::*;
 
 use components::{consumables, navbar::Navbar, timeline, users};
+use dioxus_fullstack::{ServerFnError, use_server_future};
+use dioxus_router::{Routable, Router};
 use models::{User, UserId};
 use views::{ConsumableList, Home, Login, Logout, TimelineList, UserDetail, UserList, get_user};
 
@@ -64,7 +66,7 @@ fn use_user() -> Result<Option<Arc<User>>, ServerFnError> {
     let user_result: &Option<Result<Option<Arc<User>>, ServerFnError>> = &user_resource.read();
 
     user_result.as_ref().map_or_else(
-        || Err(ServerFnError::ServerError("Mo user resource".to_string())),
+        || Err(ServerFnError::new("Mo user resource")),
         |x| x.clone(),
     )
 }
