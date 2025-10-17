@@ -1,6 +1,7 @@
 use std::{num::ParseIntError, str::FromStr};
 
-use dioxus::{prelude::*, router::ToQueryArgument};
+use dioxus::prelude::*;
+use dioxus_router::ToQueryArgument;
 use tap::Pipe;
 use thiserror::Error;
 
@@ -382,7 +383,7 @@ impl ToString for DialogReference {
 
 #[component]
 pub fn TimelineDialog(
-    dialog: ReadOnlySignal<ActiveDialog>,
+    dialog: ReadSignal<ActiveDialog>,
     on_change: Callback<()>,
     on_close: Callback<()>,
     replace_dialog: Callback<DialogReference>,

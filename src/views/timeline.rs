@@ -2,6 +2,8 @@ use std::ops::Deref;
 
 use chrono::{NaiveDate, Utc};
 use dioxus::prelude::*;
+use dioxus_fullstack::ServerFnError;
+use dioxus_router::navigator;
 use tap::Pipe;
 
 use crate::{
@@ -43,8 +45,8 @@ use crate::{
 
 #[component]
 fn EntryRow(
-    entry: ReadOnlySignal<Entry>,
-    date: ReadOnlySignal<NaiveDate>,
+    entry: ReadSignal<Entry>,
+    date: ReadSignal<NaiveDate>,
     selected: Signal<Option<EntryId>>,
 ) -> Element {
     let navigator = navigator();
@@ -238,8 +240,8 @@ fn EntryRow(
 
 #[component]
 pub fn TimelineList(
-    date: ReadOnlySignal<NaiveDate>,
-    dialog: ReadOnlySignal<Option<DialogReference>>,
+    date: ReadSignal<NaiveDate>,
+    dialog: ReadSignal<Option<DialogReference>>,
 ) -> Element {
     let navigator = navigator();
     let selected: Signal<Option<EntryId>> = use_signal(|| None);
@@ -265,22 +267,16 @@ pub fn TimelineList(
                 .pipe(Ok)
             }
             DialogReference::UpdateWee { wee_id } => {
-                let wee =
-                    get_wee_by_id(wee_id)
-                        .await?
-                        .ok_or(ServerFnError::<String>::ServerError(
-                            "Cannot find wee".to_string(),
-                        ))?;
+                let wee = get_wee_by_id(wee_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find wee"))?;
                 ActiveDialog::Wee(wees::ActiveDialog::Change(wees::Operation::Update { wee }))
                     .pipe(Ok)
             }
             DialogReference::DeleteWee { wee_id } => {
-                let wee =
-                    get_wee_by_id(wee_id)
-                        .await?
-                        .ok_or(ServerFnError::<String>::ServerError(
-                            "Cannot find wee".to_string(),
-                        ))?;
+                let wee = get_wee_by_id(wee_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find wee"))?;
                 ActiveDialog::Wee(wees::ActiveDialog::Delete(wee)).pipe(Ok)
             }
             DialogReference::CreateWeeUrge { user_id } => ActiveDialog::WeeUrge(
@@ -288,20 +284,18 @@ pub fn TimelineList(
             )
             .pipe(Ok),
             DialogReference::UpdateWeeUrge { wee_urge_id } => {
-                let wee_urge =
-                    get_wee_urge_by_id(wee_urge_id).await?.ok_or(
-                        ServerFnError::<String>::ServerError("Cannot find wee urgency".to_string()),
-                    )?;
+                let wee_urge = get_wee_urge_by_id(wee_urge_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find wee urgency"))?;
                 ActiveDialog::WeeUrge(wee_urges::ActiveDialog::Change(
                     wee_urges::Operation::Update { wee_urge },
                 ))
                 .pipe(Ok)
             }
             DialogReference::DeleteWeeUrge { wee_urge_id } => {
-                let wee_urge =
-                    get_wee_urge_by_id(wee_urge_id).await?.ok_or(
-                        ServerFnError::<String>::ServerError("Cannot find wee urgency".to_string()),
-                    )?;
+                let wee_urge = get_wee_urge_by_id(wee_urge_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find wee urgency"))?;
                 ActiveDialog::WeeUrge(wee_urges::ActiveDialog::Delete(wee_urge)).pipe(Ok)
             }
             DialogReference::CreatePoo { user_id } => {
@@ -311,22 +305,16 @@ pub fn TimelineList(
                 .pipe(Ok)
             }
             DialogReference::UpdatePoo { poo_id } => {
-                let poo =
-                    get_poo_by_id(poo_id)
-                        .await?
-                        .ok_or(ServerFnError::<String>::ServerError(
-                            "Cannot find poo".to_string(),
-                        ))?;
+                let poo = get_poo_by_id(poo_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find poo"))?;
                 ActiveDialog::Poo(poos::ActiveDialog::Change(poos::Operation::Update { poo }))
                     .pipe(Ok)
             }
             DialogReference::DeletePoo { poo_id } => {
-                let poo =
-                    get_poo_by_id(poo_id)
-                        .await?
-                        .ok_or(ServerFnError::<String>::ServerError(
-                            "Cannot find poo".to_string(),
-                        ))?;
+                let poo = get_poo_by_id(poo_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find poo"))?;
                 ActiveDialog::Poo(poos::ActiveDialog::Delete(poo)).pipe(Ok)
             }
             DialogReference::CreateConsumption { user_id } => {
@@ -336,18 +324,18 @@ pub fn TimelineList(
                 .pipe(Ok)
             }
             DialogReference::UpdateBasic { consumption_id } => {
-                let consumption = get_consumption_by_id(consumption_id).await?.ok_or(
-                    ServerFnError::<String>::ServerError("Cannot find consumption".to_string()),
-                )?;
+                let consumption = get_consumption_by_id(consumption_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find consumption"))?;
                 ActiveDialog::Consumption(consumptions::ActiveDialog::UpdateBasic(
                     consumptions::Operation::Update { consumption },
                 ))
                 .pipe(Ok)
             }
             DialogReference::UpdateIngredients { consumption_id } => {
-                let consumption = get_consumption_by_id(consumption_id).await?.ok_or(
-                    ServerFnError::<String>::ServerError("Cannot find consumption".to_string()),
-                )?;
+                let consumption = get_consumption_by_id(consumption_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find consumption"))?;
                 ActiveDialog::Consumption(consumptions::ActiveDialog::UpdateIngredients(
                     consumption,
                 ))
@@ -357,13 +345,12 @@ pub fn TimelineList(
                 parent_id,
                 consumable_id,
             } => {
-                let parent =
-                    get_consumption_by_id(parent_id).await?.ok_or(
-                        ServerFnError::<String>::ServerError("Cannot find consumption".to_string()),
-                    )?;
-                let consumable = get_consumable_by_id(consumable_id).await?.ok_or(
-                    ServerFnError::<String>::ServerError("Cannot find consumption".to_string()),
-                )?;
+                let parent = get_consumption_by_id(parent_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find consumption"))?;
+                let consumable = get_consumable_by_id(consumable_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find consumption"))?;
                 ActiveDialog::Consumption(consumptions::ActiveDialog::NestedIngredient(
                     parent, consumable,
                 ))
@@ -373,22 +360,21 @@ pub fn TimelineList(
                 parent_id,
                 consumable_id,
             } => {
-                let parent =
-                    get_consumption_by_id(parent_id).await?.ok_or(
-                        ServerFnError::<String>::ServerError("Cannot find consumption".to_string()),
-                    )?;
-                let consumable = get_consumable_by_id(consumable_id).await?.ok_or(
-                    ServerFnError::<String>::ServerError("Cannot find consumption".to_string()),
-                )?;
+                let parent = get_consumption_by_id(parent_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find consumption"))?;
+                let consumable = get_consumable_by_id(consumable_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find consumption"))?;
                 ActiveDialog::Consumption(consumptions::ActiveDialog::NestedIngredients(
                     parent, consumable,
                 ))
                 .pipe(Ok)
             }
             DialogReference::DeleteConsumption { consumption_id } => {
-                let consumption = get_consumption_by_id(consumption_id).await?.ok_or(
-                    ServerFnError::<String>::ServerError("Cannot find consumption".to_string()),
-                )?;
+                let consumption = get_consumption_by_id(consumption_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find consumption"))?;
                 ActiveDialog::Consumption(consumptions::ActiveDialog::Delete(consumption)).pipe(Ok)
             }
             DialogReference::CreateExercise { user_id } => {
@@ -398,20 +384,18 @@ pub fn TimelineList(
                 .pipe(Ok)
             }
             DialogReference::UpdateExercise { exercise_id } => {
-                let exercise =
-                    get_exercise_by_id(exercise_id).await?.ok_or(
-                        ServerFnError::<String>::ServerError("Cannot find exercise".to_string()),
-                    )?;
+                let exercise = get_exercise_by_id(exercise_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find exercise"))?;
                 ActiveDialog::Exercise(crate::components::exercises::ActiveDialog::Change(
                     crate::components::exercises::Operation::Update { exercise },
                 ))
                 .pipe(Ok)
             }
             DialogReference::DeleteExercise { exercise_id } => {
-                let exercise =
-                    get_exercise_by_id(exercise_id).await?.ok_or(
-                        ServerFnError::<String>::ServerError("Cannot find exercise".to_string()),
-                    )?;
+                let exercise = get_exercise_by_id(exercise_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find exercise"))?;
                 ActiveDialog::Exercise(crate::components::exercises::ActiveDialog::Delete(exercise))
                     .pipe(Ok)
             }
@@ -422,24 +406,18 @@ pub fn TimelineList(
                 .pipe(Ok)
             }
             DialogReference::UpdateHealthMetric { health_metric_id } => {
-                let health_metric =
-                    get_health_metric_by_id(health_metric_id)
-                        .await?
-                        .ok_or(ServerFnError::<String>::ServerError(
-                            "Cannot find health metric".to_string(),
-                        ))?;
+                let health_metric = get_health_metric_by_id(health_metric_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find health metric"))?;
                 ActiveDialog::HealthMetric(crate::components::health_metrics::ActiveDialog::Change(
                     crate::components::health_metrics::Operation::Update { health_metric },
                 ))
                 .pipe(Ok)
             }
             DialogReference::DeleteHealthMetric { health_metric_id } => {
-                let health_metric =
-                    get_health_metric_by_id(health_metric_id)
-                        .await?
-                        .ok_or(ServerFnError::<String>::ServerError(
-                            "Cannot find health metric".to_string(),
-                        ))?;
+                let health_metric = get_health_metric_by_id(health_metric_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find health metric"))?;
                 ActiveDialog::HealthMetric(crate::components::health_metrics::ActiveDialog::Delete(
                     health_metric,
                 ))
@@ -452,18 +430,18 @@ pub fn TimelineList(
                 .pipe(Ok)
             }
             DialogReference::UpdateSymptom { symptom_id } => {
-                let symptom = get_symptom_by_id(symptom_id).await?.ok_or(
-                    ServerFnError::<String>::ServerError("Cannot find symptom".to_string()),
-                )?;
+                let symptom = get_symptom_by_id(symptom_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find symptom"))?;
                 ActiveDialog::Symptom(crate::components::symptoms::ActiveDialog::Change(
                     crate::components::symptoms::Operation::Update { symptom },
                 ))
                 .pipe(Ok)
             }
             DialogReference::DeleteSymptom { symptom_id } => {
-                let symptom = get_symptom_by_id(symptom_id).await?.ok_or(
-                    ServerFnError::<String>::ServerError("Cannot find symptom".to_string()),
-                )?;
+                let symptom = get_symptom_by_id(symptom_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find symptom"))?;
                 ActiveDialog::Symptom(crate::components::symptoms::ActiveDialog::Delete(symptom))
                     .pipe(Ok)
             }
@@ -474,18 +452,18 @@ pub fn TimelineList(
                 .pipe(Ok)
             }
             DialogReference::UpdateReflux { reflux_id } => {
-                let reflux = get_reflux_by_id(reflux_id).await?.ok_or(
-                    ServerFnError::<String>::ServerError("Cannot find reflux".to_string()),
-                )?;
+                let reflux = get_reflux_by_id(reflux_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find reflux"))?;
                 ActiveDialog::Reflux(crate::components::refluxs::ActiveDialog::Change(
                     crate::components::refluxs::Operation::Update { reflux },
                 ))
                 .pipe(Ok)
             }
             DialogReference::DeleteReflux { reflux_id } => {
-                let reflux = get_reflux_by_id(reflux_id).await?.ok_or(
-                    ServerFnError::<String>::ServerError("Cannot find reflux".to_string()),
-                )?;
+                let reflux = get_reflux_by_id(reflux_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find reflux"))?;
                 ActiveDialog::Reflux(crate::components::refluxs::ActiveDialog::Delete(reflux))
                     .pipe(Ok)
             }
@@ -496,24 +474,18 @@ pub fn TimelineList(
                 .pipe(Ok)
             }
             DialogReference::UpdateNote { note_id } => {
-                let note =
-                    get_note_by_id(note_id)
-                        .await?
-                        .ok_or(ServerFnError::<String>::ServerError(
-                            "Cannot find note".to_string(),
-                        ))?;
+                let note = get_note_by_id(note_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find note"))?;
                 ActiveDialog::Note(crate::components::notes::ActiveDialog::Change(
                     crate::components::notes::Operation::Update { note },
                 ))
                 .pipe(Ok)
             }
             DialogReference::DeleteNote { note_id } => {
-                let note =
-                    get_note_by_id(note_id)
-                        .await?
-                        .ok_or(ServerFnError::<String>::ServerError(
-                            "Cannot find note".to_string(),
-                        ))?;
+                let note = get_note_by_id(note_id)
+                    .await?
+                    .ok_or(ServerFnError::new("Cannot find note"))?;
                 ActiveDialog::Note(crate::components::notes::ActiveDialog::Delete(note)).pipe(Ok)
             }
             DialogReference::Idle => Ok(ActiveDialog::Idle),
