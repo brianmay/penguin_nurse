@@ -1,7 +1,9 @@
 use std::{num::ParseIntError, str::FromStr};
 
 use chrono::{DateTime, Local, Utc};
-use dioxus::{prelude::*, router::ToQueryArgument};
+use dioxus::prelude::*;
+use dioxus_fullstack::ServerFnError;
+use dioxus_router::ToQueryArgument;
 use itertools::intersperse;
 use tap::Pipe;
 use thiserror::Error;
@@ -448,7 +450,7 @@ impl ToString for ListDialogReference {
 
 #[component]
 pub fn ConsumableDialog(
-    dialog: ReadOnlySignal<ActiveDialog>,
+    dialog: ReadSignal<ActiveDialog>,
     on_change: Callback<Consumable>,
     on_change_ingredients: Callback<Consumable>,
     on_delete: Callback<Consumable>,
@@ -566,7 +568,7 @@ enum State {
 
 #[component]
 pub fn ConsumableUpdateIngredients(
-    consumable: ReadOnlySignal<Consumable>,
+    consumable: ReadSignal<Consumable>,
     on_close: Callback<()>,
     on_change: Callback<Consumable>,
     show_update_basic: Callback<Consumable>,
@@ -824,8 +826,8 @@ async fn do_save_nested(
 
 #[component]
 fn ConsumableNestedForm(
-    nested: ReadOnlySignal<NestedConsumable>,
-    consumable: ReadOnlySignal<Consumable>,
+    nested: ReadSignal<NestedConsumable>,
+    consumable: ReadSignal<Consumable>,
     on_cancel: Callback<()>,
     on_save: Callback<NestedConsumable>,
 ) -> Element {
