@@ -40,7 +40,7 @@ futures = "0.3.31"
 gloo-timers = { version = "0.3.0", features = ["futures"] }
 classes = "1.0.0"
 # rust_decimal = { version = "1.37.2", features = ["serde"] }
-bigdecimal = { version = "0.4.8", features = ["serde"] }
+bigdecimal = { version = "0.4.9", features = ["serde"] }
 pulldown-cmark = "0.13.0"
 itertools = "0.14.0"
 derive-enum-all-values = "0.2.1"
