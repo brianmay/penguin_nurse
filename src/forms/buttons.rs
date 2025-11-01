@@ -21,8 +21,7 @@ pub fn FormCancelButton(on_cancel: Callback<()>) -> Element {
     rsx! {
         if confirm() {
             {"Really cancel?"}
-            div {
-                class: "flex gap-2",
+            div { class: "flex gap-2",
                 button {
                     r#type: "button",
                     class: "btn btn-secondary my-2",
@@ -100,17 +99,11 @@ pub fn FormSaveCancelButton(
     title: String,
     on_save: Callback<()>,
     on_cancel: Callback<()>,
-    saving: ReadOnlySignal<Saving>,
+    saving: ReadSignal<Saving>,
 ) -> Element {
     let buttons = rsx! {
-        FormSubmitButton {
-            disabled,
-            title,
-            on_save
-        }
-        FormCancelButton {
-            on_cancel
-        }
+        FormSubmitButton { disabled, title, on_save }
+        FormCancelButton { on_cancel }
     };
     match &*saving.read() {
         Saving::Yes => {
@@ -129,7 +122,7 @@ pub fn FormSaveCancelButton(
                     "Error: "
                     {err.to_string()}
                 }
-                { buttons }
+                {buttons}
             }
         }
         Saving::No => buttons,

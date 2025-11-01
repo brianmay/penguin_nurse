@@ -96,6 +96,7 @@ impl AuthnBackend for Backend {
 pub type AuthSession = axum_login::AuthSession<Backend>;
 pub type AuthError = axum_login::Error<Backend>;
 
+#[derive(Debug, Clone)]
 pub struct Session(AuthSession);
 
 impl std::ops::Deref for Session {

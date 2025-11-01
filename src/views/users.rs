@@ -2,6 +2,8 @@ use std::ops::Deref;
 
 use chrono::Local;
 use dioxus::prelude::*;
+use dioxus_fullstack::ServerFnError;
+use dioxus_router::navigator;
 use tap::Pipe;
 
 use crate::Route;
@@ -14,7 +16,7 @@ use crate::functions::users::{get_user_by_id, get_users};
 use crate::models::{User, UserId};
 
 #[component]
-pub fn UserItem(user: ReadOnlySignal<User>, on_click: Callback<User>) -> Element {
+pub fn UserItem(user: ReadSignal<User>, on_click: Callback<User>) -> Element {
     let user = user();
     let user_clone_0 = user.clone();
 
@@ -41,7 +43,7 @@ pub fn UserItem(user: ReadOnlySignal<User>, on_click: Callback<User>) -> Element
 
 #[component]
 pub fn UserDialog(
-    dialog: ReadOnlySignal<ActiveDialog>,
+    dialog: ReadSignal<ActiveDialog>,
     reload: Callback<()>,
     on_close: Callback<()>,
 ) -> Element {
@@ -105,10 +107,7 @@ pub fn UserDialog(
 }
 
 #[component]
-pub fn UserDetail(
-    user_id: UserId,
-    dialog: ReadOnlySignal<Option<DetailsDialogReference>>,
-) -> Element {
+pub fn UserDetail(user_id: UserId, dialog: ReadSignal<Option<DetailsDialogReference>>) -> Element {
     let mut maybe_user = use_resource(move || async move { get_user_by_id(user_id).await });
 
     let active_dialog: Memo<ActiveDialog> = use_memo(move || {
@@ -242,7 +241,7 @@ pub fn UserDetail(
 }
 
 #[component]
-pub fn UserList(dialog: ReadOnlySignal<Option<ListDialogReference>>) -> Element {
+pub fn UserList(dialog: ReadSignal<Option<ListDialogReference>>) -> Element {
     let mut users = use_resource(|| async { get_users().await });
 
     let dialog: Resource<Result<ActiveDialog, ServerFnError>> = use_resource(move || async move {

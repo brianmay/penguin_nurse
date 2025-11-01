@@ -1,6 +1,7 @@
 use dioxus::prelude::*;
 
 pub mod auth;
+pub mod context;
 pub mod database;
 mod handlers;
 mod oidc;
@@ -54,7 +55,7 @@ pub async fn init(app: fn() -> Element) {
     // and we use the generated address the CLI gives us
     let address = dioxus_cli_config::fullstack_address_or_localhost();
 
-    let cfg = ServeConfig::new().unwrap();
+    let cfg = ServeConfig::new();
 
     // Set up the axum router
     let router = axum::Router::new()
@@ -65,7 +66,8 @@ pub async fn init(app: fn() -> Element) {
         .route("/_dioxus", get(dioxus_handler))
         .pipe(add_oidc_middleware)
         .layer(auth_layer)
-        .layer(Extension(database));
+        .layer(Extension(database))
+        .layer(axum::middleware::from_fn(context::with_request_context));
 
     // Finally, we can launch the server
     let router = router.into_make_service();

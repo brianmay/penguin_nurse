@@ -1,6 +1,7 @@
 use std::{num::ParseIntError, str::FromStr, sync::Arc};
 
-use dioxus::{prelude::*, router::ToQueryArgument};
+use dioxus::prelude::*;
+use dioxus_router::ToQueryArgument;
 use tap::Pipe;
 use thiserror::Error;
 
