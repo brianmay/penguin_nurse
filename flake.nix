@@ -246,13 +246,17 @@
               ${tailwindcss}/bin/tailwindcss -i ./input.css -o ./assets/tailwind.css
               ./node_modules/.bin/rollup --config rollup.config.mjs
               dx --version
-              dx build --release --platform web --verbose
+              dx build --release --verbose
             '';
             installPhase = ''
               mkdir -p $out
               cp -r target/dx/$pname/release/web $out/bin
             '';
             cargoLock.lockFile = ./Cargo.lock;
+            cargoLock.outputHashes = {
+              # "const-serialize-0.7.0-rc.2" = "sha256-G2M0SyCWitPORvI3IeR2juuzLn1cOLhzbH6Y9lq71I8=";
+              # "const-serialize-0.7.0-rc.2" = pkgs.lib.fakeHash;
+            };
             meta.mainProgram = "penguin_nurse";
           };
 

@@ -1,6 +1,7 @@
 use dioxus::prelude::*;
 
 pub mod auth;
+// pub mod context;
 pub mod database;
 mod handlers;
 mod oidc;
@@ -16,59 +17,61 @@ pub use oidc::middleware::ClientState as OidcClientState;
 
 // The entry point for the server
 #[cfg(feature = "server")]
-pub async fn init(app: fn() -> Element) {
+pub fn init(app: fn() -> Element) {
     use axum_login::AuthManagerLayerBuilder;
     use oidc::middleware::add_oidc_middleware;
     use tap::Pipe;
 
-    tracing_subscriber::fmt::init();
+    dioxus::serve(move || async move {
+        let database = database::connection::init().await;
 
-    let database = database::connection::init().await;
+        let session_layer = {
+            let session_store = session_store::PostgresStore::new(database.clone());
 
-    let session_layer = {
-        let session_store = session_store::PostgresStore::new(database.clone());
+            tokio::task::spawn(
+                session_store
+                    .clone()
+                    .continuously_delete_expired(tokio::time::Duration::from_secs(60)),
+            );
 
-        tokio::task::spawn(
-            session_store
-                .clone()
-                .continuously_delete_expired(tokio::time::Duration::from_secs(60)),
-        );
+            SessionManagerLayer::new(session_store)
+                .with_secure(false)
+                .with_expiry(Expiry::OnInactivity(Duration::days(7)))
+                .with_same_site(SameSite::Lax)
+                .with_always_save(true)
+        };
 
-        SessionManagerLayer::new(session_store)
-            .with_secure(false)
-            .with_expiry(Expiry::OnInactivity(Duration::days(7)))
-            .with_same_site(SameSite::Lax)
-            .with_always_save(true)
-    };
+        let (auth_layer, auth_manager) = {
+            // Auth service.
+            //
+            // This combines the session layer with our backend to establish the auth
+            // service which will provide the auth session as a request extension.
 
-    let auth_layer = {
-        // Auth service.
-        //
-        // This combines the session layer with our backend to establish the auth
-        // service which will provide the auth session as a request extension.
-        let backend = auth::Backend::new(database.clone());
-        AuthManagerLayerBuilder::new(backend, session_layer).build()
-    };
+            use std::sync::Arc;
 
-    // Get the address the server should run on. If the CLI is running, the CLI proxies fullstack into the main address
-    // and we use the generated address the CLI gives us
-    let address = dioxus_cli_config::fullstack_address_or_localhost();
+            use axum_login::AuthManager;
+            let backend = auth::Backend::new(database.clone());
 
-    let cfg = ServeConfig::new().unwrap();
+            let layer = AuthManagerLayerBuilder::new(backend.clone(), session_layer).build();
+            let manager = Arc::new(AuthManager::new((), backend, "axum-login.data"));
 
-    // Set up the axum router
-    let router = axum::Router::new()
-        // You can add a dioxus application to the router with the `serve_dioxus_application` method
-        // This will add a fallback route to the router that will serve your component and server functions
-        .serve_dioxus_application(cfg, app)
-        .route("/_health", get(health_check))
-        .route("/_dioxus", get(dioxus_handler))
-        .pipe(add_oidc_middleware)
-        .layer(auth_layer)
-        .layer(Extension(database));
+            (layer, manager)
+        };
 
-    // Finally, we can launch the server
-    let router = router.into_make_service();
-    let listener = tokio::net::TcpListener::bind(address).await.unwrap();
-    axum::serve(listener, router).await.unwrap();
+        let cfg = ServeConfig::new();
+
+        axum::Router::new()
+            // You can add a dioxus application to the router with the `serve_dioxus_application` method
+            // This will add a fallback route to the router that will serve your component and server functions
+            // .serve_static_assets()
+            .serve_dioxus_application(cfg, app)
+            .route("/_health", get(health_check))
+            .route("/_dioxus", get(dioxus_handler))
+            .pipe(add_oidc_middleware)
+            .layer(axum::middleware::from_fn(auth::session_middleware))
+            .layer(auth_layer)
+            .layer(Extension(database))
+            .layer(Extension(auth_manager))
+            .pipe(Ok)
+    });
 }

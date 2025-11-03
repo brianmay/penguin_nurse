@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 use dioxus::prelude::*;
+use dioxus_fullstack::ServerFnError;
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq, Eq, Clone)]

@@ -1,20 +1,27 @@
 use diesel::pg::Pg;
-use diesel_async::async_connection_wrapper::AsyncConnectionWrapper;
-use diesel_async::pooled_connection::mobc::Pool;
-use diesel_async::pooled_connection::mobc::PooledConnection;
-use diesel_async::pooled_connection::AsyncDieselConnectionManager;
-use diesel_async::pooled_connection::PoolError;
 use diesel_async::AsyncConnection;
 use diesel_async::AsyncPgConnection;
-use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use diesel_async::async_connection_wrapper::AsyncConnectionWrapper;
+use diesel_async::pooled_connection::AsyncDieselConnectionManager;
+use diesel_async::pooled_connection::PoolError;
+use diesel_async::pooled_connection::mobc::Pool;
+use diesel_async::pooled_connection::mobc::PooledConnection;
+use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 use thiserror::Error;
 
 use std::env;
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
-pub type DatabasePool = Pool<AsyncPgConnection>;
+#[derive(Debug, Clone)]
+pub struct DatabasePool(Pool<AsyncPgConnection>);
 pub type DatabaseConnection = PooledConnection<AsyncPgConnection>;
+
+impl DatabasePool {
+    pub async fn get(&self) -> Result<DatabaseConnection, mobc::Error<PoolError>> {
+        self.0.get().await
+    }
+}
 
 /// An error type for SQLx stores.
 #[derive(Error, Debug)]
@@ -77,5 +84,5 @@ pub async fn init() -> DatabasePool {
         }
     }
 
-    pool
+    DatabasePool(pool)
 }

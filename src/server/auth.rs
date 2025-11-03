@@ -1,8 +1,14 @@
+use std::sync::Arc;
+
 use axum::{
+    body::Body,
+    extract::{FromRequestParts, Request},
     http,
+    middleware::Next,
     response::{IntoResponse, Response},
 };
-use axum_login::{AuthnBackend, UserId};
+
+use axum_login::{AuthManager, AuthnBackend, UserId};
 use password_auth::verify_password;
 use serde::Deserialize;
 use tap::Pipe;
@@ -96,6 +102,7 @@ impl AuthnBackend for Backend {
 pub type AuthSession = axum_login::AuthSession<Backend>;
 pub type AuthError = axum_login::Error<Backend>;
 
+#[derive(Debug, Clone)]
 pub struct Session(AuthSession);
 
 impl std::ops::Deref for Session {
@@ -145,4 +152,33 @@ impl<S: std::marker::Sync + std::marker::Send> axum::extract::FromRequestParts<S
             .map(Session)
             .map_err(|_| AuthSessionLayerNotFound)
     }
+}
+
+pub async fn session_middleware(req: Request<Body>, next: Next) -> Response<Body> {
+    let manager: Arc<AuthManager<(), Backend>> = req
+        .extensions()
+        .get::<Arc<AuthManager<(), Backend>>>()
+        .expect("AuthManager missing")
+        .clone();
+
+    // Step 2: Split the request into parts + body
+    let (mut parts, body) = req.into_parts();
+
+    // Step 3: Extract AuthSession from the parts
+    let session = match AuthSession::from_request_parts(&mut parts, &manager).await {
+        Ok(s) => Session(s),
+        Err(_) => {
+            return Response::builder()
+                .status(401)
+                .body(axum::body::Body::from("Unauthorized"))
+                .unwrap();
+        }
+    };
+
+    // Step 4: Reassemble request and insert session
+    let mut req = Request::from_parts(parts, body);
+    req.extensions_mut().insert(session);
+
+    // Step 5: Pass to next middleware / handler
+    next.run(req).await
 }

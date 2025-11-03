@@ -1,12 +1,13 @@
 use crate::models::{self, RefluxId, UserId};
 use chrono::{DateTime, Utc};
 use dioxus::prelude::*;
+use dioxus_fullstack::{ServerFnError, server};
 
 #[cfg(feature = "server")]
 use crate::models::MaybeSet;
 
 #[cfg(feature = "server")]
-use super::common::{get_database_connection, get_user_id};
+use super::common::{AppError, get_database_connection, get_user_id};
 
 #[server]
 pub async fn get_refluxs_for_time_range(
@@ -14,10 +15,12 @@ pub async fn get_refluxs_for_time_range(
     start: DateTime<Utc>,
     end: DateTime<Utc>,
 ) -> Result<Vec<models::Reflux>, ServerFnError> {
+    use dioxus_fullstack::ServerFnError;
+
     let logged_in_user_id = get_user_id().await?;
     if user_id != logged_in_user_id {
-        return Err(ServerFnError::ServerError(
-            "User ID does not match the logged in user".to_string(),
+        return Err(ServerFnError::new(
+            "User ID does not match the logged in user",
         ));
     }
 
@@ -30,6 +33,7 @@ pub async fn get_refluxs_for_time_range(
     )
     .await
     .map(|x| x.into_iter().map(|y| y.into()).collect())
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -45,6 +49,7 @@ pub async fn get_reflux_by_id(id: RefluxId) -> Result<Option<models::Reflux>, Se
     )
     .await
     .map(|x| x.map(|y| y.into()))
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
 
@@ -55,8 +60,8 @@ pub async fn create_reflux(reflux: models::NewReflux) -> Result<models::Reflux, 
     let logged_in_user_id = get_user_id().await?;
 
     if reflux.user_id != logged_in_user_id {
-        return Err(ServerFnError::ServerError(
-            "User ID does not match the logged in user".to_string(),
+        return Err(ServerFnError::new(
+            "User ID does not match the logged in user",
         ));
     }
 
@@ -66,6 +71,7 @@ pub async fn create_reflux(reflux: models::NewReflux) -> Result<models::Reflux, 
     crate::server::database::models::refluxs::create_reflux(&mut conn, &new_reflux)
         .await
         .map(|x| x.into())
+        .map_err(AppError::from)
         .map_err(ServerFnError::from)
 }
 
@@ -79,8 +85,8 @@ pub async fn update_reflux(
     if let MaybeSet::Set(req_user_id) = reflux.user_id
         && logged_in_user_id != req_user_id
     {
-        return Err(ServerFnError::ServerError(
-            "User ID does not match the logged in user".to_string(),
+        return Err(ServerFnError::new(
+            "User ID does not match the logged in user",
         ));
     }
 
@@ -90,6 +96,7 @@ pub async fn update_reflux(
     crate::server::database::models::refluxs::update_reflux(&mut conn, id.as_inner(), &updates)
         .await
         .map(|x| x.into())
+        .map_err(AppError::from)
         .map_err(ServerFnError::from)
 }
 
@@ -104,5 +111,6 @@ pub async fn delete_reflux(id: RefluxId) -> Result<(), ServerFnError> {
         logged_in_user_id.as_inner(),
     )
     .await
+    .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }

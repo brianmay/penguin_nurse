@@ -6,6 +6,7 @@ use crate::{
 };
 use chrono::Utc;
 use dioxus::prelude::*;
+use dioxus_router::{Link, Outlet, use_route};
 
 const NURSE_SVG: Asset = asset!("/assets/nurse.svg");
 
@@ -83,12 +84,17 @@ pub fn Navbar() -> Element {
                     class: "{menu_class} w-full md:block md:w-auto",
                     ul { class: "flex flex-col font-medium p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700",
                         MenuItem {
-                            route: Route::TimelineList { date, dialog: timeline::DialogReference::Idle },
+                            route: Route::TimelineList {
+                                date,
+                                dialog: timeline::DialogReference::Idle,
+                            },
                             title: "Today",
                             show_menu,
                         }
                         MenuItem {
-                            route: Route::ConsumableList { dialog: consumables::ListDialogReference::Idle },
+                            route: Route::ConsumableList {
+                                dialog: consumables::ListDialogReference::Idle,
+                            },
                             title: "Consumables",
                             show_menu,
                         }
@@ -96,7 +102,7 @@ pub fn Navbar() -> Element {
                             if user.is_admin {
                                 MenuItem {
                                     route: Route::UserList {
-                                        dialog: crate::components::users::ListDialogReference::Idle
+                                        dialog: crate::components::users::ListDialogReference::Idle,
                                     },
                                     title: "Users",
                                     show_menu,

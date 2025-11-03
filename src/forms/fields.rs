@@ -2,6 +2,7 @@
 use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use classes::classes;
 use dioxus::{prelude::*, signals::Signal};
+use dioxus_fullstack::ServerFnError;
 use palette::{Hsv, IntoColor, Srgb};
 use std::{ops::Deref, rc::Rc};
 use tap::Pipe;
@@ -129,7 +130,7 @@ struct PullDownMenuItem<D: 'static + Clone + PartialEq + FieldLabel> {
 #[component]
 fn PullDownMenu<D: 'static + Clone + PartialEq + FieldLabel>(
     id: String,
-    items: ReadOnlySignal<Vec<PullDownMenuItem<D>>>,
+    items: ReadSignal<Vec<PullDownMenuItem<D>>>,
     on_select: Callback<Option<D>>,
     search: Signal<String>,
     on_close: Callback<()>,
