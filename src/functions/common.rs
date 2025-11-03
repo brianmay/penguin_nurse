@@ -1,6 +1,4 @@
-use axum::http;
-use axum::response::IntoResponse;
-use axum::response::Response;
+use axum::Extension;
 use diesel_async::pooled_connection::PoolError;
 use dioxus::prelude::*;
 use dioxus_fullstack::FullstackContext;
@@ -28,37 +26,8 @@ impl From<AppError> for ServerFnError {
     }
 }
 
-#[derive(Debug, Error)]
-#[error("Database connection not found")]
-pub struct DatabaseConnectionNotFound;
-
-impl IntoResponse for DatabaseConnectionNotFound {
-    fn into_response(self) -> Response {
-        (
-            http::status::StatusCode::INTERNAL_SERVER_ERROR,
-            "DatabaseConnection was not found",
-        )
-            .into_response()
-    }
-}
-
-impl<S: std::marker::Sync + std::marker::Send> axum::extract::FromRequestParts<S> for DatabasePool {
-    type Rejection = DatabaseConnectionNotFound;
-
-    async fn from_request_parts(
-        parts: &mut http::request::Parts,
-        _state: &S,
-    ) -> Result<Self, Self::Rejection> {
-        parts
-            .extensions
-            .get::<DatabasePool>()
-            .cloned()
-            .ok_or(DatabaseConnectionNotFound)
-    }
-}
-
 pub async fn get_database_connection() -> Result<DatabaseConnection, ServerFnError> {
-    let pool: DatabasePool = FullstackContext::extract().await?;
+    let Extension(pool): Extension<DatabasePool> = FullstackContext::extract().await?;
     pool.get().await.map_err(AppError::from)?.pipe(Ok)
 }
 
