@@ -1093,7 +1093,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9361dcb0cacb57f8af31010e1a3503404415ce5ff33dd83c760dfdcf505aded9"
 dependencies = [
  "dioxus-asset-resolver",
- "dioxus-cli-config 0.7.0",
+ "dioxus-cli-config 0.7.1",
  "dioxus-config-macro",
  "dioxus-config-macros",
  "dioxus-core",
@@ -1126,7 +1126,7 @@ version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "954badc855b8e61d8880d204c7e3e2570daa59302c3843b2de1fae30ec266e64"
 dependencies = [
- "dioxus-cli-config 0.7.0",
+ "dioxus-cli-config 0.7.1",
  "http",
  "infer",
  "jni",
@@ -1149,9 +1149,9 @@ checksum = "cdd16948f1ffdb068dd9a64812158073a4250e2af4e98ea31fdac0312e6bce86"
 
 [[package]]
 name = "dioxus-cli-config"
-version = "0.7.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d28a6973d779e73f4b8ce705b1ea4c96f4083567ede862e734da2ab7c1dfc4b6"
+checksum = "babc8eaf90379352bc4820830749fd231feb9312433d4094b4e7b79d912b3d96"
 dependencies = [
  "wasm-bindgen",
 ]
@@ -1226,7 +1226,7 @@ dependencies = [
  "cocoa",
  "core-foundation 0.10.1",
  "dioxus-asset-resolver",
- "dioxus-cli-config 0.7.0",
+ "dioxus-cli-config 0.7.1",
  "dioxus-core",
  "dioxus-devtools",
  "dioxus-document",
@@ -1275,7 +1275,7 @@ version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "419353dace2fb67ac7b35070a56c00a66c920c0191e7a81cf9c9ac8dd7ab3798"
 dependencies = [
- "dioxus-cli-config 0.7.0",
+ "dioxus-cli-config 0.7.1",
  "dioxus-core",
  "dioxus-devtools-types",
  "dioxus-signals",
@@ -1340,7 +1340,7 @@ dependencies = [
  "content_disposition",
  "derive_more 2.0.1",
  "dioxus-asset-resolver",
- "dioxus-cli-config 0.7.0",
+ "dioxus-cli-config 0.7.1",
  "dioxus-core",
  "dioxus-fullstack-core",
  "dioxus-fullstack-macro",
@@ -1520,7 +1520,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "36d558d71ee41b33d2b35fd39444bfaab65fbda0b608c3eba33ea8ff97247115"
 dependencies = [
  "axum",
- "dioxus-cli-config 0.7.0",
+ "dioxus-cli-config 0.7.1",
  "dioxus-core",
  "dioxus-devtools",
  "dioxus-document",
@@ -1547,7 +1547,7 @@ version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a54751cf6aa00132c8a17343ad8d8cdb587d67a4b71acfc19ed78a924128edb"
 dependencies = [
- "dioxus-cli-config 0.7.0",
+ "dioxus-cli-config 0.7.1",
  "tracing",
  "tracing-subscriber",
  "tracing-wasm",
@@ -1559,7 +1559,7 @@ version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "577cc2680066242ef0e672c379c7b63072dee838a7dac6a4296f0c768ab2f72f"
 dependencies = [
- "dioxus-cli-config 0.7.0",
+ "dioxus-cli-config 0.7.1",
  "dioxus-core",
  "dioxus-core-macro",
  "dioxus-fullstack-core",
@@ -1615,7 +1615,7 @@ dependencies = [
  "chrono",
  "ciborium",
  "dashmap",
- "dioxus-cli-config 0.7.0",
+ "dioxus-cli-config 0.7.1",
  "dioxus-core",
  "dioxus-core-macro",
  "dioxus-devtools",
@@ -1716,7 +1716,7 @@ version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6d877058b49e547fee2b0fe26af17018142983262a9dd3f739963903799aea8e"
 dependencies = [
- "dioxus-cli-config 0.7.0",
+ "dioxus-cli-config 0.7.1",
  "dioxus-core",
  "dioxus-core-types",
  "dioxus-devtools",
@@ -3337,7 +3337,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "058d5b28351649020f1a1a3c36a8019a5e1d747f4103e3adb6b5eef15f1683e0"
 dependencies = [
  "const-serialize",
- "dioxus-cli-config 0.7.0",
+ "dioxus-cli-config 0.7.1",
  "dioxus-core-types",
  "serde",
 ]
