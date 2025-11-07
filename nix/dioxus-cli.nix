@@ -15,7 +15,7 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "dioxus-cli";
-  version = "0.7.0";
+  version = "0.7.1";
 
   # src = fetchCrate {
   #   inherit pname version;
@@ -26,10 +26,10 @@ rustPlatform.buildRustPackage rec {
     owner = "DioxusLabs";
     repo = "dioxus";
     rev = "v${version}";
-    hash = "sha256-MRdSvpvEaAJZSH/wjbjrlP4JxChCqeSpCkqRhig334c=";
+    hash = "sha256-EzfuD3rWVuomyzqSv4b3SVA6MmQiWAeePbdfXEvkiRk=";
   };
 
-  cargoHash = "sha256-TuJs3afMbLEocBqCskaFYgASn+913xBAgXusGDfCgCU=";
+  cargoHash = "sha256-cZe+p4pnXgkOvKxNSSylQzbQcBklqJuzf96YzsI3XX4=";
   # cargoHash = lib.fakeHash;
 
   cargoBuildFlags = [
