@@ -11,6 +11,8 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - uses: wimpysworld/nothing-but-nix@v6
+      with:
+        nix-permission-edict: true
     - uses: nixbuild/nix-quick-install-action@v34
     - name: Restore and cache Nix store
       uses: nix-community/cache-nix-action@v6
