@@ -18,6 +18,8 @@ pub struct Symptom {
     pub fever: i32,
     pub cough: i32,
     pub sore_throat: i32,
+    pub nasal_symptom: i32,
+    pub nasal_symptom_description: Option<String>,
     pub sneezing: i32,
     pub heart_burn: i32,
     pub abdominal_pain: i32,
@@ -38,9 +40,6 @@ pub struct Symptom {
     pub anxiety: i32,
     pub depression: i32,
     pub insomnia: i32,
-    pub comments: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
     pub shoulder_pain: i32,
     pub hand_pain: i32,
     pub foot_pain: i32,
@@ -50,9 +49,10 @@ pub struct Symptom {
     pub ear_pain: i32,
     pub feeling_hot: i32,
     pub feeling_cold: i32,
-    pub nasal_symptom: i32,
-    pub nasal_symptom_description: Option<String>,
     pub feeling_thirsty: i32,
+    pub comments: Option<String>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
 const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
@@ -122,6 +122,7 @@ pub async fn get_symptoms_for_time_range(
     use crate::server::database::schema::symptoms::user_id as q_user_id;
 
     table
+        .select(Symptom::as_select())
         .filter(q_user_id.eq(user_id))
         .filter(q_time.ge(start))
         .filter(q_time.lt(end))
@@ -139,6 +140,7 @@ pub async fn get_symptom_by_id(
     use crate::server::database::schema::symptoms::user_id as q_user_id;
 
     table
+        .select(Symptom::as_select())
         .filter(q_id.eq(id))
         .filter(q_user_id.eq(user_id))
         .get_result(conn)

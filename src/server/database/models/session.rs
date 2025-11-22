@@ -5,13 +5,8 @@
 
 use chrono::DateTime;
 use chrono::offset::Utc;
-use diesel::{
-    Expression, ExpressionMethods, OptionalExtension, Queryable, Selectable,
-    dsl::exists,
-    expression::AsExpression,
-    query_dsl::methods::{FilterDsl, SelectDsl},
-    select,
-};
+use diesel::dsl::exists;
+use diesel::{prelude::*, select};
 use diesel_async::{AsyncConnection, RunQueryDsl};
 use serde::Serialize;
 use tap::Pipe;
@@ -22,7 +17,8 @@ use tracing_subscriber::registry::Data;
 use crate::server::database::connection::DatabaseConnection;
 use crate::server::database::schema;
 
-#[derive(Queryable, Debug)]
+#[derive(Queryable, Selectable, Debug)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::session)]
 pub struct Session {
     pub id: String,
@@ -49,6 +45,7 @@ pub async fn load_session(
     use schema::session::table;
 
     table
+        .select(Session::as_select())
         .filter(schema::session::id.eq(id))
         .filter(schema::session::expiry_date.gt(Utc::now()))
         .get_result(conn)

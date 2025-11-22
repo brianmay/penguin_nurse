@@ -98,6 +98,7 @@ pub async fn get_consumptions_for_time_range(
         use crate::server::database::schema::consumptions::user_id as q_user_id;
 
         table
+            .select(Consumption::as_select())
             .filter(q_user_id.eq(user_id))
             .filter(q_time.ge(start))
             .filter(q_time.lt(end))
@@ -131,6 +132,7 @@ pub async fn get_consumption_by_id(
     use crate::server::database::schema::consumptions::user_id as q_user_id;
 
     table
+        .select(Consumption::as_select())
         .filter(q_id.eq(id))
         .filter(q_user_id.eq(user_id))
         .get_result(conn)

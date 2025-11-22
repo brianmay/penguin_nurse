@@ -137,6 +137,7 @@ pub async fn get_user_by_id(
     use schema::users::table;
 
     table
+        .select(User::as_select())
         .filter(q_id.eq(id))
         .get_result(conn)
         .await
@@ -152,6 +153,7 @@ pub async fn get_user_by_username(
     use schema::users::username as q_username;
 
     table
+        .select(User::as_select())
         .filter(q_username.eq(username))
         .get_result(conn)
         .await
@@ -167,6 +169,7 @@ pub async fn get_user_by_oidc_id(
     use schema::users::table;
 
     table
+        .select(User::as_select())
         .filter(q_oidc_id.eq(oidc_id))
         .get_result(conn)
         .await
@@ -182,6 +185,7 @@ pub async fn get_user_by_email(
     use schema::users::table;
 
     table
+        .select(User::as_select())
         .filter(q_email.eq(email))
         .get_results(conn)
         .await?
@@ -197,7 +201,7 @@ pub async fn get_user_by_email(
 
 pub async fn get_users(conn: &mut DatabaseConnection) -> Result<Vec<User>, diesel::result::Error> {
     use schema::users::table;
-    table.load(conn).await
+    table.select(User::as_select()).load(conn).await
 }
 
 pub async fn create_user(

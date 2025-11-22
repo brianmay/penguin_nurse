@@ -110,6 +110,7 @@ pub async fn get_exercises_for_time_range(
     use crate::server::database::schema::exercises::user_id as q_user_id;
 
     table
+        .select(Exercise::as_select())
         .filter(q_user_id.eq(user_id))
         .filter(q_time.ge(start))
         .filter(q_time.lt(end))
@@ -127,6 +128,7 @@ pub async fn get_exercise_by_id(
     use crate::server::database::schema::exercises::user_id as q_user_id;
 
     table
+        .select(Exercise::as_select())
         .filter(q_id.eq(id))
         .filter(q_user_id.eq(user_id))
         .get_result(conn)

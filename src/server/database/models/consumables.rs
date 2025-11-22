@@ -127,6 +127,7 @@ pub async fn search_consumables(
     use crate::server::database::schema::consumables::table;
 
     table
+        .select(Consumable::as_select())
         .filter(
             q::name.ilike(format!("%{}%", search)).or(q::brand
                 .ilike(format!("%{}%", search))
@@ -160,7 +161,12 @@ pub async fn get_consumable_by_id(
     use crate::server::database::schema::consumables::id as q_id;
     use crate::server::database::schema::consumables::table;
 
-    table.filter(q_id.eq(id)).get_result(conn).await.optional()
+    table
+        .select(Consumable::as_select())
+        .filter(q_id.eq(id))
+        .get_result(conn)
+        .await
+        .optional()
 }
 
 #[derive(Insertable, Debug, Clone)]

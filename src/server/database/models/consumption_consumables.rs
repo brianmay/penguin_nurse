@@ -50,6 +50,7 @@ pub async fn get_child_consumables(
     let consumption_consumables = table
         .filter(q::parent_id.eq(parent_id))
         .inner_join(schema::consumables::table.on(schema::consumables::id.eq(q::consumable_id)))
+        .select((ConsumptionConsumable::as_select(), Consumable::as_select()))
         .get_results::<(ConsumptionConsumable, Consumable)>(conn)
         .await?;
 
@@ -66,6 +67,7 @@ pub async fn get_parent_consumables(
     let consumption_consumables = table
         .filter(q::consumable_id.eq(consumable_id))
         .inner_join(schema::consumables::table.on(schema::consumables::id.eq(q::parent_id)))
+        .select((ConsumptionConsumable::as_select(), Consumable::as_select()))
         .get_results::<(ConsumptionConsumable, Consumable)>(conn)
         .await?;
 

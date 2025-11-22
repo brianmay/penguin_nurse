@@ -52,6 +52,7 @@ pub async fn get_notes_for_time_range(
     use crate::server::database::schema::notes::user_id as q_user_id;
 
     table
+        .select(Note::as_select())
         .filter(q_user_id.eq(user_id))
         .filter(q_time.ge(start))
         .filter(q_time.lt(end))
@@ -69,6 +70,7 @@ pub async fn get_note_by_id(
     use crate::server::database::schema::notes::user_id as q_user_id;
 
     table
+        .select(Note::as_select())
         .filter(q_id.eq(id))
         .filter(q_user_id.eq(user_id))
         .get_result(conn)
