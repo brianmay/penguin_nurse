@@ -34,7 +34,7 @@ pub use validation::{
     validate_maybe_date_time, validate_millilitres, validate_name, validate_password,
     validate_poo_quantity, validate_pulse, validate_symptom_extra_details,
     validate_symptom_intensity, validate_systolic_bp, validate_urgency, validate_username,
-    validate_weight,
+    validate_waist_circumference, validate_weight,
 };
 
 mod values;

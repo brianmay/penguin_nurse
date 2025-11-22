@@ -2,17 +2,18 @@ use chrono::{DateTime, FixedOffset, Local, Utc};
 use dioxus::prelude::*;
 
 use crate::{
-    components::events::{Markdown, EventDateTimeShort},
+    components::events::{EventDateTimeShort, Markdown},
     forms::{
         Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputNumber,
         InputTextArea, Saving, ValidationError, validate_blood_glucose, validate_comments,
         validate_diastolic_bp, validate_fixed_offset_date_time, validate_height, validate_pulse,
-        validate_systolic_bp, validate_weight,
+        validate_systolic_bp, validate_waist_circumference, validate_weight,
     },
     functions::health_metrics::{create_health_metric, delete_health_metric, update_health_metric},
     models::{ChangeHealthMetric, HealthMetric, MaybeSet, NewHealthMetric, UserId},
 };
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Operation {
     Create { user_id: UserId },
@@ -28,6 +29,7 @@ struct Validate {
     diastolic_bp: Memo<Result<Option<i32>, ValidationError>>,
     weight: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
     height: Memo<Result<Option<i32>, ValidationError>>,
+    waist_circumference: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
@@ -39,6 +41,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<HealthMetric, Ed
     let diastolic_bp = validate.diastolic_bp.read().clone()?;
     let weight = validate.weight.read().clone()?;
     let height = validate.height.read().clone()?;
+    let waist_circumference = validate.waist_circumference.read().clone()?;
     let comments = validate.comments.read().clone()?;
 
     match op {
@@ -52,6 +55,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<HealthMetric, Ed
                 diastolic_bp,
                 weight,
                 height,
+                waist_circumference,
                 comments,
             };
             create_health_metric(updates)
@@ -68,6 +72,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<HealthMetric, Ed
                 diastolic_bp: MaybeSet::Set(diastolic_bp),
                 weight: MaybeSet::Set(weight),
                 height: MaybeSet::Set(height),
+                waist_circumference: MaybeSet::Set(waist_circumference),
                 comments: MaybeSet::Set(comments),
             };
             update_health_metric(health_metric.id, changes)
@@ -106,6 +111,10 @@ pub fn HealthMetricUpdate(
     let weight = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
         Operation::Update { health_metric } => health_metric.weight.as_raw(),
+    });
+    let waist_circumference = use_signal(|| match &op {
+        Operation::Create { .. } => String::new(),
+        Operation::Update { health_metric } => health_metric.waist_circumference.as_raw(),
     });
     let height = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
@@ -150,6 +159,7 @@ pub fn HealthMetricUpdate(
         }),
         weight: use_memo(move || validate_weight(&weight())),
         height: use_memo(move || validate_height(&height())),
+        waist_circumference: use_memo(move || validate_waist_circumference(&waist_circumference())),
         comments: use_memo(move || validate_comments(&comments())),
     };
 
@@ -255,6 +265,13 @@ pub fn HealthMetricUpdate(
                 label: "Height (cm)",
                 value: height,
                 validate: validate.height,
+                disabled,
+            }
+            InputNumber {
+                id: "waist_circumference",
+                label: "Waist Circumference (cm)",
+                value: waist_circumference,
+                validate: validate.waist_circumference,
                 disabled,
             }
             InputTextArea {
@@ -437,6 +454,13 @@ pub fn HealthMetricDetails(health_metric: HealthMetric) -> Element {
             div {
                 "Height: "
                 {height.to_string()}
+                "cm"
+            }
+        }
+        if let Some(waist_circumference) = &health_metric.waist_circumference {
+            div {
+                "Waist Circumference: "
+                {waist_circumference.to_string()}
                 "cm"
             }
         }

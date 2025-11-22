@@ -45,6 +45,7 @@ pub struct HealthMetric {
     pub diastolic_bp: Option<i32>,
     pub weight: Option<bigdecimal::BigDecimal>,
     pub height: Option<i32>,
+    pub waist_circumference: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
@@ -67,6 +68,7 @@ pub struct NewHealthMetric {
     pub diastolic_bp: Option<i32>,
     pub weight: Option<bigdecimal::BigDecimal>,
     pub height: Option<i32>,
+    pub waist_circumference: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
 }
 
@@ -80,5 +82,6 @@ pub struct ChangeHealthMetric {
     pub diastolic_bp: MaybeSet<Option<i32>>,
     pub weight: MaybeSet<Option<bigdecimal::BigDecimal>>,
     pub height: MaybeSet<Option<i32>>,
+    pub waist_circumference: MaybeSet<Option<bigdecimal::BigDecimal>>,
     pub comments: MaybeSet<Option<String>>,
 }

@@ -108,6 +108,7 @@ diesel::table! {
         comments -> Nullable<Text>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        waist_circumference -> Nullable<Numeric>,
     }
 }
 
@@ -222,6 +223,7 @@ diesel::table! {
         nasal_symptom -> Int4,
         nasal_symptom_description -> Nullable<Text>,
         feeling_thirsty -> Int4,
+        dental_pain_description -> Nullable<Text>,
     }
 }
 

@@ -20,6 +20,7 @@ pub struct HealthMetric {
     pub diastolic_bp: Option<i32>,
     pub weight: Option<bigdecimal::BigDecimal>,
     pub height: Option<i32>,
+    pub waist_circumference: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
@@ -43,6 +44,7 @@ impl From<HealthMetric> for crate::models::HealthMetric {
             diastolic_bp: health_metric.diastolic_bp,
             weight: health_metric.weight,
             height: health_metric.height,
+            waist_circumference: health_metric.waist_circumference,
             created_at: health_metric.created_at,
             updated_at: health_metric.updated_at,
             comments: health_metric.comments,
@@ -101,6 +103,7 @@ pub struct NewHealthMetric<'a> {
     diastolic_bp: Option<i32>,
     weight: Option<&'a bigdecimal::BigDecimal>,
     height: Option<i32>,
+    waist_circumference: Option<&'a bigdecimal::BigDecimal>,
     comments: Option<&'a str>,
 }
 
@@ -116,6 +119,7 @@ impl<'a> NewHealthMetric<'a> {
             diastolic_bp: health_metric.diastolic_bp,
             weight: health_metric.weight.as_ref(),
             height: health_metric.height,
+            waist_circumference: health_metric.waist_circumference.as_ref(),
             comments: health_metric.comments.as_deref(),
         }
     }
@@ -144,6 +148,7 @@ pub struct ChangeHealthMetric<'a> {
     diastolic_bp: Option<Option<i32>>,
     weight: Option<Option<&'a bigdecimal::BigDecimal>>,
     height: Option<Option<i32>>,
+    waist_circumference: Option<Option<&'a bigdecimal::BigDecimal>>,
     comments: Option<Option<&'a str>>,
 }
 
@@ -164,6 +169,10 @@ impl<'a> ChangeHealthMetric<'a> {
             diastolic_bp: health_metric.diastolic_bp.into_option(),
             weight: health_metric.weight.as_inner_ref().into_option(),
             height: health_metric.height.into_option(),
+            waist_circumference: health_metric
+                .waist_circumference
+                .as_inner_ref()
+                .into_option(),
             comments: health_metric.comments.map_inner_deref().into_option(),
         }
     }

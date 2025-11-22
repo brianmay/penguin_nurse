@@ -463,9 +463,15 @@ pub const SYMPTOM_DEFS: &[SymptomMeta] = &[
         label: "Dental Pain",
         category: SymptomCategory::HeadFaceMouth,
         accessor: |s| s.dental_pain,
-        extra: None,
         set_new: |ns, v| ns.dental_pain = v,
         set_change: |cs, v| cs.dental_pain = MaybeSet::Set(v),
+        extra: Some(SymptomExtraMeta {
+            id: "dental_pain_description",
+            label: "Dental Pain Description",
+            accessor: |s| s.dental_pain_description.as_ref(),
+            set_new: |ns, v| ns.dental_pain_description = v.cloned(),
+            set_change: |cs, v| cs.dental_pain_description = MaybeSet::Set(v.cloned()),
+        }),
     },
     SymptomMeta {
         id: "eye_pain",
