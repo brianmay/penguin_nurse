@@ -132,8 +132,7 @@ fn PullDownMenu<D: 'static + Clone + PartialEq + FieldLabel>(
     id: String,
     items: ReadSignal<Vec<PullDownMenuItem<D>>>,
     on_select: Callback<Option<D>>,
-    search: Signal<String>,
-    on_close: Callback<()>,
+    search: Signal<Option<String>>,
 ) -> Element {
     let mut focus_idx = use_signal(|| 0);
     let mut elements: Signal<Vec<Option<Rc<MountedData>>>> = use_signal(Vec::new);
@@ -175,12 +174,12 @@ fn PullDownMenu<D: 'static + Clone + PartialEq + FieldLabel>(
                 }
             }
             Key::Tab => {
-                on_close.call(());
+                search.set(None);
             }
             Key::Escape => {
                 evt.prevent_default();
                 tracing::debug!("Escape pressed");
-                on_close.call(());
+                search.set(None);
             }
             _ => {}
         }
@@ -201,15 +200,15 @@ fn PullDownMenu<D: 'static + Clone + PartialEq + FieldLabel>(
                 focus_idx.set(prev);
             }
             Key::Tab => {
-                on_close.call(());
+                search.set(None);
             }
             Key::Escape => {
                 evt.prevent_default();
-                on_close.call(());
+                search.set(None);
             }
             Key::Character(c) => {
                 evt.prevent_default();
-                search.set(c);
+                search.set(Some(c));
                 focus_idx.set(0);
             }
             _ => {}
@@ -230,7 +229,7 @@ fn PullDownMenu<D: 'static + Clone + PartialEq + FieldLabel>(
         div {
             class: "absolute z-10 shadow-lg bg-gray-50 border border-gray-50 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500",
             onblur: move |_| {
-                on_close.call(());
+                search.set(None);
             },
             input {
                 r#type: "text",
@@ -239,7 +238,7 @@ fn PullDownMenu<D: 'static + Clone + PartialEq + FieldLabel>(
                 placeholder: "Enter input",
                 value: search(),
                 oninput: move |e| {
-                    search.set(e.value());
+                    search.set(Some(e.value()));
                 },
                 onmounted: move |e| {
                     set_element(elements, 0, Some(e.data()));
@@ -301,17 +300,15 @@ fn InputSearch<D: 'static + Clone + Eq + FieldLabel, T: 'static + Clone + Eq>(
     mut value: Signal<Option<D>>,
     disabled: Memo<bool>,
     options: Memo<Vec<PullDownMenuItem<D>>>,
-    search: Signal<String>,
+    search: Signal<Option<String>>,
     on_change: Option<Callback<Option<D>>>,
 ) -> Element {
     let mut button: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
-    let mut open = use_signal(|| false);
+    let mut open = use_memo(move || search.read().as_ref().is_some());
     let search_id = format!("{}_search", id);
 
     use_effect(move || {
-        if open() {
-            search.set(String::new());
-        } else {
+        if !open() {
             spawn(async move {
                 if let Some(button) = button.read().as_ref() {
                     _ = button.set_focus(true).await;
@@ -362,10 +359,6 @@ fn InputSearch<D: 'static + Clone + Eq + FieldLabel, T: 'static + Clone + Eq>(
                             })
                         },
                         search,
-                        on_close: Callback::new(move |_| {
-                            tracing::debug!("Closing pull down menu");
-                            open.set(false);
-                        }),
                     }
                 }
                 FieldMessage { validate, disabled }
@@ -627,15 +620,19 @@ pub fn InputSelect<D: 'static + Clone + Eq + FieldLabel, T: 'static + Clone + Eq
     disabled: Memo<bool>,
     options: Vec<InputOption<D>>,
 ) -> Element {
-    let search = use_signal(String::new);
+    let search: Signal<Option<String>> = use_signal(|| None);
     let filtered_options = use_memo(move || {
-        let query = search.read().to_lowercase();
+        let query = search.read().as_ref().map(|s| s.to_lowercase());
         options
             .iter()
             .filter(|opt| {
-                query.is_empty()
-                    || opt.title.to_lowercase().contains(&query)
-                    || opt.id.to_lowercase() == query
+                if let Some(query) = query.as_deref() {
+                    query.is_empty()
+                        || opt.title.to_lowercase().contains(query)
+                        || opt.id.to_lowercase() == query
+                } else {
+                    true
+                }
             })
             .map(|opt| PullDownMenuItem {
                 id: opt.id.clone(),
@@ -1101,38 +1098,48 @@ pub fn InputConsumable(
     on_change: Callback<Option<Consumable>>,
     mut create_form: Signal<bool>,
 ) -> Element {
-    let search = use_signal(String::new);
+    let mut search = use_signal(|| None);
+    let barcode = use_signal(String::new);
+
+    use_effect(move || {
+        let barcode = barcode();
+        if !barcode.is_empty() {
+            search.set(Some(barcode));
+        }
+    });
 
     let list: Resource<Result<Vec<PullDownMenuItem<Consumable>>, ServerFnError>> =
         use_resource(move || async move {
             let query = search();
-            if query.is_empty() {
-                return Ok(Vec::new());
-            }
-
-            search_consumables(query, false, false)
-                .await
-                .unwrap()
-                .into_iter()
-                .map(|consumable| {
-                    let id = consumable.id.to_string();
-                    let icon = rsx! {
-                        consumables::ConsumableIcon {}
-                    };
-                    let label = rsx! {
-                        div {
-                            ConsumableLabel { consumable: consumable.clone() }
+            if let Some(query) = query
+                && !query.is_empty()
+            {
+                search_consumables(query, false, false)
+                    .await
+                    .unwrap()
+                    .into_iter()
+                    .map(|consumable| {
+                        let id = consumable.id.to_string();
+                        let icon = rsx! {
+                            consumables::ConsumableIcon {}
+                        };
+                        let label = rsx! {
+                            div {
+                                ConsumableLabel { consumable: consumable.clone() }
+                            }
+                        };
+                        PullDownMenuItem {
+                            id,
+                            value: Some(consumable.clone()),
+                            label,
+                            icon,
                         }
-                    };
-                    PullDownMenuItem {
-                        id,
-                        value: Some(consumable.clone()),
-                        label,
-                        icon,
-                    }
-                })
-                .collect::<Vec<_>>()
-                .pipe(Ok)
+                    })
+                    .collect::<Vec<_>>()
+                    .pipe(Ok)
+            } else {
+                Ok(Vec::new())
+            }
         });
 
     let filtered_options =
@@ -1192,7 +1199,7 @@ pub fn InputConsumable(
             }
             div { class: "gap-2",
                 CreateButton { on_click: move |_e| create_form.set(true), "Create" }
-                Barcode { barcode: search }
+                Barcode { barcode }
             }
         }
     }
