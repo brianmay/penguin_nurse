@@ -9,8 +9,8 @@
     "tailwindcss": "^4.1.14"
   },
   "dependencies": {
+    "@preflower/barcode-detector-polyfill": "^0.9.21",
     "@tailwindcss/typography": "^0.5.19",
-    "@undecaf/barcode-detector-polyfill": "^0.9.23",
     "@undecaf/zbar-wasm": "^0.11.0"
   }
 }

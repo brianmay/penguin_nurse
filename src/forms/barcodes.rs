@@ -2,14 +2,20 @@ use dioxus::prelude::*;
 
 use crate::components::buttons::ActionButton;
 
+const ZBAR_WASM: Asset = asset!("/assets/zbar.wasm");
+
 #[component]
 fn BarcodeInput(on_set: Callback<String>) -> Element {
     use_future(move || async move {
-        let mut eval = document::eval(
+        let js_value = serde_json::json!(&ZBAR_WASM.resolve()).to_string();
+
+        let script = [
             r#"
-            //WebAssembly polyfill for some browsers
-            try { window['BarcodeDetector'].getSupportedFormats(); }
-            catch(err) { window['BarcodeDetector'] = barcodeDetectorPolyfill.BarcodeDetectorPolyfill; };
+            window['loadBarcodeDetectorPolyfill']({
+                locateFile: (file) => "#,
+            js_value.as_str(),
+            r#"
+            });
 
             // Define video as the video element. You can pass the entire element to the barcode detector!
             const video = document.querySelector('video');
@@ -18,7 +24,9 @@ fn BarcodeInput(on_set: Callback<String>) -> Element {
             video.srcObject = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
 
             // Create a BarcodeDetector for simple retail operations.
-            const barcodeDetector = new BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e"] });
+            const barcodeDetector = new BarcodeDetector({
+                formats: ["ean_13", "ean_8", "upc_a", "upc_e"],
+            });
 
             let rawValue = null;
 
@@ -62,18 +70,16 @@ fn BarcodeInput(on_set: Callback<String>) -> Element {
                 }
             }
         "#,
-        );
+        ].join("");
 
+        let mut eval = document::eval(&script);
         while let Ok(value) = eval.recv::<String>().await {
             on_set(value);
         }
     });
 
     rsx! {
-        video {
-            autoplay: true,
-            playsinline: true,
-        }
+        video { autoplay: true, playsinline: true }
     }
 }
 
@@ -83,22 +89,16 @@ pub fn Barcode(barcode: Signal<String>) -> Element {
 
     rsx! {
         if show() {
-            h1 { "Please scan barcode"}
+            h1 { "Please scan barcode" }
             BarcodeInput {
                 on_set: move |value| {
                     barcode.set(value);
                     show.set(false);
                 },
             }
-            ActionButton {
-                on_click: move |_| show.set(false),
-                "cancel"
-            }
+            ActionButton { on_click: move |_| show.set(false), "cancel" }
         } else {
-            ActionButton {
-                on_click: move |_| show.set(true),
-                "scan"
-            }
+            ActionButton { on_click: move |_| show.set(true), "scan" }
         }
     }
 }

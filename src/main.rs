@@ -78,7 +78,6 @@ fn App() -> Element {
     })?;
 
     use_context_provider(|| user_resource);
-    let _zbar = asset!("/assets/zbar.wasm");
 
     rsx! {
         // Global app resources
