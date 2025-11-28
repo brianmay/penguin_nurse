@@ -17,7 +17,7 @@ dioxus-fullstack = { version = "0.7.0" }
 dioxus-cli-config = { version = "*", optional = true }
 
 chrono = { version = "0.4.42", features = ["serde"] }
-tracing = { version = "0.1.41" }
+tracing = { version = "0.1.43" }
 diesel = { version = "2.2.12", features = ["postgres", "chrono", "serde_json", "numeric", "64-column-tables"], optional = true }
 axum = { version = "0.8.6", optional = true }
 diesel-async = { version = "0.7.0", features = ["async-connection-wrapper", "mobc", "postgres"], optional = true }
