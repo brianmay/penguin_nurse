@@ -28,23 +28,27 @@
           overlays = [ (import rust-overlay) ];
         };
         pkgs-unstable = nixpkgs-unstable.legacyPackages.${system};
-        wasm-bindgen-cli = pkgs.wasm-bindgen-cli_0_2_100;
 
-        # This should work but isn't currently required.
-        # dioxus-cli = pkgs-unstable.dioxus-cli.overrideAttrs (old: rec {
-        #   version = "0.6.1";
-        #   src = pkgs.fetchCrate {
-        #     inherit version;
-        #     pname = old.pname;
-        #     hash = "sha256-mQnSduf8SHYyUs6gHfI+JAvpRxYQA1DiMlvNofImElU=";
-        #   };
-        #   cargoDeps = old.cargoDeps.overrideAttrs (pkgs.lib.const {
-        #     name = "${old.pname}-vendor.tar.gz";
-        #     inherit src;
-        #     outputHash = "sha256-7jNOdlX9P9yxIfHTY32IXnT6XV5/9WDEjxhvHvT7bms=";
-        #     # outputHash = pkgs.lib.fakeHash;
-        #   });
-        # });
+        wasm-bindgen-cli = pkgs.buildWasmBindgenCli rec {
+          src = pkgs.fetchCrate {
+            pname = "wasm-bindgen-cli";
+            version = "0.2.106";
+            hash = "sha256-M6WuGl7EruNopHZbqBpucu4RWz44/MSdv6f0zkYw+44=";
+          };
+          # src = pkgs.fetchFromGitHub {
+          #   owner = "rustwasm";
+          #   repo = "wasm-bindgen";
+          #   rev = "0.2.106";
+          #   sha256 = "sha256-ZNqbec3fQeoIKVEdN0uXptDQlEAQNc1MAWqoTcPBUWk=";
+          # };
+
+          cargoDeps = pkgs.rustPlatform.fetchCargoVendor {
+            inherit src;
+            inherit (src) pname version;
+            hash = "sha256-ElDatyOwdKwHg3bNH/1pcxKI7LXkhsotlDPQjiLHBwA=";
+          };
+        };
+
         dioxus-cli = pkgs.callPackage ./nix/dioxus-cli.nix { };
         # dioxus-cli = pkgs.dioxus-cli;
 
