@@ -12,7 +12,7 @@ edition = "2024"
 # dioxus-fullstack = { git = "https://github.com/DioxusLabs/dioxus", branch = "main" }
 dioxus = { version = "0.7.0" , features = ["router", "fullstack"] }
 dioxus-router = { version = "0.7.0" }
-dioxus-fullstack = { version = "0.7.0" }
+dioxus-fullstack = { version = "0.7.2" }
 
 dioxus-cli-config = { version = "*", optional = true }
 
