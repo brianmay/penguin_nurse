@@ -15,7 +15,7 @@ let
 
   cfg = config.services.penguin-nurse;
 
-  system = pkgs.stdenv.system;
+  system = pkgs.stdenv.hostPlatform.system;
   penguin-nurse = self.packages.${system}.default;
 
 in
