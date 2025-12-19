@@ -18,7 +18,7 @@ dioxus-cli-config = { version = "*", optional = true }
 
 chrono = { version = "0.4.42", features = ["serde"] }
 tracing = { version = "0.1.43" }
-diesel = { version = "2.2.12", features = ["postgres", "chrono", "serde_json", "numeric", "64-column-tables"], optional = true }
+diesel = { version = "2.3.5", features = ["postgres", "chrono", "serde_json", "numeric", "64-column-tables"], optional = true }
 axum = { version = "0.8.6", optional = true }
 diesel-async = { version = "0.7.0", features = ["async-connection-wrapper", "mobc", "postgres"], optional = true }
 diesel-derive-enum = { version = "3.0.0-beta.1", features = ["postgres"], optional = true }
