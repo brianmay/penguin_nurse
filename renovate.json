@@ -5,5 +5,17 @@
   ],
   "nix": {
     "enabled": true
-  }
+  },
+  "packageRules": [
+    {
+      "managers": [
+        "nix"
+      ],
+      "lockFileMaintenance": true,
+      "enabled": true,
+      "schedule": [
+        "before 5pm on Tuesday"
+      ]
+    }
+  ]
 }
