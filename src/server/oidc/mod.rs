@@ -1,7 +1,7 @@
 mod claims;
 pub mod middleware;
 
-use openid::{error::ClientError, Discovered, Options};
+use openid::{Discovered, Options, error::ClientError};
 use thiserror::Error;
 use url::Url;
 
@@ -133,10 +133,6 @@ impl Client {
             .await
             .map_err(Error::RequestUserInfo)?;
 
-        let sub = user_info
-            .sub
-            .ok_or_else(|| Error::UserInfoMissing("sub".into()))?;
-
         let name = user_info
             .name
             .ok_or_else(|| Error::UserInfoMissing("name".into()))?;
@@ -152,7 +148,7 @@ impl Client {
             .await
             .map_err(database::connection::Error::Mobc)?;
 
-        let user = get_user_by_oidc_id(&mut conn, &sub)
+        let user = get_user_by_oidc_id(&mut conn, &user_info.sub)
             .await
             .map_err(database::connection::Error::Diesel)?;
 
@@ -167,7 +163,7 @@ impl Client {
         let user = if let Some(user) = user {
             let updates = database::models::users::UpdateUser {
                 full_name: None,
-                oidc_id: Some(Some(sub.as_str())),
+                oidc_id: Some(Some(user_info.sub.as_str())),
                 email: None,
                 is_admin: Some(is_admin),
                 username: None,
@@ -180,7 +176,7 @@ impl Client {
         } else {
             let updates = database::models::users::NewUser {
                 full_name: name.as_str(),
-                oidc_id: Some(sub.as_str()),
+                oidc_id: Some(user_info.sub.as_str()),
                 email: email.as_str(),
                 is_admin,
                 username: name.as_str(),
