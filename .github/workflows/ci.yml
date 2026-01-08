@@ -15,7 +15,7 @@ jobs:
         nix-permission-edict: true
     - uses: nixbuild/nix-quick-install-action@v34
     - name: Restore and cache Nix store
-      uses: nix-community/cache-nix-action@v6
+      uses: nix-community/cache-nix-action@v7
       with:
         # restore and save a cache using this key
         primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix') }}
