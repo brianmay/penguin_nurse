@@ -17,7 +17,7 @@ jobs:
       uses: nix-community/cache-nix-action@b426b118b6dc86d6952988d396aa7c6b09776d08 # v7.0.0
       with:
         # restore and save a cache using this key
-        primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix') }}
+        primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
         # if there's no cache hit, restore a cache by this prefix
         restore-prefixes-first-match: nix-${{ runner.os }}-
         # collect garbage until Nix store size (in bytes) is at most this number
