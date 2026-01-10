@@ -11,8 +11,6 @@ jobs:
     steps:
     - uses: actions/checkout@v6
     - uses: wimpysworld/nothing-but-nix@v6
-      with:
-        nix-permission-edict: true
     - uses: DeterminateSystems/nix-installer-action@v21
       with:
         determinate:  true
