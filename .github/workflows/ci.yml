@@ -13,9 +13,11 @@ jobs:
     - uses: wimpysworld/nothing-but-nix@v6
       with:
         nix-permission-edict: true
-    - uses: nixbuild/nix-quick-install-action@v34
+    - uses: DeterminateSystems/nix-installer-action@v21
+      with:
+        determinate:  true
     - name: Restore and cache Nix store
-      uses: nix-community/cache-nix-action@v6
+      uses: nix-community/cache-nix-action@b426b118b6dc86d6952988d396aa7c6b09776d08 # v7.0.0
       with:
         # restore and save a cache using this key
         primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix') }}
