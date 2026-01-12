@@ -526,7 +526,10 @@ pub fn ConsumptionUpdateIngredients(
             match consumption_consumables() {
                 Some(Ok(consumption_consumables)) => {
                     rsx! {
-                        ConsumptionSummary { consumption: consumption.clone() }
+                        ConsumptionSummary {
+                            consumption: consumption.clone(),
+                            consumption_consumables: Some(consumption_consumables.clone()),
+                        }
                         div { class: "p-4",
                             ul {
                                 for item in consumption_consumables {
@@ -792,7 +795,12 @@ fn ConsumableConsumptionForm(
 }
 
 #[component]
-pub fn ConsumptionSummary(consumption: Consumption) -> Element {
+pub fn ConsumptionSummary(
+    consumption: Consumption,
+    consumption_consumables: Option<Vec<ConsumptionItem>>,
+) -> Element {
+    let errors = consumption_errors(&consumption, consumption_consumables.as_ref());
+
     rsx! {
         div { {consumption.consumption_type.as_title()} }
         div {
@@ -801,10 +809,61 @@ pub fn ConsumptionSummary(consumption: Consumption) -> Element {
         div {
             consumption_duration { duration: consumption.duration }
         }
+        if let Some(mls) = consumption.liquid_mls {
+            div {
+                "Liquid Millilitres: "
+                {mls.to_string()}
+            }
+        }
+
+        if !errors.is_empty() {
+            div {
+                for error in errors {
+                    {error}
+                }
+            }
+        }
+
         if let Some(comments) = &consumption.comments {
             Markdown { content: comments.to_string() }
         }
     }
+}
+
+pub fn consumption_errors(
+    consumption: &Consumption,
+    consumption_consumables: Option<&Vec<ConsumptionItem>>,
+) -> Vec<Element> {
+    let mut errors = Vec::new();
+
+    if consumption.duration.num_seconds() < 2 {
+        errors.push(rsx! {
+            div { class: "text-error", "Duration is suspiciously short" }
+        });
+    }
+
+    if let Some(consumption_consumables) = &consumption_consumables {
+        let expected_mls = consumption.liquid_mls.unwrap_or(0.0);
+        let total_nested_mls: f64 = consumption_consumables
+            .iter()
+            .filter_map(|ci| ci.nested.liquid_mls)
+            .sum();
+        if (expected_mls - total_nested_mls).abs() > f64::EPSILON {
+            errors.push(rsx! {
+                div { class: "text-warning",
+                    {
+                        format!(
+                            "Liquid ml total from ingredients {}ml does not match consumption liquid ml {}ml",
+                            total_nested_mls,
+                            expected_mls,
+                        )
+                    }
+                }
+            });
+        }
+    }
+
+    errors
 }
 
 #[component]
