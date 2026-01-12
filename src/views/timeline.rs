@@ -131,8 +131,12 @@ fn EntryRow(
                                 },
                             }
 
+
+
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
+
+
                             WeeDuration { duration: exercise.duration }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
@@ -186,6 +190,49 @@ fn EntryRow(
                             NoteDetails { note: note.clone() }
                         }
                     }
+                }
+            }
+        }
+        if let EntryData::Consumption(consumption) = &entry.data {
+            {
+                let total_nested_mls: f64 = consumption
+                    .items
+                    .iter()
+                    .filter_map(|ci| ci.nested.liquid_mls)
+                    .sum();
+                match (consumption.consumption.liquid_mls, total_nested_mls) {
+                    (
+                        Some(consumption_mls),
+                        total_nested_mls,
+                    ) if (consumption_mls - total_nested_mls).abs() > f64::EPSILON => {
+                        rsx! {
+                            tr {
+                                td { colspan: 4, class: "block sm:table-cell",
+                                    div { class: "text-warning",
+                                        "(Warning: Liquid ml total from ingredients "
+                                        {format!("{}ml", total_nested_mls)}
+                                        " does not match consumption liquid ml "
+                                        {format!("{}ml", consumption_mls)}
+                                        ")"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    (None, total_nested_mls) if total_nested_mls > 0.0 => {
+                        rsx! {
+                            tr {
+                                td { colspan: 4, class: "block sm:table-cell",
+                                    div { class: "text-warning",
+                                        "(Warning: Liquid ml total from ingredients "
+                                        {format!("{}ml", total_nested_mls)}
+                                        " but consumption has no liquid ml set)"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    _ => rsx! {},
                 }
             }
         }
