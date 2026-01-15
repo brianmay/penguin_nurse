@@ -25,9 +25,10 @@ fn Colourinput(on_set: Callback<Hsv>) -> Element {
 
             while(true) {
                 try {
-                    const video = document.querySelector('video');
-                    if (!video) {
-                        return
+                    const video_refresh = document.querySelector('video');
+                    if (!video_refresh) {
+                        video.srcObject.getTracks().forEach(track => track.stop());
+                        break;
                     }
 
                     const width  = Number(video['naturalWidth'] || video['videoWidth'] || video['width'])
@@ -77,21 +78,14 @@ fn Colourinput(on_set: Callback<Hsv>) -> Element {
     });
 
     rsx! {
-        div {
-            class: "relative",
-            video {
-                autoplay: true,
-                playsinline: true,
-            }
+        div { class: "relative",
+            video { autoplay: true, playsinline: true }
             div {
                 class: "absolute w-full h-full top-0 left-0 opacity-40 z-20",
                 onclick: move |_| {
                     on_set(colour());
                 },
-                img {
-                    class: "w-full h-full",
-                    src: TARGET_SVG
-                }
+                img { class: "w-full h-full", src: TARGET_SVG }
             }
         }
         ColourButton {
@@ -100,7 +94,7 @@ fn Colourinput(on_set: Callback<Hsv>) -> Element {
             on_click: move |colour| {
                 on_set(colour);
             },
-            selected: false
+            selected: false,
         }
     }
 }
@@ -111,7 +105,7 @@ pub fn Colour(colour: Signal<(String, String, String)>) -> Element {
 
     rsx! {
         if show() {
-            h1 { "Please scan color"}
+            h1 { "Please scan color" }
             Colourinput {
                 on_set: move |c: Hsv| {
                     colour
@@ -123,15 +117,9 @@ pub fn Colour(colour: Signal<(String, String, String)>) -> Element {
                     show.set(false);
                 },
             }
-            ActionButton {
-                on_click: move |_| show.set(false),
-                "cancel"
-            }
+            ActionButton { on_click: move |_| show.set(false), "cancel" }
         } else {
-            ActionButton {
-                on_click: move |_| show.set(true),
-                "scan"
-            }
+            ActionButton { on_click: move |_| show.set(true), "scan" }
         }
     }
 }
