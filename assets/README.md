@@ -21,3 +21,4 @@
 * [reflux.svg](https://www.svgrepo.com/svg/499219/heartburn) GPL
 * [note.svg](https://www.svgrepo.com/svg/509175/note) MIT License
 * [consumable.svg](https://www.svgrepo.com/svg/482291/food-2) Public Domain
+* [nurse.svg](https://4vector.com/free-vector/st-bernard-s-penguin-98637) modified
