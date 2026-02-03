@@ -71,7 +71,7 @@
         nodePackages = pkgs.buildNpmPackage {
           name = "node-packages";
           src = ./.;
-          npmDepsHash = "sha256-WgaWUiNibtYpBWg1N21epwIwNSLnm/+pEuQaRSyETwQ=";
+          npmDepsHash = "sha256-Elev5dn4i2aeITt6fGJ5LGBppKiuCiAlgmgCbnQGYfw=";
           dontNpmBuild = true;
           inherit nodejs;
 
