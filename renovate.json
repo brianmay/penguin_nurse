@@ -8,6 +8,37 @@
   },
   "packageRules": [
     {
+      "matchSourceUrls": [
+        "https://github.com/open-telemetry/opentelemetry-rust",
+        "https://github.com/tokio-rs/tracing-opentelemetry",
+        "https://github.com/hyperium/tonic"
+      ],
+      "groupName": "opentelemetry-rust monorepo"
+    },
+    {
+      "matchManagers": [
+        "cargo"
+      ],
+      "matchDepTypes": [
+        "dependencies",
+        "dev-dependencies"
+      ],
+      "groupName": "rust direct dependencies"
+    },
+    {
+      /*
+       * Don’t open PRs trying to bump transitive crates
+       * unless they are security updates.
+       */
+      "matchManagers": [
+        "cargo"
+      ],
+      "matchDepTypes": [
+        "indirect"
+      ],
+      "enabled": false
+    },
+    {
       "managers": [
         "nix"
       ],
@@ -17,5 +48,35 @@
         "before 5pm on Tuesday"
       ]
     }
-  ]
+  ],
+  /*
+   * Rust-specific sanity defaults
+   */
+  "rust": {
+    /*
+     * This is the big one.
+     * Prevents Renovate from forcing single-version upgrades
+     * of transitive crates like getrandom.
+     */
+    "rangeStrategy": "auto"
+  },
+  /*
+   * Let Cargo manage transitive dependencies via Cargo.lock
+   */
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": [
+      "weekly"
+    ],
+    "commitMessageAction": "Refresh"
+  },
+  /*
+   * Avoid churn
+   */
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  /*
+   * Make failures obvious instead of retrying forever
+   */
+  "rebaseWhen": "conflicted"
 }
