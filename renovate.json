@@ -16,16 +16,6 @@
       "groupName": "opentelemetry-rust monorepo"
     },
     {
-      "matchManagers": [
-        "cargo"
-      ],
-      "matchDepTypes": [
-        "dependencies",
-        "dev-dependencies"
-      ],
-      "groupName": "rust direct dependencies"
-    },
-    {
       /*
        * Don’t open PRs trying to bump transitive crates
        * unless they are security updates.
