@@ -16,6 +16,12 @@
       "groupName": "opentelemetry-rust monorepo"
     },
     {
+      "matchSourceUrls": [
+        "https://github.com/maxcountryman/tower-sessions"
+      ],
+      "groupName": "tower-sessions monorepo"
+    },
+    {
       /*
        * Don’t open PRs trying to bump transitive crates
        * unless they are security updates.
