@@ -23,10 +23,7 @@
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [ (import rust-overlay) ];
-        };
+        pkgs = inputs.nixpkgs.legacyPackages.${system}.extend (import rust-overlay);
         pkgs-unstable = nixpkgs-unstable.legacyPackages.${system};
 
         wasm-bindgen-cli = pkgs.buildWasmBindgenCli rec {
