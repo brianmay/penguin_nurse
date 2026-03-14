@@ -102,15 +102,15 @@ pub fn validate_duration(str: &str) -> Result<TimeDelta, ValidationError> {
 }
 
 pub fn validate_millilitres(str: &str) -> Result<i32, ValidationError> {
-    validate_field_value(str)
+    validate_in_range(str, 0, 10_000)
 }
 
 pub fn validate_consumable_quantity(str: &str) -> Result<Option<f64>, ValidationError> {
-    validate_field_value(str)
+    validate_in_range_maybe(str, 0.0, 10_000.0)
 }
 
 pub fn validate_consumable_millilitres(str: &str) -> Result<Option<f64>, ValidationError> {
-    validate_field_value(str)
+    validate_in_range_maybe(str, 0.0, 10_000.0)
 }
 
 pub fn validate_consumable_unit(
@@ -135,28 +135,41 @@ pub fn validate_bristol(bristol_type: Option<Bristol>) -> Result<Bristol, Valida
     bristol_type.ok_or_else(|| ValidationError("Bristol type is required".to_string()))
 }
 
-pub fn validate_colour_hue(str: &str) -> Result<f32, ValidationError> {
-    validate_in_range(str, -180.0, 360.0)
+pub fn validate_colour_hue(str: &str) -> Result<Option<f32>, ValidationError> {
+    validate_in_range_maybe(str, -180.0, 360.0)
 }
 
-pub fn validate_colour_saturation(str: &str) -> Result<f32, ValidationError> {
-    validate_in_range(str, 0.0, 1.0)
+pub fn validate_colour_saturation(str: &str) -> Result<Option<f32>, ValidationError> {
+    validate_in_range_maybe(str, 0.0, 1.0)
 }
 
-pub fn validate_colour_value(str: &str) -> Result<f32, ValidationError> {
-    validate_in_range(str, 0.0, 1.0)
+pub fn validate_colour_value(str: &str) -> Result<Option<f32>, ValidationError> {
+    validate_in_range_maybe(str, 0.0, 1.0)
 }
 
 pub fn validate_colour(
+    quality: &Result<i32, ValidationError>,
     (hue, saturation, value): (String, String, String),
-) -> Result<Hsv, ValidationError> {
+) -> Result<Option<Hsv>, ValidationError> {
+    let empty = matches!(quality, Ok(0));
+
     let hue = validate_colour_hue(str::trim(&hue));
     let saturation = validate_colour_saturation(str::trim(&saturation));
     let value = validate_colour_value(str::trim(&value));
 
-    match (hue, saturation, value) {
-        (Ok(hue), Ok(saturation), Ok(value)) => Ok(Hsv::new(hue, saturation, value)),
-        (Err(_err), _, _) | (_, Err(_err), _) | (_, _, Err(_err)) => {
+    match (empty, hue, saturation, value) {
+        (false, Ok(Some(hue)), Ok(Some(saturation)), Ok(Some(value))) => {
+            Ok(Some(Hsv::new(hue, saturation, value)))
+        }
+        (false, Ok(None), Ok(None), Ok(None)) => Ok(None),
+        (false, Ok(None), _, _) | (false, _, Ok(None), _) | (false, _, _, Ok(None)) => {
+            Err(ValidationError("Colour must be completely set".to_string()))
+        }
+        (true, Ok(None), Ok(None), Ok(None)) => Ok(None),
+        (true, Ok(Some(_)), _, _) | (true, _, Ok(Some(_)), _) | (true, _, _, Ok(Some(_))) => Err(
+            ValidationError("Colour must be completely empty if quality is 0".to_string()),
+        ),
+        (_, Err(_err), _, _) | (_, _, Err(_err), _) | (_, _, _, Err(_err)) => {
             Err(ValidationError("Invalid colour".to_string()))
         }
     }

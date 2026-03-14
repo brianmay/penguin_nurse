@@ -33,7 +33,7 @@ struct Validate {
     urgency: Memo<Result<Urgency, ValidationError>>,
     leakage: Memo<Result<i32, ValidationError>>,
     mls: Memo<Result<i32, ValidationError>>,
-    colour: Memo<Result<Hsv, ValidationError>>,
+    colour: Memo<Result<Option<Hsv>, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
@@ -100,25 +100,34 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
     });
     let colour = use_signal(|| match &op {
         Operation::Create { .. } => (String::new(), String::new(), String::new()),
-        Operation::Update { wee } => (
-            wee.colour.hue.as_raw(),
-            wee.colour.saturation.as_raw(),
-            wee.colour.value.as_raw(),
-        ),
+        Operation::Update { wee } => {
+            if let Some(colour) = wee.colour {
+                (
+                    colour.hue.into_inner().to_string(),
+                    colour.saturation.to_string(),
+                    colour.value.to_string(),
+                )
+            } else {
+                (String::new(), String::new(), String::new())
+            }
+        }
     });
     let comments = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
         Operation::Update { wee } => wee.comments.as_raw(),
     });
 
-    let validate = Validate {
-        time: use_memo(move || validate_fixed_offset_date_time(&time())),
-        duration: use_memo(move || validate_duration(&duration())),
-        urgency: use_memo(move || validate_urgency(urgency())),
-        leakage: use_memo(move || validate_symptom_intensity(&leakage())),
-        mls: use_memo(move || validate_millilitres(&mls())),
-        colour: use_memo(move || validate_colour(colour())),
-        comments: use_memo(move || validate_comments(&comments())),
+    let validate = {
+        let validate_mls = use_memo(move || validate_millilitres(&mls()));
+        Validate {
+            time: use_memo(move || validate_fixed_offset_date_time(&time())),
+            duration: use_memo(move || validate_duration(&duration())),
+            urgency: use_memo(move || validate_urgency(urgency())),
+            leakage: use_memo(move || validate_symptom_intensity(&leakage())),
+            mls: validate_mls,
+            colour: use_memo(move || validate_colour(&validate_mls.read(), colour())),
+            comments: use_memo(move || validate_comments(&comments())),
+        }
     };
 
     let mut saving = use_signal(|| Saving::No);

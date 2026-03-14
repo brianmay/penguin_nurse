@@ -123,7 +123,7 @@ pub struct Poo {
     pub urgency: Urgency,
     pub quantity: i32,
     pub bristol: Bristol,
-    pub colour: palette::Hsv,
+    pub colour: Option<palette::Hsv>,
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
@@ -138,7 +138,7 @@ pub struct NewPoo {
     pub urgency: Urgency,
     pub quantity: i32,
     pub bristol: Bristol,
-    pub colour: palette::Hsv,
+    pub colour: Option<palette::Hsv>,
     pub comments: Option<String>,
 }
 
@@ -151,6 +151,6 @@ pub struct ChangePoo {
     pub urgency: MaybeSet<Urgency>,
     pub quantity: MaybeSet<i32>,
     pub bristol: MaybeSet<Bristol>,
-    pub colour: MaybeSet<palette::Hsv>,
+    pub colour: MaybeSet<Option<palette::Hsv>>,
     pub comments: MaybeSet<Option<String>>,
 }

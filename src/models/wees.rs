@@ -42,7 +42,7 @@ pub struct Wee {
     pub urgency: Urgency,
     pub leakage: i32,
     pub mls: i32,
-    pub colour: palette::Hsv,
+    pub colour: Option<palette::Hsv>,
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
@@ -57,7 +57,7 @@ pub struct NewWee {
     pub urgency: Urgency,
     pub leakage: i32,
     pub mls: i32,
-    pub colour: palette::Hsv,
+    pub colour: Option<palette::Hsv>,
     pub comments: Option<String>,
 }
 
@@ -70,6 +70,6 @@ pub struct ChangeWee {
     pub urgency: MaybeSet<Urgency>,
     pub leakage: MaybeSet<i32>,
     pub mls: MaybeSet<i32>,
-    pub colour: MaybeSet<palette::Hsv>,
+    pub colour: MaybeSet<Option<palette::Hsv>>,
     pub comments: MaybeSet<Option<String>>,
 }

@@ -31,7 +31,7 @@ struct Validate {
     urgency: Memo<Result<Urgency, ValidationError>>,
     quantity: Memo<Result<i32, ValidationError>>,
     bristol: Memo<Result<Bristol, ValidationError>>,
-    colour: Memo<Result<Hsv, ValidationError>>,
+    colour: Memo<Result<Option<Hsv>, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
@@ -98,25 +98,34 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
     });
     let colour = use_signal(|| match &op {
         Operation::Create { .. } => (String::new(), String::new(), String::new()),
-        Operation::Update { poo } => (
-            poo.colour.hue.as_raw(),
-            poo.colour.saturation.as_raw(),
-            poo.colour.value.as_raw(),
-        ),
+        Operation::Update { poo } => {
+            if let Some(colour) = poo.colour {
+                (
+                    colour.hue.as_raw(),
+                    colour.saturation.as_raw(),
+                    colour.value.as_raw(),
+                )
+            } else {
+                (String::new(), String::new(), String::new())
+            }
+        }
     });
     let comments = use_signal(|| match &op {
         Operation::Create { .. } => "".to_string(),
         Operation::Update { poo } => poo.comments.as_ref().cloned().unwrap_or_default(),
     });
 
-    let validate = Validate {
-        time: use_memo(move || validate_fixed_offset_date_time(&time())),
-        duration: use_memo(move || validate_duration(&duration())),
-        urgency: use_memo(move || validate_urgency(urgency())),
-        quantity: use_memo(move || validate_poo_quantity(&quantity())),
-        bristol: use_memo(move || validate_bristol(bristol())),
-        colour: use_memo(move || validate_colour(colour())),
-        comments: use_memo(move || validate_comments(&comments())),
+    let validate = {
+        let validate_quantity = use_memo(move || validate_poo_quantity(&quantity()));
+        Validate {
+            time: use_memo(move || validate_fixed_offset_date_time(&time())),
+            duration: use_memo(move || validate_duration(&duration())),
+            urgency: use_memo(move || validate_urgency(urgency())),
+            quantity: validate_quantity,
+            bristol: use_memo(move || validate_bristol(bristol())),
+            colour: use_memo(move || validate_colour(&validate_quantity.read(), colour())),
+            comments: use_memo(move || validate_comments(&comments())),
+        }
     };
 
     let mut saving = use_signal(|| Saving::No);

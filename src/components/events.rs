@@ -74,19 +74,23 @@ pub fn UrgencyLabel(urgency: Urgency) -> Element {
 }
 
 #[component]
-pub fn event_colour(colour: palette::Hsv) -> Element {
-    let colour: palette::Srgb = colour.into_color();
+pub fn event_colour(colour: Option<palette::Hsv>) -> Element {
+    if let Some(colour) = colour {
+        let colour: palette::Srgb = colour.into_color();
 
-    rsx! {
-        div {
-            class: "w-20 h-20 m-1 inline-block border-2 border-white",
-            style: format!(
-                "background-color: rgb({}, {}, {})",
-                colour.red * 255.0,
-                colour.green * 255.0,
-                colour.blue * 255.0,
-            ),
+        rsx! {
+            div {
+                class: "w-20 h-20 m-1 inline-block border-2 border-white",
+                style: format!(
+                    "background-color: rgb({}, {}, {})",
+                    colour.red * 255.0,
+                    colour.green * 255.0,
+                    colour.blue * 255.0,
+                ),
+            }
         }
+    } else {
+        rsx! {}
     }
 }
 

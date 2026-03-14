@@ -969,7 +969,7 @@ pub fn InputColour(
     id: &'static str,
     label: &'static str,
     value: Signal<(String, String, String)>,
-    validate: Memo<Result<Hsv, ValidationError>>,
+    validate: Memo<Result<Option<Hsv>, ValidationError>>,
     colours: Vec<(String, Hsv)>,
     disabled: Memo<bool>,
 ) -> Element {
@@ -983,7 +983,7 @@ pub fn InputColour(
     let validate_saturation = use_memo(move || validate_colour_saturation(&value().1));
     let validate_value = use_memo(move || validate_colour_value(&value().2));
 
-    let colour: Option<Hsv> = validate().ok();
+    let colour: Option<Hsv> = validate().ok().flatten();
     let rgb_colour: Option<Srgb> = colour.map(|x| x.into_color());
 
     rsx! {
@@ -1052,7 +1052,6 @@ pub fn InputColour(
                 }
                 FieldMessage { validate: validate_value, disabled }
             }
-
 
             if let Some(colour) = rgb_colour {
                 div {
@@ -1170,22 +1169,16 @@ pub fn InputConsumable(
             // if let None = list.read().deref() {
             //     p { class: "alert alert-info", "Loading..." }
             // }
-
-            {
-                value
-                    .read()
-                    .deref()
-                    .as_ref()
-                    .map(|consumable| rsx! {
-                        div {
-                            class: "bg-green-500 rounded-sm border-green-100 text-white p-2 mb-2",
-                            onclick: move |_e| {
-                                value.set(None);
-                                on_change(None);
-                            },
-                            {consumable.name.clone()}
-                        }
-                    })
+            {value.read().deref().as_ref().map(|consumable| rsx! {
+                div {
+                    class: "bg-green-500 rounded-sm border-green-100 text-white p-2 mb-2",
+                    onclick: move |_e| {
+                        value.set(None);
+                        on_change(None);
+                    },
+                    {consumable.name.clone()}
+                }
+            })
             }
             InputSearch {
                 id,

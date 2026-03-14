@@ -16,9 +16,9 @@ pub struct Wee {
     pub duration: chrono::Duration,
     pub urgency: i32,
     pub mls: i32,
-    pub colour_hue: f32,
-    pub colour_saturation: f32,
-    pub colour_value: f32,
+    pub colour_hue: Option<f32>,
+    pub colour_saturation: Option<f32>,
+    pub colour_value: Option<f32>,
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
@@ -33,6 +33,13 @@ impl From<Wee> for crate::models::Wee {
         let timezone = chrono::FixedOffset::east_opt(wee.utc_offset).unwrap_or(DEFAULT_TIMEZONE);
         let time = wee.time.with_timezone(&timezone);
 
+        let colour = match (wee.colour_hue, wee.colour_saturation, wee.colour_value) {
+            (Some(hue), Some(saturation), Some(value)) => {
+                Some(palette::Hsv::new(hue, saturation, value))
+            }
+            _ => None,
+        };
+
         Self {
             id: WeeId::new(wee.id),
             user_id: UserId::new(wee.user_id),
@@ -41,7 +48,7 @@ impl From<Wee> for crate::models::Wee {
             urgency: wee.urgency.try_into().unwrap_or_default(),
             leakage: wee.leakage,
             mls: wee.mls,
-            colour: palette::Hsv::new(wee.colour_hue, wee.colour_saturation, wee.colour_value),
+            colour,
             created_at: wee.created_at,
             updated_at: wee.updated_at,
             comments: wee.comments,
@@ -98,9 +105,9 @@ pub struct NewWee<'a> {
     urgency: i32,
     leakage: i32,
     mls: i32,
-    colour_hue: f32,
-    colour_saturation: f32,
-    colour_value: f32,
+    colour_hue: Option<f32>,
+    colour_saturation: Option<f32>,
+    colour_value: Option<f32>,
     comments: Option<&'a str>,
 }
 
@@ -114,9 +121,9 @@ impl<'a> NewWee<'a> {
             urgency: wee.urgency.into(),
             leakage: wee.leakage,
             mls: wee.mls,
-            colour_hue: wee.colour.hue.into_inner(),
-            colour_saturation: wee.colour.saturation,
-            colour_value: wee.colour.value,
+            colour_hue: wee.colour.map(|colour| colour.hue.into_inner()),
+            colour_saturation: wee.colour.map(|colour| colour.saturation),
+            colour_value: wee.colour.map(|colour| colour.value),
             comments: wee.comments.as_deref(),
         }
     }
@@ -143,9 +150,9 @@ pub struct ChangeWee<'a> {
     urgency: Option<i32>,
     leakage: Option<i32>,
     mls: Option<i32>,
-    colour_hue: Option<f32>,
-    colour_saturation: Option<f32>,
-    colour_value: Option<f32>,
+    colour_hue: Option<Option<f32>>,
+    colour_saturation: Option<Option<f32>>,
+    colour_value: Option<Option<f32>>,
     comments: Option<Option<&'a str>>,
 }
 
@@ -161,9 +168,18 @@ impl<'a> ChangeWee<'a> {
             urgency: wee.urgency.map_into().into_option(),
             leakage: wee.leakage.into_option(),
             mls: wee.mls.into_option(),
-            colour_hue: wee.colour.map(|x| x.hue.into_inner()).into_option(),
-            colour_saturation: wee.colour.map(|x| x.saturation).into_option(),
-            colour_value: wee.colour.map(|x| x.value).into_option(),
+            colour_hue: wee
+                .colour
+                .map(|x| x.map(|colour| colour.hue.into_inner()))
+                .into_option(),
+            colour_saturation: wee
+                .colour
+                .map(|x| x.map(|colour| colour.saturation))
+                .into_option(),
+            colour_value: wee
+                .colour
+                .map(|x| x.map(|colour| colour.value))
+                .into_option(),
             comments: wee.comments.as_ref().map(|x| x.as_deref()).into_option(),
         }
     }

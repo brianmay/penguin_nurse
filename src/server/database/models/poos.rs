@@ -19,9 +19,9 @@ pub struct Poo {
     pub urgency: i32,
     pub quantity: i32,
     pub bristol: i32,
-    pub colour_hue: f32,
-    pub colour_saturation: f32,
-    pub colour_value: f32,
+    pub colour_hue: Option<f32>,
+    pub colour_saturation: Option<f32>,
+    pub colour_value: Option<f32>,
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
@@ -35,6 +35,13 @@ impl From<Poo> for crate::models::Poo {
         let timezone = chrono::FixedOffset::east_opt(poo.utc_offset).unwrap_or(DEFAULT_TIMEZONE);
         let time = poo.time.with_timezone(&timezone);
 
+        let colour = match (poo.colour_hue, poo.colour_saturation, poo.colour_value) {
+            (Some(hue), Some(saturation), Some(value)) => {
+                Some(palette::Hsv::new(hue, saturation, value))
+            }
+            _ => None,
+        };
+
         Self {
             id: PooId::new(poo.id),
             user_id: UserId::new(poo.user_id),
@@ -43,7 +50,7 @@ impl From<Poo> for crate::models::Poo {
             urgency: poo.urgency.try_into().unwrap_or_default(),
             quantity: poo.quantity,
             bristol: poo.bristol.try_into().unwrap_or_default(),
-            colour: palette::Hsv::new(poo.colour_hue, poo.colour_saturation, poo.colour_value),
+            colour,
             comments: poo.comments,
             created_at: poo.created_at,
             updated_at: poo.updated_at,
@@ -100,9 +107,9 @@ pub struct NewPoo<'a> {
     urgency: i32,
     quantity: i32,
     bristol: i32,
-    colour_hue: f32,
-    colour_saturation: f32,
-    colour_value: f32,
+    colour_hue: Option<f32>,
+    colour_saturation: Option<f32>,
+    colour_value: Option<f32>,
     comments: Option<&'a str>,
 }
 
@@ -116,9 +123,9 @@ impl<'a> NewPoo<'a> {
             urgency: poo.urgency.into(),
             quantity: poo.quantity,
             bristol: poo.bristol.into(),
-            colour_hue: poo.colour.hue.into_inner(),
-            colour_saturation: poo.colour.saturation,
-            colour_value: poo.colour.value,
+            colour_hue: poo.colour.map(|colour| colour.hue.into_inner()),
+            colour_saturation: poo.colour.map(|colour| colour.saturation),
+            colour_value: poo.colour.map(|colour| colour.value),
             comments: poo.comments.as_deref(),
         }
     }
@@ -147,9 +154,9 @@ pub struct ChangePoo<'a> {
     pub urgency: Option<i32>,
     pub quantity: Option<i32>,
     pub bristol: Option<i32>,
-    pub colour_hue: Option<f32>,
-    pub colour_saturation: Option<f32>,
-    pub colour_value: Option<f32>,
+    pub colour_hue: Option<Option<f32>>,
+    pub colour_saturation: Option<Option<f32>>,
+    pub colour_value: Option<Option<f32>>,
     pub comments: Option<Option<&'a str>>,
 }
 
@@ -165,9 +172,18 @@ impl<'a> ChangePoo<'a> {
             urgency: poo.urgency.map_into().into_option(),
             quantity: poo.quantity.into_option(),
             bristol: poo.bristol.map_into().into_option(),
-            colour_hue: poo.colour.map(|x| x.hue.into_inner()).into_option(),
-            colour_saturation: poo.colour.map(|x| x.saturation).into_option(),
-            colour_value: poo.colour.map(|x| x.value).into_option(),
+            colour_hue: poo
+                .colour
+                .map(|x| x.map(|colour| colour.hue.into_inner()))
+                .into_option(),
+            colour_saturation: poo
+                .colour
+                .map(|x| x.map(|colour| colour.saturation))
+                .into_option(),
+            colour_value: poo
+                .colour
+                .map(|x| x.map(|colour| colour.value))
+                .into_option(),
             comments: poo.comments.map_inner_deref().into_option(),
         }
     }
