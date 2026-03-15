@@ -17,8 +17,8 @@ use super::consumptions::Consumption;
 pub struct ConsumptionConsumable {
     pub parent_id: i64,
     pub consumable_id: i64,
-    pub quantity: Option<f64>,
-    pub liquid_mls: Option<f64>,
+    pub quantity: Option<bigdecimal::BigDecimal>,
+    pub liquid_mls: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
@@ -97,8 +97,8 @@ pub async fn get_parent_consumables(
 pub struct NewConsumptionConsumable<'a> {
     pub parent_id: i64,
     pub consumable_id: i64,
-    pub quantity: Option<f64>,
-    pub liquid_mls: Option<f64>,
+    pub quantity: Option<&'a bigdecimal::BigDecimal>,
+    pub liquid_mls: Option<&'a bigdecimal::BigDecimal>,
     pub comments: Option<&'a str>,
 }
 
@@ -111,8 +111,8 @@ impl<'a> NewConsumptionConsumable<'a> {
         Self {
             parent_id: parent_id.as_inner(),
             consumable_id: consumable_id.as_inner(),
-            quantity: consumption_consumable.quantity,
-            liquid_mls: consumption_consumable.liquid_mls,
+            quantity: consumption_consumable.quantity.as_ref(),
+            liquid_mls: consumption_consumable.liquid_mls.as_ref(),
             comments: consumption_consumable.comments.as_deref(),
         }
     }
@@ -133,8 +133,8 @@ pub async fn create_consumption_consumable(
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::consumption_consumables)]
 pub struct ChangeConsumptionConsumable<'a> {
-    pub quantity: Option<Option<f64>>,
-    pub liquid_mls: Option<Option<f64>>,
+    pub quantity: Option<Option<&'a bigdecimal::BigDecimal>>,
+    pub liquid_mls: Option<Option<&'a bigdecimal::BigDecimal>>,
     pub comments: Option<Option<&'a str>>,
 }
 
@@ -143,8 +143,11 @@ impl<'a> ChangeConsumptionConsumable<'a> {
         consumption_consumable: &'a crate::models::ChangeConsumptionConsumable,
     ) -> Self {
         Self {
-            quantity: consumption_consumable.quantity.into_option(),
-            liquid_mls: consumption_consumable.liquid_mls.into_option(),
+            quantity: consumption_consumable.quantity.as_inner_ref().into_option(),
+            liquid_mls: consumption_consumable
+                .liquid_mls
+                .as_inner_ref()
+                .into_option(),
             comments: consumption_consumable
                 .comments
                 .map_inner_deref()

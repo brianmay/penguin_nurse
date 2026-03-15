@@ -56,7 +56,7 @@ pub struct Consumption {
     pub user_id: i64,
     pub time: DateTime<Utc>,
     pub duration: TimeDelta,
-    pub liquid_mls: Option<f64>,
+    pub liquid_mls: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
@@ -149,7 +149,7 @@ pub struct NewConsumption<'a> {
     pub utc_offset: i32,
     pub duration: TimeDelta,
     pub consumption_type: ConsumptionType,
-    pub liquid_mls: Option<f64>,
+    pub liquid_mls: Option<&'a bigdecimal::BigDecimal>,
     pub comments: Option<&'a str>,
 }
 
@@ -161,7 +161,7 @@ impl<'a> NewConsumption<'a> {
             utc_offset: consumption.time.offset().local_minus_utc(),
             duration: consumption.duration,
             consumption_type: consumption.consumption_type.into(),
-            liquid_mls: consumption.liquid_mls,
+            liquid_mls: consumption.liquid_mls.as_ref(),
             comments: consumption.comments.as_deref(),
         }
     }
@@ -186,7 +186,7 @@ pub struct ChangeConsumption<'a> {
     pub utc_offset: Option<i32>,
     pub duration: Option<TimeDelta>,
     pub consumption_type: Option<ConsumptionType>,
-    pub liquid_mls: Option<Option<f64>>,
+    pub liquid_mls: Option<Option<&'a bigdecimal::BigDecimal>>,
     pub comments: Option<Option<&'a str>>,
 }
 
@@ -203,7 +203,7 @@ impl<'a> ChangeConsumption<'a> {
                 .into_option(),
             duration: consumption.duration.into_option(),
             consumption_type: consumption.consumption_type.map_into().into_option(),
-            liquid_mls: consumption.liquid_mls.into_option(),
+            liquid_mls: consumption.liquid_mls.as_inner_ref().into_option(),
             comments: consumption.comments.map_inner_deref().into_option(),
         }
     }

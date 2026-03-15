@@ -31,10 +31,10 @@ pub use validation::{
     validate_consumption_type, validate_diastolic_bp, validate_distance, validate_duration,
     validate_email, validate_exercise_calories, validate_exercise_rpe, validate_exercise_type,
     validate_fixed_offset_date_time, validate_full_name, validate_height, validate_location,
-    validate_maybe_date_time, validate_millilitres, validate_name, validate_password,
-    validate_poo_quantity, validate_pulse, validate_symptom_extra_details,
-    validate_symptom_intensity, validate_systolic_bp, validate_urgency, validate_username,
-    validate_waist_circumference, validate_weight,
+    validate_maybe_date_time, validate_name, validate_password, validate_poo_quantity,
+    validate_pulse, validate_symptom_extra_details, validate_symptom_intensity,
+    validate_systolic_bp, validate_urgency, validate_username, validate_waist_circumference,
+    validate_wee_millilitres, validate_weight,
 };
 
 mod values;

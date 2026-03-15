@@ -101,16 +101,20 @@ pub fn validate_duration(str: &str) -> Result<TimeDelta, ValidationError> {
     validate_field_value(str)
 }
 
-pub fn validate_millilitres(str: &str) -> Result<i32, ValidationError> {
-    validate_in_range(str, 0, 10_000)
+pub fn validate_wee_millilitres(str: &str) -> Result<i32, ValidationError> {
+    validate_in_range_exclusive(str, 0, 10_000)
 }
 
-pub fn validate_consumable_quantity(str: &str) -> Result<Option<f64>, ValidationError> {
-    validate_in_range_maybe(str, 0.0, 10_000.0)
+pub fn validate_consumable_quantity(
+    str: &str,
+) -> Result<Option<bigdecimal::BigDecimal>, ValidationError> {
+    validate_in_range_maybe_exclusive(str, BigDecimal::from(0), BigDecimal::from(10_000))
 }
 
-pub fn validate_consumable_millilitres(str: &str) -> Result<Option<f64>, ValidationError> {
-    validate_in_range_maybe(str, 0.0, 10_000.0)
+pub fn validate_consumable_millilitres(
+    str: &str,
+) -> Result<Option<bigdecimal::BigDecimal>, ValidationError> {
+    validate_in_range_maybe_exclusive(str, BigDecimal::from(0), BigDecimal::from(10_000))
 }
 
 pub fn validate_consumable_unit(
@@ -187,33 +191,76 @@ pub fn validate_in_range<T>(str: &str, min: T, max: T) -> Result<T, ValidationEr
 where
     T: FieldValue<RawValue = String, DerefValue = str> + PartialOrd + std::fmt::Display,
 {
-    validate_field_value::<T>(str)?.pipe(|v: T| {
-        if (min <= v) && (v <= max) {
-            Ok(v)
+    validate_in_range_inner(str, min, max, true)
+}
+
+pub fn validate_in_range_exclusive<T>(str: &str, min: T, max: T) -> Result<T, ValidationError>
+where
+    T: FieldValue<RawValue = String, DerefValue = str> + PartialOrd + std::fmt::Display,
+{
+    validate_in_range_inner(str, min, max, false)
+}
+
+fn check_range<T>(v: T, min: &T, max: &T, max_inclusive: bool) -> Result<T, ValidationError>
+where
+    T: PartialOrd + std::fmt::Display,
+{
+    let min_ok = *min <= v;
+    let max_ok = if max_inclusive { v <= *max } else { v < *max };
+
+    if min_ok && max_ok {
+        Ok(v)
+    } else {
+        let range_msg = if max_inclusive {
+            format!("between {} and {}", min, max)
         } else {
-            Err(ValidationError(format!(
-                "Value must be between {} and {}",
-                min, max
-            )))
-        }
-    })
+            format!("between {} and {} (exclusive)", min, max)
+        };
+        Err(ValidationError(format!("Value must be {}", range_msg)))
+    }
+}
+
+fn validate_in_range_inner<T>(
+    str: &str,
+    min: T,
+    max: T,
+    max_inclusive: bool,
+) -> Result<T, ValidationError>
+where
+    T: FieldValue<RawValue = String, DerefValue = str> + PartialOrd + std::fmt::Display,
+{
+    validate_field_value::<T>(str)?.pipe(|v: T| check_range(v, &min, &max, max_inclusive))
 }
 
 pub fn validate_in_range_maybe<T>(str: &str, min: T, max: T) -> Result<Option<T>, ValidationError>
 where
     T: FieldValue<RawValue = String, DerefValue = str> + PartialOrd + std::fmt::Display,
 {
+    validate_in_range_maybe_inner(str, min, max, true)
+}
+
+pub fn validate_in_range_maybe_exclusive<T>(
+    str: &str,
+    min: T,
+    max: T,
+) -> Result<Option<T>, ValidationError>
+where
+    T: FieldValue<RawValue = String, DerefValue = str> + PartialOrd + std::fmt::Display,
+{
+    validate_in_range_maybe_inner(str, min, max, false)
+}
+
+fn validate_in_range_maybe_inner<T>(
+    str: &str,
+    min: T,
+    max: T,
+    max_inclusive: bool,
+) -> Result<Option<T>, ValidationError>
+where
+    T: FieldValue<RawValue = String, DerefValue = str> + PartialOrd + std::fmt::Display,
+{
     validate_field_value::<Option<T>>(str)?
-        .map(|v: T| {
-            if (min <= v) && (v <= max) {
-                Ok(v)
-            } else {
-                Err(ValidationError(format!(
-                    "Value must be between {} and {}",
-                    min, max
-                )))
-            }
-        })
+        .map(|v: T| check_range(v, &min, &max, max_inclusive))
         .transpose()
 }
 

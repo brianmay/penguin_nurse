@@ -35,8 +35,8 @@ impl NestedConsumableId {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NestedConsumable {
     pub id: NestedConsumableId,
-    pub quantity: Option<f64>,
-    pub liquid_mls: Option<f64>,
+    pub quantity: Option<bigdecimal::BigDecimal>,
+    pub liquid_mls: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
@@ -59,15 +59,15 @@ impl ConsumableItem {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewNestedConsumable {
     pub id: NestedConsumableId,
-    pub quantity: Option<f64>,
-    pub liquid_mls: Option<f64>,
+    pub quantity: Option<bigdecimal::BigDecimal>,
+    pub liquid_mls: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
 }
 
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeNestedConsumable {
-    pub quantity: MaybeSet<Option<f64>>,
-    pub liquid_mls: MaybeSet<Option<f64>>,
+    pub quantity: MaybeSet<Option<bigdecimal::BigDecimal>>,
+    pub liquid_mls: MaybeSet<Option<bigdecimal::BigDecimal>>,
     pub comments: MaybeSet<Option<String>>,
 }

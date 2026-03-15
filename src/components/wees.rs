@@ -13,8 +13,8 @@ use crate::{
         Colour, Dialog, EditError, FieldValue, FormSaveCancelButton, InputColour, InputDateTime,
         InputDuration, InputNumber, InputSymptomIntensity, InputTextArea, InputUrgency, Saving,
         ValidationError, validate_colour, validate_comments, validate_duration,
-        validate_fixed_offset_date_time, validate_millilitres, validate_symptom_intensity,
-        validate_urgency,
+        validate_fixed_offset_date_time, validate_symptom_intensity, validate_urgency,
+        validate_wee_millilitres,
     },
     functions::wees::{create_wee, delete_wee, update_wee},
     models::{ChangeWee, MaybeSet, NewWee, Urgency, UserId, Wee},
@@ -118,7 +118,7 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
     });
 
     let validate = {
-        let validate_mls = use_memo(move || validate_millilitres(&mls()));
+        let validate_mls = use_memo(move || validate_wee_millilitres(&mls()));
         Validate {
             time: use_memo(move || validate_fixed_offset_date_time(&time())),
             duration: use_memo(move || validate_duration(&duration())),

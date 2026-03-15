@@ -801,8 +801,8 @@ pub fn ConsumableUpdateIngredients(
 
 #[derive(Debug, Clone)]
 struct ValidateNested {
-    quantity: Memo<Result<Option<f64>, ValidationError>>,
-    liquid_mls: Memo<Result<Option<f64>, ValidationError>>,
+    quantity: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
+    liquid_mls: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 

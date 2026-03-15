@@ -14,8 +14,8 @@ use super::consumables::Consumable;
 pub struct NestedConsumable {
     pub parent_id: i64,
     pub consumable_id: i64,
-    pub quantity: Option<f64>,
-    pub liquid_mls: Option<f64>,
+    pub quantity: Option<bigdecimal::BigDecimal>,
+    pub liquid_mls: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
@@ -94,8 +94,8 @@ pub async fn get_parent_consumables(
 pub struct NewNestedConsumable<'a> {
     pub parent_id: i64,
     pub consumable_id: i64,
-    pub quantity: Option<f64>,
-    pub liquid_mls: Option<f64>,
+    pub quantity: Option<&'a bigdecimal::BigDecimal>,
+    pub liquid_mls: Option<&'a bigdecimal::BigDecimal>,
     pub comments: Option<&'a str>,
 }
 
@@ -106,8 +106,8 @@ impl<'a> NewNestedConsumable<'a> {
         Self {
             parent_id: parent_id.as_inner(),
             consumable_id: consumable_id.as_inner(),
-            quantity: nested_consumable.quantity,
-            liquid_mls: nested_consumable.liquid_mls,
+            quantity: nested_consumable.quantity.as_ref(),
+            liquid_mls: nested_consumable.liquid_mls.as_ref(),
             comments: nested_consumable.comments.as_deref(),
         }
     }
@@ -128,16 +128,16 @@ pub async fn create_nested_consumable(
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::nested_consumables)]
 pub struct ChangeNestedConsumable<'a> {
-    pub quantity: Option<Option<f64>>,
-    pub liquid_mls: Option<Option<f64>>,
+    pub quantity: Option<Option<&'a bigdecimal::BigDecimal>>,
+    pub liquid_mls: Option<Option<&'a bigdecimal::BigDecimal>>,
     pub comments: Option<Option<&'a str>>,
 }
 
 impl<'a> ChangeNestedConsumable<'a> {
     pub fn from_front_end(nested_consumable: &'a crate::models::ChangeNestedConsumable) -> Self {
         Self {
-            quantity: nested_consumable.quantity.into_option(),
-            liquid_mls: nested_consumable.liquid_mls.into_option(),
+            quantity: nested_consumable.quantity.as_inner_ref().into_option(),
+            liquid_mls: nested_consumable.liquid_mls.as_inner_ref().into_option(),
             comments: nested_consumable.comments.map_inner_deref().into_option(),
         }
     }

@@ -39,7 +39,7 @@ struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
     duration: Memo<Result<TimeDelta, ValidationError>>,
     consumption_type: Memo<Result<ConsumptionType, ValidationError>>,
-    liquid_mls: Memo<Result<Option<f64>, ValidationError>>,
+    liquid_mls: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
@@ -677,8 +677,8 @@ pub fn ConsumptionUpdateIngredients(
 
 #[derive(Debug, Clone)]
 struct ValidateConsumption {
-    quantity: Memo<Result<Option<f64>, ValidationError>>,
-    liquid_mls: Memo<Result<Option<f64>, ValidationError>>,
+    quantity: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
+    liquid_mls: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
@@ -843,12 +843,14 @@ pub fn consumption_errors(
     }
 
     if let Some(consumption_consumables) = &consumption_consumables {
-        let expected_mls = consumption.liquid_mls.unwrap_or(0.0);
-        let total_nested_mls: f64 = consumption_consumables
+        let zero = bigdecimal::BigDecimal::from(0);
+        let expected_mls = consumption.liquid_mls.as_ref().unwrap_or(&zero);
+        let total_nested_mls: bigdecimal::BigDecimal = consumption_consumables
             .iter()
-            .filter_map(|ci| ci.nested.liquid_mls)
+            .filter_map(|ci| ci.nested.liquid_mls.as_ref())
+            .cloned()
             .sum();
-        if (expected_mls - total_nested_mls).abs() > f64::EPSILON {
+        if *expected_mls != total_nested_mls {
             errors.push(rsx! {
                 div { class: "text-warning",
                     {

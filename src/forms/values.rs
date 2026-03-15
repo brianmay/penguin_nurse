@@ -217,25 +217,6 @@ impl FieldValue for f32 {
     }
 }
 
-impl FieldValue for f64 {
-    type RawValue = String;
-    type DerefValue = str;
-
-    fn as_raw(&self) -> String {
-        self.to_string()
-    }
-    fn from_raw(value: &str) -> Result<Self, FieldValueError> {
-        let value = value.trim();
-        if value.is_empty() {
-            return Err(FieldValueError::RequiredValue);
-        }
-        match value.parse() {
-            Ok(value) => Ok(value),
-            Err(_) => Err(FieldValueError::InvalidValue),
-        }
-    }
-}
-
 impl FieldValue for bigdecimal::BigDecimal {
     type RawValue = String;
     type DerefValue = str;
