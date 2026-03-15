@@ -17,6 +17,7 @@ pub mod sql_types {
 diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::ConsumableUnit;
+    use super::sql_types::ConsumptionType;
 
     consumables (id) {
         id -> Int8,
@@ -30,6 +31,7 @@ diesel::table! {
         destroyed -> Nullable<Timestamptz>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        consumption_type -> Nullable<ConsumptionType>,
     }
 }
 

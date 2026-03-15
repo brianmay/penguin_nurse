@@ -12,7 +12,7 @@ use crate::{
         buttons::{ChangeButton, CreateButton},
         consumables::{
             ActiveDialog, ConsumableDialog, ConsumableItemList, ListDialogReference, Operation,
-            OrganicIcon,
+            OrganicIcon, consumable_errors,
         },
         events::Markdown,
     },
@@ -29,6 +29,7 @@ fn EntryRow(
 ) -> Element {
     let consumable = consumable_with_items.consumable;
     let items = consumable_with_items.items;
+    let errors = consumable_errors(&consumable, Some(&items));
 
     let id = consumable.id;
 
@@ -46,6 +47,12 @@ fn EntryRow(
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 if let Some(brand) = &consumable.brand {
                     div { {brand.clone()} }
+                }
+            }
+
+            td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
+                if let Some(consumption_type) = consumable.consumption_type {
+                    {consumption_type.as_title()}
                 }
             }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
@@ -72,6 +79,20 @@ fn EntryRow(
                     {destroyed.with_timezone(&Local).to_string()}
                 }
             }
+        }
+
+        {
+            errors
+                .into_iter()
+                .map(|error| {
+                    rsx! {
+                        tr {
+                            td { colspan: 4, class: "block sm:table-cell",
+                                div { class: "text-error", {error} }
+                            }
+                        }
+                    }
+                })
         }
 
         if selected() == Some(id) {
@@ -267,6 +288,7 @@ pub fn ConsumableList(dialog: ReadSignal<Option<ListDialogReference>>) -> Elemen
                             tr {
                                 th { "Name" }
                                 th { "Brand" }
+                                th { "Consumption" }
                                 th { "Unit" }
                                 th { "Ingredients" }
                                 th { "Comments" }

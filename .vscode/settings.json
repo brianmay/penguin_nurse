@@ -47,7 +47,8 @@
         "timezone",
         "trgm",
         "userinfo",
-        "xlink"
+        "xlink",
+        "ZBAR"
     ],
     "rust-analyzer.cargo.features": [
         "server"

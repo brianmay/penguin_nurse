@@ -819,7 +819,7 @@ pub fn ConsumptionSummary(
         if !errors.is_empty() {
             div {
                 for error in errors {
-                    {error}
+                    div { class: "text-error", {error} }
                 }
             }
         }
@@ -833,13 +833,14 @@ pub fn ConsumptionSummary(
 pub fn consumption_errors(
     consumption: &Consumption,
     consumption_consumables: Option<&Vec<ConsumptionItem>>,
-) -> Vec<Element> {
+) -> Vec<String> {
     let mut errors = Vec::new();
 
     if consumption.duration.num_seconds() < 2 {
-        errors.push(rsx! {
-            div { class: "text-error", "Duration is suspiciously short" }
-        });
+        errors.push(format!(
+            "Duration {} is suspiciously short",
+            consumption.duration
+        ));
     }
 
     if let Some(consumption_consumables) = &consumption_consumables {
@@ -851,17 +852,26 @@ pub fn consumption_errors(
             .cloned()
             .sum();
         if *expected_mls != total_nested_mls {
-            errors.push(rsx! {
-                div { class: "text-warning",
-                    {
-                        format!(
-                            "Liquid ml total from ingredients {}ml does not match consumption liquid ml {}ml",
-                            total_nested_mls,
-                            expected_mls,
-                        )
-                    }
-                }
-            });
+            errors.push(format!(
+                "Liquid ml total from ingredients {}ml does not match consumption liquid ml {}ml",
+                total_nested_mls, expected_mls,
+            ));
+        }
+    }
+
+    // check for any nested consumables with consumption type that doesn't match parent
+    if let Some(consumption_consumables) = &consumption_consumables {
+        for ci in consumption_consumables.iter() {
+            if let Some(consumption_type) = ci.consumable.consumption_type
+                && consumption_type != consumption.consumption_type
+            {
+                errors.push(format!(
+                    "Ingredient {} has consumption type {} which does not match parent consumption type {}",
+                    ci.consumable.name,
+                    consumption_type.as_title(),
+                    consumption.consumption_type.as_title(),
+                ));
+            }
         }
     }
 

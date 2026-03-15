@@ -12,11 +12,11 @@ use crate::{
     components::events::Markdown,
     forms::{
         Barcode, Dialog, EditError, FieldValue, FormCloseButton, FormDeleteButton, FormEditButton,
-        FormSaveCancelButton, InputBoolean, InputConsumable, InputConsumableUnitType, InputNumber,
-        InputOptionDateTimeUtc, InputString, InputTextArea, Saving, ValidationError,
-        validate_barcode, validate_brand, validate_comments, validate_consumable_millilitres,
-        validate_consumable_quantity, validate_consumable_unit, validate_maybe_date_time,
-        validate_name,
+        FormSaveCancelButton, InputBoolean, InputConsumable, InputConsumableUnitType,
+        InputConsumptionTypeMaybe, InputNumber, InputOptionDateTimeUtc, InputString, InputTextArea,
+        Saving, ValidationError, validate_barcode, validate_brand, validate_comments,
+        validate_consumable_millilitres, validate_consumable_quantity, validate_consumable_unit,
+        validate_consumption_type_maybe, validate_maybe_date_time, validate_name,
     },
     functions::consumables::{
         create_consumable, create_nested_consumable, delete_consumable, delete_nested_consumable,
@@ -24,8 +24,8 @@ use crate::{
     },
     models::{
         ChangeConsumable, ChangeNestedConsumable, Consumable, ConsumableId, ConsumableItem,
-        ConsumableUnit, MaybeSet, NestedConsumable, NestedConsumableId, NewConsumable,
-        NewNestedConsumable,
+        ConsumableUnit, ConsumptionType, MaybeSet, NestedConsumable, NestedConsumableId,
+        NewConsumable, NewNestedConsumable,
     },
 };
 
@@ -45,6 +45,7 @@ struct Validate {
     comments: Memo<Result<Option<String>, ValidationError>>,
     created: Memo<Result<Option<DateTime<Utc>>, ValidationError>>,
     destroyed: Memo<Result<Option<DateTime<Utc>>, ValidationError>>,
+    consumption_type: Memo<Result<Option<ConsumptionType>, ValidationError>>,
 }
 
 async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumable, EditError> {
@@ -56,6 +57,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumable, Edit
     let comments = validate.comments.read().clone()?;
     let created: Option<DateTime<Utc>> = validate.created.read().clone()?;
     let destroyed: Option<DateTime<Utc>> = validate.destroyed.read().clone()?;
+    let consumption_type = validate.consumption_type.read().clone()?;
 
     match op {
         Operation::Create => {
@@ -68,6 +70,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumable, Edit
                 comments,
                 created,
                 destroyed,
+                consumption_type,
             };
             create_consumable(updates).await.map_err(EditError::Server)
         }
@@ -81,6 +84,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumable, Edit
                 comments: MaybeSet::Set(comments),
                 created: MaybeSet::Set(created),
                 destroyed: MaybeSet::Set(destroyed),
+                consumption_type: MaybeSet::Set(consumption_type),
             };
             update_consumable(consumable.id, changes)
                 .await
@@ -135,6 +139,11 @@ pub fn ConsumableUpdate(
         Operation::Update { consumable } => consumable.destroyed.as_raw(),
     });
 
+    let consumption_type = use_signal(|| match &op {
+        Operation::Create => None,
+        Operation::Update { consumable } => consumable.consumption_type,
+    });
+
     let validate = Validate {
         name: use_memo(move || validate_name(&name())),
         brand: use_memo(move || validate_brand(&brand())),
@@ -144,6 +153,7 @@ pub fn ConsumableUpdate(
         comments: use_memo(move || validate_comments(&comments())),
         created: use_memo(move || validate_maybe_date_time(&created())),
         destroyed: use_memo(move || validate_maybe_date_time(&destroyed())),
+        consumption_type: use_memo(move || validate_consumption_type_maybe(consumption_type())),
     };
 
     let mut saving = use_signal(|| Saving::No);
@@ -159,6 +169,7 @@ pub fn ConsumableUpdate(
             || validate.comments.read().is_err()
             || validate.created.read().is_err()
             || validate.destroyed.read().is_err()
+            || validate.consumption_type.read().is_err()
             || disabled()
     });
 
@@ -235,6 +246,13 @@ pub fn ConsumableUpdate(
                 label: "Unit",
                 value: unit,
                 validate: validate.unit,
+                disabled,
+            }
+            InputConsumptionTypeMaybe {
+                id: "consumption_type",
+                label: "Consumption Type",
+                value: consumption_type,
+                validate: validate.consumption_type,
                 disabled,
             }
             InputTextArea {
@@ -660,7 +678,10 @@ pub fn ConsumableUpdateIngredients(
             match nested_consumables() {
                 Some(Ok(nested_consumables)) => {
                     rsx! {
-                        ConsumableSummary { consumable: consumable.clone() }
+                        ConsumableSummary {
+                            consumable: consumable.clone(),
+                            nested_consumables: Some(nested_consumables.clone()),
+                        }
                         div { class: "p-4",
                             ul {
                                 for item in nested_consumables {
@@ -940,7 +961,12 @@ pub fn ConsumableIcon() -> Element {
 }
 
 #[component]
-pub fn ConsumableSummary(consumable: Consumable) -> Element {
+pub fn ConsumableSummary(
+    consumable: Consumable,
+    nested_consumables: Option<Vec<ConsumableItem>>,
+) -> Element {
+    let errors = consumable_errors(&consumable, nested_consumables.as_ref());
+
     rsx! {
         div {
             if consumable.is_organic {
@@ -953,9 +979,19 @@ pub fn ConsumableSummary(consumable: Consumable) -> Element {
                 div { {brand.clone()} }
             }
         }
+        if let Some(consumption_type) = consumable.consumption_type {
+            div { {consumption_type.as_title()} }
+        }
         div {
             span { class: "sm:hidden", "Unit: " }
             {consumable.unit.to_string()}
+        }
+        if !errors.is_empty() {
+            div {
+                for error in errors {
+                    div { class: "text-error", {error} }
+                }
+            }
         }
         div {
             if let Some(comments) = &consumable.comments {
@@ -975,6 +1011,31 @@ pub fn ConsumableSummary(consumable: Consumable) -> Element {
             }
         }
     }
+}
+
+pub fn consumable_errors(
+    consumable: &Consumable,
+    nested_consumables: Option<&Vec<ConsumableItem>>,
+) -> Vec<String> {
+    let mut errors = Vec::new();
+
+    if let Some(nested_consumables) = nested_consumables {
+        for nc in nested_consumables {
+            if let (Some(nc_type), Some(consumable_type)) =
+                (nc.consumable.consumption_type, consumable.consumption_type)
+                && nc_type != consumable_type
+            {
+                errors.push(format!(
+                    "Ingredient {} has consumption type {} which does not match parent consumption type {}",
+                    nc.consumable.name,
+                    nc_type.as_title(),
+                    consumable_type.as_title(),
+                ));
+            }
+        }
+    }
+
+    errors
 }
 
 #[component]

@@ -1,0 +1,2 @@
+ALTER TABLE consumables
+ADD COLUMN consumption_type consumption_type;

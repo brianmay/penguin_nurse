@@ -17,9 +17,9 @@ pub use dialog::Dialog;
 pub use errors::{EditError, ValidationError};
 pub use fields::{
     InputBoolean, InputColour, InputConsumable, InputConsumableUnitType, InputConsumptionType,
-    InputDateTime, InputDuration, InputExerciseCalories, InputExerciseRpe, InputExerciseType,
-    InputNumber, InputOptionDateTimeUtc, InputPassword, InputPooBristolType, InputString,
-    InputSymptomIntensity, InputTextArea, InputUrgency,
+    InputConsumptionTypeMaybe, InputDateTime, InputDuration, InputExerciseCalories,
+    InputExerciseRpe, InputExerciseType, InputNumber, InputOptionDateTimeUtc, InputPassword,
+    InputPooBristolType, InputString, InputSymptomIntensity, InputTextArea, InputUrgency,
 };
 pub use saving::MyForm;
 pub use saving::Saving;
@@ -28,13 +28,14 @@ pub use validation::{
     validate_brand, validate_bristol, validate_colour, validate_colour_hue,
     validate_colour_saturation, validate_colour_value, validate_comments,
     validate_consumable_millilitres, validate_consumable_quantity, validate_consumable_unit,
-    validate_consumption_type, validate_diastolic_bp, validate_distance, validate_duration,
-    validate_email, validate_exercise_calories, validate_exercise_rpe, validate_exercise_type,
-    validate_fixed_offset_date_time, validate_full_name, validate_height, validate_location,
-    validate_maybe_date_time, validate_name, validate_password, validate_poo_quantity,
-    validate_pulse, validate_symptom_extra_details, validate_symptom_intensity,
-    validate_systolic_bp, validate_urgency, validate_username, validate_waist_circumference,
-    validate_wee_millilitres, validate_weight,
+    validate_consumption_type, validate_consumption_type_maybe, validate_diastolic_bp,
+    validate_distance, validate_duration, validate_email, validate_exercise_calories,
+    validate_exercise_rpe, validate_exercise_type, validate_fixed_offset_date_time,
+    validate_full_name, validate_height, validate_location, validate_maybe_date_time,
+    validate_name, validate_password, validate_poo_quantity, validate_pulse,
+    validate_symptom_extra_details, validate_symptom_intensity, validate_systolic_bp,
+    validate_urgency, validate_username, validate_waist_circumference, validate_wee_millilitres,
+    validate_weight,
 };
 
 mod values;

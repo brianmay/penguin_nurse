@@ -131,11 +131,8 @@ fn EntryRow(
                                 },
                             }
 
-
-
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-
 
                             WeeDuration { duration: exercise.duration }
                         }

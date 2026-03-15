@@ -129,6 +129,12 @@ pub fn validate_consumption_type(
     consumption_type.ok_or_else(|| ValidationError("Consumption type is required".to_string()))
 }
 
+pub fn validate_consumption_type_maybe(
+    consumption_type: Option<ConsumptionType>,
+) -> Result<Option<ConsumptionType>, ValidationError> {
+    Ok(consumption_type)
+}
+
 pub fn validate_exercise_type(
     exercise_type: Option<ExerciseType>,
 ) -> Result<ExerciseType, ValidationError> {

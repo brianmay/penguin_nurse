@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::MaybeSet;
 
-use super::ConsumableItem;
+use super::{ConsumableItem, ConsumptionType};
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, AllValues)]
 pub enum ConsumableUnit {
@@ -96,6 +96,7 @@ pub struct Consumable {
     pub destroyed: Option<DateTime<Utc>>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub consumption_type: Option<ConsumptionType>,
 }
 
 #[cfg(feature = "server")]
@@ -121,6 +122,7 @@ pub struct NewConsumable {
     pub comments: Option<String>,
     pub created: Option<DateTime<Utc>>,
     pub destroyed: Option<DateTime<Utc>>,
+    pub consumption_type: Option<ConsumptionType>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -133,4 +135,5 @@ pub struct ChangeConsumable {
     pub comments: MaybeSet<Option<String>>,
     pub created: MaybeSet<Option<DateTime<Utc>>>,
     pub destroyed: MaybeSet<Option<DateTime<Utc>>>,
+    pub consumption_type: MaybeSet<Option<ConsumptionType>>,
 }

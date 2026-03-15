@@ -11,6 +11,7 @@ use tap::Pipe;
 use crate::models;
 use crate::server::database::{connection::DatabaseConnection, schema};
 
+use super::consumptions::ConsumptionType;
 use super::nested_consumables::NestedConsumable;
 
 #[derive(diesel_derive_enum::DbEnum, Debug, Copy, Clone)]
@@ -60,6 +61,7 @@ pub struct Consumable {
     pub destroyed: Option<chrono::DateTime<chrono::Utc>>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub consumption_type: Option<ConsumptionType>,
 }
 
 impl From<Consumable> for crate::models::Consumable {
@@ -76,6 +78,7 @@ impl From<Consumable> for crate::models::Consumable {
             created_at: consumable.created_at,
             updated_at: consumable.updated_at,
             comments: consumable.comments,
+            consumption_type: consumable.consumption_type.map(|x| x.into()),
         }
     }
 }
@@ -181,6 +184,7 @@ pub struct NewConsumable<'a> {
     pub comments: Option<&'a str>,
     pub created: Option<DateTime<Utc>>,
     pub destroyed: Option<DateTime<Utc>>,
+    pub consumption_type: Option<ConsumptionType>,
 }
 
 impl<'a> NewConsumable<'a> {
@@ -194,6 +198,7 @@ impl<'a> NewConsumable<'a> {
             comments: consumable.comments.as_deref(),
             created: consumable.created.as_ref().copied(),
             destroyed: consumable.destroyed.as_ref().copied(),
+            consumption_type: consumable.consumption_type.map(|x| x.into()),
         }
     }
 }
@@ -221,6 +226,7 @@ pub struct ChangeConsumable<'a> {
     pub comments: Option<Option<&'a str>>,
     pub created: Option<Option<DateTime<Utc>>>,
     pub destroyed: Option<Option<DateTime<Utc>>>,
+    pub consumption_type: Option<Option<ConsumptionType>>,
 }
 
 impl<'a> ChangeConsumable<'a> {
@@ -234,6 +240,7 @@ impl<'a> ChangeConsumable<'a> {
             comments: consumable.comments.map_inner_deref().into_option(),
             created: consumable.created.into_option(),
             destroyed: consumable.destroyed.into_option(),
+            consumption_type: consumable.consumption_type.map_inner_into().into_option(),
         }
     }
 }

@@ -695,6 +695,53 @@ pub fn InputConsumptionType(
 }
 
 #[component]
+pub fn InputConsumptionTypeMaybe(
+    id: &'static str,
+    label: &'static str,
+    value: Signal<Option<ConsumptionType>>,
+    validate: Memo<Result<Option<ConsumptionType>, ValidationError>>,
+    disabled: Memo<bool>,
+) -> Element {
+    let options = std::iter::once(InputOption {
+        id: "none".to_string(),
+        value: None,
+        icon: rsx! {},
+        title: "None".to_string(),
+        label: rsx! { "None" },
+    })
+    .chain(
+        ConsumptionType::all_values()
+            .iter()
+            .map(|consumption_type| {
+                let id = consumption_type.as_id();
+                let icon = rsx! {
+                    ConsumptionTypeIcon { consumption_type: *consumption_type }
+                };
+                let label = consumption_type.as_title();
+                InputOption {
+                    id: id.to_string(),
+                    value: Some(*consumption_type),
+                    icon,
+                    title: label.to_string(),
+                    label: rsx! { "{label}" },
+                }
+            }),
+    )
+    .collect::<Vec<_>>();
+
+    rsx! {
+        InputSelect {
+            id,
+            label,
+            validate,
+            value,
+            disabled,
+            options,
+        }
+    }
+}
+
+#[component]
 pub fn InputConsumableUnitType(
     id: &'static str,
     label: &'static str,
