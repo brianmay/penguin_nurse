@@ -324,6 +324,15 @@ pub const SYMPTOM_DEFS: &[SymptomMeta] = &[
         set_change: |cs, v| cs.neck_pain = MaybeSet::Set(v),
     },
     SymptomMeta {
+        id: "shoulder_pain",
+        label: "Shoulder Pain",
+        category: SymptomCategory::Musculoskeletal,
+        accessor: |s| s.shoulder_pain,
+        extra: None,
+        set_new: |ns, v| ns.shoulder_pain = v,
+        set_change: |cs, v| cs.shoulder_pain = MaybeSet::Set(v),
+    },
+    SymptomMeta {
         id: "joint_pain",
         label: "Joint Pain",
         category: SymptomCategory::Musculoskeletal,
@@ -421,15 +430,6 @@ pub const SYMPTOM_DEFS: &[SymptomMeta] = &[
         extra: None,
         set_new: |ns, v| ns.insomnia = v,
         set_change: |cs, v| cs.insomnia = MaybeSet::Set(v),
-    },
-    SymptomMeta {
-        id: "shoulder_pain",
-        label: "Shoulder Pain",
-        category: SymptomCategory::Musculoskeletal,
-        accessor: |s| s.shoulder_pain,
-        extra: None,
-        set_new: |ns, v| ns.shoulder_pain = v,
-        set_change: |cs, v| cs.shoulder_pain = MaybeSet::Set(v),
     },
     SymptomMeta {
         id: "hand_pain",
