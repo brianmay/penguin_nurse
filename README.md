@@ -27,6 +27,23 @@ To run for a different platform, use the `--platform platform` flag. E.g.
 dx serve --platform desktop
 ```
 
+## CLI Tools
+
+### Data Linter
+
+The project includes a CLI tool to validate database records and check for data inconsistencies. See [docs/LINT.md](docs/LINT.md) for details.
+
+Quick usage with Nix:
+```bash
+DATABASE_URL=postgres://user:password@localhost/penguin_nurse nix run .#lint
+```
+
+Or with Cargo:
+```bash
+export DATABASE_URL=postgres://user:password@localhost/penguin_nurse
+./lint.sh
+```
+
 ## Style guidelines
 
 

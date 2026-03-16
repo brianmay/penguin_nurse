@@ -7,6 +7,11 @@ license = "AGPL-3.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "lint"
+path = "src/bin/lint.rs"
+required-features = ["cli-only"]
+
 [dependencies]
 # dioxus = { git = "https://github.com/DioxusLabs/dioxus", branch = "main" }
 # dioxus-router = { git = "https://github.com/DioxusLabs/dioxus", branch = "main" }
@@ -24,7 +29,7 @@ axum = { version = "0.8.6", optional = true }
 diesel-async = { version = "0.7.0", features = ["async-connection-wrapper", "mobc", "postgres"], optional = true }
 diesel-derive-enum = { version = "3.0.0-beta.1", features = ["postgres"], optional = true }
 diesel_migrations = { version = "2.2.0", features = ["postgres"], optional = true }
-tokio = { version = "1.50.0", optional = true }
+tokio = { version = "1.50.0", optional = true, features = ["full"] }
 tracing-subscriber = { version = "0.3.20", optional = true }
 tower-sessions = { version = "0.14.0", optional = true }
 thiserror = "2.0.17"
@@ -59,6 +64,7 @@ web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
 server = ["dioxus/server", "dioxus-cli-config", "tokio", "axum", "diesel", "diesel-async", "diesel-derive-enum", "diesel_migrations", "tracing-subscriber", "tower-sessions", "tower-sessions-core", "mobc", "axum-login", "password-auth", "openid", "arc-swap", "url"]
+cli-only = ["server"]
 
 [profile.wasm-dev]
 inherits = "dev"

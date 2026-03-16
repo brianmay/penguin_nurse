@@ -52,8 +52,8 @@ fn EntryRow(
     let navigator = navigator();
     let entry: Entry = entry();
     let id = entry.get_id();
-    let update_dialog_reference = entry.get_update_dialog_reference();
-    let delete_dialog_reference = entry.get_delete_dialog_reference();
+    let update_dialog_reference = DialogReference::get_update_dialog_reference(&entry);
+    let delete_dialog_reference = DialogReference::get_delete_dialog_reference(&entry);
 
     rsx! {
         tr {

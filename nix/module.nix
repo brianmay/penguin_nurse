@@ -17,6 +17,7 @@ let
 
   system = pkgs.stdenv.hostPlatform.system;
   penguin-nurse = self.packages.${system}.default;
+  lint = self.packages.${system}.lint;
 
 in
 # wrapper = pkgs.writeShellScriptBin "penguin-nurse" ''
@@ -62,6 +63,7 @@ in
   };
 
   config = mkIf cfg.enable {
+    environment.systemPackages = [ lint ];
     users.users.penguin_nurse = {
       isSystemUser = true;
       description = "Penguin Nurse user";

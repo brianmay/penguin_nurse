@@ -261,6 +261,46 @@
             meta.mainProgram = "penguin_nurse";
           };
 
+        lint =
+          let
+            cargoToml = builtins.fromTOML (builtins.readFile ./Cargo.toml);
+            rev = build_env.VCS_REF;
+          in
+          pkgs.rustPlatform.buildRustPackage {
+            pname = "penguin-nurse-lint";
+            version = "${cargoToml.package.version}-${rev}";
+            src = ./.;
+            strictDeps = true;
+            buildInputs = [ pkgs.openssl ];
+            nativeBuildInputs = [
+              rustPlatform
+              postgres
+              pkgs.pkg-config
+            ];
+            # Only build the lint binary, skip tests and other binaries
+            cargoBuildFlags = [ "--bin" "lint" ];
+            doCheck = false;
+            buildAndTestSubdir = null;
+            buildPhase = ''
+              export VCS_REF="${build_env.VCS_REF}"
+              export BUILD_DATE="${build_env.BUILD_DATE}"
+              cargo build --release --bin lint --features cli-only
+            '';
+            installPhase = ''
+              mkdir -p $out/bin
+              cp target/release/lint $out/bin/penguin-nurse-lint
+            '';
+            cargoLock.lockFile = ./Cargo.lock;
+            cargoLock.outputHashes = {
+              # "const-serialize-0.7.0-rc.2" = "sha256-G2M0SyCWitPORvI3IeR2juuzLn1cOLhzbH6Y9lq71I8=";
+              # "const-serialize-0.7.0-rc.2" = pkgs.lib.fakeHash;
+            };
+            meta = {
+              description = "CLI tool to validate Penguin Nurse database records";
+              mainProgram = "penguin-nurse-lint";
+            };
+          };
+
         test_module = pkgs.testers.nixosTest {
           name = "penguin-nurse-test";
           nodes.machine =
@@ -360,6 +400,7 @@
           # frontend = frontend-bindgen;
           # combined = combined;
           default = combined;
+          lint = lint;
         };
         devShells.default = devShell;
       }

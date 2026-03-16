@@ -5,11 +5,12 @@ use super::entry::{Entry, EntryData, Event};
 use super::poos::Poo;
 use super::wees::Wee;
 
+#[derive(Default)]
 pub struct Timeline(Vec<Entry>);
 
 impl Timeline {
     pub fn new() -> Self {
-        Timeline(vec![])
+        Self::default()
     }
 
     pub fn add_wees(&mut self, wees: Vec<Wee>) {
