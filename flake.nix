@@ -278,7 +278,10 @@
               pkgs.pkg-config
             ];
             # Only build the lint binary, skip tests and other binaries
-            cargoBuildFlags = [ "--bin" "lint" ];
+            cargoBuildFlags = [
+              "--bin"
+              "lint"
+            ];
             doCheck = false;
             buildAndTestSubdir = null;
             buildPhase = ''
@@ -312,9 +315,6 @@
               services.penguin-nurse = {
                 enable = true;
                 port = 4000;
-                secretsFile = builtins.toFile "penguin-nurse.env" ''
-                  DATABASE_URL="postgresql://penguin_nurse:your_secure_password_here@localhost/penguin_nurse"
-                '';
               };
               system.stateVersion = "24.11";
 

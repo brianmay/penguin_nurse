@@ -50,16 +50,6 @@ in
         Used to generate the OIDC redirect URL. Not used if OIDC not configured.
       '';
     };
-    secretsFile = mkOption {
-      type = types.str;
-      example = "/run/secrets/penguin-nurse.env";
-      description = lib.mdDoc ''
-        Path to an env file containing the secrets used by penguin-nurse.
-
-        Must contain at least:
-        - `DATABASE_URL` - The URL to the database.
-      '';
-    };
   };
 
   config = mkIf cfg.enable {
@@ -81,12 +71,12 @@ in
       serviceConfig = {
         User = "penguin_nurse";
         ExecStart = "${lib.getExe penguin-nurse}";
-        EnvironmentFile = cfg.secretsFile;
       };
       environment = {
         RUST_LOG = "info";
         PORT = toString cfg.port;
         BASE_URL = cfg.base_url;
+        DATABASE_URL = "postgresql:///penguin_nurse?host=/var/run/postgresql";
       };
     };
   };
