@@ -43,6 +43,58 @@ use crate::{
     use_user,
 };
 
+fn get_update_dialog_reference(entry: &Entry) -> DialogReference {
+    match &entry.data {
+        EntryData::Poo(poo) => DialogReference::UpdatePoo { poo_id: poo.id },
+        EntryData::Wee(wee) => DialogReference::UpdateWee { wee_id: wee.id },
+        EntryData::WeeUrge(wee_urge) => DialogReference::UpdateWeeUrge {
+            wee_urge_id: wee_urge.id,
+        },
+        EntryData::Consumption(consumption_with_items) => DialogReference::UpdateBasic {
+            consumption_id: consumption_with_items.consumption.id,
+        },
+        EntryData::Exercise(exercise) => DialogReference::UpdateExercise {
+            exercise_id: exercise.id,
+        },
+        EntryData::HealthMetric(health_metric) => DialogReference::UpdateHealthMetric {
+            health_metric_id: health_metric.id,
+        },
+        EntryData::Symptom(symptom) => DialogReference::UpdateSymptom {
+            symptom_id: symptom.id,
+        },
+        EntryData::Reflux(reflux) => DialogReference::UpdateReflux {
+            reflux_id: reflux.id,
+        },
+        EntryData::Note(note) => DialogReference::UpdateNote { note_id: note.id },
+    }
+}
+
+fn get_delete_dialog_reference(entry: &Entry) -> DialogReference {
+    match &entry.data {
+        EntryData::Poo(poo) => DialogReference::DeletePoo { poo_id: poo.id },
+        EntryData::Wee(wee) => DialogReference::DeleteWee { wee_id: wee.id },
+        EntryData::WeeUrge(wee_urge) => DialogReference::DeleteWeeUrge {
+            wee_urge_id: wee_urge.id,
+        },
+        EntryData::Consumption(consumption_with_items) => DialogReference::DeleteConsumption {
+            consumption_id: consumption_with_items.consumption.id,
+        },
+        EntryData::Exercise(exercise) => DialogReference::DeleteExercise {
+            exercise_id: exercise.id,
+        },
+        EntryData::HealthMetric(health_metric) => DialogReference::DeleteHealthMetric {
+            health_metric_id: health_metric.id,
+        },
+        EntryData::Symptom(symptom) => DialogReference::DeleteSymptom {
+            symptom_id: symptom.id,
+        },
+        EntryData::Reflux(reflux) => DialogReference::DeleteReflux {
+            reflux_id: reflux.id,
+        },
+        EntryData::Note(note) => DialogReference::DeleteNote { note_id: note.id },
+    }
+}
+
 #[component]
 fn EntryRow(
     entry: ReadSignal<Entry>,
@@ -52,8 +104,8 @@ fn EntryRow(
     let navigator = navigator();
     let entry: Entry = entry();
     let id = entry.get_id();
-    let update_dialog_reference = entry.get_update_dialog_reference();
-    let delete_dialog_reference = entry.get_delete_dialog_reference();
+    let update_dialog_reference = get_update_dialog_reference(&entry);
+    let delete_dialog_reference = get_delete_dialog_reference(&entry);
 
     rsx! {
         tr {

@@ -83,6 +83,43 @@ impl From<Consumable> for crate::models::Consumable {
     }
 }
 
+pub async fn get_all_consumables_with_nested(
+    conn: &mut DatabaseConnection,
+) -> Result<Vec<(Consumable, Vec<(NestedConsumable, Consumable)>)>, diesel::result::Error> {
+    use crate::server::database::schema::consumables::dsl as q;
+    use crate::server::database::schema::consumables::table;
+    use crate::server::database::schema::nested_consumables::dsl as q_nested;
+    use crate::server::database::schema::nested_consumables::table as nested_table;
+
+    let consumables: Vec<Consumable> = table
+        .select(Consumable::as_select())
+        .order(q::name.asc())
+        .get_results(conn)
+        .await?;
+
+    let nested: Vec<(NestedConsumable, Consumable)> = nested_table
+        .filter(q_nested::parent_id.eq_any(consumables.iter().map(|x| x.id)))
+        .inner_join(table.on(q::id.eq(q_nested::consumable_id)))
+        .load(conn)
+        .await?;
+
+    let id_indices: HashMap<i64, usize> = consumables
+        .iter()
+        .enumerate()
+        .map(|(i, p)| (p.id, i))
+        .collect();
+
+    let mut result: Vec<_> = consumables.into_iter().map(|c| (c, Vec::new())).collect();
+
+    for (nested_consumable, consumable) in nested {
+        if let Some(index) = nested_consumable.parent_id.pipe(|i| id_indices.get(&i)) {
+            result[*index].1.push((nested_consumable, consumable));
+        }
+    }
+
+    Ok(result)
+}
+
 pub async fn search_consumables_with_nested(
     conn: &mut DatabaseConnection,
     search: &str,

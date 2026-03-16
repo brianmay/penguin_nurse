@@ -1,11 +1,8 @@
 use chrono::{DateTime, FixedOffset};
 
-use crate::{
-    components::timeline::DialogReference,
-    models::{
-        Exercise, ExerciseId, HealthMetric, HealthMetricId, Note, NoteId, Reflux, RefluxId,
-        Symptom, SymptomId, WeeUrge, WeeUrgeId,
-    },
+use crate::models::{
+    Exercise, ExerciseId, HealthMetric, HealthMetricId, Note, NoteId, Reflux, RefluxId,
+    Symptom, SymptomId, WeeUrge, WeeUrgeId,
 };
 
 use super::{ConsumptionId, ConsumptionWithItems, Poo, PooId, Wee, WeeId};
@@ -77,58 +74,6 @@ impl Entry {
             EntryData::Symptom(symptom) => EntryId::Symptom(symptom.id),
             EntryData::Reflux(reflux) => EntryId::Reflux(reflux.id),
             EntryData::Note(note) => EntryId::Note(note.id),
-        }
-    }
-
-    pub fn get_update_dialog_reference(&self) -> DialogReference {
-        match &self.data {
-            EntryData::Poo(poo) => DialogReference::UpdatePoo { poo_id: poo.id },
-            EntryData::Wee(wee) => DialogReference::UpdateWee { wee_id: wee.id },
-            EntryData::WeeUrge(wee_urge) => DialogReference::UpdateWeeUrge {
-                wee_urge_id: wee_urge.id,
-            },
-            EntryData::Consumption(consumption_with_items) => DialogReference::UpdateBasic {
-                consumption_id: consumption_with_items.consumption.id,
-            },
-            EntryData::Exercise(exercise) => DialogReference::UpdateExercise {
-                exercise_id: exercise.id,
-            },
-            EntryData::HealthMetric(health_metric) => DialogReference::UpdateHealthMetric {
-                health_metric_id: health_metric.id,
-            },
-            EntryData::Symptom(symptom) => DialogReference::UpdateSymptom {
-                symptom_id: symptom.id,
-            },
-            EntryData::Reflux(reflux) => DialogReference::UpdateReflux {
-                reflux_id: reflux.id,
-            },
-            EntryData::Note(note) => DialogReference::UpdateNote { note_id: note.id },
-        }
-    }
-
-    pub fn get_delete_dialog_reference(&self) -> DialogReference {
-        match &self.data {
-            EntryData::Poo(poo) => DialogReference::DeletePoo { poo_id: poo.id },
-            EntryData::Wee(wee) => DialogReference::DeleteWee { wee_id: wee.id },
-            EntryData::WeeUrge(wee_urge) => DialogReference::DeleteWeeUrge {
-                wee_urge_id: wee_urge.id,
-            },
-            EntryData::Consumption(consumption_with_items) => DialogReference::DeleteConsumption {
-                consumption_id: consumption_with_items.consumption.id,
-            },
-            EntryData::Exercise(exercise) => DialogReference::DeleteExercise {
-                exercise_id: exercise.id,
-            },
-            EntryData::HealthMetric(health_metric) => DialogReference::DeleteHealthMetric {
-                health_metric_id: health_metric.id,
-            },
-            EntryData::Symptom(symptom) => DialogReference::DeleteSymptom {
-                symptom_id: symptom.id,
-            },
-            EntryData::Reflux(reflux) => DialogReference::DeleteReflux {
-                reflux_id: reflux.id,
-            },
-            EntryData::Note(note) => DialogReference::DeleteNote { note_id: note.id },
         }
     }
 }

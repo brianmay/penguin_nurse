@@ -86,6 +86,35 @@ impl From<Consumption> for crate::models::Consumption {
     }
 }
 
+pub async fn get_all_consumptions_with_items(
+    conn: &mut DatabaseConnection,
+) -> Result<Vec<(Consumption, Vec<(ConsumptionConsumable, Consumable)>)>, diesel::result::Error> {
+    let consumptions: Vec<Consumption> = {
+        use crate::server::database::schema::consumptions::table;
+
+        table
+            .select(Consumption::as_select())
+            .order(schema::consumptions::time.asc())
+            .load(conn)
+            .await?
+    };
+
+    let nested: Vec<(ConsumptionConsumable, Consumable)> =
+        ConsumptionConsumable::belonging_to(&consumptions)
+            .inner_join(schema::consumables::table)
+            .load(conn)
+            .await?;
+
+    let result: Vec<_> = nested
+        .grouped_by(&consumptions)
+        .into_iter()
+        .zip(consumptions)
+        .map(|(a, b)| (b, a))
+        .collect();
+
+    Ok(result)
+}
+
 pub async fn get_consumptions_for_time_range(
     conn: &mut DatabaseConnection,
     user_id: i64,

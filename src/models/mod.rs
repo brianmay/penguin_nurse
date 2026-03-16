@@ -74,6 +74,7 @@ pub use consumables::ConsumableId;
 pub use consumables::ConsumableUnit;
 pub use consumables::ConsumableWithItems;
 pub use consumables::NewConsumable;
+pub use consumables::consumable_errors;
 
 mod consumptions;
 pub use consumptions::ChangeConsumption;
@@ -82,6 +83,7 @@ pub use consumptions::ConsumptionId;
 pub use consumptions::ConsumptionType;
 pub use consumptions::ConsumptionWithItems;
 pub use consumptions::NewConsumption;
+pub use consumptions::consumption_errors;
 
 mod nested_consumables;
 pub use nested_consumables::ChangeNestedConsumable;
