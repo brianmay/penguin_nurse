@@ -50,6 +50,20 @@ in
         Used to generate the OIDC redirect URL. Not used if OIDC not configured.
       '';
     };
+    secretsFile = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      example = "/run/secrets/penguin-nurse.env";
+      description = lib.mdDoc ''
+        Optional path to an env file containing the secrets used by penguin-nurse.
+
+        Might contain:
+        - `OIDC_DISCOVERY_URL` - The URL to the OIDC.
+        - `OIDC_CLIENT_ID` - The Client ID for the OIDC.
+        - `OIDC_CLIENT_SECRET` - The Client secret for the OIDC.
+        - `OIDC_AUTH_SCOPE` - "openid profile groups email" or similar.
+      '';
+    };
   };
 
   config = mkIf cfg.enable {
@@ -71,6 +85,7 @@ in
       serviceConfig = {
         User = "penguin_nurse";
         ExecStart = "${lib.getExe penguin-nurse}";
+        EnvironmentFile = cfg.secretsFile;
       };
       environment = {
         RUST_LOG = "info";
