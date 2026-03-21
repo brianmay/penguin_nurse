@@ -4,8 +4,8 @@ use diesel_async::AsyncPgConnection;
 use diesel_async::async_connection_wrapper::AsyncConnectionWrapper;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use diesel_async::pooled_connection::PoolError;
-use diesel_async::pooled_connection::mobc::Pool;
-use diesel_async::pooled_connection::mobc::PooledConnection;
+use diesel_async::pooled_connection::bb8::Pool;
+use diesel_async::pooled_connection::bb8::PooledConnection;
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 use thiserror::Error;
 
@@ -15,11 +15,11 @@ const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
 #[derive(Debug, Clone)]
 pub struct DatabasePool(Pool<AsyncPgConnection>);
-pub type DatabaseConnection = PooledConnection<AsyncPgConnection>;
+pub type DatabaseConnection = PooledConnection<'static, AsyncPgConnection>;
 
 impl DatabasePool {
-    pub async fn get(&self) -> Result<DatabaseConnection, mobc::Error<PoolError>> {
-        self.0.get().await
+    pub async fn get(&self) -> Result<DatabaseConnection, bb8::RunError<PoolError>> {
+        self.0.get_owned().await
     }
 }
 
@@ -30,7 +30,7 @@ pub enum Error {
     Diesel(#[from] diesel::result::Error),
 
     #[error(transparent)]
-    Mobc(#[from] mobc::Error<PoolError>),
+    Bb8(#[from] bb8::RunError<PoolError>),
 
     #[error(transparent)]
     Encode(serde_json::Error),
@@ -60,12 +60,15 @@ pub async fn init() -> DatabasePool {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let config = AsyncDieselConnectionManager::<diesel_async::AsyncPgConnection>::new(database_url);
 
-    let pool = Pool::new(config);
+    let pool = Pool::builder()
+        .build(config)
+        .await
+        .expect("Failed to build database pool");
 
     let mut tries = 0;
 
     loop {
-        let conn = pool.get().await;
+        let conn = pool.get_owned().await;
         match conn {
             Ok(conn) => {
                 run_migrations(conn).await.unwrap();

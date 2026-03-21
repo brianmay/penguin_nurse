@@ -143,10 +143,7 @@ impl Client {
 
         let is_admin = groups.contains(&"admin".to_string());
 
-        let mut conn = pool
-            .get()
-            .await
-            .map_err(database::connection::Error::Mobc)?;
+        let mut conn = pool.get().await.map_err(database::connection::Error::Bb8)?;
 
         let user = get_user_by_oidc_id(&mut conn, &user_info.sub)
             .await

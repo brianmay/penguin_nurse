@@ -195,7 +195,7 @@ Add `Hash` when the type will be used in a `HashMap`/`HashSet`.
 1. **Use `thiserror`** for all error types. Derive `#[derive(Error, Debug)]`.
 
 2. **`AppError`** (`src/functions/common.rs`) is the top-level server error enum.
-   It `#[from]`-converts database and pool errors.
+   It `#[from]`-converts database and bb8 pool errors.
 
 3. **Server function error chain**: always end with:
    ```rust

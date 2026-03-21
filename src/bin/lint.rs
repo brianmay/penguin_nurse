@@ -1,8 +1,9 @@
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
+use penguin_nurse::server::database::connection::DatabaseConnection;
 use penguin_nurse::server::database::models::{
-    consumables::Consumable, consumptions::Consumption, consumption_consumables::ConsumptionConsumable,
-    nested_consumables::NestedConsumable,
+    consumables::Consumable, consumption_consumables::ConsumptionConsumable,
+    consumptions::Consumption, nested_consumables::NestedConsumable,
 };
 use penguin_nurse::server::database::schema;
 
@@ -38,7 +39,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn check_consumables(
-    conn: &mut diesel_async::pooled_connection::mobc::PooledConnection<diesel_async::AsyncPgConnection>,
+    conn: &mut DatabaseConnection,
 ) -> Result<usize, Box<dyn std::error::Error>> {
     use schema::consumables::dsl::*;
     use schema::nested_consumables;
@@ -73,13 +74,14 @@ async fn check_consumables(
             .collect();
 
         // Run error checks using validation module
-        let errors = penguin_nurse::validation::consumable_errors(
-            &frontend_consumable,
-            Some(&nested_items),
-        );
+        let errors =
+            penguin_nurse::validation::consumable_errors(&frontend_consumable, Some(&nested_items));
 
         if !errors.is_empty() {
-            println!("\n  Consumable: {} (ID: {})", consumable.name, consumable.id);
+            println!(
+                "\n  Consumable: {} (ID: {})",
+                consumable.name, consumable.id
+            );
             for error in errors {
                 println!("    ✗ {}", error);
                 error_count += 1;
@@ -95,7 +97,7 @@ async fn check_consumables(
 }
 
 async fn check_consumptions(
-    conn: &mut diesel_async::pooled_connection::mobc::PooledConnection<diesel_async::AsyncPgConnection>,
+    conn: &mut DatabaseConnection,
 ) -> Result<usize, Box<dyn std::error::Error>> {
     use schema::consumption_consumables;
     use schema::consumptions::dsl::*;
@@ -113,10 +115,7 @@ async fn check_consumptions(
                     .on(consumption_consumables::consumable_id.eq(schema::consumables::id)),
             )
             .filter(consumption_consumables::parent_id.eq(consumption.id))
-            .select((
-                ConsumptionConsumable::as_select(),
-                Consumable::as_select(),
-            ))
+            .select((ConsumptionConsumable::as_select(), Consumable::as_select()))
             .load(conn)
             .await?;
 

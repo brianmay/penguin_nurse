@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 
 use crate::{
     components::{
-        events::{Markdown, EventDateTimeShort},
+        events::{EventDateTimeShort, Markdown},
         times::time_delta_to_string,
     },
     forms::{

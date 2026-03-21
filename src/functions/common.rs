@@ -14,7 +14,7 @@ use crate::server::database::connection::DatabasePool;
 #[derive(Error, Debug)]
 pub enum AppError {
     #[error("Database pool error: {0}")]
-    DbPoolError(#[from] mobc::Error<PoolError>),
+    DbPoolError(#[from] bb8::RunError<PoolError>),
 
     #[error("Database error: {0}")]
     DbError(#[from] diesel::result::Error),
