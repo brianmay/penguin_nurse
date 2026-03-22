@@ -6,7 +6,6 @@
   inputs.nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
   inputs.rust-overlay.url = "github:oxalica/rust-overlay";
   inputs.devenv.url = "github:cachix/devenv";
-  inputs.crane.url = "github:ipetkov/crane";
   inputs.flockenzeit.url = "github:balsoft/flockenzeit";
 
   outputs =
@@ -17,7 +16,6 @@
       flake-utils,
       rust-overlay,
       devenv,
-      crane,
       flockenzeit,
     }:
     flake-utils.lib.eachDefaultSystem (
