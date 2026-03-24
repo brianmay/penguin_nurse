@@ -8,7 +8,7 @@ use chrono::Utc;
 use dioxus::prelude::*;
 use dioxus_router::{Link, Outlet, use_route};
 
-const NURSE_SVG: Asset = asset!("/assets/nurse.svg");
+const FAVICON_SVG: Asset = asset!("/assets/favicon.svg");
 
 #[component]
 pub fn MenuItem(route: Route, title: String, mut show_menu: Signal<bool>) -> Element {
@@ -49,7 +49,7 @@ pub fn Navbar() -> Element {
                 Link {
                     to: Route::Home {},
                     class: "flex items-center space-x-3 rtl:space-x-reverse",
-                    img { alt: "Nurse Logo", src: NURSE_SVG, class: "h-12" }
+                    img { alt: "Nurse Logo", src: FAVICON_SVG, class: "h-12" }
                     span { class: "self-center text-2xl font-semibold whitespace-nowrap dark:text-white",
                         "Penguin Nurse"
                     }
@@ -130,7 +130,6 @@ pub fn Navbar() -> Element {
         }
 
         Outlet::<Route> {}
-
 
         footer { class: "footer bg-base-200 text-base-content p-10 mt-20",
             aside {

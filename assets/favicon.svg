@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Penguin Nurse">
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="30" fill="#1a6fa8"/>
+
+  <!-- White medical cross -->
+  <rect x="24" y="14" width="16" height="36" rx="3" fill="white"/>
+  <rect x="14" y="24" width="36" height="16" rx="3" fill="white"/>
+
+  <!-- Red heart on the cross -->
+  <path d="M32 38
+             C32 38 22 31 22 24.5
+             C22 20.9 24.9 18 28.5 18
+             C30.3 18 32 19.2 32 19.2
+             C32 19.2 33.7 18 35.5 18
+             C39.1 18 42 20.9 42 24.5
+             C42 31 32 38 32 38Z"
+        fill="#e02020"/>
+
+  <!-- Pulse line across the heart -->
+  <polyline points="23,28 27,28 29,23 31,33 33,26 35,28 41,28"
+            fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

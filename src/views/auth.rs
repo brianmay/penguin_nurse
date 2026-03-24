@@ -17,7 +17,7 @@ use tracing::error;
 #[cfg(feature = "server")]
 use tap::Pipe;
 
-const NURSE_SVG: Asset = asset!("/assets/nurse.svg");
+const FAVICON_SVG: Asset = asset!("/assets/favicon.svg");
 
 #[component]
 pub fn LoginWindow(children: Element) -> Element {
@@ -27,7 +27,7 @@ pub fn LoginWindow(children: Element) -> Element {
                 a {
                     href: "#",
                     class: "flex items-center mb-6 text-2xl font-semibold text-gray-900 dark:text-white",
-                    img { alt: "Nurse Logo", src: NURSE_SVG, class: "h-8" }
+                    img { alt: "Nurse Logo", src: FAVICON_SVG, class: "h-8" }
                     span { class: "self-center text-2xl font-semibold whitespace-nowrap dark:text-white",
                         "Penguin Nurse"
                     }

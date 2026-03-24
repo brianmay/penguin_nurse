@@ -42,7 +42,7 @@ enum Route {
     NotFound { segments: Vec<String> },
 }
 
-const MEDICAL_SVG: Asset = asset!("/assets/medical.svg");
+const FAVICON_SVG: Asset = asset!("/assets/favicon.svg");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
 #[cfg(not(feature = "server"))]
@@ -81,14 +81,13 @@ fn App() -> Element {
 
     rsx! {
         // Global app resources
-        document::Link { rel: "icon", href: MEDICAL_SVG }
+        document::Link { rel: "icon", r#type: "image/svg+xml", href: FAVICON_SVG }
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
 
         document::Script {
             r#type: "module",
             src: asset!("/assets/bundle.js", JsAssetOptions::new().with_minify(false)),
         }
-
 
         Router::<Route> {}
     }
