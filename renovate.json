@@ -22,6 +22,12 @@
       "groupName": "tower-sessions monorepo"
     },
     {
+      "matchSourceUrls": [
+        "https://github.com/dioxuslabs/dioxus"
+      ],
+      "groupName": "dioxus monorepo"
+    },
+    {
       /*
        * Don’t open PRs trying to bump transitive crates
        * unless they are security updates.
