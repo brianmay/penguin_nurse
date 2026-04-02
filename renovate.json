@@ -8,8 +8,14 @@
   },
   "packageRules": [
     {
+      "matchCategories": [
+        "rust"
+      ],
+      "rangeStrategy": "auto"
+    },
+    {
       "matchSourceUrls": [
-        "https://github.com/open-telemetry/opentelemetry-rust",
+"https://github.com/open-telemetry/opentelemetry-rust",
         "https://github.com/tokio-rs/tracing-opentelemetry",
         "https://github.com/hyperium/tonic"
       ],
@@ -17,21 +23,21 @@
     },
     {
       "matchSourceUrls": [
-        "https://github.com/maxcountryman/tower-sessions"
+"https://github.com/maxcountryman/tower-sessions"
       ],
       "groupName": "tower-sessions monorepo"
-    },
-    {
-      "matchSourceUrls": [
-        "https://github.com/dioxuslabs/dioxus"
-      ],
-      "groupName": "dioxus monorepo"
     },
     {
       /*
        * Don’t open PRs trying to bump transitive crates
        * unless they are security updates.
        */
+      "matchSourceUrls": [
+        "https://github.com/dioxuslabs/dioxus"
+      ],
+      "groupName": "dioxus monorepo"
+    },
+    {
       "matchManagers": [
         "cargo"
       ],
@@ -41,27 +47,17 @@
       "enabled": false
     },
     {
-      "managers": [
-        "nix"
-      ],
-      "lockFileMaintenance": true,
+      "matchManagers": ["nix"],
+      "lockFileMaintenance": {
+        "enabled": true
+      },
       "enabled": true,
-      "schedule": [
-        "every weekend"
-      ]
+      "schedule": ["every weekend"]
     }
   ],
   /*
    * Rust-specific sanity defaults
    */
-  "rust": {
-    /*
-     * This is the big one.
-     * Prevents Renovate from forcing single-version upgrades
-     * of transitive crates like getrandom.
-     */
-    "rangeStrategy": "auto"
-  },
   /*
    * Let Cargo manage transitive dependencies via Cargo.lock
    */
