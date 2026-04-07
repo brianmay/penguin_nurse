@@ -237,6 +237,7 @@
               postgres
               pkgs.binaryen
               pkgs.pkg-config
+              pkgs.esbuild
             ];
             buildPhase = ''
               export VCS_REF="${build_env.VCS_REF}"
@@ -362,6 +363,7 @@
                 postgres
                 tailwindcss
                 pkgs.watchman
+                pkgs.esbuild
               ];
               enterShell = ''
                 # export DIOXUS_ASSET_ROOT="dist"

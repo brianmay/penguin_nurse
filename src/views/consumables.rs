@@ -299,8 +299,7 @@ pub fn ConsumableList(dialog: ReadSignal<Option<ListDialogReference>>) -> Elemen
                         tbody { class: "block sm:table-row-group",
                             for consumable in list.iter() {
                                 EntryRow {
-                                    // Borken, See https://github.com/dioxuslabs/dioxus/issues/4066
-                                    // key: "{consumable.consumable.id.as_inner().to_string()}",
+                                    key: "{consumable.consumable.id.as_inner().to_string()}",
                                     consumable_with_items: consumable.clone(),
                                     selected,
                                 }
