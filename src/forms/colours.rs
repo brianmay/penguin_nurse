@@ -127,7 +127,7 @@ fn ColourInput(on_set: Callback<Hsv>) -> Element {
     rsx! {
         div {
             class: "relative w-full bg-black overflow-hidden cursor-pointer",
-            style: "aspect-ratio: 16 / 9;",
+            style: "aspect-ratio: 9 / 16;",
             onclick: move |_| { on_set(colour()); },
             video {
                 class: "block w-full h-full object-contain",

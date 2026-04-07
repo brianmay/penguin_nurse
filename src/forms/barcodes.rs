@@ -93,7 +93,15 @@ fn BarcodeInput(on_set: Callback<String>) -> Element {
     });
 
     rsx! {
-        video { autoplay: true, playsinline: true }
+        div {
+            class: "relative w-full bg-black overflow-hidden",
+            style: "aspect-ratio: 9 / 16;",
+            video {
+                class: "block w-full h-full object-contain",
+                autoplay: true,
+                playsinline: true,
+            }
+        }
     }
 }
 
