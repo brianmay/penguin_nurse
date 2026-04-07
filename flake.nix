@@ -258,7 +258,7 @@
               # "const-serialize-0.7.0-rc.2" = "sha256-G2M0SyCWitPORvI3IeR2juuzLn1cOLhzbH6Y9lq71I8=";
               # "const-serialize-0.7.0-rc.2" = pkgs.lib.fakeHash;
             };
-            meta.mainProgram = "penguin_nurse";
+            meta.mainProgram = "server";
           };
 
         lint =
