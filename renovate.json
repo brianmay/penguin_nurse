@@ -15,7 +15,7 @@
     },
     {
       "matchSourceUrls": [
-"https://github.com/open-telemetry/opentelemetry-rust",
+        "https://github.com/open-telemetry/opentelemetry-rust",
         "https://github.com/tokio-rs/tracing-opentelemetry",
         "https://github.com/hyperium/tonic"
       ],
@@ -23,7 +23,7 @@
     },
     {
       "matchSourceUrls": [
-"https://github.com/maxcountryman/tower-sessions"
+        "https://github.com/maxcountryman/tower-sessions"
       ],
       "groupName": "tower-sessions monorepo"
     },
@@ -47,12 +47,16 @@
       "enabled": false
     },
     {
-      "matchManagers": ["nix"],
+      "matchManagers": [
+        "nix"
+      ],
       "lockFileMaintenance": {
         "enabled": true
       },
       "enabled": true,
-      "schedule": ["every weekend"]
+      "schedule": [
+        "every weekend"
+      ]
     }
   ],
   /*
@@ -64,7 +68,7 @@
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": [
-      "every weekend"
+      "every month"
     ],
     "commitMessageAction": "Refresh"
   },
@@ -76,5 +80,8 @@
   /*
    * Make failures obvious instead of retrying forever
    */
-  "rebaseWhen": "conflicted"
+  "rebaseWhen": "conflicted",
+  "gitIgnoredAuthors": [
+    "github-actions[bot]"
+  ]
 }
