@@ -82,6 +82,6 @@
    */
   "rebaseWhen": "conflicted",
   "gitIgnoredAuthors": [
-    "github-actions[bot]"
+    "renovate[bot]@users.noreply.github.com"
   ]
 }
