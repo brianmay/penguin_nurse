@@ -80,11 +80,9 @@ in
 
     systemd.services.penguin-nurse = {
       wantedBy = [ "multi-user.target" ];
-      unit = {
-        after = [ "postgresql.service" ];
-        requires = [ "postgresql.service" ];
-        partOf = [ "postgresql.service" ];
-      };
+      after = [ "postgresql.service" ];
+      requires = [ "postgresql.service" ];
+      partOf = [ "postgresql.service" ];
       serviceConfig = {
         User = "penguin_nurse";
         ExecStart = "${lib.getExe penguin-nurse}";
