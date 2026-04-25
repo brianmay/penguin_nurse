@@ -83,6 +83,7 @@ in
       unit = {
         after = [ "postgresql.service" ];
         requires = [ "postgresql.service" ];
+        partOf = [ "postgresql.service" ];
       };
       serviceConfig = {
         User = "penguin_nurse";
