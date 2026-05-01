@@ -27,8 +27,8 @@
         wasm-bindgen-cli = pkgs.buildWasmBindgenCli rec {
           src = pkgs.fetchCrate {
             pname = "wasm-bindgen-cli";
-            version = "0.2.117";
-            hash = "sha256-vtDQXL8FSgdutqXG7/rBUWgrYCtzdmeVQQkWkjasvZU=";
+            version = "0.2.120";
+            hash = "sha256-Dkkx8Bhfk+y/jEz9Fzwytmv2N3Gj/7ST+5MlPRzzetU=";
           };
           # src = pkgs.fetchFromGitHub {
           #   owner = "rustwasm";
@@ -40,7 +40,7 @@
           cargoDeps = pkgs.rustPlatform.fetchCargoVendor {
             inherit src;
             inherit (src) pname version;
-            hash = "sha256-eKe7uwneUYxejSbG/1hKqg6bSmtL0KQ9ojlazeqTi88=";
+            hash = "sha256-5Zu/Sh9aBMxB+KGC1MHWJAQ8PuE40M6lsenkpFEwJ6A=";
             # hash = pkgs.lib.fakeHash;
           };
         };
@@ -67,7 +67,7 @@
         nodePackages = pkgs.buildNpmPackage {
           name = "node-packages";
           src = ./.;
-          npmDepsHash = "sha256-pEUrgAYvUTxI8xYKNA/a3rRRCexCo3X5gzq7SCf6qg8=";
+          npmDepsHash = "sha256-mVFjn4BeaAPLSJtkKxFkbdPktGKFiwXOQrRQArwkDhY=";
           dontNpmBuild = true;
           inherit nodejs;
 
