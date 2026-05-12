@@ -348,6 +348,7 @@
               packages = [
                 rustPlatform
                 pkgs-unstable.rust-analyzer
+                pkgs-unstable.osv-scanner
                 wasm-bindgen-cli
                 pkgs.binaryen
                 nodejs

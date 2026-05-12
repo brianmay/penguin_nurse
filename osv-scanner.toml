@@ -1,0 +1,74 @@
+# 14 packages silenced below are transitive dependencies of dioxus/desktop
+# (GTK/WebView/Wry). They are NOT present in the web/server builds and
+# cannot be fixed by us — they require upstream dioxus-desktop updates.
+
+[[PackageOverrides]]
+name = "atk"
+ecosystem = "crates.io"
+vulnerability.ignore = true
+
+[[PackageOverrides]]
+name = "atk-sys"
+ecosystem = "crates.io"
+vulnerability.ignore = true
+
+[[PackageOverrides]]
+name = "fxhash"
+ecosystem = "crates.io"
+vulnerability.ignore = true
+
+[[PackageOverrides]]
+name = "gdk"
+ecosystem = "crates.io"
+vulnerability.ignore = true
+
+[[PackageOverrides]]
+name = "gdk-sys"
+ecosystem = "crates.io"
+vulnerability.ignore = true
+
+[[PackageOverrides]]
+name = "gdkwayland-sys"
+ecosystem = "crates.io"
+vulnerability.ignore = true
+
+[[PackageOverrides]]
+name = "gdkx11-sys"
+ecosystem = "crates.io"
+vulnerability.ignore = true
+
+[[PackageOverrides]]
+name = "glib"
+ecosystem = "crates.io"
+vulnerability.ignore = true
+
+[[PackageOverrides]]
+name = "gtk"
+ecosystem = "crates.io"
+vulnerability.ignore = true
+
+[[PackageOverrides]]
+name = "gtk-sys"
+ecosystem = "crates.io"
+vulnerability.ignore = true
+
+[[PackageOverrides]]
+name = "gtk3-macros"
+ecosystem = "crates.io"
+vulnerability.ignore = true
+
+[[PackageOverrides]]
+name = "paste"
+ecosystem = "crates.io"
+vulnerability.ignore = true
+
+[[PackageOverrides]]
+name = "proc-macro-error"
+ecosystem = "crates.io"
+vulnerability.ignore = true
+
+[[PackageOverrides]]
+name = "rand"
+version = "0.7.3"
+ecosystem = "crates.io"
+vulnerability.ignore = true
