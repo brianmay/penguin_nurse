@@ -52,7 +52,7 @@
         "lockFileMaintenance"
       ],
       "matchFileNames": [
-        "**/flake.lock"
+        "**/flake.nix"
       ],
       "schedule": [
         "before 11am on monday"
