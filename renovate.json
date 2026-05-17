@@ -47,16 +47,17 @@
       "enabled": false
     },
     {
-      "matchManagers": [
-        "nix"
+      "description": "Run Nix lock file maintenance weekly",
+      "matchUpdateTypes": [
+        "lockFileMaintenance"
       ],
-      "lockFileMaintenance": {
-        "enabled": true
-      },
-      "enabled": true,
+      "matchFileNames": [
+        "**/flake.lock"
+      ],
       "schedule": [
-        "every weekend"
-      ]
+        "before 11am on monday"
+      ],
+      "groupName": "nix lock file maintenance"
     }
   ],
   /*
@@ -68,9 +69,8 @@
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": [
-      "every month"
-    ],
-    "commitMessageAction": "Refresh"
+      "before 4am on the first day of the month"
+    ]
   },
   /*
    * Avoid churn
