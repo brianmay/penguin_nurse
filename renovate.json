@@ -57,7 +57,8 @@
       "schedule": [
         "before 11am on monday"
       ],
-      "groupName": "nix lock file maintenance"
+      "groupName": "nix lock file maintenance",
+      "commitMessageTopic": "nix lock file"
     }
   ],
   /*
