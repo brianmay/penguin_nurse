@@ -55,17 +55,14 @@
         "**/flake.nix"
       ],
       "schedule": [
-        "before 11am on monday"
+        "before 4am on monday"
       ],
       "groupName": "nix lock file maintenance",
       "commitMessageTopic": "nix lock file"
     }
   ],
   /*
-   * Rust-specific sanity defaults
-   */
-  /*
-   * Let Cargo manage transitive dependencies via Cargo.lock
+   * Update all lock files
    */
   "lockFileMaintenance": {
     "enabled": true,
