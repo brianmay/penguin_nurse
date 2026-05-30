@@ -29,23 +29,10 @@
       "groupName": "tower-sessions monorepo"
     },
     {
-      /*
-       * Don’t open PRs trying to bump transitive crates
-       * unless they are security updates.
-       */
       "matchSourceUrls": [
         "https://github.com/dioxuslabs/dioxus"
       ],
       "groupName": "dioxus monorepo"
-    },
-    {
-      "matchManagers": [
-        "cargo"
-      ],
-      "matchDepTypes": [
-        "indirect"
-      ],
-      "enabled": false
     },
     {
       "description": "Run Nix lock file maintenance weekly",
