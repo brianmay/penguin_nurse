@@ -119,13 +119,13 @@ impl Client {
             return Err(Error::NoToken);
         }
 
-        let no_groups = vec![];
         let groups = token
             .id_token
             .as_ref()
             .and_then(|id_token| id_token.payload().ok())
-            .map_or(&no_groups, |claims| &claims.groups)
-            .clone();
+            .and_then(|claims| claims.groups.as_ref())
+            .cloned()
+            .unwrap_or_default();
 
         let user_info = self
             .oidc_client

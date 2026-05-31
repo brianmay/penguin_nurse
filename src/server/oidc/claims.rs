@@ -39,7 +39,8 @@ pub struct StandardClaims {
     pub azp: Option<String>,
     #[serde(flatten)]
     pub userinfo: Userinfo,
-    pub groups: Vec<String>,
+    #[serde(default)]
+    pub groups: Option<Vec<String>>,
 }
 
 impl Claims for StandardClaims {
