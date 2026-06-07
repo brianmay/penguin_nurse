@@ -72,3 +72,9 @@ name = "rand"
 version = "0.7.3"
 ecosystem = "crates.io"
 vulnerability.ignore = true
+
+[[PackageOverrides]]
+name = "proc-macro-error2"
+ecosystem = "crates.io"
+ignore = true
+reason = "Compile-time proc macro only — no runtime impact (transitive via validator_derive → openid)"
