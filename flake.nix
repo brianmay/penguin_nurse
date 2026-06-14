@@ -27,20 +27,21 @@
         wasm-bindgen-cli = pkgs.buildWasmBindgenCli rec {
           src = pkgs.fetchCrate {
             pname = "wasm-bindgen-cli";
-            version = "0.2.120";
-            hash = "sha256-Dkkx8Bhfk+y/jEz9Fzwytmv2N3Gj/7ST+5MlPRzzetU=";
+            version = "0.2.125";
+            registryDl = "https://static.crates.io/crates";
+            hash = "sha256-zRawtjxMOdTMX+mZaiNR3YYfTiZJhf9qj7kXSSeMxrc=";
           };
           # src = pkgs.fetchFromGitHub {
           #   owner = "rustwasm";
           #   repo = "wasm-bindgen";
           #   rev = "0.2.106";
-          #   sha256 = "sha256-ZNqbec3fQeoIKVEdN0uXptDQlEAQNc1MAWqoTcPBUWk=";
+          #   sha256sha256-zRawtjxMOdTMX+mZaiNR3YYfTiZJhf9qj7kXSSeMxrc=UWk=";
           # };
 
           cargoDeps = pkgs.rustPlatform.fetchCargoVendor {
             inherit src;
             inherit (src) pname version;
-            hash = "sha256-5Zu/Sh9aBMxB+KGC1MHWJAQ8PuE40M6lsenkpFEwJ6A=";
+            hash = "sha256-aZCfgR23Qb0Pn4Mm4ToMtuuRQqSJjXCR9li/VvP5CTM=";
             # hash = pkgs.lib.fakeHash;
           };
         };
