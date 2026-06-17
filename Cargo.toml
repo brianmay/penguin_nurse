@@ -55,7 +55,7 @@ classes = "1.0.0"
 # rust_decimal = { version = "1.37.2", features = ["serde"] }
 bigdecimal = { version = "0.4.8", features = ["serde"] }
 pulldown-cmark = "0.13.1"
-itertools = "0.14.0"
+itertools = "0.15.0"
 derive-enum-all-values = "0.2.1"
 
 [features]
