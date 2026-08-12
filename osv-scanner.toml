@@ -78,3 +78,10 @@ name = "proc-macro-error2"
 ecosystem = "crates.io"
 ignore = true
 reason = "Compile-time proc macro only — no runtime impact (transitive via validator_derive → openid)"
+
+[[PackageOverrides]]
+name = "lru"
+version = "0.16.4"
+ecosystem = "crates.io"
+vulnerability.ignore = true
+reason = "Transitive dependency of dioxus-server 0.7.x which constrains lru to ^0.16.0 — cannot be upgraded without a major dioxus version bump"
