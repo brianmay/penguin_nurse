@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use dioxus::prelude::*;
 use palette::RgbHue;
@@ -198,44 +200,6 @@ impl FieldValue for TimeDelta {
     }
 }
 
-impl FieldValue for f32 {
-    type RawValue = String;
-    type DerefValue = str;
-
-    fn as_raw(&self) -> String {
-        self.to_string()
-    }
-    fn from_raw(value: &str) -> Result<Self, FieldValueError> {
-        let value = value.trim();
-        if value.is_empty() {
-            return Err(FieldValueError::RequiredValue);
-        }
-        match value.parse() {
-            Ok(value) => Ok(value),
-            Err(_) => Err(FieldValueError::InvalidValue),
-        }
-    }
-}
-
-impl FieldValue for bigdecimal::BigDecimal {
-    type RawValue = String;
-    type DerefValue = str;
-
-    fn as_raw(&self) -> String {
-        self.to_string()
-    }
-    fn from_raw(value: &str) -> Result<Self, FieldValueError> {
-        let value = value.trim();
-        if value.is_empty() {
-            return Err(FieldValueError::RequiredValue);
-        }
-        match value.parse() {
-            Ok(value) => Ok(value),
-            Err(_) => Err(FieldValueError::InvalidValue),
-        }
-    }
-}
-
 impl<T: FieldValue<RawValue = String, DerefValue = str>> FieldValue for Option<T> {
     type RawValue = T::RawValue;
     type DerefValue = T::DerefValue;
@@ -256,7 +220,15 @@ impl<T: FieldValue<RawValue = String, DerefValue = str>> FieldValue for Option<T
     }
 }
 
-impl FieldValue for i32 {
+pub trait Parsable: FromStr + std::fmt::Display {}
+
+impl Parsable for i32 {}
+impl Parsable for u16 {}
+impl Parsable for u32 {}
+impl Parsable for f32 {}
+impl Parsable for bigdecimal::BigDecimal {}
+
+impl<T: Parsable> FieldValue for T {
     type RawValue = String;
     type DerefValue = str;
 

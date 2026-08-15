@@ -270,7 +270,7 @@ where
         .transpose()
 }
 
-pub fn validate_pulse(str: &str) -> Result<Option<i32>, ValidationError> {
+pub fn validate_pulse(str: &str) -> Result<Option<u16>, ValidationError> {
     validate_in_range_maybe(str, 30, 220)
 }
 
@@ -280,11 +280,11 @@ pub fn validate_blood_glucose(
     validate_in_range_maybe(str, BigDecimal::from(0), BigDecimal::from(50))
 }
 
-pub fn validate_systolic_bp(str: &str) -> Result<Option<i32>, ValidationError> {
+pub fn validate_systolic_bp(str: &str) -> Result<Option<u16>, ValidationError> {
     validate_in_range_maybe(str, 50, 300)
 }
 
-pub fn validate_diastolic_bp(str: &str) -> Result<Option<i32>, ValidationError> {
+pub fn validate_diastolic_bp(str: &str) -> Result<Option<u16>, ValidationError> {
     validate_in_range_maybe(str, 30, 200)
 }
 
@@ -292,7 +292,7 @@ pub fn validate_weight(str: &str) -> Result<Option<bigdecimal::BigDecimal>, Vali
     validate_in_range_maybe(str, BigDecimal::from(0), BigDecimal::from(500))
 }
 
-pub fn validate_height(str: &str) -> Result<Option<i32>, ValidationError> {
+pub fn validate_height(str: &str) -> Result<Option<u16>, ValidationError> {
     validate_in_range_maybe(str, 30, 300)
 }
 

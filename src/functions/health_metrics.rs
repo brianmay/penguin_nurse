@@ -15,6 +15,8 @@ pub async fn get_health_metrics_for_time_range(
     start: DateTime<Utc>,
     end: DateTime<Utc>,
 ) -> Result<Vec<models::HealthMetric>, ServerFnError> {
+    use crate::server::database::models::DatabaseConversionError;
+
     let logged_in_user_id = get_user_id().await?;
     if user_id != logged_in_user_id {
         return Err(ServerFnError::new(
@@ -30,8 +32,11 @@ pub async fn get_health_metrics_for_time_range(
         end,
     )
     .await
-    .map(|x| x.into_iter().map(|y| y.into()).collect())
     .map_err(AppError::from)
+    .map_err(ServerFnError::from)?
+    .into_iter()
+    .map(|y| y.try_into())
+    .collect::<Result<Vec<models::HealthMetric>, DatabaseConversionError>>()
     .map_err(ServerFnError::from)
 }
 
@@ -48,8 +53,10 @@ pub async fn get_health_metric_by_id(
         logged_in_user_id.as_inner(),
     )
     .await
-    .map(|x| x.map(|y| y.into()))
     .map_err(AppError::from)
+    .map_err(ServerFnError::from)?
+    .map(|y| y.try_into())
+    .transpose()
     .map_err(ServerFnError::from)
 }
 
@@ -75,8 +82,9 @@ pub async fn create_health_metric(
         &new_health_metric,
     )
     .await
-    .map(|x| x.into())
     .map_err(AppError::from)
+    .map_err(ServerFnError::from)?
+    .try_into()
     .map_err(ServerFnError::from)
 }
 
@@ -107,8 +115,9 @@ pub async fn update_health_metric(
         &updates,
     )
     .await
-    .map(|x| x.into())
     .map_err(AppError::from)
+    .map_err(ServerFnError::from)?
+    .try_into()
     .map_err(ServerFnError::from)
 }
 

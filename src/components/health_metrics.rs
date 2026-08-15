@@ -23,12 +23,12 @@ pub enum Operation {
 #[derive(Debug, Clone)]
 struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    pulse: Memo<Result<Option<i32>, ValidationError>>,
+    pulse: Memo<Result<Option<u16>, ValidationError>>,
     blood_glucose: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
-    systolic_bp: Memo<Result<Option<i32>, ValidationError>>,
-    diastolic_bp: Memo<Result<Option<i32>, ValidationError>>,
+    systolic_bp: Memo<Result<Option<u16>, ValidationError>>,
+    diastolic_bp: Memo<Result<Option<u16>, ValidationError>>,
     weight: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
-    height: Memo<Result<Option<i32>, ValidationError>>,
+    height: Memo<Result<Option<u16>, ValidationError>>,
     waist_circumference: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }

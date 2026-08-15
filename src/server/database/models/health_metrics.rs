@@ -1,9 +1,11 @@
 use crate::models::{HealthMetricId, UserId};
+use crate::server::database::models::DatabaseConversionError;
 use crate::server::database::{connection::DatabaseConnection, schema};
 use chrono::Utc;
 use diesel::prelude::*;
 use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
+use tap::Pipe;
 
 #[allow(dead_code)]
 #[derive(Queryable, Selectable, Debug, Clone)]
@@ -26,29 +28,36 @@ pub struct HealthMetric {
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
-const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
+impl TryFrom<HealthMetric> for crate::models::HealthMetric {
+    type Error = DatabaseConversionError;
 
-impl From<HealthMetric> for crate::models::HealthMetric {
-    fn from(health_metric: HealthMetric) -> Self {
-        let timezone =
-            chrono::FixedOffset::east_opt(health_metric.utc_offset).unwrap_or(DEFAULT_TIMEZONE);
+    fn try_from(health_metric: HealthMetric) -> Result<Self, Self::Error> {
+        let timezone = chrono::FixedOffset::east_opt(health_metric.utc_offset)
+            .ok_or(DatabaseConversionError::InvalidValue)?;
         let time = health_metric.time.with_timezone(&timezone);
 
         Self {
             id: HealthMetricId::new(health_metric.id),
             user_id: UserId::new(health_metric.user_id),
             time,
-            pulse: health_metric.pulse,
+            pulse: health_metric.pulse.map(|p| p.try_into()).transpose()?,
             blood_glucose: health_metric.blood_glucose,
-            systolic_bp: health_metric.systolic_bp,
-            diastolic_bp: health_metric.diastolic_bp,
+            systolic_bp: health_metric
+                .systolic_bp
+                .map(|p| p.try_into())
+                .transpose()?,
+            diastolic_bp: health_metric
+                .diastolic_bp
+                .map(|p| p.try_into())
+                .transpose()?,
             weight: health_metric.weight,
-            height: health_metric.height,
+            height: health_metric.height.map(|p| p.try_into()).transpose()?,
             waist_circumference: health_metric.waist_circumference,
             created_at: health_metric.created_at,
             updated_at: health_metric.updated_at,
             comments: health_metric.comments,
         }
+        .pipe(Ok)
     }
 }
 
@@ -113,12 +122,12 @@ impl<'a> NewHealthMetric<'a> {
             user_id: health_metric.user_id.as_inner(),
             time: health_metric.time.with_timezone(&Utc),
             utc_offset: health_metric.time.offset().local_minus_utc(),
-            pulse: health_metric.pulse,
+            pulse: health_metric.pulse.map(|p| p.into()),
             blood_glucose: health_metric.blood_glucose.as_ref(),
-            systolic_bp: health_metric.systolic_bp,
-            diastolic_bp: health_metric.diastolic_bp,
+            systolic_bp: health_metric.systolic_bp.map(|p| p.into()),
+            diastolic_bp: health_metric.diastolic_bp.map(|p| p.into()),
             weight: health_metric.weight.as_ref(),
-            height: health_metric.height,
+            height: health_metric.height.map(|p| p.into()),
             waist_circumference: health_metric.waist_circumference.as_ref(),
             comments: health_metric.comments.as_deref(),
         }
@@ -163,12 +172,12 @@ impl<'a> ChangeHealthMetric<'a> {
                 .time
                 .map(|time| time.offset().local_minus_utc())
                 .into_option(),
-            pulse: health_metric.pulse.into_option(),
+            pulse: health_metric.pulse.map_inner_into().into_option(),
             blood_glucose: health_metric.blood_glucose.as_inner_ref().into_option(),
-            systolic_bp: health_metric.systolic_bp.into_option(),
-            diastolic_bp: health_metric.diastolic_bp.into_option(),
+            systolic_bp: health_metric.systolic_bp.map_inner_into().into_option(),
+            diastolic_bp: health_metric.diastolic_bp.map_inner_into().into_option(),
             weight: health_metric.weight.as_inner_ref().into_option(),
-            height: health_metric.height.into_option(),
+            height: health_metric.height.map_inner_into().into_option(),
             waist_circumference: health_metric
                 .waist_circumference
                 .as_inner_ref()
