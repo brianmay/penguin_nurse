@@ -175,6 +175,7 @@ pub fn HealthMetricUpdate(
             || validate.diastolic_bp.read().is_err()
             || validate.weight.read().is_err()
             || validate.height.read().is_err()
+            || validate.waist_circumference.read().is_err()
             || validate.comments.read().is_err()
             || disabled()
     });
