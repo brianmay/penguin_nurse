@@ -26,6 +26,8 @@ pub struct HealthMetric {
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub body_fat_pct: Option<bigdecimal::BigDecimal>,
+    pub bia_details: Option<serde_json::Value>,
 }
 
 impl TryFrom<HealthMetric> for crate::models::HealthMetric {
@@ -56,6 +58,8 @@ impl TryFrom<HealthMetric> for crate::models::HealthMetric {
             created_at: health_metric.created_at,
             updated_at: health_metric.updated_at,
             comments: health_metric.comments,
+            body_fat_pct: health_metric.body_fat_pct,
+            bia_details: health_metric.bia_details,
         }
         .pipe(Ok)
     }
@@ -134,6 +138,8 @@ pub struct NewHealthMetric<'a> {
     height: Option<i32>,
     waist_circumference: Option<&'a bigdecimal::BigDecimal>,
     comments: Option<&'a str>,
+    body_fat_pct: Option<&'a bigdecimal::BigDecimal>,
+    bia_details: Option<&'a serde_json::Value>,
 }
 
 impl<'a> NewHealthMetric<'a> {
@@ -150,6 +156,32 @@ impl<'a> NewHealthMetric<'a> {
             height: health_metric.height.map(|p| p.into()),
             waist_circumference: health_metric.waist_circumference.as_ref(),
             comments: health_metric.comments.as_deref(),
+            body_fat_pct: health_metric.body_fat_pct.as_ref(),
+            bia_details: health_metric.bia_details.as_ref(),
+        }
+    }
+
+    pub fn for_kiosk(
+        user_id: i64,
+        weight_kg: &'a bigdecimal::BigDecimal,
+        body_fat_pct: Option<&'a bigdecimal::BigDecimal>,
+        bia_details: Option<&'a serde_json::Value>,
+    ) -> Self {
+        let now = Utc::now();
+        Self {
+            user_id,
+            time: now,
+            utc_offset: 0,
+            pulse: None,
+            blood_glucose: None,
+            systolic_bp: None,
+            diastolic_bp: None,
+            weight: Some(weight_kg),
+            height: None,
+            waist_circumference: None,
+            comments: None,
+            body_fat_pct,
+            bia_details,
         }
     }
 }
@@ -179,6 +211,8 @@ pub struct ChangeHealthMetric<'a> {
     height: Option<Option<i32>>,
     waist_circumference: Option<Option<&'a bigdecimal::BigDecimal>>,
     comments: Option<Option<&'a str>>,
+    body_fat_pct: Option<Option<&'a bigdecimal::BigDecimal>>,
+    bia_details: Option<Option<&'a serde_json::Value>>,
 }
 
 impl<'a> ChangeHealthMetric<'a> {
@@ -203,6 +237,8 @@ impl<'a> ChangeHealthMetric<'a> {
                 .as_inner_ref()
                 .into_option(),
             comments: health_metric.comments.map_inner_deref().into_option(),
+            body_fat_pct: health_metric.body_fat_pct.as_inner_ref().into_option(),
+            bia_details: health_metric.bia_details.as_inner_ref().into_option(),
         }
     }
 }

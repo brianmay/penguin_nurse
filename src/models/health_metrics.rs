@@ -49,6 +49,8 @@ pub struct HealthMetric {
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub body_fat_pct: Option<bigdecimal::BigDecimal>,
+    pub bia_details: Option<serde_json::Value>,
 }
 
 #[allow(dead_code)]
@@ -70,6 +72,8 @@ pub struct NewHealthMetric {
     pub height: Option<u16>,
     pub waist_circumference: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
+    pub body_fat_pct: Option<bigdecimal::BigDecimal>,
+    pub bia_details: Option<serde_json::Value>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -84,4 +88,6 @@ pub struct ChangeHealthMetric {
     pub height: MaybeSet<Option<u16>>,
     pub waist_circumference: MaybeSet<Option<bigdecimal::BigDecimal>>,
     pub comments: MaybeSet<Option<String>>,
+    pub body_fat_pct: MaybeSet<Option<bigdecimal::BigDecimal>>,
+    pub bia_details: MaybeSet<Option<serde_json::Value>>,
 }

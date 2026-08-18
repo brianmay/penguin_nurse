@@ -1,5 +1,6 @@
 use dioxus::prelude::*;
 
+pub mod api;
 pub mod auth;
 // pub mod context;
 pub mod database;
@@ -70,8 +71,9 @@ pub fn init(app: fn() -> Element) {
             .pipe(add_oidc_middleware)
             .layer(axum::middleware::from_fn(auth::session_middleware))
             .layer(auth_layer)
-            .layer(Extension(database))
+            .layer(Extension(database.clone()))
             .layer(Extension(auth_manager))
+            .merge(api::router(database))
             .pipe(Ok)
     });
 }

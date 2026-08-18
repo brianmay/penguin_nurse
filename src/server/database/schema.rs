@@ -115,6 +115,8 @@ diesel::table! {
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
         waist_circumference -> Nullable<Numeric>,
+        body_fat_pct -> Nullable<Numeric>,
+        bia_details -> Nullable<Jsonb>,
     }
 }
 

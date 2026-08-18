@@ -62,6 +62,7 @@ in
         - `OIDC_CLIENT_ID` - The Client ID for the OIDC.
         - `OIDC_CLIENT_SECRET` - The Client secret for the OIDC.
         - `OIDC_AUTH_SCOPE` - "openid profile groups email" or similar.
+        - `KIOSK_API_KEY` - API key for the kiosk endpoints.
       '';
     };
   };

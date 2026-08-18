@@ -71,12 +71,15 @@
         };
 
         # Expose the npm CLI tools (rollup etc.) on PATH, like buildNpmPackage's $out/bin used to.
-        nodePackagesCli = pkgs.runCommand "penguin-nurse-frontend-cli" {
-          nativeBuildInputs = [ nodePackages ];
-        } ''
-          mkdir -p $out/bin
-          ln -s ${nodePackages}/node_modules/.bin/* $out/bin/
-        '';
+        nodePackagesCli =
+          pkgs.runCommand "penguin-nurse-frontend-cli"
+            {
+              nativeBuildInputs = [ nodePackages ];
+            }
+            ''
+              mkdir -p $out/bin
+              ln -s ${nodePackages}/node_modules/.bin/* $out/bin/
+            '';
 
         # frontend =
         #   let
@@ -371,6 +374,7 @@
                 export PORT="${toString port}"
                 export BASE_URL="http://localhost:$PORT/"
                 export DATABASE_URL="postgresql://penguin_nurse:your_secure_password_here@localhost:${toString postgres_port}/penguin_nurse"
+                export KIOSK_API_KEY="dont_tell_secret"
               '';
               services.postgres = {
                 enable = true;

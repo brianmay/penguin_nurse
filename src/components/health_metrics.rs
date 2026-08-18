@@ -57,6 +57,8 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<HealthMetric, Ed
                 height,
                 waist_circumference,
                 comments,
+                body_fat_pct: None,
+                bia_details: None,
             };
             create_health_metric(updates)
                 .await
@@ -74,6 +76,8 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<HealthMetric, Ed
                 height: MaybeSet::Set(height),
                 waist_circumference: MaybeSet::Set(waist_circumference),
                 comments: MaybeSet::Set(comments),
+                body_fat_pct: MaybeSet::NoChange,
+                bia_details: MaybeSet::NoChange,
             };
             update_health_metric(health_metric.id, changes)
                 .await
