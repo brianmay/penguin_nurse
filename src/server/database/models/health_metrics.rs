@@ -163,15 +163,15 @@ impl<'a> NewHealthMetric<'a> {
 
     pub fn for_kiosk(
         user_id: i64,
+        time: chrono::DateTime<chrono::FixedOffset>,
         weight_kg: &'a bigdecimal::BigDecimal,
         body_fat_pct: Option<&'a bigdecimal::BigDecimal>,
         bia_details: Option<&'a serde_json::Value>,
     ) -> Self {
-        let now = Utc::now();
         Self {
             user_id,
-            time: now,
-            utc_offset: 0,
+            time: time.with_timezone(&Utc),
+            utc_offset: time.offset().local_minus_utc(),
             pulse: None,
             blood_glucose: None,
             systolic_bp: None,

@@ -10,6 +10,7 @@ use axum::{
     routing::{get, post},
 };
 use chrono::{Datelike, Utc};
+use chrono_tz::Tz;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
@@ -173,6 +174,7 @@ struct MeasurementRequest {
     weight_g: u32,
     body_fat_deci_pct: Option<u16>,
     details: Option<serde_json::Value>,
+    timezone: String,
 }
 
 #[derive(Serialize)]
@@ -249,11 +251,21 @@ async fn post_measurement(
         .body_fat_deci_pct
         .map(|v| bigdecimal::BigDecimal::from(v) / bigdecimal::BigDecimal::from(10u32));
 
-    let now = Utc::now();
+    let tz: Tz = body.timezone.parse().map_err(|e| {
+        error_response(
+            StatusCode::BAD_REQUEST,
+            &format!("invalid timezone: {e}"),
+        )
+    })?;
+
+    let now_utc = Utc::now();
+    let now_local = now_utc.with_timezone(&tz);
+    let now_fixed: chrono::DateTime<chrono::FixedOffset> = now_local.into();
     let bia_details = body.details.unwrap_or(serde_json::json!({}));
 
     let new_metric = db_health_metrics::NewHealthMetric::for_kiosk(
         body.user_id,
+        now_fixed,
         &weight_kg,
         body_fat_pct.as_ref(),
         Some(&bia_details),
@@ -269,7 +281,7 @@ async fn post_measurement(
         })?;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let timestamp = now.format("%Y-%m-%dT%H:%M:%SZ").to_string();
+    let timestamp = now_utc.format("%Y-%m-%dT%H:%M:%SZ").to_string();
 
     Ok((
         StatusCode::CREATED,

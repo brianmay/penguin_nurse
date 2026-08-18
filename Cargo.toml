@@ -23,6 +23,7 @@ dioxus-fullstack = { version = "0.7.0" }
 dioxus-cli-config = { version = "*", optional = true }
 
 chrono = { version = "0.4.42", features = ["serde"] }
+chrono-tz = { version = "0.10", optional = true }
 tracing = { version = "0.1.43" }
 diesel = { version = "2.3.10", features = ["postgres", "chrono", "serde_json", "numeric", "64-column-tables"], optional = true }
 axum = { version = "0.8.9", optional = true }
@@ -64,7 +65,7 @@ default = ["web"]
 web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
-server = ["dioxus/server", "dioxus-cli-config", "tokio", "axum", "diesel", "diesel-async", "diesel-derive-enum", "diesel_migrations", "tracing-subscriber", "tower-sessions", "tower-sessions-core", "bb8", "axum-login", "password-auth", "openid", "arc-swap", "url"]
+server = ["dioxus/server", "dioxus-cli-config", "tokio", "axum", "diesel", "diesel-async", "diesel-derive-enum", "diesel_migrations", "tracing-subscriber", "tower-sessions", "tower-sessions-core", "bb8", "axum-login", "password-auth", "openid", "arc-swap", "url", "chrono-tz"]
 cli-only = ["server"]
 
 [profile.wasm-dev]
