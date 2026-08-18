@@ -251,12 +251,10 @@ async fn post_measurement(
         .body_fat_deci_pct
         .map(|v| bigdecimal::BigDecimal::from(v) / bigdecimal::BigDecimal::from(10u32));
 
-    let tz: Tz = body.timezone.parse().map_err(|e| {
-        error_response(
-            StatusCode::BAD_REQUEST,
-            &format!("invalid timezone: {e}"),
-        )
-    })?;
+    let tz: Tz = body
+        .timezone
+        .parse()
+        .map_err(|e| error_response(StatusCode::BAD_REQUEST, &format!("invalid timezone: {e}")))?;
 
     let now_utc = Utc::now();
     let now_local = now_utc.with_timezone(&tz);

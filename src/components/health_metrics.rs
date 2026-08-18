@@ -5,9 +5,9 @@ use crate::{
     components::events::{EventDateTimeShort, Markdown},
     forms::{
         Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputNumber,
-        InputTextArea, Saving, ValidationError, validate_blood_glucose, validate_comments,
-        validate_diastolic_bp, validate_fixed_offset_date_time, validate_height, validate_pulse,
-        validate_systolic_bp, validate_waist_circumference, validate_weight,
+        InputTextArea, Saving, ValidationError, validate_blood_glucose, validate_body_fat_pct,
+        validate_comments, validate_diastolic_bp, validate_fixed_offset_date_time, validate_height,
+        validate_pulse, validate_systolic_bp, validate_waist_circumference, validate_weight,
     },
     functions::health_metrics::{create_health_metric, delete_health_metric, update_health_metric},
     models::{ChangeHealthMetric, HealthMetric, MaybeSet, NewHealthMetric, UserId},
@@ -30,6 +30,7 @@ struct Validate {
     weight: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
     height: Memo<Result<Option<u16>, ValidationError>>,
     waist_circumference: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
+    body_fat_pct: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
@@ -42,6 +43,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<HealthMetric, Ed
     let weight = validate.weight.read().clone()?;
     let height = validate.height.read().clone()?;
     let waist_circumference = validate.waist_circumference.read().clone()?;
+    let body_fat_pct = validate.body_fat_pct.read().clone()?;
     let comments = validate.comments.read().clone()?;
 
     match op {
@@ -57,7 +59,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<HealthMetric, Ed
                 height,
                 waist_circumference,
                 comments,
-                body_fat_pct: None,
+                body_fat_pct,
                 bia_details: None,
             };
             create_health_metric(updates)
@@ -76,7 +78,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<HealthMetric, Ed
                 height: MaybeSet::Set(height),
                 waist_circumference: MaybeSet::Set(waist_circumference),
                 comments: MaybeSet::Set(comments),
-                body_fat_pct: MaybeSet::NoChange,
+                body_fat_pct: MaybeSet::Set(body_fat_pct),
                 bia_details: MaybeSet::NoChange,
             };
             update_health_metric(health_metric.id, changes)
@@ -128,6 +130,10 @@ pub fn HealthMetricUpdate(
         Operation::Create { .. } => String::new(),
         Operation::Update { health_metric } => health_metric.comments.as_raw(),
     });
+    let body_fat_pct = use_signal(|| match &op {
+        Operation::Create { .. } => String::new(),
+        Operation::Update { health_metric } => health_metric.body_fat_pct.as_raw(),
+    });
 
     let validate_systolic_bp = use_memo(move || validate_systolic_bp(&systolic_bp()));
 
@@ -164,6 +170,7 @@ pub fn HealthMetricUpdate(
         weight: use_memo(move || validate_weight(&weight())),
         height: use_memo(move || validate_height(&height())),
         waist_circumference: use_memo(move || validate_waist_circumference(&waist_circumference())),
+        body_fat_pct: use_memo(move || validate_body_fat_pct(&body_fat_pct())),
         comments: use_memo(move || validate_comments(&comments())),
     };
 
@@ -180,6 +187,7 @@ pub fn HealthMetricUpdate(
             || validate.weight.read().is_err()
             || validate.height.read().is_err()
             || validate.waist_circumference.read().is_err()
+            || validate.body_fat_pct.read().is_err()
             || validate.comments.read().is_err()
             || disabled()
     });
@@ -277,6 +285,13 @@ pub fn HealthMetricUpdate(
                 label: "Waist Circumference (cm)",
                 value: waist_circumference,
                 validate: validate.waist_circumference,
+                disabled,
+            }
+            InputNumber {
+                id: "body_fat_pct",
+                label: "Body Fat (%)",
+                value: body_fat_pct,
+                validate: validate.body_fat_pct,
                 disabled,
             }
             InputTextArea {
@@ -467,6 +482,13 @@ pub fn HealthMetricDetails(health_metric: HealthMetric) -> Element {
                 "Waist Circumference: "
                 {waist_circumference.to_string()}
                 "cm"
+            }
+        }
+        if let Some(body_fat_pct) = &health_metric.body_fat_pct {
+            div {
+                "Body Fat: "
+                {body_fat_pct.to_string()}
+                "%"
             }
         }
         if let Some(comments) = &health_metric.comments {

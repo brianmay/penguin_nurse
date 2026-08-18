@@ -25,7 +25,7 @@ pub use saving::MyForm;
 pub use saving::Saving;
 pub use validation::{
     validate_1st_password, validate_2nd_password, validate_barcode, validate_blood_glucose,
-    validate_brand, validate_bristol, validate_colour, validate_colour_hue,
+    validate_body_fat_pct, validate_brand, validate_bristol, validate_colour, validate_colour_hue,
     validate_colour_saturation, validate_colour_value, validate_comments,
     validate_consumable_millilitres, validate_consumable_quantity, validate_consumable_unit,
     validate_consumption_type, validate_consumption_type_maybe, validate_date_of_birth,
