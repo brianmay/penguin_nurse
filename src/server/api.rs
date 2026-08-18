@@ -260,7 +260,7 @@ async fn post_measurement(
 
     let now_utc = Utc::now();
     let now_local = now_utc.with_timezone(&tz);
-    let now_fixed: chrono::DateTime<chrono::FixedOffset> = now_local.into();
+    let now_fixed = now_local.fixed_offset();
     let bia_details = body.details.unwrap_or(serde_json::json!({}));
 
     let new_metric = db_health_metrics::NewHealthMetric::for_kiosk(
