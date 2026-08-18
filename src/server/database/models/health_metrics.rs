@@ -99,6 +99,26 @@ pub async fn get_health_metric_by_id(
         .optional()
 }
 
+pub async fn get_latest_height(
+    conn: &mut DatabaseConnection,
+    user_id: i64,
+) -> Result<Option<i32>, diesel::result::Error> {
+    use crate::server::database::schema::health_metrics::height as q_height;
+    use crate::server::database::schema::health_metrics::table;
+    use crate::server::database::schema::health_metrics::time as q_time;
+    use crate::server::database::schema::health_metrics::user_id as q_user_id;
+
+    table
+        .select(HealthMetric::as_select())
+        .filter(q_user_id.eq(user_id))
+        .filter(q_height.is_not_null())
+        .order(q_time.desc())
+        .first(conn)
+        .await
+        .optional()
+        .map(|hm| hm.and_then(|hm| hm.height))
+}
+
 #[derive(Insertable, Debug, Clone)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::health_metrics)]

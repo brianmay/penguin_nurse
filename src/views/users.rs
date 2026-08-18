@@ -129,7 +129,7 @@ pub fn UserDetail(user_id: UserId, dialog: ReadSignal<Option<DetailsDialogRefere
     match maybe_user() {
         Some(Ok(Some(obj))) => {
             rsx! {
-                table { class: "table table-striped",
+                    table { class: "table table-striped",
                     tbody {
                         tr {
                             td { "ID" }
@@ -150,6 +150,14 @@ pub fn UserDetail(user_id: UserId, dialog: ReadSignal<Option<DetailsDialogRefere
                         tr {
                             td { "Role" }
                             td { {if obj.is_admin { "Admin" } else { "User" }} }
+                        }
+                        tr {
+                            td { "Date of Birth" }
+                            td { {obj.date_of_birth.map(|d| d.format("%Y-%m-%d").to_string()).unwrap_or_default()} }
+                        }
+                        tr {
+                            td { "Sex" }
+                            td { {obj.sex.map(|s| s.as_title().to_string()).unwrap_or_default()} }
                         }
                         tr {
                             td { "Created" }

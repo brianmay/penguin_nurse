@@ -10,6 +10,31 @@ use crate::models::UserId;
 use crate::server::database::connection::DatabaseConnection;
 use crate::server::database::schema;
 
+#[derive(diesel_derive_enum::DbEnum, Debug, Copy, Clone)]
+#[db_enum(existing_type_path = "schema::sql_types::Sex")]
+pub enum Sex {
+    Male,
+    Female,
+}
+
+impl From<Sex> for crate::models::Sex {
+    fn from(sex: Sex) -> crate::models::Sex {
+        match sex {
+            Sex::Male => crate::models::Sex::Male,
+            Sex::Female => crate::models::Sex::Female,
+        }
+    }
+}
+
+impl From<crate::models::Sex> for Sex {
+    fn from(sex: crate::models::Sex) -> Sex {
+        match sex {
+            crate::models::Sex::Male => Sex::Male,
+            crate::models::Sex::Female => Sex::Female,
+        }
+    }
+}
+
 #[allow(dead_code)]
 #[derive(Queryable, Selectable, Debug)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -47,6 +72,8 @@ pub struct User {
     pub is_admin: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub date_of_birth: Option<chrono::NaiveDate>,
+    pub sex: Option<Sex>,
 }
 
 impl AuthUser for User {
@@ -70,6 +97,8 @@ impl From<User> for crate::models::User {
             oidc_id: user.oidc_id,
             email: user.email,
             is_admin: user.is_admin,
+            date_of_birth: user.date_of_birth,
+            sex: user.sex.map(|s| s.into()),
             created_at: user.created_at,
             updated_at: user.updated_at,
         }
@@ -86,6 +115,7 @@ pub struct NewUser<'a> {
     pub oidc_id: Option<&'a str>,
     pub email: &'a str,
     pub is_admin: bool,
+    pub sex: Option<Sex>,
 }
 
 impl<'a> NewUser<'a> {
@@ -97,6 +127,7 @@ impl<'a> NewUser<'a> {
             oidc_id: user.oidc_id.as_deref(),
             email: &user.email,
             is_admin: user.is_admin,
+            sex: user.sex.map(|s| s.into()),
         }
     }
 }
@@ -111,6 +142,8 @@ pub struct UpdateUser<'a> {
     pub oidc_id: Option<Option<&'a str>>,
     pub email: Option<&'a str>,
     pub is_admin: Option<bool>,
+    pub date_of_birth: Option<Option<chrono::NaiveDate>>,
+    pub sex: Option<Option<Sex>>,
 }
 
 impl<'a> UpdateUser<'a> {
@@ -125,6 +158,8 @@ impl<'a> UpdateUser<'a> {
             oidc_id: user.oidc_id.map_inner_deref().into_option(),
             email: user.email.as_deref().into_option(),
             is_admin: user.is_admin.into_option(),
+            date_of_birth: user.date_of_birth.into_option(),
+            sex: user.sex.map(|s| s.map(|s| s.into())).into_option(),
         }
     }
 }

@@ -1,9 +1,11 @@
 use bigdecimal::BigDecimal;
-use chrono::{DateTime, FixedOffset, TimeDelta, Utc};
+use chrono::{DateTime, FixedOffset, NaiveDate, TimeDelta, Utc};
 use palette::Hsv;
 use tap::Pipe;
 
-use crate::models::{Bristol, ConsumableUnit, ConsumptionType, ExerciseRpe, ExerciseType, Urgency};
+use crate::models::{
+    Bristol, ConsumableUnit, ConsumptionType, ExerciseRpe, ExerciseType, Sex, Urgency,
+};
 
 use super::{FieldValue, errors::ValidationError};
 
@@ -39,6 +41,14 @@ pub fn validate_email(str: &str) -> Result<String, ValidationError> {
         return Err(ValidationError("Email should contain @".to_string()));
     }
     Ok(str)
+}
+
+pub fn validate_date_of_birth(str: &str) -> Result<Option<NaiveDate>, ValidationError> {
+    validate_field_value(str)
+}
+
+pub fn validate_sex(sex: Option<Sex>) -> Result<Option<Sex>, ValidationError> {
+    Ok(sex)
 }
 
 pub fn validate_password(str: &str) -> Result<String, ValidationError> {

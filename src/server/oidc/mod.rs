@@ -165,6 +165,8 @@ impl Client {
                 is_admin: Some(is_admin),
                 username: None,
                 password: None,
+                date_of_birth: None,
+                sex: None,
             };
 
             update_user(&mut conn, user.id, updates)
@@ -178,6 +180,7 @@ impl Client {
                 is_admin,
                 username: name.as_str(),
                 password: "",
+                sex: None,
             };
             create_user(&mut conn, updates)
                 .await

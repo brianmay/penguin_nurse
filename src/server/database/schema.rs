@@ -12,6 +12,10 @@ pub mod sql_types {
     #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "exercise_type"))]
     pub struct ExerciseType;
+
+    #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "sex"))]
+    pub struct Sex;
 }
 
 diesel::table! {
@@ -237,6 +241,9 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::Sex;
+
     users (id) {
         id -> Int8,
         username -> Text,
@@ -247,6 +254,8 @@ diesel::table! {
         is_admin -> Bool,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        date_of_birth -> Nullable<Date>,
+        sex -> Nullable<Sex>,
     }
 }
 

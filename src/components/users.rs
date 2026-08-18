@@ -1,5 +1,6 @@
 use std::{num::ParseIntError, str::FromStr, sync::Arc};
 
+use chrono::NaiveDate;
 use dioxus::prelude::*;
 use dioxus_router::ToQueryArgument;
 use tap::Pipe;
@@ -7,12 +8,13 @@ use thiserror::Error;
 
 use crate::{
     forms::{
-        Dialog, EditError, FieldValue, FormSaveCancelButton, InputBoolean, InputPassword,
-        InputString, Saving, ValidationError, validate_1st_password, validate_2nd_password,
-        validate_email, validate_full_name, validate_username,
+        Dialog, EditError, FieldValue, FormSaveCancelButton, InputBoolean, InputDate,
+        InputPassword, InputSex, InputString, Saving, ValidationError, validate_1st_password,
+        validate_2nd_password, validate_date_of_birth, validate_email, validate_full_name,
+        validate_sex, validate_username,
     },
     functions::users::{create_user, delete_user, update_user},
-    models::{ChangeUser, MaybeSet, NewUser, User},
+    models::{ChangeUser, MaybeSet, NewUser, Sex, User},
 };
 
 #[derive(Debug, Clone)]
@@ -23,6 +25,8 @@ struct ValidateSaveNewUser {
     password: Memo<Result<String, ValidationError>>,
     password_confirm: Memo<Result<String, ValidationError>>,
     is_admin: Memo<Result<bool, ValidationError>>,
+    date_of_birth: Memo<Result<Option<NaiveDate>, ValidationError>>,
+    sex: Memo<Result<Option<Sex>, ValidationError>>,
 }
 
 async fn do_save_new_user(validate: &ValidateSaveNewUser) -> Result<User, EditError> {
@@ -32,6 +36,7 @@ async fn do_save_new_user(validate: &ValidateSaveNewUser) -> Result<User, EditEr
     let password = validate.password.read().clone()?;
     let _password_confirm = validate.password_confirm.read().clone()?;
     let is_admin = validate.is_admin.read().clone()?;
+    let sex = validate.sex.read().clone()?;
 
     let user_updates = NewUser {
         username,
@@ -40,6 +45,7 @@ async fn do_save_new_user(validate: &ValidateSaveNewUser) -> Result<User, EditEr
         password,
         oidc_id: None,
         is_admin,
+        sex,
     };
     create_user(user_updates).await.map_err(EditError::Server)
 }
@@ -50,6 +56,8 @@ struct ValidateUpdateExistingUser {
     email: Memo<Result<String, ValidationError>>,
     full_name: Memo<Result<String, ValidationError>>,
     is_admin: Memo<Result<bool, ValidationError>>,
+    date_of_birth: Memo<Result<Option<NaiveDate>, ValidationError>>,
+    sex: Memo<Result<Option<Sex>, ValidationError>>,
 }
 
 async fn do_update_existing_user(
@@ -60,6 +68,8 @@ async fn do_update_existing_user(
     let email = validate.email.read().clone()?;
     let full_name = validate.full_name.read().clone()?;
     let is_admin = validate.is_admin.read().clone()?;
+    let date_of_birth = validate.date_of_birth.read().clone()?;
+    let sex = validate.sex.read().clone()?;
 
     let changes = ChangeUser {
         username: MaybeSet::Set(username),
@@ -67,6 +77,8 @@ async fn do_update_existing_user(
         full_name: MaybeSet::Set(full_name),
         oidc_id: MaybeSet::NoChange,
         is_admin: MaybeSet::Set(is_admin),
+        date_of_birth: MaybeSet::Set(date_of_birth),
+        sex: MaybeSet::Set(sex),
     };
     update_user(user.id, changes, None)
         .await
@@ -92,6 +104,8 @@ async fn do_change_password(
         full_name: MaybeSet::NoChange,
         oidc_id: MaybeSet::NoChange,
         is_admin: MaybeSet::NoChange,
+        date_of_birth: MaybeSet::NoChange,
+        sex: MaybeSet::NoChange,
     };
     update_user(user.id, changes, Some(password))
         .await
@@ -106,6 +120,8 @@ pub fn UserCreate(on_cancel: Callback, on_save: Callback<User>) -> Element {
     let password = use_signal(String::new);
     let password_confirm = use_signal(String::new);
     let is_admin = use_signal(|| false);
+    let date_of_birth = use_signal(String::new);
+    let sex = use_signal(|| None::<Sex>);
 
     let validate = {
         let password_validate = use_memo(move || validate_1st_password(&password()));
@@ -118,6 +134,8 @@ pub fn UserCreate(on_cancel: Callback, on_save: Callback<User>) -> Element {
                 validate_2nd_password(&password_validate.read(), &password_confirm())
             }),
             is_admin: use_memo(move || Ok(is_admin())),
+            date_of_birth: use_memo(move || validate_date_of_birth(&date_of_birth())),
+            sex: use_memo(move || validate_sex(sex())),
         }
     };
 
@@ -132,6 +150,8 @@ pub fn UserCreate(on_cancel: Callback, on_save: Callback<User>) -> Element {
             || validate.password.read().is_err()
             || validate.password_confirm.read().is_err()
             || validate.is_admin.read().is_err()
+            || validate.date_of_birth.read().is_err()
+            || validate.sex.read().is_err()
             || disabled()
     });
 
@@ -187,6 +207,20 @@ pub fn UserCreate(on_cancel: Callback, on_save: Callback<User>) -> Element {
                     validate: validate.full_name,
                     disabled,
                 }
+                InputDate {
+                    id: "date_of_birth",
+                    label: "Date of Birth",
+                    value: date_of_birth,
+                    validate: validate.date_of_birth,
+                    disabled,
+                }
+                InputSex {
+                    id: "sex",
+                    label: "Sex",
+                    value: sex,
+                    validate: validate.sex,
+                    disabled,
+                }
                 InputPassword {
                     id: "password",
                     label: "Password",
@@ -227,12 +261,16 @@ pub fn UserUpdate(user: User, on_cancel: Callback, on_save: Callback<User>) -> E
     let email = use_signal(|| user.email.as_raw());
     let full_name = use_signal(|| user.full_name.as_raw());
     let is_admin = use_signal(|| user.is_admin);
+    let date_of_birth = use_signal(|| user.date_of_birth.as_raw());
+    let sex = use_signal(|| user.sex);
 
     let validate = ValidateUpdateExistingUser {
         username: use_memo(move || validate_username(&username())),
         email: use_memo(move || validate_email(&email())),
         full_name: use_memo(move || validate_full_name(&full_name())),
         is_admin: use_memo(move || Ok(is_admin())),
+        date_of_birth: use_memo(move || validate_date_of_birth(&date_of_birth())),
+        sex: use_memo(move || validate_sex(sex())),
     };
 
     let mut saving = use_signal(|| Saving::No);
@@ -244,6 +282,8 @@ pub fn UserUpdate(user: User, on_cancel: Callback, on_save: Callback<User>) -> E
             || validate.email.read().is_err()
             || validate.full_name.read().is_err()
             || validate.is_admin.read().is_err()
+            || validate.date_of_birth.read().is_err()
+            || validate.sex.read().is_err()
             || disabled()
     });
 
@@ -302,6 +342,20 @@ pub fn UserUpdate(user: User, on_cancel: Callback, on_save: Callback<User>) -> E
                     label: "Full Name",
                     value: full_name,
                     validate: validate.full_name,
+                    disabled,
+                }
+                InputDate {
+                    id: "date_of_birth",
+                    label: "Date of Birth",
+                    value: date_of_birth,
+                    validate: validate.date_of_birth,
+                    disabled,
+                }
+                InputSex {
+                    id: "sex",
+                    label: "Sex",
+                    value: sex,
+                    validate: validate.sex,
                     disabled,
                 }
                 InputBoolean {

@@ -1,6 +1,7 @@
 mod users;
 pub use users::ChangeUser;
 pub use users::NewUser;
+pub use users::Sex;
 pub use users::User;
 pub use users::UserId;
 

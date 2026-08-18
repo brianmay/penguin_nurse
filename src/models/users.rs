@@ -1,10 +1,34 @@
 use std::str::FromStr;
 
+use derive_enum_all_values::AllValues;
+
 use crate::models::MaybeSet;
 
 use serde::{Deserialize, Serialize};
 
 // Types from database::models that frontend requires. This excludes secrets such as the users password.
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, AllValues)]
+pub enum Sex {
+    Male,
+    Female,
+}
+
+impl Sex {
+    pub fn as_id(&self) -> &'static str {
+        match self {
+            Self::Male => "male",
+            Self::Female => "female",
+        }
+    }
+
+    pub fn as_title(&self) -> &'static str {
+        match self {
+            Self::Male => "Male",
+            Self::Female => "Female",
+        }
+    }
+}
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct UserId(i64);
@@ -40,6 +64,8 @@ pub struct User {
     pub oidc_id: Option<String>,
     pub email: String,
     pub is_admin: bool,
+    pub date_of_birth: Option<chrono::NaiveDate>,
+    pub sex: Option<Sex>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -52,6 +78,7 @@ pub struct NewUser {
     pub oidc_id: Option<String>,
     pub email: String,
     pub is_admin: bool,
+    pub sex: Option<Sex>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -62,4 +89,6 @@ pub struct ChangeUser {
     pub oidc_id: MaybeSet<Option<String>>,
     pub email: MaybeSet<String>,
     pub is_admin: MaybeSet<bool>,
+    pub date_of_birth: MaybeSet<Option<chrono::NaiveDate>>,
+    pub sex: MaybeSet<Option<Sex>>,
 }

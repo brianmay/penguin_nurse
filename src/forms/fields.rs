@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
+use chrono::{DateTime, FixedOffset, Local, NaiveDate, TimeDelta, Utc};
 use classes::classes;
 use dioxus::{prelude::*, signals::Signal};
 use dioxus_fullstack::ServerFnError;
@@ -23,7 +23,8 @@ use crate::{
     },
     functions::consumables::search_consumables,
     models::{
-        Bristol, Consumable, ConsumableUnit, ConsumptionType, ExerciseRpe, ExerciseType, Urgency,
+        Bristol, Consumable, ConsumableUnit, ConsumptionType, ExerciseRpe, ExerciseType, Sex,
+        Urgency,
     },
 };
 
@@ -563,6 +564,33 @@ pub fn InputOptionDateTimeUtc(
 }
 
 #[component]
+pub fn InputDate(
+    id: &'static str,
+    label: &'static str,
+    value: Signal<String>,
+    validate: Memo<Result<Option<NaiveDate>, ValidationError>>,
+    disabled: Memo<bool>,
+) -> Element {
+    rsx! {
+        div { class: "mb-5",
+            label { r#for: id, class: get_label_classes(), "{label}" }
+            input {
+                r#type: "date",
+                class: get_input_classes(validate().is_ok(), disabled()),
+                id,
+                placeholder: "YYYY-MM-DD",
+                value: "{value()}",
+                disabled,
+                oninput: move |e| {
+                    value.set(e.value());
+                },
+            }
+            FieldMessage { validate, disabled }
+        }
+    }
+}
+
+#[component]
 pub fn InputDuration(
     id: &'static str,
     label: &'static str,
@@ -727,6 +755,46 @@ pub fn InputConsumptionTypeMaybe(
                 }
             }),
     )
+    .collect::<Vec<_>>();
+
+    rsx! {
+        InputSelect {
+            id,
+            label,
+            validate,
+            value,
+            disabled,
+            options,
+        }
+    }
+}
+
+#[component]
+pub fn InputSex(
+    id: &'static str,
+    label: &'static str,
+    value: Signal<Option<Sex>>,
+    validate: Memo<Result<Option<Sex>, ValidationError>>,
+    disabled: Memo<bool>,
+) -> Element {
+    let options = std::iter::once(InputOption {
+        id: "none".to_string(),
+        value: None,
+        icon: rsx! {},
+        title: "None".to_string(),
+        label: rsx! { "None" },
+    })
+    .chain(Sex::all_values().iter().map(|sex| {
+        let id = sex.as_id();
+        let label = sex.as_title();
+        InputOption {
+            id: id.to_string(),
+            value: Some(*sex),
+            icon: rsx! {},
+            title: label.to_string(),
+            label: rsx! { "{label}" },
+        }
+    }))
     .collect::<Vec<_>>();
 
     rsx! {

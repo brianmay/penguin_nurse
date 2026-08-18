@@ -135,3 +135,18 @@ pub async fn delete_health_metric(id: HealthMetricId) -> Result<(), ServerFnErro
     .map_err(AppError::from)
     .map_err(ServerFnError::from)
 }
+
+#[server]
+pub async fn get_latest_height() -> Result<Option<u16>, ServerFnError> {
+    let logged_in_user_id = get_user_id().await?;
+    let mut conn = get_database_connection().await?;
+
+    crate::server::database::models::health_metrics::get_latest_height(
+        &mut conn,
+        logged_in_user_id.as_inner(),
+    )
+    .await
+    .map(|h| h.map(|h| h as u16))
+    .map_err(AppError::from)
+    .map_err(ServerFnError::from)
+}

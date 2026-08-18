@@ -1,18 +1,19 @@
 use std::str::FromStr;
 
-use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
+use chrono::{DateTime, FixedOffset, Local, NaiveDate, TimeDelta, Utc};
 use dioxus::prelude::*;
 use palette::RgbHue;
 use thiserror::Error;
 
 use crate::components::consumables::{ConsumableIcon, ConsumableLabel, ConsumableUnitIcon};
 use crate::components::consumptions::ConsumptionTypeIcon;
-use crate::components::events::{UrgencyIcon, UrgencyLabel};
+use crate::components::events::UrgencyIcon;
+use crate::components::events::UrgencyLabel;
 use crate::components::exercises::{ExerciseRpeIcon, ExerciseRpeLabel, ExerciseTypeIcon};
 use crate::components::poos::PooBristolIcon;
 use crate::components::{ElementIcon, StrIcon};
 use crate::models::{
-    Bristol, Consumable, ConsumableUnit, ConsumptionType, ExerciseRpe, ExerciseType, Urgency,
+    Bristol, Consumable, ConsumableUnit, ConsumptionType, ExerciseRpe, ExerciseType, Sex, Urgency,
 };
 
 #[derive(Error, Debug)]
@@ -108,6 +109,26 @@ impl FieldValue for DateTime<FixedOffset> {
         }
         match DateTime::parse_from_rfc3339(value) {
             Ok(time) => Ok(time),
+            Err(_) => Err(FieldValueError::InvalidValue),
+        }
+    }
+}
+
+impl FieldValue for NaiveDate {
+    type RawValue = String;
+    type DerefValue = str;
+
+    fn as_raw(&self) -> String {
+        self.format("%Y-%m-%d").to_string()
+    }
+
+    fn from_raw(value: &str) -> Result<Self, FieldValueError> {
+        let value = value.trim();
+        if value.is_empty() {
+            return Err(FieldValueError::RequiredValue);
+        }
+        match NaiveDate::parse_from_str(value, "%Y-%m-%d") {
+            Ok(date) => Ok(date),
             Err(_) => Err(FieldValueError::InvalidValue),
         }
     }
@@ -256,6 +277,18 @@ impl FieldLabel for ConsumptionType {
                 icon: rsx! {
                     ConsumptionTypeIcon { consumption_type: *self }
                 },
+            }
+        }
+    }
+}
+
+impl FieldLabel for Sex {
+    fn as_label(&self) -> Element {
+        let label = self.as_title();
+        rsx! {
+            StrIcon {
+                title: label,
+                icon: rsx! {},
             }
         }
     }
