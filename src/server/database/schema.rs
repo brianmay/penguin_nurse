@@ -117,6 +117,7 @@ diesel::table! {
         waist_circumference -> Nullable<Numeric>,
         body_fat_pct -> Nullable<Numeric>,
         bia_details -> Nullable<Jsonb>,
+        hip_circumference -> Nullable<Numeric>,
     }
 }
 

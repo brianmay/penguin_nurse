@@ -312,6 +312,12 @@ pub fn validate_waist_circumference(
     validate_in_range_maybe(str, BigDecimal::from(30), BigDecimal::from(300))
 }
 
+pub fn validate_hip_circumference(
+    str: &str,
+) -> Result<Option<bigdecimal::BigDecimal>, ValidationError> {
+    validate_in_range_maybe(str, BigDecimal::from(30), BigDecimal::from(300))
+}
+
 pub fn validate_body_fat_pct(str: &str) -> Result<Option<bigdecimal::BigDecimal>, ValidationError> {
     validate_in_range_maybe(str, BigDecimal::from(0), BigDecimal::from(100))
 }
