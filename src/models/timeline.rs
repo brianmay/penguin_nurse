@@ -140,7 +140,7 @@ impl Timeline {
     }
 
     pub fn sort(&mut self) {
-        self.0.sort_by(|a, b| a.time.cmp(&b.time));
+        self.0.sort_by_key(|a| a.time);
     }
 
     pub fn iter(&self) -> std::slice::Iter<'_, Entry> {
