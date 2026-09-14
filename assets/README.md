@@ -4,6 +4,7 @@
 * [exercise/running.svg](https://www.svgrepo.com/svg/528569/running)
 * [exercise/cycling.svg](https://www.svgrepo.com/svg/490678/cycling)
 * [exercise/indoor_cycling.svg](https://www.svgrepo.com/svg/456141/exercise-bike)
+* [exercise/treadmill.svg](https://www.svgrepo.com/svg/528753/treadmill) CC Attribution License
 * [exercise/jumping.svg](https://www.svgrepo.com/svg/453216/jumping-in)
 * [exercise/skipping.svg](https://www.svgrepo.com/svg/322631/jumping-rope)
 * [exercise/flying.svg](https://www.svgrepo.com/svg/323873/flying-trout)

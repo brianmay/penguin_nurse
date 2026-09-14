@@ -314,6 +314,7 @@ const WALKING_SVG: Asset = asset!("/assets/exercise/walking.svg");
 const RUNNING_SVG: Asset = asset!("/assets/exercise/running.svg");
 const CYCLING_SVG: Asset = asset!("/assets/exercise/cycling.svg");
 const INDOOR_CYCLING_SVG: Asset = asset!("/assets/exercise/indoor_cycling.svg");
+const TREADMILL_SVG: Asset = asset!("/assets/exercise/treadmill.svg");
 const JUMPING_SVG: Asset = asset!("/assets/exercise/jumping.svg");
 const SKIPPING_SVG: Asset = asset!("/assets/exercise/skipping.svg");
 const FLYING_SVG: Asset = asset!("/assets/exercise/flying.svg");
@@ -326,6 +327,7 @@ pub fn ExerciseTypeIcon(exercise_type: ExerciseType) -> Element {
         ExerciseType::Running => RUNNING_SVG,
         ExerciseType::Cycling => CYCLING_SVG,
         ExerciseType::IndoorCycling => INDOOR_CYCLING_SVG,
+        ExerciseType::Treadmill => TREADMILL_SVG,
         ExerciseType::Jumping => JUMPING_SVG,
         ExerciseType::Skipping => SKIPPING_SVG,
         ExerciseType::Flying => FLYING_SVG,
