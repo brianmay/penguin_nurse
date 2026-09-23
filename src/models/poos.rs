@@ -119,12 +119,13 @@ pub struct Poo {
     pub id: PooId,
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: chrono::Duration,
+    pub duration: Option<chrono::Duration>,
     pub urgency: Urgency,
     pub quantity: i32,
     pub bristol: Bristol,
     pub colour: Option<palette::Hsv>,
     pub comments: Option<String>,
+    pub complete: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -134,12 +135,13 @@ pub struct Poo {
 pub struct NewPoo {
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: chrono::Duration,
+    pub duration: Option<chrono::Duration>,
     pub urgency: Urgency,
     pub quantity: i32,
     pub bristol: Bristol,
     pub colour: Option<palette::Hsv>,
     pub comments: Option<String>,
+    pub complete: bool,
 }
 
 #[allow(dead_code)]
@@ -147,10 +149,11 @@ pub struct NewPoo {
 pub struct ChangePoo {
     pub user_id: MaybeSet<UserId>,
     pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
-    pub duration: MaybeSet<chrono::Duration>,
+    pub duration: MaybeSet<Option<chrono::Duration>>,
     pub urgency: MaybeSet<Urgency>,
     pub quantity: MaybeSet<i32>,
     pub bristol: MaybeSet<Bristol>,
     pub colour: MaybeSet<Option<palette::Hsv>>,
     pub comments: MaybeSet<Option<String>>,
+    pub complete: MaybeSet<bool>,
 }

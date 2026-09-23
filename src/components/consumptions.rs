@@ -11,10 +11,10 @@ use crate::{
     },
     forms::{
         Dialog, EditError, FieldValue, FormCloseButton, FormDeleteButton, FormEditButton,
-        FormSaveCancelButton, InputConsumable, InputConsumptionType, InputDateTime, InputDuration,
-        InputNumber, InputTextArea, Saving, ValidationError, validate_comments,
+        FormSaveCancelButton, InputBoolean, InputConsumable, InputConsumptionType, InputDateTime,
+        InputDuration, InputNumber, InputTextArea, Saving, ValidationError, validate_comments,
         validate_consumable_millilitres, validate_consumable_quantity, validate_consumption_type,
-        validate_duration, validate_fixed_offset_date_time,
+        validate_fixed_offset_date_time, validate_optional_duration,
     },
     functions::consumptions::{
         create_consumption, create_consumption_consumable, delete_consumption,
@@ -37,13 +37,13 @@ pub enum Operation {
 #[derive(Debug, Clone)]
 struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    duration: Memo<Result<TimeDelta, ValidationError>>,
+    duration: Memo<Result<Option<TimeDelta>, ValidationError>>,
     consumption_type: Memo<Result<ConsumptionType, ValidationError>>,
     liquid_mls: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
-async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumption, EditError> {
+async fn do_save(op: &Operation, validate: &Validate, complete: bool) -> Result<Consumption, EditError> {
     let time = validate.time.read().clone()?;
     let duration = validate.duration.read().clone()?;
     let consumption_type = validate.consumption_type.read().clone()?;
@@ -59,6 +59,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumption, Edi
                 liquid_mls,
                 comments,
                 consumption_type,
+                complete,
             };
             create_consumption(updates).await.map_err(EditError::Server)
         }
@@ -70,6 +71,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumption, Edi
                 consumption_type: MaybeSet::Set(consumption_type),
                 liquid_mls: MaybeSet::Set(liquid_mls),
                 comments: MaybeSet::Set(comments),
+                complete: MaybeSet::Set(complete),
             };
             update_consumption(consumption.id, changes)
                 .await
@@ -94,6 +96,11 @@ pub fn ConsumptionUpdate(
         Operation::Update { consumption } => consumption.duration.as_raw(),
     });
 
+    let complete = use_signal(|| match &op {
+        Operation::Create { .. } => false,
+        Operation::Update { consumption } => consumption.complete,
+    });
+
     let consumption_type = use_signal(|| match &op {
         Operation::Create { .. } => None,
         Operation::Update { consumption } => Some(consumption.consumption_type),
@@ -111,7 +118,7 @@ pub fn ConsumptionUpdate(
 
     let validate = Validate {
         time: use_memo(move || validate_fixed_offset_date_time(&time())),
-        duration: use_memo(move || validate_duration(&duration())),
+        duration: use_memo(move || validate_optional_duration(*complete.read(), &duration())),
         consumption_type: use_memo(move || validate_consumption_type(consumption_type())),
         liquid_mls: use_memo(move || validate_consumable_millilitres(&liquid_mls())),
         comments: use_memo(move || validate_comments(&comments())),
@@ -132,13 +139,15 @@ pub fn ConsumptionUpdate(
 
     let op_clone = op.clone();
     let validate_clone = validate.clone();
+    let complete_clone = *complete.read();
     let on_save = use_callback(move |()| {
         let op = op_clone.clone();
         let validate = validate_clone.clone();
+        let complete = complete_clone;
         spawn(async move {
             saving.set(Saving::Yes);
 
-            let result = do_save(&op, &validate).await;
+            let result = do_save(&op, &validate, complete).await;
 
             match result {
                 Ok(consumable) => {
@@ -182,6 +191,12 @@ pub fn ConsumptionUpdate(
                 value: duration,
                 start_time: validate.time,
                 validate: validate.duration,
+                disabled,
+            }
+            InputBoolean {
+                id: "complete",
+                label: "Complete",
+                value: complete,
                 disabled,
             }
             InputConsumptionType {
@@ -296,17 +311,23 @@ pub fn ConsumptionTypeIcon(consumption_type: ConsumptionType) -> Element {
 }
 
 #[component]
-pub fn consumption_duration(duration: chrono::TimeDelta) -> Element {
-    let text = time_delta_to_string(duration);
-
-    rsx! {
-        if duration.num_seconds() < 2 {
-            span { class: "text-error", {text} }
-        } else if duration.num_minutes() < 60 {
-            span { class: "text-success", {text} }
-        } else {
-            span { class: "text-error", {text} }
+pub fn consumption_duration(duration: Option<chrono::TimeDelta>) -> Element {
+    match duration {
+        Some(d) => {
+            let text = time_delta_to_string(d);
+            rsx! {
+                if d.num_seconds() < 2 {
+                    span { class: "text-error", {text} }
+                } else if d.num_minutes() < 60 {
+                    span { class: "text-success", {text} }
+                } else {
+                    span { class: "text-error", {text} }
+                }
+            }
         }
+        None => rsx! {
+            span { class: "text-gray-400", "Incomplete" }
+        },
     }
 }
 
@@ -836,10 +857,13 @@ pub fn consumption_errors(
 ) -> Vec<String> {
     let mut errors = Vec::new();
 
-    if consumption.duration.num_seconds() < 2 {
+    if consumption.complete
+        && let Some(duration) = consumption.duration
+        && duration.num_seconds() < 2
+    {
         errors.push(format!(
             "Duration {} is suspiciously short",
-            consumption.duration
+            duration
         ));
     }
 

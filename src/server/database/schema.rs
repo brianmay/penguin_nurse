@@ -59,13 +59,14 @@ diesel::table! {
         id -> Int8,
         user_id -> Int8,
         time -> Timestamptz,
-        duration -> Interval,
+        duration -> Nullable<Interval>,
         liquid_mls -> Nullable<Numeric>,
         comments -> Nullable<Text>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
         utc_offset -> Int4,
         consumption_type -> ConsumptionType,
+        complete -> Bool,
     }
 }
 
@@ -78,7 +79,7 @@ diesel::table! {
         user_id -> Int8,
         time -> Timestamptz,
         utc_offset -> Int4,
-        duration -> Interval,
+        duration -> Nullable<Interval>,
         location -> Nullable<Text>,
         distance -> Nullable<Numeric>,
         calories -> Nullable<Int4>,
@@ -87,6 +88,7 @@ diesel::table! {
         comments -> Nullable<Text>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        complete -> Bool,
     }
 }
 
@@ -150,7 +152,7 @@ diesel::table! {
         id -> Int8,
         user_id -> Int8,
         time -> Timestamptz,
-        duration -> Interval,
+        duration -> Nullable<Interval>,
         urgency -> Int4,
         quantity -> Int4,
         bristol -> Int4,
@@ -161,6 +163,7 @@ diesel::table! {
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
         utc_offset -> Int4,
+        complete -> Bool,
     }
 }
 
@@ -170,12 +173,13 @@ diesel::table! {
         user_id -> Int8,
         time -> Timestamptz,
         utc_offset -> Int4,
-        duration -> Interval,
+        duration -> Nullable<Interval>,
         location -> Nullable<Text>,
         severity -> Int4,
         comments -> Nullable<Text>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        complete -> Bool,
     }
 }
 
@@ -280,7 +284,7 @@ diesel::table! {
         id -> Int8,
         user_id -> Int8,
         time -> Timestamptz,
-        duration -> Interval,
+        duration -> Nullable<Interval>,
         urgency -> Int4,
         mls -> Int4,
         colour_hue -> Nullable<Float4>,
@@ -291,6 +295,7 @@ diesel::table! {
         updated_at -> Timestamptz,
         utc_offset -> Int4,
         leakage -> Int4,
+        complete -> Bool,
     }
 }
 

@@ -38,12 +38,13 @@ pub struct Wee {
     pub id: WeeId,
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: chrono::Duration,
+    pub duration: Option<chrono::Duration>,
     pub urgency: Urgency,
     pub leakage: i32,
     pub mls: i32,
     pub colour: Option<palette::Hsv>,
     pub comments: Option<String>,
+    pub complete: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -53,12 +54,13 @@ pub struct Wee {
 pub struct NewWee {
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: chrono::Duration,
+    pub duration: Option<chrono::Duration>,
     pub urgency: Urgency,
     pub leakage: i32,
     pub mls: i32,
     pub colour: Option<palette::Hsv>,
     pub comments: Option<String>,
+    pub complete: bool,
 }
 
 #[allow(dead_code)]
@@ -66,10 +68,11 @@ pub struct NewWee {
 pub struct ChangeWee {
     pub user_id: MaybeSet<UserId>,
     pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
-    pub duration: MaybeSet<chrono::Duration>,
+    pub duration: MaybeSet<Option<chrono::Duration>>,
     pub urgency: MaybeSet<Urgency>,
     pub leakage: MaybeSet<i32>,
     pub mls: MaybeSet<i32>,
     pub colour: MaybeSet<Option<palette::Hsv>>,
     pub comments: MaybeSet<Option<String>>,
+    pub complete: MaybeSet<bool>,
 }

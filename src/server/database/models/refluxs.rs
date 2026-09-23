@@ -17,10 +17,11 @@ pub struct Reflux {
     pub user_id: i64,
     pub time: DateTime<Utc>,
     pub utc_offset: i32,
-    pub duration: TimeDelta,
+    pub duration: Option<TimeDelta>,
     pub location: Option<String>,
     pub severity: i32,
     pub comments: Option<String>,
+    pub complete: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -40,6 +41,7 @@ impl From<Reflux> for crate::models::Reflux {
             location: reflux.location,
             severity: reflux.severity,
             comments: reflux.comments,
+            complete: reflux.complete,
             created_at: reflux.created_at,
             updated_at: reflux.updated_at,
         }
@@ -91,10 +93,11 @@ pub struct NewReflux<'a> {
     pub user_id: i64,
     pub time: DateTime<Utc>,
     pub utc_offset: i32,
-    pub duration: TimeDelta,
+    pub duration: Option<TimeDelta>,
     pub location: Option<&'a str>,
     pub severity: i32,
     pub comments: Option<&'a str>,
+    pub complete: bool,
 }
 
 impl<'a> NewReflux<'a> {
@@ -107,6 +110,7 @@ impl<'a> NewReflux<'a> {
             location: reflux.location.as_deref(),
             severity: reflux.severity,
             comments: reflux.comments.as_deref(),
+            complete: reflux.complete,
         }
     }
 }
@@ -128,10 +132,11 @@ pub async fn create_reflux(
 pub struct ChangeReflux<'a> {
     pub time: Option<DateTime<Utc>>,
     pub utc_offset: Option<i32>,
-    pub duration: Option<TimeDelta>,
+    pub duration: Option<Option<TimeDelta>>,
     pub location: Option<Option<&'a str>>,
     pub severity: Option<i32>,
     pub comments: Option<Option<&'a str>>,
+    pub complete: Option<bool>,
 }
 
 impl<'a> ChangeReflux<'a> {
@@ -149,6 +154,7 @@ impl<'a> ChangeReflux<'a> {
             location: reflux.location.map_inner_deref().into_option(),
             severity: reflux.severity.into_option(),
             comments: reflux.comments.map_inner_deref().into_option(),
+            complete: reflux.complete.into_option(),
         }
     }
 }

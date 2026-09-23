@@ -77,3 +77,19 @@ impl Entry {
         }
     }
 }
+
+impl EntryData {
+    pub fn is_complete(&self) -> bool {
+        match self {
+            EntryData::Poo(poo) => poo.complete,
+            EntryData::Wee(wee) => wee.complete,
+            EntryData::WeeUrge(_) => true,
+            EntryData::Consumption(consumption) => consumption.consumption.complete,
+            EntryData::Exercise(exercise) => exercise.complete,
+            EntryData::HealthMetric(_) => true,
+            EntryData::Symptom(_) => true,
+            EntryData::Reflux(reflux) => reflux.complete,
+            EntryData::Note(_) => true,
+        }
+    }
+}

@@ -1,4 +1,5 @@
-use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
+use chrono::{DateTime, FixedOffset, Local, Utc};
+use chrono::Duration;
 use classes::classes;
 use dioxus::prelude::*;
 use palette::Hsv;
@@ -10,10 +11,10 @@ use crate::{
         times::time_delta_to_string,
     },
     forms::{
-        Colour, Dialog, EditError, FieldValue, FormSaveCancelButton, InputColour, InputDateTime,
-        InputDuration, InputNumber, InputSymptomIntensity, InputTextArea, InputUrgency, Saving,
-        ValidationError, validate_colour, validate_comments, validate_duration,
-        validate_fixed_offset_date_time, validate_symptom_intensity, validate_urgency,
+        Colour, Dialog, EditError, FieldValue, FormSaveCancelButton, InputBoolean, InputColour,
+        InputDateTime, InputDuration, InputNumber, InputSymptomIntensity, InputTextArea, InputUrgency,
+        Saving, ValidationError, validate_colour, validate_comments, validate_fixed_offset_date_time,
+        validate_optional_chrono_duration, validate_symptom_intensity, validate_urgency,
         validate_wee_millilitres,
     },
     functions::wees::{create_wee, delete_wee, update_wee},
@@ -29,7 +30,7 @@ pub enum Operation {
 #[derive(Debug, Clone)]
 struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    duration: Memo<Result<TimeDelta, ValidationError>>,
+    duration: Memo<Result<Option<Duration>, ValidationError>>,
     urgency: Memo<Result<Urgency, ValidationError>>,
     leakage: Memo<Result<i32, ValidationError>>,
     mls: Memo<Result<i32, ValidationError>>,
@@ -37,7 +38,7 @@ struct Validate {
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
-async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> {
+async fn do_save(op: &Operation, validate: &Validate, complete: bool) -> Result<Wee, EditError> {
     let time = validate.time.read().clone()?;
     let duration = validate.duration.read().clone()?;
     let urgency = validate.urgency.read().clone()?;
@@ -57,6 +58,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> 
                 mls,
                 colour,
                 comments,
+                complete,
             };
             create_wee(updates).await.map_err(EditError::Server)
         }
@@ -70,6 +72,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> 
                 mls: MaybeSet::Set(mls),
                 colour: MaybeSet::Set(colour),
                 comments: MaybeSet::Set(comments),
+                complete: MaybeSet::Set(complete),
             };
             update_wee(wee.id, changes).await.map_err(EditError::Server)
         }
@@ -85,6 +88,10 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
     let duration = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
         Operation::Update { wee } => wee.duration.as_raw(),
+    });
+    let complete = use_signal(|| match &op {
+        Operation::Create { .. } => false,
+        Operation::Update { wee } => wee.complete,
     });
     let urgency = use_signal(|| match &op {
         Operation::Create { .. } => None,
@@ -121,7 +128,7 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
         let validate_mls = use_memo(move || validate_wee_millilitres(&mls()));
         Validate {
             time: use_memo(move || validate_fixed_offset_date_time(&time())),
-            duration: use_memo(move || validate_duration(&duration())),
+            duration: use_memo(move || validate_optional_chrono_duration(*complete.read(), &duration())),
             urgency: use_memo(move || validate_urgency(urgency())),
             leakage: use_memo(move || validate_symptom_intensity(&leakage())),
             mls: validate_mls,
@@ -147,13 +154,15 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
 
     let op_clone = op.clone();
     let validate_clone = validate.clone();
+    let complete_clone = *complete.read();
     let on_save = use_callback(move |()| {
         let op = op_clone.clone();
         let validate = validate_clone.clone();
+        let complete = complete_clone;
         spawn(async move {
             saving.set(Saving::Yes);
 
-            let result = do_save(&op, &validate).await;
+            let result = do_save(&op, &validate, complete).await;
 
             match result {
                 Ok(wee) => {
@@ -195,6 +204,12 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
                 value: duration,
                 start_time: validate.time,
                 validate: validate.duration,
+                disabled,
+            }
+            InputBoolean {
+                id: "complete",
+                label: "Complete",
+                value: complete,
                 disabled,
             }
             InputUrgency {
@@ -319,21 +334,26 @@ pub fn wee_title() -> &'static str {
 }
 
 #[component]
-pub fn WeeDuration(duration: chrono::TimeDelta) -> Element {
-    let text = time_delta_to_string(duration);
-
-    let classes = if duration.num_seconds() == 0 {
-        classes!["text-error"]
-    } else if duration.num_seconds() < 60 {
-        classes!["text-success"]
-    } else if duration.num_minutes() < 3 {
-        classes!["text-warning"]
-    } else {
-        classes!["text-error"]
-    };
-
-    rsx! {
-        span { class: classes, {text} }
+pub fn WeeDuration(duration: Option<chrono::Duration>) -> Element {
+    match duration {
+        Some(d) => {
+            let text = time_delta_to_string(d);
+            let classes = if d.num_seconds() == 0 {
+                classes!["text-error"]
+            } else if d.num_seconds() < 60 {
+                classes!["text-success"]
+            } else if d.num_minutes() < 3 {
+                classes!["text-warning"]
+            } else {
+                classes!["text-error"]
+            };
+            rsx! {
+                span { class: classes, {text} }
+            }
+        }
+        None => rsx! {
+            span { class: "text-gray-400", "Incomplete" }
+        },
     }
 }
 

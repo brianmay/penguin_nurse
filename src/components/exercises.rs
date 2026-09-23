@@ -7,9 +7,9 @@ use crate::{
         times::time_delta_to_string,
     },
     forms::{
-        Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputDuration,
+        Dialog, EditError, FieldValue, FormSaveCancelButton, InputBoolean, InputDateTime, InputDuration,
         InputExerciseCalories, InputExerciseRpe, InputExerciseType, InputNumber, InputTextArea,
-        Saving, ValidationError, validate_comments, validate_distance, validate_duration,
+        Saving, ValidationError, validate_comments, validate_distance, validate_optional_duration,
         validate_exercise_calories, validate_exercise_rpe, validate_exercise_type,
         validate_fixed_offset_date_time, validate_location,
     },
@@ -27,7 +27,7 @@ pub enum Operation {
 #[derive(Debug, Clone)]
 struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    duration: Memo<Result<TimeDelta, ValidationError>>,
+    duration: Memo<Result<Option<TimeDelta>, ValidationError>>,
     location: Memo<Result<Option<String>, ValidationError>>,
     distance: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
     calories: Memo<Result<Option<i32>, ValidationError>>,
@@ -36,7 +36,7 @@ struct Validate {
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
-async fn do_save(op: &Operation, validate: &Validate) -> Result<Exercise, EditError> {
+async fn do_save(op: &Operation, validate: &Validate, complete: bool) -> Result<Exercise, EditError> {
     let time = validate.time.read().clone()?;
     let duration = validate.duration.read().clone()?;
     let exercise_type = validate.exercise_type.read().clone()?;
@@ -58,6 +58,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Exercise, EditEr
                 rpe,
                 comments,
                 exercise_type,
+                complete,
             };
             create_exercise(updates).await.map_err(EditError::Server)
         }
@@ -72,6 +73,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Exercise, EditEr
                 calories: MaybeSet::Set(calories),
                 rpe: MaybeSet::Set(rpe),
                 comments: MaybeSet::Set(comments),
+                complete: MaybeSet::Set(complete),
             };
             update_exercise(exercise.id, changes)
                 .await
@@ -90,6 +92,11 @@ pub fn ExerciseUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Exer
     let duration = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
         Operation::Update { exercise } => exercise.duration.as_raw(),
+    });
+
+    let complete = use_signal(|| match &op {
+        Operation::Create { .. } => false,
+        Operation::Update { exercise } => exercise.complete,
     });
 
     let exercise_type = use_signal(|| match &op {
@@ -124,7 +131,7 @@ pub fn ExerciseUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Exer
 
     let validate = Validate {
         time: use_memo(move || validate_fixed_offset_date_time(&time())),
-        duration: use_memo(move || validate_duration(&duration())),
+        duration: use_memo(move || validate_optional_duration(*complete.read(), &duration())),
         location: use_memo(move || validate_location(&location())),
         distance: use_memo(move || validate_distance(&distance())),
         calories: use_memo(move || validate_exercise_calories(&calories())),
@@ -151,13 +158,15 @@ pub fn ExerciseUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Exer
 
     let op_clone = op.clone();
     let validate_clone = validate.clone();
+    let complete_clone = *complete.read();
     let on_save = use_callback(move |()| {
         let op = op_clone.clone();
         let validate = validate_clone.clone();
+        let complete = complete_clone;
         spawn(async move {
             saving.set(Saving::Yes);
 
-            let result = do_save(&op, &validate).await;
+            let result = do_save(&op, &validate, complete).await;
 
             match result {
                 Ok(consumable) => {
@@ -199,6 +208,12 @@ pub fn ExerciseUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Exer
                 value: duration,
                 start_time: validate.time,
                 validate: validate.duration,
+                disabled,
+            }
+            InputBoolean {
+                id: "complete",
+                label: "Complete",
+                value: complete,
                 disabled,
             }
             InputTextArea {
@@ -359,17 +374,23 @@ pub fn ExerciseRpeIcon(rpe: ExerciseRpe) -> Element {
 }
 
 #[component]
-pub fn ExerciseDuration(duration: chrono::TimeDelta) -> Element {
-    let text = time_delta_to_string(duration);
-
-    rsx! {
-        if duration.num_seconds() < 2 {
-            span { class: "text-error", {text} }
-        } else if duration.num_minutes() < 60 {
-            span { class: "text-success", {text} }
-        } else {
-            span { class: "text-error", {text} }
+pub fn ExerciseDuration(duration: Option<chrono::TimeDelta>) -> Element {
+    match duration {
+        Some(d) => {
+            let text = time_delta_to_string(d);
+            rsx! {
+                if d.num_seconds() < 2 {
+                    span { class: "text-error", {text} }
+                } else if d.num_minutes() < 60 {
+                    span { class: "text-success", {text} }
+                } else {
+                    span { class: "text-error", {text} }
+                }
+            }
         }
+        None => rsx! {
+            span { class: "text-gray-400", "Incomplete" }
+        },
     }
 }
 

@@ -13,7 +13,7 @@ pub struct Wee {
     pub id: i64,
     pub user_id: i64,
     pub time: chrono::DateTime<chrono::Utc>,
-    pub duration: chrono::Duration,
+    pub duration: Option<chrono::Duration>,
     pub urgency: i32,
     pub mls: i32,
     pub colour_hue: Option<f32>,
@@ -24,6 +24,7 @@ pub struct Wee {
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub utc_offset: i32,
     pub leakage: i32,
+    pub complete: bool,
 }
 
 const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
@@ -49,6 +50,7 @@ impl From<Wee> for crate::models::Wee {
             leakage: wee.leakage,
             mls: wee.mls,
             colour,
+            complete: wee.complete,
             created_at: wee.created_at,
             updated_at: wee.updated_at,
             comments: wee.comments,
@@ -101,7 +103,7 @@ pub struct NewWee<'a> {
     user_id: i64,
     time: chrono::DateTime<chrono::Utc>,
     utc_offset: i32,
-    duration: chrono::Duration,
+    duration: Option<chrono::Duration>,
     urgency: i32,
     leakage: i32,
     mls: i32,
@@ -109,6 +111,7 @@ pub struct NewWee<'a> {
     colour_saturation: Option<f32>,
     colour_value: Option<f32>,
     comments: Option<&'a str>,
+    complete: bool,
 }
 
 impl<'a> NewWee<'a> {
@@ -125,6 +128,7 @@ impl<'a> NewWee<'a> {
             colour_saturation: wee.colour.map(|colour| colour.saturation),
             colour_value: wee.colour.map(|colour| colour.value),
             comments: wee.comments.as_deref(),
+            complete: wee.complete,
         }
     }
 }
@@ -146,7 +150,7 @@ pub async fn create_wee(
 pub struct ChangeWee<'a> {
     time: Option<chrono::DateTime<chrono::Utc>>,
     utc_offset: Option<i32>,
-    duration: Option<chrono::Duration>,
+    duration: Option<Option<chrono::Duration>>,
     urgency: Option<i32>,
     leakage: Option<i32>,
     mls: Option<i32>,
@@ -154,6 +158,7 @@ pub struct ChangeWee<'a> {
     colour_saturation: Option<Option<f32>>,
     colour_value: Option<Option<f32>>,
     comments: Option<Option<&'a str>>,
+    complete: Option<bool>,
 }
 
 impl<'a> ChangeWee<'a> {
@@ -181,6 +186,7 @@ impl<'a> ChangeWee<'a> {
                 .map(|x| x.map(|colour| colour.value))
                 .into_option(),
             comments: wee.comments.as_ref().map(|x| x.as_deref()).into_option(),
+            complete: wee.complete.into_option(),
         }
     }
 }

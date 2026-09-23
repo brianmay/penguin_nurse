@@ -55,13 +55,14 @@ pub struct Consumption {
     pub id: i64,
     pub user_id: i64,
     pub time: DateTime<Utc>,
-    pub duration: TimeDelta,
+    pub duration: Option<TimeDelta>,
     pub liquid_mls: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub utc_offset: i32,
     pub consumption_type: ConsumptionType,
+    pub complete: bool,
 }
 
 const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
@@ -79,6 +80,7 @@ impl From<Consumption> for crate::models::Consumption {
             duration: consumption.duration,
             liquid_mls: consumption.liquid_mls,
             comments: consumption.comments,
+            complete: consumption.complete,
             created_at: consumption.created_at,
             updated_at: consumption.updated_at,
             consumption_type: consumption.consumption_type.into(),
@@ -147,10 +149,11 @@ pub struct NewConsumption<'a> {
     pub user_id: i64,
     pub time: DateTime<Utc>,
     pub utc_offset: i32,
-    pub duration: TimeDelta,
+    pub duration: Option<TimeDelta>,
     pub consumption_type: ConsumptionType,
     pub liquid_mls: Option<&'a bigdecimal::BigDecimal>,
     pub comments: Option<&'a str>,
+    pub complete: bool,
 }
 
 impl<'a> NewConsumption<'a> {
@@ -163,6 +166,7 @@ impl<'a> NewConsumption<'a> {
             consumption_type: consumption.consumption_type.into(),
             liquid_mls: consumption.liquid_mls.as_ref(),
             comments: consumption.comments.as_deref(),
+            complete: consumption.complete,
         }
     }
 }
@@ -184,10 +188,11 @@ pub async fn create_consumption(
 pub struct ChangeConsumption<'a> {
     pub time: Option<DateTime<Utc>>,
     pub utc_offset: Option<i32>,
-    pub duration: Option<TimeDelta>,
+    pub duration: Option<Option<TimeDelta>>,
     pub consumption_type: Option<ConsumptionType>,
     pub liquid_mls: Option<Option<&'a bigdecimal::BigDecimal>>,
     pub comments: Option<Option<&'a str>>,
+    pub complete: Option<bool>,
 }
 
 impl<'a> ChangeConsumption<'a> {
@@ -205,6 +210,7 @@ impl<'a> ChangeConsumption<'a> {
             consumption_type: consumption.consumption_type.map_into().into_option(),
             liquid_mls: consumption.liquid_mls.as_inner_ref().into_option(),
             comments: consumption.comments.map_inner_deref().into_option(),
+            complete: consumption.complete.into_option(),
         }
     }
 }

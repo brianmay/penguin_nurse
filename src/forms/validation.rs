@@ -107,8 +107,34 @@ pub fn validate_maybe_date_time(str: &str) -> Result<Option<DateTime<Utc>>, Vali
     validate_field_value(str)
 }
 
-pub fn validate_duration(str: &str) -> Result<TimeDelta, ValidationError> {
-    validate_field_value(str)
+pub fn validate_optional_duration(complete: bool, str: &str) -> Result<Option<TimeDelta>, ValidationError> {
+    if str.trim().is_empty() {
+        if complete {
+            Err(ValidationError("Duration is required when marked complete".to_string()))
+        } else {
+            Ok(None)
+        }
+    } else {
+        match validate_field_value::<TimeDelta>(str) {
+            Ok(td) => Ok(Some(td)),
+            Err(e) => Err(e),
+        }
+    }
+}
+
+pub fn validate_optional_chrono_duration(complete: bool, str: &str) -> Result<Option<chrono::Duration>, ValidationError> {
+    if str.trim().is_empty() {
+        if complete {
+            Err(ValidationError("Duration is required when marked complete".to_string()))
+        } else {
+            Ok(None)
+        }
+    } else {
+        match validate_field_value::<chrono::Duration>(str) {
+            Ok(d) => Ok(Some(d)),
+            Err(e) => Err(e),
+        }
+    }
 }
 
 pub fn validate_wee_millilitres(str: &str) -> Result<i32, ValidationError> {

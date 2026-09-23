@@ -15,7 +15,7 @@ pub struct Poo {
     pub id: i64,
     pub user_id: i64,
     pub time: chrono::DateTime<chrono::Utc>,
-    pub duration: chrono::Duration,
+    pub duration: Option<chrono::Duration>,
     pub urgency: i32,
     pub quantity: i32,
     pub bristol: i32,
@@ -26,6 +26,7 @@ pub struct Poo {
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub utc_offset: i32,
+    pub complete: bool,
 }
 
 const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
@@ -52,6 +53,7 @@ impl From<Poo> for crate::models::Poo {
             bristol: poo.bristol.try_into().unwrap_or_default(),
             colour,
             comments: poo.comments,
+            complete: poo.complete,
             created_at: poo.created_at,
             updated_at: poo.updated_at,
         }
@@ -103,7 +105,7 @@ pub struct NewPoo<'a> {
     user_id: i64,
     time: chrono::DateTime<chrono::Utc>,
     utc_offset: i32,
-    duration: chrono::Duration,
+    duration: Option<chrono::Duration>,
     urgency: i32,
     quantity: i32,
     bristol: i32,
@@ -111,6 +113,7 @@ pub struct NewPoo<'a> {
     colour_saturation: Option<f32>,
     colour_value: Option<f32>,
     comments: Option<&'a str>,
+    complete: bool,
 }
 
 impl<'a> NewPoo<'a> {
@@ -127,6 +130,7 @@ impl<'a> NewPoo<'a> {
             colour_saturation: poo.colour.map(|colour| colour.saturation),
             colour_value: poo.colour.map(|colour| colour.value),
             comments: poo.comments.as_deref(),
+            complete: poo.complete,
         }
     }
 }
@@ -150,7 +154,7 @@ pub async fn create_poo(
 pub struct ChangePoo<'a> {
     pub time: Option<chrono::DateTime<chrono::Utc>>,
     pub utc_offset: Option<i32>,
-    pub duration: Option<chrono::Duration>,
+    pub duration: Option<Option<chrono::Duration>>,
     pub urgency: Option<i32>,
     pub quantity: Option<i32>,
     pub bristol: Option<i32>,
@@ -158,6 +162,7 @@ pub struct ChangePoo<'a> {
     pub colour_saturation: Option<Option<f32>>,
     pub colour_value: Option<Option<f32>>,
     pub comments: Option<Option<&'a str>>,
+    pub complete: Option<bool>,
 }
 
 impl<'a> ChangePoo<'a> {
@@ -185,6 +190,7 @@ impl<'a> ChangePoo<'a> {
                 .map(|x| x.map(|colour| colour.value))
                 .into_option(),
             comments: poo.comments.map_inner_deref().into_option(),
+            complete: poo.complete.into_option(),
         }
     }
 }

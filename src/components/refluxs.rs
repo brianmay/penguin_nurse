@@ -8,9 +8,9 @@ use crate::{
         times::time_delta_to_string,
     },
     forms::{
-        Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputDuration,
+        Dialog, EditError, FieldValue, FormSaveCancelButton, InputBoolean, InputDateTime, InputDuration,
         InputSymptomIntensity, InputTextArea, Saving, ValidationError, validate_comments,
-        validate_duration, validate_fixed_offset_date_time, validate_location,
+        validate_fixed_offset_date_time, validate_location, validate_optional_duration,
         validate_symptom_intensity,
     },
     functions::refluxs::{create_reflux, delete_reflux, update_reflux},
@@ -27,13 +27,13 @@ pub enum Operation {
 #[derive(Debug, Clone)]
 struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    duration: Memo<Result<TimeDelta, ValidationError>>,
+    duration: Memo<Result<Option<TimeDelta>, ValidationError>>,
     location: Memo<Result<Option<String>, ValidationError>>,
     severity: Memo<Result<i32, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
-async fn do_save(op: &Operation, validate: &Validate) -> Result<Reflux, EditError> {
+async fn do_save(op: &Operation, validate: &Validate, complete: bool) -> Result<Reflux, EditError> {
     let time = validate.time.read().clone()?;
     let duration = validate.duration.read().clone()?;
     let location = validate.location.read().clone()?;
@@ -49,6 +49,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Reflux, EditErro
                 location,
                 severity,
                 comments,
+                complete,
             };
             create_reflux(updates).await.map_err(EditError::Server)
         }
@@ -60,6 +61,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Reflux, EditErro
                 location: MaybeSet::Set(location),
                 severity: MaybeSet::Set(severity),
                 comments: MaybeSet::Set(comments),
+                complete: MaybeSet::Set(complete),
             };
             update_reflux(reflux.id, changes)
                 .await
@@ -80,6 +82,11 @@ pub fn RefluxUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Reflux
         Operation::Update { reflux } => reflux.duration.as_raw(),
     });
 
+    let complete = use_signal(|| match &op {
+        Operation::Create { .. } => false,
+        Operation::Update { reflux } => reflux.complete,
+    });
+
     let location = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
         Operation::Update { reflux } => reflux.location.as_raw(),
@@ -97,7 +104,7 @@ pub fn RefluxUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Reflux
 
     let validate = Validate {
         time: use_memo(move || validate_fixed_offset_date_time(&time())),
-        duration: use_memo(move || validate_duration(&duration())),
+        duration: use_memo(move || validate_optional_duration(*complete.read(), &duration())),
         location: use_memo(move || validate_location(&location())),
         severity: use_memo(move || validate_symptom_intensity(&severity())),
         comments: use_memo(move || validate_comments(&comments())),
@@ -118,13 +125,15 @@ pub fn RefluxUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Reflux
 
     let op_clone = op.clone();
     let validate_clone = validate.clone();
+    let complete_clone = *complete.read();
     let on_save = use_callback(move |()| {
         let op = op_clone.clone();
         let validate = validate_clone.clone();
+        let complete = complete_clone;
         spawn(async move {
             saving.set(Saving::Yes);
 
-            let result = do_save(&op, &validate).await;
+            let result = do_save(&op, &validate, complete).await;
 
             match result {
                 Ok(consumable) => {
@@ -166,6 +175,12 @@ pub fn RefluxUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Reflux
                 value: duration,
                 start_time: validate.time,
                 validate: validate.duration,
+                disabled,
+            }
+            InputBoolean {
+                id: "complete",
+                label: "Complete",
+                value: complete,
                 disabled,
             }
             InputTextArea {
@@ -269,11 +284,17 @@ pub fn reflux_title() -> &'static str {
 }
 
 #[component]
-pub fn reflux_duration(duration: chrono::TimeDelta) -> Element {
-    let text = time_delta_to_string(duration);
-
-    rsx! {
-        span { {text} }
+pub fn reflux_duration(duration: Option<chrono::TimeDelta>) -> Element {
+    match duration {
+        Some(d) => {
+            let text = time_delta_to_string(d);
+            rsx! {
+                span { {text} }
+            }
+        }
+        None => rsx! {
+            span { class: "text-gray-400", "Incomplete" }
+        },
     }
 }
 

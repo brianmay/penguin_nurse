@@ -1,5 +1,7 @@
 /// Validation/linting utilities for consumables and consumptions
-use crate::models::{Consumable, ConsumableItem, Consumption, ConsumptionItem};
+use crate::models::{
+    Consumable, ConsumableItem, Consumption, ConsumptionItem, Exercise, Poo, Reflux, Wee,
+};
 
 pub fn consumable_errors(
     consumable: &Consumable,
@@ -32,10 +34,17 @@ pub fn consumption_errors(
 ) -> Vec<String> {
     let mut errors = Vec::new();
 
-    if consumption.duration.num_seconds() < 2 {
+    if !consumption.complete {
+        errors.push("Incomplete entry".to_string());
+    }
+
+    if consumption.complete
+        && let Some(duration) = consumption.duration
+        && duration.num_seconds() < 2
+    {
         errors.push(format!(
             "Duration {} is suspiciously short",
-            consumption.duration
+            duration
         ));
     }
 
@@ -69,6 +78,86 @@ pub fn consumption_errors(
                 ));
             }
         }
+    }
+
+    errors
+}
+
+pub fn exercise_errors(exercise: &Exercise) -> Vec<String> {
+    let mut errors = Vec::new();
+
+    if !exercise.complete {
+        errors.push("Incomplete entry".to_string());
+    }
+
+    if exercise.complete
+        && let Some(duration) = exercise.duration
+        && duration.num_seconds() < 2
+    {
+        errors.push(format!(
+            "Duration {} is suspiciously short",
+            duration
+        ));
+    }
+
+    errors
+}
+
+pub fn reflux_errors(reflux: &Reflux) -> Vec<String> {
+    let mut errors = Vec::new();
+
+    if !reflux.complete {
+        errors.push("Incomplete entry".to_string());
+    }
+
+    if reflux.complete
+        && let Some(duration) = reflux.duration
+        && duration.num_seconds() < 2
+    {
+        errors.push(format!(
+            "Duration {} is suspiciously short",
+            duration
+        ));
+    }
+
+    errors
+}
+
+pub fn wee_errors(wee: &Wee) -> Vec<String> {
+    let mut errors = Vec::new();
+
+    if !wee.complete {
+        errors.push("Incomplete entry".to_string());
+    }
+
+    if wee.complete
+        && let Some(duration) = wee.duration
+        && duration.num_seconds() < 2
+    {
+        errors.push(format!(
+            "Duration {} is suspiciously short",
+            duration
+        ));
+    }
+
+    errors
+}
+
+pub fn poo_errors(poo: &Poo) -> Vec<String> {
+    let mut errors = Vec::new();
+
+    if !poo.complete {
+        errors.push("Incomplete entry".to_string());
+    }
+
+    if poo.complete
+        && let Some(duration) = poo.duration
+        && duration.num_seconds() < 2
+    {
+        errors.push(format!(
+            "Duration {} is suspiciously short",
+            duration
+        ));
     }
 
     errors
@@ -138,10 +227,11 @@ mod tests {
             id: ConsumptionId::new(1),
             user_id: UserId::new(1),
             time: chrono::DateTime::parse_from_rfc3339("2024-01-01T12:00:00+00:00").unwrap(),
-            duration: chrono::TimeDelta::seconds(duration_secs),
+            duration: Some(chrono::TimeDelta::seconds(duration_secs)),
             consumption_type,
             liquid_mls,
             comments: None,
+            complete: true,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         }

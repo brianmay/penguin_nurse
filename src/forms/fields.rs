@@ -596,7 +596,7 @@ pub fn InputDuration(
     label: &'static str,
     value: Signal<String>,
     start_time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    validate: Memo<Result<TimeDelta, ValidationError>>,
+    validate: Memo<Result<Option<TimeDelta>, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
     rsx! {

@@ -73,10 +73,11 @@ pub struct Consumption {
     pub id: ConsumptionId,
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: chrono::TimeDelta,
+    pub duration: Option<chrono::TimeDelta>,
     pub consumption_type: ConsumptionType,
     pub liquid_mls: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
+    pub complete: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -103,18 +104,20 @@ impl ConsumptionWithItems {
 pub struct NewConsumption {
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: chrono::TimeDelta,
+    pub duration: Option<chrono::TimeDelta>,
     pub consumption_type: ConsumptionType,
     pub liquid_mls: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
+    pub complete: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeConsumption {
     pub user_id: MaybeSet<UserId>,
     pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
-    pub duration: MaybeSet<chrono::TimeDelta>,
+    pub duration: MaybeSet<Option<chrono::TimeDelta>>,
     pub consumption_type: MaybeSet<ConsumptionType>,
     pub liquid_mls: MaybeSet<Option<bigdecimal::BigDecimal>>,
     pub comments: MaybeSet<Option<String>>,
+    pub complete: MaybeSet<bool>,
 }

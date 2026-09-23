@@ -166,13 +166,14 @@ pub struct Exercise {
     pub id: ExerciseId,
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: chrono::TimeDelta,
+    pub duration: Option<chrono::TimeDelta>,
     pub location: Option<String>,
     pub distance: Option<bigdecimal::BigDecimal>,
     pub calories: Option<i32>,
     pub rpe: Option<ExerciseRpe>,
     pub exercise_type: ExerciseType,
     pub comments: Option<String>,
+    pub complete: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -188,24 +189,26 @@ impl Exercise {
 pub struct NewExercise {
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: chrono::TimeDelta,
+    pub duration: Option<chrono::TimeDelta>,
     pub location: Option<String>,
     pub distance: Option<bigdecimal::BigDecimal>,
     pub calories: Option<i32>,
     pub rpe: Option<ExerciseRpe>,
     pub exercise_type: ExerciseType,
     pub comments: Option<String>,
+    pub complete: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeExercise {
     pub user_id: MaybeSet<UserId>,
     pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
-    pub duration: MaybeSet<chrono::TimeDelta>,
+    pub duration: MaybeSet<Option<chrono::TimeDelta>>,
     pub location: MaybeSet<Option<String>>,
     pub distance: MaybeSet<Option<bigdecimal::BigDecimal>>,
     pub calories: MaybeSet<Option<i32>>,
     pub rpe: MaybeSet<Option<ExerciseRpe>>,
     pub exercise_type: MaybeSet<ExerciseType>,
     pub comments: MaybeSet<Option<String>>,
+    pub complete: MaybeSet<bool>,
 }
