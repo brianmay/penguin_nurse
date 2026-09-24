@@ -381,7 +381,7 @@ pub fn ExerciseDuration(duration: Option<chrono::TimeDelta>) -> Element {
             rsx! {
                 if d.num_seconds() < 2 {
                     span { class: "text-error", {text} }
-                } else if d.num_minutes() < 60 {
+                } else if d.num_hours() < 12 {
                     span { class: "text-success", {text} }
                 } else {
                     span { class: "text-error", {text} }
