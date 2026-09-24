@@ -107,10 +107,15 @@ pub fn validate_maybe_date_time(str: &str) -> Result<Option<DateTime<Utc>>, Vali
     validate_field_value(str)
 }
 
-pub fn validate_optional_duration(complete: bool, str: &str) -> Result<Option<TimeDelta>, ValidationError> {
+pub fn validate_optional_duration(
+    complete: bool,
+    str: &str,
+) -> Result<Option<TimeDelta>, ValidationError> {
     if str.trim().is_empty() {
         if complete {
-            Err(ValidationError("Duration is required when marked complete".to_string()))
+            Err(ValidationError(
+                "Duration is required when marked complete".to_string(),
+            ))
         } else {
             Ok(None)
         }
@@ -122,10 +127,15 @@ pub fn validate_optional_duration(complete: bool, str: &str) -> Result<Option<Ti
     }
 }
 
-pub fn validate_optional_chrono_duration(complete: bool, str: &str) -> Result<Option<chrono::Duration>, ValidationError> {
+pub fn validate_optional_chrono_duration(
+    complete: bool,
+    str: &str,
+) -> Result<Option<chrono::Duration>, ValidationError> {
     if str.trim().is_empty() {
         if complete {
-            Err(ValidationError("Duration is required when marked complete".to_string()))
+            Err(ValidationError(
+                "Duration is required when marked complete".to_string(),
+            ))
         } else {
             Ok(None)
         }

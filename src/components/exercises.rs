@@ -7,11 +7,11 @@ use crate::{
         times::time_delta_to_string,
     },
     forms::{
-        Dialog, EditError, FieldValue, FormSaveCancelButton, InputBoolean, InputDateTime, InputDuration,
-        InputExerciseCalories, InputExerciseRpe, InputExerciseType, InputNumber, InputTextArea,
-        Saving, ValidationError, validate_comments, validate_distance, validate_optional_duration,
+        Dialog, EditError, FieldValue, FormSaveCancelButton, InputBoolean, InputDateTime,
+        InputDuration, InputExerciseCalories, InputExerciseRpe, InputExerciseType, InputNumber,
+        InputTextArea, Saving, ValidationError, validate_comments, validate_distance,
         validate_exercise_calories, validate_exercise_rpe, validate_exercise_type,
-        validate_fixed_offset_date_time, validate_location,
+        validate_fixed_offset_date_time, validate_location, validate_optional_duration,
     },
     functions::exercises::{create_exercise, delete_exercise, update_exercise},
     models::{ChangeExercise, Exercise, ExerciseRpe, ExerciseType, MaybeSet, NewExercise, UserId},
@@ -36,7 +36,11 @@ struct Validate {
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
-async fn do_save(op: &Operation, validate: &Validate, complete: bool) -> Result<Exercise, EditError> {
+async fn do_save(
+    op: &Operation,
+    validate: &Validate,
+    complete: bool,
+) -> Result<Exercise, EditError> {
     let time = validate.time.read().clone()?;
     let duration = validate.duration.read().clone()?;
     let exercise_type = validate.exercise_type.read().clone()?;

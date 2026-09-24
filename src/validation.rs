@@ -42,10 +42,7 @@ pub fn consumption_errors(
         && let Some(duration) = consumption.duration
         && duration.num_seconds() < 2
     {
-        errors.push(format!(
-            "Duration {} is suspiciously short",
-            duration
-        ));
+        errors.push(format!("Duration {} is suspiciously short", duration));
     }
 
     if let Some(consumption_consumables) = &consumption_consumables {
@@ -94,10 +91,7 @@ pub fn exercise_errors(exercise: &Exercise) -> Vec<String> {
         && let Some(duration) = exercise.duration
         && duration.num_seconds() < 2
     {
-        errors.push(format!(
-            "Duration {} is suspiciously short",
-            duration
-        ));
+        errors.push(format!("Duration {} is suspiciously short", duration));
     }
 
     errors
@@ -114,10 +108,7 @@ pub fn reflux_errors(reflux: &Reflux) -> Vec<String> {
         && let Some(duration) = reflux.duration
         && duration.num_seconds() < 2
     {
-        errors.push(format!(
-            "Duration {} is suspiciously short",
-            duration
-        ));
+        errors.push(format!("Duration {} is suspiciously short", duration));
     }
 
     errors
@@ -134,10 +125,7 @@ pub fn wee_errors(wee: &Wee) -> Vec<String> {
         && let Some(duration) = wee.duration
         && duration.num_seconds() < 2
     {
-        errors.push(format!(
-            "Duration {} is suspiciously short",
-            duration
-        ));
+        errors.push(format!("Duration {} is suspiciously short", duration));
     }
 
     errors
@@ -154,10 +142,7 @@ pub fn poo_errors(poo: &Poo) -> Vec<String> {
         && let Some(duration) = poo.duration
         && duration.num_seconds() < 2
     {
-        errors.push(format!(
-            "Duration {} is suspiciously short",
-            duration
-        ));
+        errors.push(format!("Duration {} is suspiciously short", duration));
     }
 
     errors

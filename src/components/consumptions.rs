@@ -43,7 +43,11 @@ struct Validate {
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
-async fn do_save(op: &Operation, validate: &Validate, complete: bool) -> Result<Consumption, EditError> {
+async fn do_save(
+    op: &Operation,
+    validate: &Validate,
+    complete: bool,
+) -> Result<Consumption, EditError> {
     let time = validate.time.read().clone()?;
     let duration = validate.duration.read().clone()?;
     let consumption_type = validate.consumption_type.read().clone()?;
@@ -861,10 +865,7 @@ pub fn consumption_errors(
         && let Some(duration) = consumption.duration
         && duration.num_seconds() < 2
     {
-        errors.push(format!(
-            "Duration {} is suspiciously short",
-            duration
-        ));
+        errors.push(format!("Duration {} is suspiciously short", duration));
     }
 
     if let Some(consumption_consumables) = &consumption_consumables {

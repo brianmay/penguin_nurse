@@ -1,5 +1,5 @@
-use chrono::{DateTime, FixedOffset, Local, Utc};
 use chrono::Duration;
+use chrono::{DateTime, FixedOffset, Local, Utc};
 use classes::classes;
 use dioxus::prelude::*;
 use palette::Hsv;
@@ -12,10 +12,10 @@ use crate::{
     },
     forms::{
         Colour, Dialog, EditError, FieldValue, FormSaveCancelButton, InputBoolean, InputColour,
-        InputDateTime, InputDuration, InputNumber, InputSymptomIntensity, InputTextArea, InputUrgency,
-        Saving, ValidationError, validate_colour, validate_comments, validate_fixed_offset_date_time,
-        validate_optional_chrono_duration, validate_symptom_intensity, validate_urgency,
-        validate_wee_millilitres,
+        InputDateTime, InputDuration, InputNumber, InputSymptomIntensity, InputTextArea,
+        InputUrgency, Saving, ValidationError, validate_colour, validate_comments,
+        validate_fixed_offset_date_time, validate_optional_chrono_duration,
+        validate_symptom_intensity, validate_urgency, validate_wee_millilitres,
     },
     functions::wees::{create_wee, delete_wee, update_wee},
     models::{ChangeWee, MaybeSet, NewWee, Urgency, UserId, Wee},
@@ -128,7 +128,9 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
         let validate_mls = use_memo(move || validate_wee_millilitres(&mls()));
         Validate {
             time: use_memo(move || validate_fixed_offset_date_time(&time())),
-            duration: use_memo(move || validate_optional_chrono_duration(*complete.read(), &duration())),
+            duration: use_memo(move || {
+                validate_optional_chrono_duration(*complete.read(), &duration())
+            }),
             urgency: use_memo(move || validate_urgency(urgency())),
             leakage: use_memo(move || validate_symptom_intensity(&leakage())),
             mls: validate_mls,
