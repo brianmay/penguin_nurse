@@ -351,7 +351,7 @@ pub fn PooDuration(duration: Option<chrono::Duration>) -> Element {
             }
         }
         None => rsx! {
-            span { class: "text-gray-400", "Incomplete" }
+            span { class: "text-gray-400", "No duration" }
         },
     }
 }

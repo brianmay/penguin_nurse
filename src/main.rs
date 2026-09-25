@@ -6,14 +6,15 @@ use dioxus::prelude::*;
 use components::{consumables, navbar::Navbar, timeline, users};
 use dioxus_fullstack::{ServerFnError, use_server_future};
 use dioxus_router::{Routable, Router};
-use models::{User, UserId};
+use penguin_nurse::models::{User, UserId};
 use views::{ConsumableList, Home, Login, Logout, TimelineList, UserDetail, UserList, get_user};
+
+pub use penguin_nurse::models;
 
 mod components;
 mod dt;
 mod forms;
 mod functions;
-mod models;
 mod version;
 mod views;
 

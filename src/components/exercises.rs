@@ -393,7 +393,7 @@ pub fn ExerciseDuration(duration: Option<chrono::TimeDelta>) -> Element {
             }
         }
         None => rsx! {
-            span { class: "text-gray-400", "Incomplete" }
+            span { class: "text-gray-400", "No duration" }
         },
     }
 }

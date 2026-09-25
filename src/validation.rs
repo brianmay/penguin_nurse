@@ -1,6 +1,6 @@
 /// Validation/linting utilities for consumables and consumptions
 use crate::models::{
-    Consumable, ConsumableItem, Consumption, ConsumptionItem, Exercise, Poo, Reflux, Wee,
+    Consumable, ConsumableItem, Consumption, ConsumptionItem, EntryData, Exercise, Poo, Reflux, Wee,
 };
 
 pub fn consumable_errors(
@@ -146,6 +146,20 @@ pub fn poo_errors(poo: &Poo) -> Vec<String> {
     }
 
     errors
+}
+
+pub fn entry_errors(entry_data: &EntryData) -> Vec<String> {
+    match entry_data {
+        EntryData::Wee(wee) => wee_errors(wee),
+        EntryData::WeeUrge(_) => Vec::new(),
+        EntryData::Poo(poo) => poo_errors(poo),
+        EntryData::Consumption(consumption) => {
+            consumption_errors(&consumption.consumption, Some(&consumption.items))
+        }
+        EntryData::Exercise(exercise) => exercise_errors(exercise),
+        EntryData::HealthMetric(_) | EntryData::Symptom(_) | EntryData::Note(_) => Vec::new(),
+        EntryData::Reflux(reflux) => reflux_errors(reflux),
+    }
 }
 
 #[cfg(test)]

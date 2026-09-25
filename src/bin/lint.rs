@@ -3,7 +3,8 @@ use diesel_async::RunQueryDsl;
 use penguin_nurse::server::database::connection::DatabaseConnection;
 use penguin_nurse::server::database::models::{
     consumables::Consumable, consumption_consumables::ConsumptionConsumable,
-    consumptions::Consumption, nested_consumables::NestedConsumable,
+    consumptions::Consumption, exercises::Exercise, nested_consumables::NestedConsumable,
+    poos::Poo, refluxs::Reflux, wees::Wee,
 };
 use penguin_nurse::server::database::schema;
 
@@ -26,6 +27,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\nChecking consumptions...");
     let consumption_errors = check_consumptions(&mut conn).await?;
     total_errors += consumption_errors;
+
+    // Check all exercises
+    println!("\nChecking exercises...");
+    let exercise_errors = check_exercises(&mut conn).await?;
+    total_errors += exercise_errors;
+
+    // Check all refluxs
+    println!("\nChecking refluxs...");
+    let reflux_errors = check_refluxs(&mut conn).await?;
+    total_errors += reflux_errors;
+
+    // Check all wees
+    println!("\nChecking wees...");
+    let wee_errors = check_wees(&mut conn).await?;
+    total_errors += wee_errors;
+
+    // Check all poos
+    println!("\nChecking poos...");
+    let poo_errors = check_poos(&mut conn).await?;
+    total_errors += poo_errors;
 
     // Summary
     println!("\n=== Summary ===");
@@ -152,6 +173,116 @@ async fn check_consumptions(
 
     if error_count == 0 {
         println!("  ✓ No consumption errors found");
+    }
+
+    Ok(error_count)
+}
+
+async fn check_exercises(
+    conn: &mut DatabaseConnection,
+) -> Result<usize, Box<dyn std::error::Error>> {
+    use schema::exercises::dsl::*;
+
+    let all_exercises: Vec<Exercise> = exercises.select(Exercise::as_select()).load(conn).await?;
+    let mut error_count = 0;
+
+    for exercise in all_exercises {
+        let frontend_exercise = penguin_nurse::models::Exercise::from(exercise.clone());
+        let errors = penguin_nurse::validation::exercise_errors(&frontend_exercise);
+
+        if !errors.is_empty() {
+            println!(
+                "\n  Exercise: {} (ID: {})",
+                frontend_exercise.exercise_type.as_title(),
+                exercise.id
+            );
+            for error in errors {
+                println!("    ✗ {}", error);
+                error_count += 1;
+            }
+        }
+    }
+
+    if error_count == 0 {
+        println!("  ✓ No exercise errors found");
+    }
+
+    Ok(error_count)
+}
+
+async fn check_refluxs(conn: &mut DatabaseConnection) -> Result<usize, Box<dyn std::error::Error>> {
+    use schema::refluxs::dsl::*;
+
+    let all_refluxs: Vec<Reflux> = refluxs.select(Reflux::as_select()).load(conn).await?;
+    let mut error_count = 0;
+
+    for reflux in all_refluxs {
+        let frontend_reflux = penguin_nurse::models::Reflux::from(reflux.clone());
+        let errors = penguin_nurse::validation::reflux_errors(&frontend_reflux);
+
+        if !errors.is_empty() {
+            println!("\n  Reflux: (ID: {})", reflux.id);
+            for error in errors {
+                println!("    ✗ {}", error);
+                error_count += 1;
+            }
+        }
+    }
+
+    if error_count == 0 {
+        println!("  ✓ No reflux errors found");
+    }
+
+    Ok(error_count)
+}
+
+async fn check_wees(conn: &mut DatabaseConnection) -> Result<usize, Box<dyn std::error::Error>> {
+    use schema::wees::dsl::*;
+
+    let all_wees: Vec<Wee> = wees.select(Wee::as_select()).load(conn).await?;
+    let mut error_count = 0;
+
+    for wee in all_wees {
+        let frontend_wee = penguin_nurse::models::Wee::from(wee.clone());
+        let errors = penguin_nurse::validation::wee_errors(&frontend_wee);
+
+        if !errors.is_empty() {
+            println!("\n  Wee: (ID: {})", wee.id);
+            for error in errors {
+                println!("    ✗ {}", error);
+                error_count += 1;
+            }
+        }
+    }
+
+    if error_count == 0 {
+        println!("  ✓ No wee errors found");
+    }
+
+    Ok(error_count)
+}
+
+async fn check_poos(conn: &mut DatabaseConnection) -> Result<usize, Box<dyn std::error::Error>> {
+    use schema::poos::dsl::*;
+
+    let all_poos: Vec<Poo> = poos.select(Poo::as_select()).load(conn).await?;
+    let mut error_count = 0;
+
+    for poo in all_poos {
+        let frontend_poo = penguin_nurse::models::Poo::from(poo.clone());
+        let errors = penguin_nurse::validation::poo_errors(&frontend_poo);
+
+        if !errors.is_empty() {
+            println!("\n  Poo: (ID: {})", poo.id);
+            for error in errors {
+                println!("    ✗ {}", error);
+                error_count += 1;
+            }
+        }
+    }
+
+    if error_count == 0 {
+        println!("  ✓ No poo errors found");
     }
 
     Ok(error_count)

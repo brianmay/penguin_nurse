@@ -4,6 +4,7 @@ use chrono::{NaiveDate, Utc};
 use dioxus::prelude::*;
 use dioxus_fullstack::ServerFnError;
 use dioxus_router::navigator;
+use penguin_nurse::validation::entry_errors;
 use tap::Pipe;
 
 use crate::{
@@ -13,7 +14,7 @@ use crate::{
         buttons::{ChangeButton, CreateButton, DeleteButton, NavButton},
         consumptions::{
             self, ConsumptionDetails, ConsumptionItemList, ConsumptionTypeIcon,
-            consumption_duration, consumption_errors,
+            consumption_duration,
         },
         events::EventTime,
         exercises::{ExerciseDetails, ExerciseTypeIcon},
@@ -58,7 +59,7 @@ fn EntryRow(
     let row_class = if entry.data.is_complete() {
         "hover:bg-gray-500 border-blue-300 mt-2 mb-2 p-2 border-2 w-full sm:w-auto sm:border-none inline-block sm:table-row"
     } else {
-        "hover:bg-gray-500 border-blue-300 mt-2 mb-2 p-2 border-2 w-full sm:w-auto sm:border-none inline-block sm:table-row bg-gray-800 dark:bg-gray-500 opacity-60"
+        "hover:bg-gray-500 border-blue-300 mt-2 mb-2 p-2 border-2 w-full sm:w-auto sm:border-none inline-block sm:table-row bg-gray-800 dark:bg-gray-400 opacity-60"
     };
 
     rsx! {
@@ -196,24 +197,19 @@ fn EntryRow(
                 }
             }
         }
-        if let EntryData::Consumption(consumption) = &entry.data {
-            {
-                let errors = consumption_errors(
-                    &consumption.consumption,
-                    Some(&consumption.items),
-                );
-                errors
-                    .into_iter()
-                    .map(|error| {
-                        rsx! {
-                            tr {
-                                td { colspan: 4, class: "block sm:table-cell",
-                                    div { class: "text-error", {error} }
-                                }
+        {
+            let errors = entry_errors(&entry.data);
+            errors
+                .into_iter()
+                .map(|error| {
+                    rsx! {
+                        tr {
+                            td { colspan: 4, class: "block sm:table-cell",
+                                div { class: "text-error", {error} }
                             }
                         }
-                    })
-            }
+                    }
+                })
         }
 
         if selected() == Some(id) {
