@@ -13,11 +13,10 @@ use crate::{
         StrIcon,
         buttons::{ChangeButton, CreateButton, DeleteButton, NavButton},
         consumptions::{
-            self, ConsumptionDetails, ConsumptionItemList, ConsumptionTypeIcon,
-            consumption_duration,
+            self, ConsumptionDetails, ConsumptionDuration, ConsumptionItemList, ConsumptionTypeIcon,
         },
         events::EventTime,
-        exercises::{ExerciseDetails, ExerciseTypeIcon},
+        exercises::{ExerciseDetails, ExerciseDuration, ExerciseTypeIcon},
         health_metrics::{HealthMetricDetails, HealthMetricIcon, health_metric_title},
         notes::{NoteDetails, note_icon, note_title},
         poos::{self, PooDetails, PooDuration, PooIcon, poo_title},
@@ -118,7 +117,7 @@ fn EntryRow(
                             }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            consumption_duration { duration: consumption.consumption.duration }
+                            ConsumptionDuration { duration: consumption.consumption.duration }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             ConsumptionDetails { consumption: consumption.consumption.clone() }
@@ -140,8 +139,7 @@ fn EntryRow(
 
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-
-                            WeeDuration { duration: exercise.duration }
+                            ExerciseDuration { duration: exercise.duration }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             ExerciseDetails { exercise: exercise.clone() }

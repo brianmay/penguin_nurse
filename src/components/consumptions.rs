@@ -316,7 +316,7 @@ pub fn ConsumptionTypeIcon(consumption_type: ConsumptionType) -> Element {
 }
 
 #[component]
-pub fn consumption_duration(duration: Option<chrono::TimeDelta>) -> Element {
+pub fn ConsumptionDuration(duration: Option<chrono::TimeDelta>) -> Element {
     match duration {
         Some(d) => {
             let text = time_delta_to_string(d);
@@ -833,7 +833,7 @@ pub fn ConsumptionSummary(
             EventDateTimeShort { time: consumption.time }
         }
         div {
-            consumption_duration { duration: consumption.duration }
+            ConsumptionDuration { duration: consumption.duration }
         }
         if let Some(mls) = consumption.liquid_mls {
             div {
