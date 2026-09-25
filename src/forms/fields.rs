@@ -217,12 +217,11 @@ fn PullDownMenu<D: 'static + Clone + PartialEq + FieldLabel>(
         els[index] = el;
     };
 
+    let mut clicking_inside = use_signal(|| false);
+
     rsx! {
         div {
             class: "absolute z-10 shadow-lg bg-gray-50 border border-gray-50 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500",
-            onblur: move |_| {
-                search.set(None);
-            },
             input {
                 r#type: "text",
                 class: get_input_classes(true, false),
@@ -240,6 +239,12 @@ fn PullDownMenu<D: 'static + Clone + PartialEq + FieldLabel>(
                     focus_idx.set(0);
                 },
                 onkeydown: onkeydown_input,
+                onblur: move |_| {
+                    if !clicking_inside() {
+                        search.set(None);
+                    }
+                    clicking_inside.set(false);
+                },
                 tabindex: "-1",
             }
             ul { class: "p-2 shadow rounded-box", onkeydown: onkeydown_list,
@@ -251,6 +256,9 @@ fn PullDownMenu<D: 'static + Clone + PartialEq + FieldLabel>(
                         li {
                             key: "{item.id}",
                             class: "flex px-4 py-2 hover:bg-gray-800 hover:text-gray-100 cursor-pointer gap-4",
+                            onmousedown: move |_evt| {
+                                clicking_inside.set(true);
+                            },
                             onclick: {
                                 let value = item.value.clone();
                                 move |_| {
