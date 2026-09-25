@@ -42,22 +42,13 @@ fn get_label_classes() -> String {
     ]
 }
 
-fn get_checkbox_classes(is_valid: bool, is_disabled: bool) -> String {
+fn get_toggle_classes(is_valid: bool, is_disabled: bool) -> String {
     let classes = classes![
-        "bg-gray-100",
-        "checkbox",
+        "toggle",
         "dark:bg-gray-700",
-        "dark:focus:ring-blue-500",
-        "dark:ring-offset-gray-800",
         "dark:text-white",
         "focus:ring-2",
         "focus:ring-blue-500",
-        "h-4",
-        "ring-offset-2",
-        "ring-offset-gray-100",
-        "rounded",
-        "text-gray-900",
-        "w-4",
         "focus:outline-none"
     ];
 
@@ -66,10 +57,10 @@ fn get_checkbox_classes(is_valid: bool, is_disabled: bool) -> String {
     }
 
     if is_valid {
-        return classes + " " + &classes!["border-green-500", "dark:border-green-500"];
+        return classes + " " + &classes!["toggle-success"];
     }
 
-    classes + &classes!["border-red-500", "dark:border-red-500"]
+    classes + &classes!["toggle-error"]
 }
 
 fn get_input_classes(is_valid: bool, is_disabled: bool) -> String {
@@ -1042,11 +1033,11 @@ pub fn InputBoolean(
     disabled: Memo<bool>,
 ) -> Element {
     rsx! {
-        div {
+        div { class: "mb-5",
             label { r#for: id, class: get_label_classes(), "{label}" }
             input {
                 r#type: "checkbox",
-                class: get_checkbox_classes(true, disabled()),
+                class: get_toggle_classes(true, disabled()),
                 id,
                 checked: value(),
                 disabled,
