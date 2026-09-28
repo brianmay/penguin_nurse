@@ -200,6 +200,13 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
                 validate: validate.time,
                 disabled,
             }
+            InputUrgency {
+                id: "urgency",
+                label: "Urgency",
+                value: urgency,
+                validate: validate.urgency,
+                disabled,
+            }
             InputDuration {
                 id: "duration",
                 label: "Duration",
@@ -212,13 +219,6 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
                 id: "complete",
                 label: "Complete",
                 value: complete,
-                disabled,
-            }
-            InputUrgency {
-                id: "urgency",
-                label: "Urgency",
-                value: urgency,
-                validate: validate.urgency,
                 disabled,
             }
             InputSymptomIntensity {

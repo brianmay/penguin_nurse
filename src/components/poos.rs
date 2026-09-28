@@ -198,6 +198,13 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
                 validate: validate.time,
                 disabled,
             }
+            InputUrgency {
+                id: "urgency",
+                label: "Urgency",
+                value: urgency,
+                validate: validate.urgency,
+                disabled,
+            }
             InputDuration {
                 id: "duration",
                 label: "Duration",
@@ -210,13 +217,6 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
                 id: "complete",
                 label: "Complete",
                 value: complete,
-                disabled,
-            }
-            InputUrgency {
-                id: "urgency",
-                label: "Urgency",
-                value: urgency,
-                validate: validate.urgency,
                 disabled,
             }
             InputNumber {
