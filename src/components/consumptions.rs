@@ -190,6 +190,13 @@ pub fn ConsumptionUpdate(
                 validate: validate.time,
                 disabled,
             }
+            InputConsumptionType {
+                id: "consumption_type",
+                label: "Type",
+                value: consumption_type,
+                validate: validate.consumption_type,
+                disabled,
+            }
             InputDuration {
                 id: "duration",
                 label: "Duration",
@@ -202,13 +209,6 @@ pub fn ConsumptionUpdate(
                 id: "complete",
                 label: "Complete",
                 value: complete,
-                disabled,
-            }
-            InputConsumptionType {
-                id: "consumption_type",
-                label: "Type",
-                value: consumption_type,
-                validate: validate.consumption_type,
                 disabled,
             }
             InputNumber {
