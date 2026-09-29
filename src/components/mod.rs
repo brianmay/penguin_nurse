@@ -14,7 +14,7 @@ pub mod users;
 pub mod wee_urges;
 pub mod wees;
 
-mod times;
+pub mod times;
 
 use dioxus::prelude::*;
 

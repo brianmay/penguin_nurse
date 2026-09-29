@@ -9,6 +9,7 @@ use tap::Pipe;
 
 use crate::{
     components::{
+        times::time_delta_to_string,
         ElementIcon,
         buttons::{ActionButton, CreateButton},
         consumables::{self, ConsumableLabel, ConsumableUnitIcon, ConsumableUpdate},
@@ -625,6 +626,9 @@ pub fn InputDuration(
                 }
             }
             FieldMessage { validate, disabled }
+            if let Ok(Some(d)) = validate() {
+                span { class: "text-sm text-base-content/60", "{time_delta_to_string(d)}" }
+            }
         }
     }
 }
