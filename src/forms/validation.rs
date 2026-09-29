@@ -187,10 +187,6 @@ pub fn validate_exercise_type(
     exercise_type.ok_or_else(|| ValidationError("Exercise type is required".to_string()))
 }
 
-pub fn validate_bristol(bristol_type: Option<Bristol>) -> Result<Bristol, ValidationError> {
-    bristol_type.ok_or_else(|| ValidationError("Bristol type is required".to_string()))
-}
-
 pub fn validate_colour_hue(str: &str) -> Result<Option<f32>, ValidationError> {
     validate_in_range_maybe(str, -180.0, 360.0)
 }
@@ -231,12 +227,95 @@ pub fn validate_colour(
     }
 }
 
+pub fn validate_colour_maybe(
+    quality: &Result<Option<i32>, ValidationError>,
+    (hue, saturation, value): (String, String, String),
+) -> Result<Option<Hsv>, ValidationError> {
+    if quality.is_err() {
+        return Ok(None);
+    }
+
+    let hue = validate_colour_hue(str::trim(&hue));
+    let saturation = validate_colour_saturation(str::trim(&saturation));
+    let value = validate_colour_value(str::trim(&value));
+
+    match quality.as_ref() {
+        Ok(None) => {
+            match (hue, saturation, value) {
+                (Ok(Some(hue)), Ok(Some(saturation)), Ok(Some(value))) => {
+                    Ok(Some(Hsv::new(hue, saturation, value)))
+                }
+                (Ok(None), Ok(None), Ok(None)) => Ok(None),
+                (Ok(None), _, _) | (_, Ok(None), _) | (_, _, Ok(None)) => {
+                    Err(ValidationError("Colour must be completely set".to_string()))
+                }
+                (Err(e), _, _) | (_, Err(e), _) | (_, _, Err(e)) => Err(e.clone()),
+            }
+        }
+        Ok(Some(0)) => {
+            match (hue, saturation, value) {
+                (Ok(None), Ok(None), Ok(None)) => Ok(None),
+                (Ok(Some(_)), _, _) | (_, Ok(Some(_)), _) | (_, _, Ok(Some(_))) => Err(
+                    ValidationError("Colour must be completely empty if quality is 0".to_string()),
+                ),
+                (Err(e), _, _) | (_, Err(e), _) | (_, _, Err(e)) => Err(e.clone()),
+            }
+        }
+        Ok(Some(_)) => {
+            match (hue, saturation, value) {
+                (Ok(Some(hue)), Ok(Some(saturation)), Ok(Some(value))) => {
+                    Ok(Some(Hsv::new(hue, saturation, value)))
+                }
+                (Ok(None), Ok(None), Ok(None)) => Ok(None),
+                (Ok(None), _, _) | (_, Ok(None), _) | (_, _, Ok(None)) => {
+                    Err(ValidationError("Colour must be completely set".to_string()))
+                }
+                (Err(e), _, _) | (_, Err(e), _) | (_, _, Err(e)) => Err(e.clone()),
+            }
+        }
+        Err(_) => Ok(None),
+    }
+}
+
 pub fn validate_urgency(urgency: Option<Urgency>) -> Result<Urgency, ValidationError> {
     urgency.ok_or_else(|| ValidationError("Urgency is required".to_string()))
 }
 
-pub fn validate_poo_quantity(str: &str) -> Result<i32, ValidationError> {
-    validate_in_range(str, 0, 10)
+pub fn validate_optional_poo_quantity(
+    complete: bool,
+    str: &str,
+) -> Result<Option<i32>, ValidationError> {
+    if str.trim().is_empty() {
+        if complete {
+            Err(ValidationError(
+                "Quantity is required when marked complete".to_string(),
+            ))
+        } else {
+            Ok(None)
+        }
+    } else {
+        match validate_in_range(str, 0, 10) {
+            Ok(v) => Ok(Some(v)),
+            Err(e) => Err(e),
+        }
+    }
+}
+
+pub fn validate_optional_bristol(
+    complete: bool,
+    bristol: Option<Bristol>,
+) -> Result<Option<Bristol>, ValidationError> {
+    if bristol.is_none() {
+        if complete {
+            Err(ValidationError(
+                "Bristol type is required when marked complete".to_string(),
+            ))
+        } else {
+            Ok(None)
+        }
+    } else {
+        Ok(bristol)
+    }
 }
 
 pub fn validate_in_range<T>(str: &str, min: T, max: T) -> Result<T, ValidationError>

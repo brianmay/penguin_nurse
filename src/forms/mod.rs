@@ -25,18 +25,18 @@ pub use saving::MyForm;
 pub use saving::Saving;
 pub use validation::{
     validate_1st_password, validate_2nd_password, validate_barcode, validate_blood_glucose,
-    validate_body_fat_pct, validate_brand, validate_bristol, validate_colour, validate_colour_hue,
-    validate_colour_saturation, validate_colour_value, validate_comments,
+    validate_body_fat_pct, validate_brand, validate_colour, validate_colour_hue,
+    validate_colour_maybe, validate_colour_saturation, validate_colour_value, validate_comments,
     validate_consumable_millilitres, validate_consumable_quantity, validate_consumable_unit,
     validate_consumption_type, validate_consumption_type_maybe, validate_date_of_birth,
     validate_diastolic_bp, validate_distance, validate_email, validate_exercise_calories,
     validate_exercise_rpe, validate_exercise_type, validate_fixed_offset_date_time,
     validate_full_name, validate_height, validate_hip_circumference, validate_location,
-    validate_maybe_date_time, validate_name, validate_optional_chrono_duration,
-    validate_optional_duration, validate_password, validate_poo_quantity, validate_pulse,
-    validate_sex, validate_symptom_extra_details, validate_symptom_intensity, validate_systolic_bp,
-    validate_urgency, validate_username, validate_waist_circumference, validate_wee_millilitres,
-    validate_weight,
+    validate_maybe_date_time, validate_name, validate_optional_bristol,
+    validate_optional_chrono_duration, validate_optional_duration, validate_optional_poo_quantity,
+    validate_password, validate_pulse, validate_sex, validate_symptom_extra_details,
+    validate_symptom_intensity, validate_systolic_bp, validate_urgency, validate_username,
+    validate_waist_circumference, validate_wee_millilitres, validate_weight,
 };
 
 mod values;

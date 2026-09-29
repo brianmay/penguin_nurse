@@ -17,8 +17,8 @@ pub struct Poo {
     pub time: chrono::DateTime<chrono::Utc>,
     pub duration: Option<chrono::Duration>,
     pub urgency: i32,
-    pub quantity: i32,
-    pub bristol: i32,
+    pub quantity: Option<i32>,
+    pub bristol: Option<i32>,
     pub colour_hue: Option<f32>,
     pub colour_saturation: Option<f32>,
     pub colour_value: Option<f32>,
@@ -43,6 +43,8 @@ impl From<Poo> for crate::models::Poo {
             _ => None,
         };
 
+        let bristol = poo.bristol.and_then(|b| b.try_into().ok());
+
         Self {
             id: PooId::new(poo.id),
             user_id: UserId::new(poo.user_id),
@@ -50,7 +52,7 @@ impl From<Poo> for crate::models::Poo {
             duration: poo.duration,
             urgency: poo.urgency.try_into().unwrap_or_default(),
             quantity: poo.quantity,
-            bristol: poo.bristol.try_into().unwrap_or_default(),
+            bristol,
             colour,
             comments: poo.comments,
             complete: poo.complete,
@@ -107,8 +109,8 @@ pub struct NewPoo<'a> {
     utc_offset: i32,
     duration: Option<chrono::Duration>,
     urgency: i32,
-    quantity: i32,
-    bristol: i32,
+    quantity: Option<i32>,
+    bristol: Option<i32>,
     colour_hue: Option<f32>,
     colour_saturation: Option<f32>,
     colour_value: Option<f32>,
@@ -125,7 +127,7 @@ impl<'a> NewPoo<'a> {
             duration: poo.duration,
             urgency: poo.urgency.into(),
             quantity: poo.quantity,
-            bristol: poo.bristol.into(),
+            bristol: poo.bristol.map(|b| b.into()),
             colour_hue: poo.colour.map(|colour| colour.hue.into_inner()),
             colour_saturation: poo.colour.map(|colour| colour.saturation),
             colour_value: poo.colour.map(|colour| colour.value),
@@ -156,8 +158,8 @@ pub struct ChangePoo<'a> {
     pub utc_offset: Option<i32>,
     pub duration: Option<Option<chrono::Duration>>,
     pub urgency: Option<i32>,
-    pub quantity: Option<i32>,
-    pub bristol: Option<i32>,
+    pub quantity: Option<Option<i32>>,
+    pub bristol: Option<Option<i32>>,
     pub colour_hue: Option<Option<f32>>,
     pub colour_saturation: Option<Option<f32>>,
     pub colour_value: Option<Option<f32>>,
@@ -176,7 +178,7 @@ impl<'a> ChangePoo<'a> {
             duration: poo.duration.into_option(),
             urgency: poo.urgency.map_into().into_option(),
             quantity: poo.quantity.into_option(),
-            bristol: poo.bristol.map_into().into_option(),
+            bristol: poo.bristol.map(|x| x.map(|b| b.into())).into_option(),
             colour_hue: poo
                 .colour
                 .map(|x| x.map(|colour| colour.hue.into_inner()))

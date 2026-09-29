@@ -891,7 +891,7 @@ pub fn InputPooBristolType(
     id: &'static str,
     label: &'static str,
     value: Signal<Option<Bristol>>,
-    validate: Memo<Result<Bristol, ValidationError>>,
+    validate: Memo<Result<Option<Bristol>, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
     let options = Bristol::all_values()
