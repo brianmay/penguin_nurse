@@ -12,8 +12,8 @@ use crate::{
     forms::{
         Colour, Dialog, EditError, FieldValue, FormSaveCancelButton, InputBoolean, InputColour,
         InputDateTime, InputDuration, InputNumber, InputPooBristolType, InputTextArea,
-        InputUrgency, Saving, ValidationError, validate_colour_maybe, validate_comments,
-        validate_fixed_offset_date_time, validate_optional_bristol,
+        InputUrgency, Saving, ValidationError, validate_bristol_quantity, validate_colour_maybe,
+        validate_comments, validate_fixed_offset_date_time, validate_optional_bristol,
         validate_optional_chrono_duration, validate_optional_poo_quantity, validate_urgency,
     },
     functions::poos::{create_poo, delete_poo, update_poo},
@@ -33,6 +33,7 @@ struct Validate {
     urgency: Memo<Result<Urgency, ValidationError>>,
     quantity: Memo<Result<Option<i32>, ValidationError>>,
     bristol: Memo<Result<Option<Bristol>, ValidationError>>,
+    bristol_quantity: Memo<Result<(), ValidationError>>,
     colour: Memo<Result<Option<Hsv>, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
@@ -125,6 +126,7 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
 
     let quantity_validate =
         use_memo(move || validate_optional_poo_quantity(*complete.read(), &quantity()));
+    let bristol_validate = use_memo(move || validate_optional_bristol(*complete.read(), bristol()));
     let validate = {
         Validate {
             time: use_memo(move || validate_fixed_offset_date_time(&time())),
@@ -133,7 +135,10 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
             }),
             urgency: use_memo(move || validate_urgency(urgency())),
             quantity: quantity_validate,
-            bristol: use_memo(move || validate_optional_bristol(*complete.read(), bristol())),
+            bristol: bristol_validate,
+            bristol_quantity: use_memo(move || {
+                validate_bristol_quantity(&bristol_validate.read(), &quantity_validate.read())
+            }),
             colour: use_memo(move || validate_colour_maybe(&quantity_validate.read(), colour())),
             comments: use_memo(move || validate_comments(&comments())),
         }
@@ -149,6 +154,7 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
             || validate.urgency.read().is_err()
             || validate.quantity.read().is_err()
             || validate.bristol.read().is_err()
+            || validate.bristol_quantity.read().is_err()
             || validate.colour.read().is_err()
             || validate.comments.read().is_err()
             || disabled()
@@ -233,6 +239,9 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
                 value: bristol,
                 validate: validate.bristol,
                 disabled,
+            }
+            if let Err(err) = &*validate.bristol_quantity.read() {
+                div { class: "text-red-500", "{err}" }
             }
             InputColour {
                 id: "colour",

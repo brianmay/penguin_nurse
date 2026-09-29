@@ -240,39 +240,33 @@ pub fn validate_colour_maybe(
     let value = validate_colour_value(str::trim(&value));
 
     match quality.as_ref() {
-        Ok(None) => {
-            match (hue, saturation, value) {
-                (Ok(Some(hue)), Ok(Some(saturation)), Ok(Some(value))) => {
-                    Ok(Some(Hsv::new(hue, saturation, value)))
-                }
-                (Ok(None), Ok(None), Ok(None)) => Ok(None),
-                (Ok(None), _, _) | (_, Ok(None), _) | (_, _, Ok(None)) => {
-                    Err(ValidationError("Colour must be completely set".to_string()))
-                }
-                (Err(e), _, _) | (_, Err(e), _) | (_, _, Err(e)) => Err(e.clone()),
+        Ok(None) => match (hue, saturation, value) {
+            (Ok(Some(hue)), Ok(Some(saturation)), Ok(Some(value))) => {
+                Ok(Some(Hsv::new(hue, saturation, value)))
             }
-        }
-        Ok(Some(0)) => {
-            match (hue, saturation, value) {
-                (Ok(None), Ok(None), Ok(None)) => Ok(None),
-                (Ok(Some(_)), _, _) | (_, Ok(Some(_)), _) | (_, _, Ok(Some(_))) => Err(
-                    ValidationError("Colour must be completely empty if quality is 0".to_string()),
-                ),
-                (Err(e), _, _) | (_, Err(e), _) | (_, _, Err(e)) => Err(e.clone()),
+            (Ok(None), Ok(None), Ok(None)) => Ok(None),
+            (Ok(None), _, _) | (_, Ok(None), _) | (_, _, Ok(None)) => {
+                Err(ValidationError("Colour must be completely set".to_string()))
             }
-        }
-        Ok(Some(_)) => {
-            match (hue, saturation, value) {
-                (Ok(Some(hue)), Ok(Some(saturation)), Ok(Some(value))) => {
-                    Ok(Some(Hsv::new(hue, saturation, value)))
-                }
-                (Ok(None), Ok(None), Ok(None)) => Ok(None),
-                (Ok(None), _, _) | (_, Ok(None), _) | (_, _, Ok(None)) => {
-                    Err(ValidationError("Colour must be completely set".to_string()))
-                }
-                (Err(e), _, _) | (_, Err(e), _) | (_, _, Err(e)) => Err(e.clone()),
+            (Err(e), _, _) | (_, Err(e), _) | (_, _, Err(e)) => Err(e.clone()),
+        },
+        Ok(Some(0)) => match (hue, saturation, value) {
+            (Ok(None), Ok(None), Ok(None)) => Ok(None),
+            (Ok(Some(_)), _, _) | (_, Ok(Some(_)), _) | (_, _, Ok(Some(_))) => Err(
+                ValidationError("Colour must be completely empty if quality is 0".to_string()),
+            ),
+            (Err(e), _, _) | (_, Err(e), _) | (_, _, Err(e)) => Err(e.clone()),
+        },
+        Ok(Some(_)) => match (hue, saturation, value) {
+            (Ok(Some(hue)), Ok(Some(saturation)), Ok(Some(value))) => {
+                Ok(Some(Hsv::new(hue, saturation, value)))
             }
-        }
+            (Ok(None), Ok(None), Ok(None)) => Ok(None),
+            (Ok(None), _, _) | (_, Ok(None), _) | (_, _, Ok(None)) => {
+                Err(ValidationError("Colour must be completely set".to_string()))
+            }
+            (Err(e), _, _) | (_, Err(e), _) | (_, _, Err(e)) => Err(e.clone()),
+        },
         Err(_) => Ok(None),
     }
 }
@@ -315,6 +309,21 @@ pub fn validate_optional_bristol(
         }
     } else {
         Ok(bristol)
+    }
+}
+
+pub fn validate_bristol_quantity(
+    bristol: &Result<Option<Bristol>, ValidationError>,
+    quantity: &Result<Option<i32>, ValidationError>,
+) -> Result<(), ValidationError> {
+    match (bristol, quantity) {
+        (Ok(Some(Bristol::B0)), Ok(Some(q))) if *q > 0 => Err(ValidationError(
+            "Quantity must be 0 when Bristol is B0".to_string(),
+        )),
+        (Ok(Some(b)), Ok(Some(q))) if *b != Bristol::B0 && *q == 0 => Err(ValidationError(
+            "Quantity must be greater than 0 when Bristol is not B0".to_string(),
+        )),
+        _ => Ok(()),
     }
 }
 
