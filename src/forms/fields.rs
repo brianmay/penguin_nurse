@@ -15,7 +15,7 @@ use crate::{
         consumptions::ConsumptionTypeIcon,
         events::{UrgencyIcon, UrgencyLabel},
         exercises::{ExerciseRpeIcon, ExerciseRpeLabel, ExerciseTypeIcon},
-        poos::PooBristolIcon,
+        poos::{PooBristolIcon, PooBristolLabel},
         times::time_delta_to_string,
     },
     forms::{
@@ -923,7 +923,9 @@ pub fn InputPooBristolType(
             value: Some(*bristol),
             icon,
             title: label.to_string(),
-            label: rsx! { "{label}" },
+            label: rsx! {
+                PooBristolLabel { bristol: *bristol }
+            },
         }
     }))
     .collect::<Vec<_>>();
