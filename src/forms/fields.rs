@@ -303,6 +303,7 @@ fn InputSearch<D: 'static + Clone + Eq + FieldLabel, T: 'static + Clone + Eq>(
     options: Memo<Vec<PullDownMenuItem<D>>>,
     search: Signal<Option<String>>,
     on_change: Option<Callback<Option<D>>>,
+    none_label: Element,
 ) -> Element {
     let mut button: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
     let mut open = use_memo(move || search.read().as_ref().is_some());
@@ -340,7 +341,7 @@ fn InputSearch<D: 'static + Clone + Eq + FieldLabel, T: 'static + Clone + Eq>(
                         if let Some(selected_option) = value.read().deref() {
                             { selected_option.as_label() }
                         } else {
-                            rsx! { "Select..." }
+                            { none_label }
                         }
                     }
                 }
@@ -652,6 +653,11 @@ pub fn InputSelect<D: 'static + Clone + Eq + FieldLabel, T: 'static + Clone + Eq
     options: Vec<InputOption<D>>,
 ) -> Element {
     let search: Signal<Option<String>> = use_signal(|| None);
+    let none_label = options
+        .iter()
+        .find(|opt| opt.value.is_none())
+        .map(|opt| opt.label.clone())
+        .unwrap_or_else(|| rsx! { "Select..." });
     let filtered_options = use_memo(move || {
         let query = search.read().as_ref().map(|s| s.to_lowercase());
         options
@@ -683,6 +689,7 @@ pub fn InputSelect<D: 'static + Clone + Eq + FieldLabel, T: 'static + Clone + Eq
             disabled,
             options: filtered_options,
             search,
+            none_label,
         }
     }
 }
@@ -898,23 +905,32 @@ pub fn InputPooBristolType(
     validate: Memo<Result<Option<Bristol>, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
-    let options = Bristol::all_values()
-        .iter()
-        .map(|bristol| {
-            let id = bristol.as_id();
-            let icon = rsx! {
-                PooBristolIcon { bristol: *bristol }
-            };
-            let label = bristol.as_title();
-            InputOption {
-                id: id.to_string(),
-                value: Some(*bristol),
-                icon,
-                title: label.to_string(),
-                label: rsx! { "{label}" },
-            }
-        })
-        .collect::<Vec<_>>();
+    let options = std::iter::once(InputOption {
+        id: "none".to_string(),
+        value: None,
+        icon: rsx! {},
+        title: "None".to_string(),
+        label: rsx! { "None" },
+    })
+    .chain(
+        Bristol::all_values()
+            .iter()
+            .map(|bristol| {
+                let id = bristol.as_id();
+                let icon = rsx! {
+                    PooBristolIcon { bristol: *bristol }
+                };
+                let label = bristol.as_title();
+                InputOption {
+                    id: id.to_string(),
+                    value: Some(*bristol),
+                    icon,
+                    title: label.to_string(),
+                    label: rsx! { "{label}" },
+                }
+            }),
+    )
+    .collect::<Vec<_>>();
 
     rsx! {
         InputSelect {
@@ -1307,6 +1323,7 @@ pub fn InputConsumable(
                 options: filtered_options,
                 search,
                 on_change: Some(on_change),
+                none_label: rsx! { "Select..." },
             }
             div { class: "gap-2",
                 CreateButton { on_click: move |_e| create_form.set(true), "Create" }
