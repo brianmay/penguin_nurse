@@ -9,7 +9,6 @@ use tap::Pipe;
 
 use crate::{
     components::{
-        times::time_delta_to_string,
         ElementIcon,
         buttons::{ActionButton, CreateButton},
         consumables::{self, ConsumableLabel, ConsumableUnitIcon, ConsumableUpdate},
@@ -17,6 +16,7 @@ use crate::{
         events::{UrgencyIcon, UrgencyLabel},
         exercises::{ExerciseRpeIcon, ExerciseRpeLabel, ExerciseTypeIcon},
         poos::PooBristolIcon,
+        times::time_delta_to_string,
     },
     forms::{
         Barcode, validate_colour_hue, validate_colour_saturation, validate_colour_value,
@@ -912,24 +912,20 @@ pub fn InputPooBristolType(
         title: "None".to_string(),
         label: rsx! { "None" },
     })
-    .chain(
-        Bristol::all_values()
-            .iter()
-            .map(|bristol| {
-                let id = bristol.as_id();
-                let icon = rsx! {
-                    PooBristolIcon { bristol: *bristol }
-                };
-                let label = bristol.as_title();
-                InputOption {
-                    id: id.to_string(),
-                    value: Some(*bristol),
-                    icon,
-                    title: label.to_string(),
-                    label: rsx! { "{label}" },
-                }
-            }),
-    )
+    .chain(Bristol::all_values().iter().map(|bristol| {
+        let id = bristol.as_id();
+        let icon = rsx! {
+            PooBristolIcon { bristol: *bristol }
+        };
+        let label = bristol.as_title();
+        InputOption {
+            id: id.to_string(),
+            value: Some(*bristol),
+            icon,
+            title: label.to_string(),
+            label: rsx! { "{label}" },
+        }
+    }))
     .collect::<Vec<_>>();
 
     rsx! {

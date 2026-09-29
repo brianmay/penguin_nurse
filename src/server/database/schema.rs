@@ -286,7 +286,7 @@ diesel::table! {
         time -> Timestamptz,
         duration -> Nullable<Interval>,
         urgency -> Int4,
-        mls -> Int4,
+        mls -> Nullable<Int4>,
         colour_hue -> Nullable<Float4>,
         colour_saturation -> Nullable<Float4>,
         colour_value -> Nullable<Float4>,
@@ -294,7 +294,7 @@ diesel::table! {
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
         utc_offset -> Int4,
-        leakage -> Int4,
+        leakage -> Nullable<Int4>,
         complete -> Bool,
     }
 }

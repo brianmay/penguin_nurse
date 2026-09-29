@@ -12,10 +12,10 @@ use crate::{
     },
     forms::{
         Colour, Dialog, EditError, FieldValue, FormSaveCancelButton, InputBoolean, InputColour,
-        InputDateTime, InputDuration, InputNumber, InputSymptomIntensity, InputTextArea,
-        InputUrgency, Saving, ValidationError, validate_colour, validate_comments,
-        validate_fixed_offset_date_time, validate_optional_chrono_duration,
-        validate_symptom_intensity, validate_urgency, validate_wee_millilitres,
+        InputDateTime, InputDuration, InputNumber, InputTextArea, InputUrgency, Saving,
+        ValidationError, validate_colour_maybe, validate_comments, validate_fixed_offset_date_time,
+        validate_optional_chrono_duration, validate_optional_leakage, validate_optional_mls,
+        validate_urgency,
     },
     functions::wees::{create_wee, delete_wee, update_wee},
     models::{ChangeWee, MaybeSet, NewWee, Urgency, UserId, Wee},
@@ -32,8 +32,8 @@ struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
     duration: Memo<Result<Option<Duration>, ValidationError>>,
     urgency: Memo<Result<Urgency, ValidationError>>,
-    leakage: Memo<Result<i32, ValidationError>>,
-    mls: Memo<Result<i32, ValidationError>>,
+    leakage: Memo<Result<Option<i32>, ValidationError>>,
+    mls: Memo<Result<Option<i32>, ValidationError>>,
     colour: Memo<Result<Option<Hsv>, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
@@ -99,11 +99,11 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
     });
     let leakage = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { wee } => wee.leakage.as_raw(),
+        Operation::Update { wee } => wee.leakage.map(|l| l.to_string()).unwrap_or_default(),
     });
     let mls = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { wee } => wee.mls.as_raw(),
+        Operation::Update { wee } => wee.mls.map(|m| m.to_string()).unwrap_or_default(),
     });
     let colour = use_signal(|| match &op {
         Operation::Create { .. } => (String::new(), String::new(), String::new()),
@@ -125,16 +125,16 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
     });
 
     let validate = {
-        let validate_mls = use_memo(move || validate_wee_millilitres(&mls()));
+        let mls_validate = use_memo(move || validate_optional_mls(*complete.read(), &mls()));
         Validate {
             time: use_memo(move || validate_fixed_offset_date_time(&time())),
             duration: use_memo(move || {
                 validate_optional_chrono_duration(*complete.read(), &duration())
             }),
             urgency: use_memo(move || validate_urgency(urgency())),
-            leakage: use_memo(move || validate_symptom_intensity(&leakage())),
-            mls: validate_mls,
-            colour: use_memo(move || validate_colour(&validate_mls.read(), colour())),
+            leakage: use_memo(move || validate_optional_leakage(*complete.read(), &leakage())),
+            mls: mls_validate,
+            colour: use_memo(move || validate_colour_maybe(&mls_validate.read(), colour())),
             comments: use_memo(move || validate_comments(&comments())),
         }
     };
@@ -221,16 +221,16 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
                 value: complete,
                 disabled,
             }
-            InputSymptomIntensity {
+            InputNumber {
                 id: "leakage",
-                label: "Leakage",
+                label: "Leakage (0-10)".to_string(),
                 value: leakage,
                 validate: validate.leakage,
                 disabled,
             }
             InputNumber {
                 id: "mls",
-                label: "Quantity",
+                label: "Quantity (ml)".to_string(),
                 value: mls,
                 validate: validate.mls,
                 disabled,
@@ -360,19 +360,25 @@ pub fn WeeDuration(duration: Option<chrono::Duration>) -> Element {
 }
 
 #[component]
-pub fn WeeMls(mls: i32) -> Element {
-    let classes = if mls == 0 {
-        classes!["text-error"]
-    } else if mls < 100 {
-        classes!["text-warning"]
-    } else if mls < 500 {
-        classes!["text-success"]
-    } else {
-        classes!["text-error"]
-    };
-
-    rsx! {
-        span { class: classes, {mls.to_string() + " ml"} }
+pub fn WeeMls(mls: Option<i32>) -> Element {
+    match mls {
+        Some(m) => {
+            let classes = if m == 0 {
+                classes!["text-error"]
+            } else if m < 100 {
+                classes!["text-warning"]
+            } else if m < 500 {
+                classes!["text-success"]
+            } else {
+                classes!["text-error"]
+            };
+            rsx! {
+                span { class: classes, {m.to_string() + " ml"} }
+            }
+        }
+        None => rsx! {
+            span { class: "text-gray-400", "No quantity" }
+        },
     }
 }
 
@@ -422,7 +428,9 @@ pub fn WeeSummary(wee: Wee) -> Element {
         WeeMls { mls: wee.mls }
         WeeDuration { duration: wee.duration }
         UrgencyLabel { urgency: wee.urgency }
-        SymptomIntensity { intensity: wee.leakage }
+        if let Some(leakage) = wee.leakage {
+            SymptomIntensity { intensity: leakage }
+        }
         event_colour { colour: wee.colour }
         if let Some(comments) = &wee.comments {
             Markdown { content: comments.to_string() }
@@ -440,10 +448,12 @@ pub fn WeeDetails(wee: Wee) -> Element {
             div {
                 UrgencyLabel { urgency: wee.urgency }
             }
-            SymptomDisplay {
-                name: "Leakage".to_string(),
-                intensity: wee.leakage,
-                extra: None,
+            if let Some(leakage) = wee.leakage {
+                SymptomDisplay {
+                    name: "Leakage".to_string(),
+                    intensity: leakage,
+                    extra: None,
+                }
             }
         }
         if let Some(comments) = &wee.comments {

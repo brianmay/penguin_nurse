@@ -295,6 +295,43 @@ pub fn validate_optional_poo_quantity(
     }
 }
 
+pub fn validate_optional_leakage(
+    complete: bool,
+    str: &str,
+) -> Result<Option<i32>, ValidationError> {
+    if str.trim().is_empty() {
+        if complete {
+            Err(ValidationError(
+                "Leakage is required when marked complete".to_string(),
+            ))
+        } else {
+            Ok(None)
+        }
+    } else {
+        match validate_in_range(str, 0, 10) {
+            Ok(v) => Ok(Some(v)),
+            Err(e) => Err(e),
+        }
+    }
+}
+
+pub fn validate_optional_mls(complete: bool, str: &str) -> Result<Option<i32>, ValidationError> {
+    if str.trim().is_empty() {
+        if complete {
+            Err(ValidationError(
+                "Quantity is required when marked complete".to_string(),
+            ))
+        } else {
+            Ok(None)
+        }
+    } else {
+        match validate_in_range_exclusive(str, 0, 10_000) {
+            Ok(v) => Ok(Some(v)),
+            Err(e) => Err(e),
+        }
+    }
+}
+
 pub fn validate_optional_bristol(
     complete: bool,
     bristol: Option<Bristol>,

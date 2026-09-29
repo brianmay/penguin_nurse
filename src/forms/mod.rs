@@ -34,10 +34,10 @@ pub use validation::{
     validate_fixed_offset_date_time, validate_full_name, validate_height,
     validate_hip_circumference, validate_location, validate_maybe_date_time, validate_name,
     validate_optional_bristol, validate_optional_chrono_duration, validate_optional_duration,
-    validate_optional_poo_quantity, validate_password, validate_pulse, validate_sex,
-    validate_symptom_extra_details, validate_symptom_intensity, validate_systolic_bp,
-    validate_urgency, validate_username, validate_waist_circumference, validate_wee_millilitres,
-    validate_weight,
+    validate_optional_leakage, validate_optional_mls, validate_optional_poo_quantity,
+    validate_password, validate_pulse, validate_sex, validate_symptom_extra_details,
+    validate_symptom_intensity, validate_systolic_bp, validate_urgency, validate_username,
+    validate_waist_circumference, validate_wee_millilitres, validate_weight,
 };
 
 mod values;
