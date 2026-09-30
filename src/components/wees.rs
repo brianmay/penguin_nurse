@@ -425,9 +425,9 @@ pub fn WeeSummary(wee: Wee) -> Element {
         div {
             EventDateTimeShort { time: wee.time }
         }
-        WeeMls { mls: wee.mls }
-        WeeDuration { duration: wee.duration }
-        UrgencyLabel { urgency: wee.urgency }
+        div { WeeMls { mls: wee.mls } }
+        div { WeeDuration { duration: wee.duration } }
+        div { UrgencyLabel { urgency: wee.urgency } }
         if let Some(leakage) = wee.leakage {
             SymptomIntensity { intensity: leakage }
         }
