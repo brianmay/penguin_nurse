@@ -7,7 +7,10 @@ use components::{consumables, navbar::Navbar, timeline, users};
 use dioxus_fullstack::{ServerFnError, use_server_future};
 use dioxus_router::{Routable, Router};
 use penguin_nurse::models::{User, UserId};
-use views::{ConsumableList, Home, Login, Logout, TimelineList, UserDetail, UserList, get_user};
+use views::{
+    ConsumableList, Home, IncompleteList, Login, Logout, TimelineList, UserDetail, UserList,
+    get_user,
+};
 
 pub use penguin_nurse::models;
 
@@ -31,6 +34,8 @@ enum Route {
     #[layout(Navbar)]
     #[route("/")]
     Home {  },
+    #[route("/incomplete")]
+    IncompleteList { },
     #[route("/:date?:dialog")]
     TimelineList { date: NaiveDate, dialog: timeline::DialogReference},
     #[route("/users?:dialog")]

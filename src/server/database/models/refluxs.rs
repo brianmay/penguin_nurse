@@ -68,6 +68,22 @@ pub async fn get_refluxs_for_time_range(
         .await
 }
 
+pub async fn get_refluxs_incomplete(
+    conn: &mut DatabaseConnection,
+    user_id: i64,
+) -> Result<Vec<Reflux>, diesel::result::Error> {
+    use crate::server::database::schema::refluxs::complete as q_complete;
+    use crate::server::database::schema::refluxs::table;
+    use crate::server::database::schema::refluxs::user_id as q_user_id;
+
+    table
+        .select(Reflux::as_select())
+        .filter(q_user_id.eq(user_id))
+        .filter(q_complete.eq(false))
+        .load(conn)
+        .await
+}
+
 pub async fn get_reflux_by_id(
     conn: &mut DatabaseConnection,
     id: i64,

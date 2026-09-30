@@ -92,6 +92,11 @@ pub fn Navbar() -> Element {
                             show_menu,
                         }
                         MenuItem {
+                            route: Route::IncompleteList { },
+                            title: "Incomplete",
+                            show_menu,
+                        }
+                        MenuItem {
                             route: Route::ConsumableList {
                                 dialog: consumables::ListDialogReference::Idle,
                             },

@@ -124,6 +124,39 @@ pub async fn get_consumptions_for_time_range(
     Ok(result)
 }
 
+pub async fn get_consumptions_incomplete(
+    conn: &mut DatabaseConnection,
+    user_id: i64,
+) -> Result<Vec<(Consumption, Vec<(ConsumptionConsumable, Consumable)>)>, diesel::result::Error> {
+    let consumptions: Vec<Consumption> = {
+        use crate::server::database::schema::consumptions::complete as q_complete;
+        use crate::server::database::schema::consumptions::table;
+        use crate::server::database::schema::consumptions::user_id as q_user_id;
+
+        table
+            .select(Consumption::as_select())
+            .filter(q_user_id.eq(user_id))
+            .filter(q_complete.eq(false))
+            .load(conn)
+            .await?
+    };
+
+    let nested: Vec<(ConsumptionConsumable, Consumable)> =
+        ConsumptionConsumable::belonging_to(&consumptions)
+            .inner_join(schema::consumables::table)
+            .load(conn)
+            .await?;
+
+    let result: Vec<_> = nested
+        .grouped_by(&consumptions)
+        .into_iter()
+        .zip(consumptions)
+        .map(|(a, b)| (b, a))
+        .collect();
+
+    Ok(result)
+}
+
 pub async fn get_consumption_by_id(
     conn: &mut DatabaseConnection,
     id: i64,

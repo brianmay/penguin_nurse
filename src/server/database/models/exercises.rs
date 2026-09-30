@@ -123,6 +123,22 @@ pub async fn get_exercises_for_time_range(
         .await
 }
 
+pub async fn get_exercises_incomplete(
+    conn: &mut DatabaseConnection,
+    user_id: i64,
+) -> Result<Vec<Exercise>, diesel::result::Error> {
+    use crate::server::database::schema::exercises::complete as q_complete;
+    use crate::server::database::schema::exercises::table;
+    use crate::server::database::schema::exercises::user_id as q_user_id;
+
+    table
+        .select(Exercise::as_select())
+        .filter(q_user_id.eq(user_id))
+        .filter(q_complete.eq(false))
+        .load(conn)
+        .await
+}
+
 pub async fn get_exercise_by_id(
     conn: &mut DatabaseConnection,
     id: i64,

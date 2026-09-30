@@ -78,6 +78,22 @@ pub async fn get_wees_for_time_range(
         .await
 }
 
+pub async fn get_wees_incomplete(
+    conn: &mut DatabaseConnection,
+    user_id: i64,
+) -> Result<Vec<Wee>, diesel::result::Error> {
+    use crate::server::database::schema::wees::complete as q_complete;
+    use crate::server::database::schema::wees::table;
+    use crate::server::database::schema::wees::user_id as q_user_id;
+
+    table
+        .select(Wee::as_select())
+        .filter(q_user_id.eq(user_id))
+        .filter(q_complete.eq(false))
+        .load(conn)
+        .await
+}
+
 pub async fn get_wee_by_id(
     conn: &mut DatabaseConnection,
     id: i64,

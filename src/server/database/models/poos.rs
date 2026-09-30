@@ -82,6 +82,22 @@ pub async fn get_poos_for_time_range(
         .await
 }
 
+pub async fn get_poos_incomplete(
+    conn: &mut DatabaseConnection,
+    user_id: i64,
+) -> Result<Vec<Poo>, diesel::result::Error> {
+    use crate::server::database::schema::poos::complete as q_complete;
+    use crate::server::database::schema::poos::table;
+    use crate::server::database::schema::poos::user_id as q_user_id;
+
+    table
+        .select(Poo::as_select())
+        .filter(q_user_id.eq(user_id))
+        .filter(q_complete.eq(false))
+        .load(conn)
+        .await
+}
+
 pub async fn get_poo_by_id(
     conn: &mut DatabaseConnection,
     id: i64,

@@ -38,6 +38,23 @@ pub async fn get_refluxs_for_time_range(
 }
 
 #[server]
+pub async fn get_refluxs_incomplete(user_id: UserId) -> Result<Vec<models::Reflux>, ServerFnError> {
+    let logged_in_user_id = get_user_id().await?;
+    if user_id != logged_in_user_id {
+        return Err(ServerFnError::new(
+            "User ID does not match the logged in user",
+        ));
+    }
+
+    let mut conn = get_database_connection().await?;
+    crate::server::database::models::refluxs::get_refluxs_incomplete(&mut conn, user_id.as_inner())
+        .await
+        .map(|x| x.into_iter().map(|y| y.into()).collect())
+        .map_err(AppError::from)
+        .map_err(ServerFnError::from)
+}
+
+#[server]
 pub async fn get_reflux_by_id(id: RefluxId) -> Result<Option<models::Reflux>, ServerFnError> {
     let logged_in_user_id = get_user_id().await?;
     let mut conn = get_database_connection().await?;
