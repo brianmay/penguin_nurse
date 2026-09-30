@@ -199,6 +199,13 @@ pub fn ExerciseUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Exer
                     on_cancel(());
                 }
             },
+            InputExerciseType {
+                id: "exercise_type",
+                label: "Type",
+                value: exercise_type,
+                validate: validate.exercise_type,
+                disabled,
+            }
             InputDateTime {
                 id: "time",
                 label: "Time",
@@ -246,13 +253,6 @@ pub fn ExerciseUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Exer
                 label: "RPE (1-10)",
                 value: rpe,
                 validate: validate.rpe,
-                disabled,
-            }
-            InputExerciseType {
-                id: "exercise_type",
-                label: "Type",
-                value: exercise_type,
-                validate: validate.exercise_type,
                 disabled,
             }
             InputTextArea {
