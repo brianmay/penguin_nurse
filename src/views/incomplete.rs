@@ -22,6 +22,7 @@ use crate::{
         wee_urges::{WeeUrgeDetails, WeeUrgeIcon, wee_urge_title},
         wees::{WeeDetails, WeeDuration, WeeIcon, wee_title},
     },
+    dt::display_date,
     functions::{
         consumptions::{get_consumption_by_id, get_consumptions_incomplete},
         exercises::{get_exercise_by_id, get_exercises_incomplete},
@@ -360,7 +361,7 @@ pub fn IncompleteList() -> Element {
         div { class: "ml-2 mr-2",
             div { class: "font-bold text-lg", "Incomplete Entries" }
             div { class: "mb-2 text-sm text-gray-600 dark:text-gray-400",
-                "Entries with incomplete = false, spanning all dates"
+                "Incomplete entries grouped by date"
             }
         }
 
@@ -386,13 +387,20 @@ pub fn IncompleteList() -> Element {
                             }
                         }
                         tbody { class: "block sm:table-row-group",
-                            for entry in timeline.iter() {
-                                IncompleteEntryRow {
-                                    key: "{entry.get_id().as_str()}",
-                                    entry: entry.clone(),
-                                    selected,
-                                    on_edit: on_edit,
-                                    on_delete: on_delete,
+                            for (date, entries) in timeline.grouped_by_date() {
+                                tr { class: "text-center font-bold bg-gray-700",
+                                    td { colspan: 4,
+                                        {display_date(date)}
+                                    }
+                                }
+                                for entry in entries {
+                                    IncompleteEntryRow {
+                                        key: "{entry.get_id().as_str()}",
+                                        entry: entry.clone(),
+                                        selected,
+                                        on_edit: on_edit,
+                                        on_delete: on_delete,
+                                    }
                                 }
                             }
                         }
