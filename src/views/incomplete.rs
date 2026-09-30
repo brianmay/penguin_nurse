@@ -49,7 +49,7 @@ fn IncompleteEntryRow(
 
     rsx! {
         tr {
-            class: "hover:bg-gray-500 border-blue-300 mt-2 mb-2 p-2 border-2 w-full sm:w-auto sm:border-none inline-block sm:table-row bg-gray-800 dark:bg-gray-400 opacity-60",
+            class: "hover:bg-gray-500 border-blue-300 mt-2 mb-2 p-2 border-2 w-full sm:w-auto sm:border-none inline-block sm:table-row",
             onclick: move |_| selected.set(Some(id)),
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 EventTime { time: entry.time }
