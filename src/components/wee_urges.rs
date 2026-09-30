@@ -191,6 +191,7 @@ pub fn WeeUrgeDelete(
             {wee_urge.id.to_string()}
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
+        WeeUrgeSummary { wee_urge: wee_urge.clone() }
         form {
             novalidate: true,
             action: "javascript:void(0)",
