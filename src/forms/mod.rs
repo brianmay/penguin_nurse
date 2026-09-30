@@ -25,7 +25,7 @@ pub use saving::MyForm;
 pub use saving::Saving;
 pub use validation::{
     validate_1st_password, validate_2nd_password, validate_barcode, validate_blood_glucose,
-    validate_body_fat_pct, validate_brand, validate_bristol_quantity, validate_colour,
+    validate_body_fat_pct, validate_brand, validate_bristol_quantity,
     validate_colour_hue, validate_colour_maybe, validate_colour_saturation, validate_colour_value,
     validate_comments, validate_consumable_millilitres, validate_consumable_quantity,
     validate_consumable_unit, validate_consumption_type, validate_consumption_type_maybe,
@@ -37,7 +37,7 @@ pub use validation::{
     validate_optional_leakage, validate_optional_mls, validate_optional_poo_quantity,
     validate_password, validate_pulse, validate_sex, validate_symptom_extra_details,
     validate_symptom_intensity, validate_systolic_bp, validate_urgency, validate_username,
-    validate_waist_circumference, validate_wee_millilitres, validate_weight,
+    validate_waist_circumference, validate_weight,
 };
 
 mod values;
