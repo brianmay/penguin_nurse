@@ -8,8 +8,9 @@ use crate::{
     components::{
         StrIcon,
         buttons::{ChangeButton, DeleteButton},
-        consumptions::ConsumptionDetails,
-        consumptions::{ConsumptionDuration, ConsumptionTypeIcon},
+        consumptions::{
+            ConsumptionDetails, ConsumptionDuration, ConsumptionItemList, ConsumptionTypeIcon,
+        },
         events::EventTime,
         exercises::ExerciseTypeIcon,
         exercises::{ExerciseDetails, ExerciseDuration},
@@ -107,6 +108,9 @@ fn IncompleteEntryRow(
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             ConsumptionDetails { consumption: consumption.consumption.clone() }
+                            if !consumption.items.is_empty() {
+                                ConsumptionItemList { list: consumption.items.clone() }
+                            }
                         }
                     }
                 }
@@ -188,6 +192,22 @@ fn IncompleteEntryRow(
                     DeleteButton {
                         on_click: move |_| on_delete.call(delete_dialog_reference.clone()),
                         "Delete"
+                    }
+                    match &entry.data {
+                        EntryData::Consumption(cons_item) => {
+                            let cid = cons_item.consumption.id;
+                            rsx! {
+                                ChangeButton {
+                                    on_click: move |_| {
+                                        on_edit.call(DialogReference::UpdateIngredients {
+                                            consumption_id: cid,
+                                        });
+                                    },
+                                    "Ingredients"
+                                }
+                            }
+                        }
+                        _ => rsx! {},
                     }
                 }
             }
@@ -304,6 +324,53 @@ pub fn IncompleteList() -> Element {
                         .ok_or(ServerFnError::new("Cannot find consumption"))?;
                     ActiveDialog::Consumption(
                         crate::components::consumptions::ActiveDialog::Delete(consumption),
+                    )
+                    .pipe(Ok)
+                }
+                DialogReference::UpdateIngredients { consumption_id } => {
+                    let consumption = get_consumption_by_id(consumption_id)
+                        .await?
+                        .ok_or(ServerFnError::new("Cannot find consumption"))?;
+                    ActiveDialog::Consumption(
+                        crate::components::consumptions::ActiveDialog::UpdateIngredients(
+                            consumption,
+                        ),
+                    )
+                    .pipe(Ok)
+                }
+                DialogReference::IngredientUpdateBasic {
+                    parent_id,
+                    consumable_id,
+                } => {
+                    let parent = get_consumption_by_id(parent_id)
+                        .await?
+                        .ok_or(ServerFnError::new("Cannot find consumption"))?;
+                    let consumable =
+                        crate::functions::consumables::get_consumable_by_id(consumable_id)
+                            .await?
+                            .ok_or(ServerFnError::new("Cannot find consumable"))?;
+                    ActiveDialog::Consumption(
+                        crate::components::consumptions::ActiveDialog::NestedIngredient(
+                            parent, consumable,
+                        ),
+                    )
+                    .pipe(Ok)
+                }
+                DialogReference::IngredientUpdateIngredients {
+                    parent_id,
+                    consumable_id,
+                } => {
+                    let parent = get_consumption_by_id(parent_id)
+                        .await?
+                        .ok_or(ServerFnError::new("Cannot find consumption"))?;
+                    let consumable =
+                        crate::functions::consumables::get_consumable_by_id(consumable_id)
+                            .await?
+                            .ok_or(ServerFnError::new("Cannot find consumable"))?;
+                    ActiveDialog::Consumption(
+                        crate::components::consumptions::ActiveDialog::NestedIngredients(
+                            parent, consumable,
+                        ),
                     )
                     .pipe(Ok)
                 }
@@ -426,10 +493,28 @@ pub fn IncompleteList() -> Element {
                     dialog: dialog.clone(),
                     on_change: move || { timeline.restart() },
                     replace_dialog: |_| {},
-                    show_consumption_update_basic: |_| {},
-                    show_consumption_update_ingredients: |_| {},
-                    show_consumption_ingredient_update_basic: |_| {},
-                    show_consumption_ingredient_update_ingredients: |_| {},
+                    show_consumption_update_basic: move |consumption: crate::models::Consumption| {
+                        on_edit.call(DialogReference::UpdateBasic {
+                            consumption_id: consumption.id,
+                        });
+                    },
+                    show_consumption_update_ingredients: move |consumption: crate::models::Consumption| {
+                        on_edit.call(DialogReference::UpdateIngredients {
+                            consumption_id: consumption.id,
+                        });
+                    },
+                    show_consumption_ingredient_update_basic: move |(consumption, consumable): (crate::models::Consumption, crate::models::Consumable)| {
+                        on_edit.call(DialogReference::IngredientUpdateBasic {
+                            parent_id: consumption.id,
+                            consumable_id: consumable.id,
+                        });
+                    },
+                    show_consumption_ingredient_update_ingredients: move |(consumption, consumable): (crate::models::Consumption, crate::models::Consumable)| {
+                        on_edit.call(DialogReference::IngredientUpdateIngredients {
+                            parent_id: consumption.id,
+                            consumable_id: consumable.id,
+                        });
+                    },
                     on_close,
                 }
             },
