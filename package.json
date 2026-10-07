@@ -12,5 +12,10 @@
     "@preflower/barcode-detector-polyfill": "^0.9.21",
     "@tailwindcss/typography": "^0.5.19",
     "@undecaf/zbar-wasm": "^0.11.0"
+  },
+  "overrides": {
+    "@tailwindcss/typography": {
+      "postcss-selector-parser": "7.1.6"
+    }
   }
 }
