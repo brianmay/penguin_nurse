@@ -1,0 +1,4 @@
+-- PostgreSQL does not support removing values from an enum type.
+-- Reverting would require recreating the type and recasting the dependent
+-- columns, so this down migration is intentionally a no-op. The added
+-- values are harmless if unused.

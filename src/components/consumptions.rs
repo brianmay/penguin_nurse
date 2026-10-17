@@ -307,7 +307,14 @@ pub fn ConsumptionTypeIcon(consumption_type: ConsumptionType) -> Element {
         ConsumptionType::InhaleMouth => MOUTH_SVG,
         ConsumptionType::SpitOut => SPIT_SVG,
         ConsumptionType::Inject => INJECT_SVG,
-        ConsumptionType::ApplySkin => SKIN_SVG,
+        ConsumptionType::ApplySkin
+        | ConsumptionType::ApplyLips
+        | ConsumptionType::ApplyToes
+        | ConsumptionType::ApplyEars
+        | ConsumptionType::ApplyHair
+        | ConsumptionType::ApplyEyes
+        | ConsumptionType::ApplyFace
+        | ConsumptionType::ApplyHands => SKIN_SVG,
     };
     let alt = consumption_type.as_title();
     rsx! {

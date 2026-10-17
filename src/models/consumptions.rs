@@ -16,6 +16,13 @@ pub enum ConsumptionType {
     SpitOut,
     Inject,
     ApplySkin,
+    ApplyLips,
+    ApplyToes,
+    ApplyEars,
+    ApplyHair,
+    ApplyEyes,
+    ApplyFace,
+    ApplyHands,
 }
 
 impl ConsumptionType {
@@ -27,6 +34,13 @@ impl ConsumptionType {
             Self::SpitOut => "spit_out",
             Self::Inject => "inject",
             Self::ApplySkin => "apply_skin",
+            Self::ApplyLips => "apply_lips",
+            Self::ApplyToes => "apply_toes",
+            Self::ApplyEars => "apply_ears",
+            Self::ApplyHair => "apply_hair",
+            Self::ApplyEyes => "apply_eyes",
+            Self::ApplyFace => "apply_face",
+            Self::ApplyHands => "apply_hands",
         }
     }
 
@@ -38,6 +52,13 @@ impl ConsumptionType {
             Self::SpitOut => "Spit out",
             Self::Inject => "Inject",
             Self::ApplySkin => "Apply skin",
+            Self::ApplyLips => "Apply lips",
+            Self::ApplyToes => "Apply toes",
+            Self::ApplyEars => "Apply ears",
+            Self::ApplyHair => "Apply hair",
+            Self::ApplyEyes => "Apply eyes",
+            Self::ApplyFace => "Apply face",
+            Self::ApplyHands => "Apply hands",
         }
     }
 }

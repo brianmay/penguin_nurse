@@ -19,6 +19,13 @@ pub enum ConsumptionType {
     SpitOut,
     Inject,
     ApplySkin,
+    ApplyLips,
+    ApplyToes,
+    ApplyEars,
+    ApplyHair,
+    ApplyEyes,
+    ApplyFace,
+    ApplyHands,
 }
 
 impl From<ConsumptionType> for models::ConsumptionType {
@@ -30,6 +37,13 @@ impl From<ConsumptionType> for models::ConsumptionType {
             ConsumptionType::SpitOut => models::ConsumptionType::SpitOut,
             ConsumptionType::Inject => models::ConsumptionType::Inject,
             ConsumptionType::ApplySkin => models::ConsumptionType::ApplySkin,
+            ConsumptionType::ApplyLips => models::ConsumptionType::ApplyLips,
+            ConsumptionType::ApplyToes => models::ConsumptionType::ApplyToes,
+            ConsumptionType::ApplyEars => models::ConsumptionType::ApplyEars,
+            ConsumptionType::ApplyHair => models::ConsumptionType::ApplyHair,
+            ConsumptionType::ApplyEyes => models::ConsumptionType::ApplyEyes,
+            ConsumptionType::ApplyFace => models::ConsumptionType::ApplyFace,
+            ConsumptionType::ApplyHands => models::ConsumptionType::ApplyHands,
         }
     }
 }
@@ -43,6 +57,13 @@ impl From<models::ConsumptionType> for ConsumptionType {
             models::ConsumptionType::SpitOut => ConsumptionType::SpitOut,
             models::ConsumptionType::Inject => ConsumptionType::Inject,
             models::ConsumptionType::ApplySkin => ConsumptionType::ApplySkin,
+            models::ConsumptionType::ApplyLips => ConsumptionType::ApplyLips,
+            models::ConsumptionType::ApplyToes => ConsumptionType::ApplyToes,
+            models::ConsumptionType::ApplyEars => ConsumptionType::ApplyEars,
+            models::ConsumptionType::ApplyHair => ConsumptionType::ApplyHair,
+            models::ConsumptionType::ApplyEyes => ConsumptionType::ApplyEyes,
+            models::ConsumptionType::ApplyFace => ConsumptionType::ApplyFace,
+            models::ConsumptionType::ApplyHands => ConsumptionType::ApplyHands,
         }
     }
 }
