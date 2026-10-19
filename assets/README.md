@@ -10,6 +10,8 @@
 * [exercise/flying.svg](https://www.svgrepo.com/svg/323873/flying-trout)
 * [exercise/other.svg](https://www.svgrepo.com/svg/210072/exercise-gym)
 * [consumption/digest.svg](https://www.svgrepo.com/svg/414332/eat)
+* [consumption/nose.svg](https://www.svgrepo.com/svg/482721/nose-1)
+* [consumption/mouth.svg](https://www.svgrepo.com/svg/424770/mouth-emoji-smiley)
 * [consumption/spit.svg](https://upload.wikimedia.org/wikipedia/commons/7/79/Spitting.svg) CC BY-SA 4.0
 * [consumption/inject.svg](https://www.svgrepo.com/svg/411943/inject) Attribution CC BY
 * [consumption/skin.svg](https://www.svgrepo.com/svg/39858/band-aid-forming-a-cross-mark) Public Domain
