@@ -298,6 +298,13 @@ const MOUTH_SVG: Asset = asset!("/assets/consumption/mouth.svg");
 const SPIT_SVG: Asset = asset!("/assets/consumption/spit.svg");
 const INJECT_SVG: Asset = asset!("/assets/consumption/inject.svg");
 const SKIN_SVG: Asset = asset!("/assets/consumption/skin.svg");
+const LIPS_SVG: Asset = asset!("/assets/consumption/lips.svg");
+const TOES_SVG: Asset = asset!("/assets/consumption/toes.svg");
+const EARS_SVG: Asset = asset!("/assets/consumption/ears.svg");
+const HAIR_SVG: Asset = asset!("/assets/consumption/hair.svg");
+const EYES_SVG: Asset = asset!("/assets/consumption/eyes.svg");
+const FACE_SVG: Asset = asset!("/assets/consumption/face.svg");
+const HANDS_SVG: Asset = asset!("/assets/consumption/hands.svg");
 
 #[component]
 pub fn ConsumptionTypeIcon(consumption_type: ConsumptionType) -> Element {
@@ -307,14 +314,14 @@ pub fn ConsumptionTypeIcon(consumption_type: ConsumptionType) -> Element {
         ConsumptionType::InhaleMouth => MOUTH_SVG,
         ConsumptionType::SpitOut => SPIT_SVG,
         ConsumptionType::Inject => INJECT_SVG,
-        ConsumptionType::ApplySkin
-        | ConsumptionType::ApplyLips
-        | ConsumptionType::ApplyToes
-        | ConsumptionType::ApplyEars
-        | ConsumptionType::ApplyHair
-        | ConsumptionType::ApplyEyes
-        | ConsumptionType::ApplyFace
-        | ConsumptionType::ApplyHands => SKIN_SVG,
+        ConsumptionType::ApplySkin => SKIN_SVG,
+        ConsumptionType::ApplyLips => LIPS_SVG,
+        ConsumptionType::ApplyToes => TOES_SVG,
+        ConsumptionType::ApplyEars => EARS_SVG,
+        ConsumptionType::ApplyHair => HAIR_SVG,
+        ConsumptionType::ApplyEyes => EYES_SVG,
+        ConsumptionType::ApplyFace => FACE_SVG,
+        ConsumptionType::ApplyHands => HANDS_SVG,
     };
     let alt = consumption_type.as_title();
     rsx! {
