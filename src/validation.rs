@@ -1,7 +1,32 @@
 /// Validation/linting utilities for consumables and consumptions
 use crate::models::{
-    Consumable, ConsumableItem, Consumption, ConsumptionItem, EntryData, Exercise, Poo, Reflux, Wee,
+    Consumable, ConsumableItem, Consumption, ConsumptionItem, ConsumptionType, EntryData, Exercise,
+    Poo, Reflux, Wee,
 };
+
+/// True when an ingredient with the `ingredient` consumption type is allowed
+/// inside a parent with the `parent` consumption type.
+///
+/// Exact matches are always allowed. Additionally, an apply skin ingredient is
+/// the generic form of applying to a specific skin site, so it is also allowed
+/// for parents applied to toes, hands, face or ears. Lips, hair and eyes are
+/// not generic skin sites, so they require an exact match, as does the reverse
+/// direction (a site-specific ingredient inside an apply skin parent).
+fn ingredient_type_matches(ingredient: ConsumptionType, parent: ConsumptionType) -> bool {
+    if ingredient == parent {
+        return true;
+    }
+    matches!(
+        (ingredient, parent),
+        (
+            ConsumptionType::ApplySkin,
+            ConsumptionType::ApplyToes
+                | ConsumptionType::ApplyHands
+                | ConsumptionType::ApplyFace
+                | ConsumptionType::ApplyEars
+        )
+    )
+}
 
 pub fn consumable_errors(
     consumable: &Consumable,
@@ -13,7 +38,7 @@ pub fn consumable_errors(
         for nc in nested_consumables {
             if let (Some(nc_type), Some(consumable_type)) =
                 (nc.consumable.consumption_type, consumable.consumption_type)
-                && nc_type != consumable_type
+                && !ingredient_type_matches(nc_type, consumable_type)
             {
                 errors.push(format!(
                     "Ingredient {} has consumption type {} which does not match parent consumption type {}",
@@ -65,7 +90,7 @@ pub fn consumption_errors(
     if let Some(consumption_consumables) = &consumption_consumables {
         for ci in consumption_consumables.iter() {
             if let Some(consumption_type) = ci.consumable.consumption_type
-                && consumption_type != consumption.consumption_type
+                && !ingredient_type_matches(consumption_type, consumption.consumption_type)
             {
                 errors.push(format!(
                     "Ingredient {} has consumption type {} which does not match parent consumption type {}",
@@ -303,6 +328,47 @@ mod tests {
         assert!(consumable_errors(&parent_set, Some(&vec![ingredient_none])).is_empty());
     }
 
+    #[test]
+    fn consumable_specific_apply_parent_accepts_apply_skin_ingredient() {
+        for parent_type in [
+            ConsumptionType::ApplyToes,
+            ConsumptionType::ApplyHands,
+            ConsumptionType::ApplyFace,
+            ConsumptionType::ApplyEars,
+        ] {
+            let parent = make_consumable(1, Some(parent_type));
+            let ingredient = make_consumable_item(1, 2, None, Some(ConsumptionType::ApplySkin));
+            assert!(
+                consumable_errors(&parent, Some(&vec![ingredient])).is_empty(),
+                "{parent_type:?} should accept an apply skin ingredient"
+            );
+        }
+    }
+
+    #[test]
+    fn consumable_non_skin_apply_parent_rejects_apply_skin_ingredient() {
+        for parent_type in [
+            ConsumptionType::ApplyLips,
+            ConsumptionType::ApplyHair,
+            ConsumptionType::ApplyEyes,
+        ] {
+            let parent = make_consumable(1, Some(parent_type));
+            let ingredient = make_consumable_item(1, 2, None, Some(ConsumptionType::ApplySkin));
+            assert_eq!(
+                consumable_errors(&parent, Some(&vec![ingredient])).len(),
+                1,
+                "{parent_type:?} should reject an apply skin ingredient"
+            );
+        }
+    }
+
+    #[test]
+    fn consumable_apply_skin_parent_rejects_specific_apply_ingredient() {
+        let parent = make_consumable(1, Some(ConsumptionType::ApplySkin));
+        let ingredient = make_consumable_item(1, 2, None, Some(ConsumptionType::ApplyToes));
+        assert_eq!(consumable_errors(&parent, Some(&vec![ingredient])).len(), 1);
+    }
+
     // ── consumption_errors ────────────────────────────────────────────────────
 
     #[test]
@@ -387,5 +453,61 @@ mod tests {
             Some(ConsumptionType::Digest),
         );
         assert!(consumption_errors(&c, Some(&vec![item])).is_empty());
+    }
+
+    #[test]
+    fn consumption_specific_apply_type_accepts_apply_skin_ingredient() {
+        for consumption_type in [
+            ConsumptionType::ApplyToes,
+            ConsumptionType::ApplyHands,
+            ConsumptionType::ApplyFace,
+            ConsumptionType::ApplyEars,
+        ] {
+            let c = make_consumption(10, Some(BigDecimal::from(100)), consumption_type);
+            let item = make_consumption_item(
+                1,
+                1,
+                Some(BigDecimal::from(100)),
+                Some(ConsumptionType::ApplySkin),
+            );
+            assert!(
+                consumption_errors(&c, Some(&vec![item])).is_empty(),
+                "{consumption_type:?} should accept an apply skin ingredient"
+            );
+        }
+    }
+
+    #[test]
+    fn consumption_non_skin_apply_type_rejects_apply_skin_ingredient() {
+        for consumption_type in [
+            ConsumptionType::ApplyLips,
+            ConsumptionType::ApplyHair,
+            ConsumptionType::ApplyEyes,
+        ] {
+            let c = make_consumption(10, Some(BigDecimal::from(100)), consumption_type);
+            let item = make_consumption_item(
+                1,
+                1,
+                Some(BigDecimal::from(100)),
+                Some(ConsumptionType::ApplySkin),
+            );
+            assert_eq!(
+                consumption_errors(&c, Some(&vec![item])).len(),
+                1,
+                "{consumption_type:?} should reject an apply skin ingredient"
+            );
+        }
+    }
+
+    #[test]
+    fn consumption_apply_skin_type_rejects_specific_apply_ingredient() {
+        let c = make_consumption(10, Some(BigDecimal::from(100)), ConsumptionType::ApplySkin);
+        let item = make_consumption_item(
+            1,
+            1,
+            Some(BigDecimal::from(100)),
+            Some(ConsumptionType::ApplyToes),
+        );
+        assert_eq!(consumption_errors(&c, Some(&vec![item])).len(), 1);
     }
 }
