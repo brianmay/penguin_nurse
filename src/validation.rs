@@ -131,7 +131,7 @@ pub fn reflux_errors(reflux: &Reflux) -> Vec<String> {
 
     if reflux.complete
         && let Some(duration) = reflux.duration
-        && duration.num_seconds() < 2
+        && duration.num_seconds() < 1
     {
         errors.push(format!("Duration {} is suspiciously short", duration));
     }
