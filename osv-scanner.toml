@@ -92,3 +92,10 @@ version = "0.10.4"
 ecosystem = "crates.io"
 vulnerability.ignore = true
 reason = "GHSA-qwgh-2vcv-g2f7 has no fixed version; transitive dependency of digest 0.10.x (RustCrypto) which is required by many crates"
+
+[[PackageOverrides]]
+name = "deepmerge"
+version = "4.3.1"
+ecosystem = "npm"
+vulnerability.ignore = true
+reason = "GHSA-gcqx-w48m-w2h4 has no fixed version; transitive dependency of @rollup/plugin-node-resolve"
