@@ -298,7 +298,7 @@ pub fn Logout() -> Element {
 #[server]
 async fn login_with_password(username: String, password: String) -> Result<User, ServerFnError> {
     use crate::server::auth::{Credentials, Session};
-    let mut session: Session = FullstackContext::extract().await?;
+    let session: Session = FullstackContext::extract().await?;
 
     let creds = Credentials {
         username,
@@ -330,7 +330,7 @@ async fn login_with_password(username: String, password: String) -> Result<User,
 async fn do_logout() -> Result<(), ServerFnError> {
     use crate::server::auth::Session;
 
-    let mut session: Session = FullstackContext::extract().await?;
+    let session: Session = FullstackContext::extract().await?;
     session.logout().await.map_err(|e| {
         error!("Error logging out: {:?}", e);
         ServerFnError::new("Error logging out")
@@ -343,7 +343,7 @@ pub async fn get_user() -> Result<Option<User>, ServerFnError> {
     use crate::server::auth::Session;
 
     let session: Session = FullstackContext::extract().await?;
-    session.user.clone().map(|x| x.into()).pipe(Ok)
+    session.user().await.clone().map(|x| x.into()).pipe(Ok)
 }
 
 #[server]
