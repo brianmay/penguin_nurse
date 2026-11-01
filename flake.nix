@@ -258,8 +258,7 @@
             '';
             cargoLock.lockFile = ./Cargo.lock;
             cargoLock.outputHashes = {
-              # "const-serialize-0.7.0-rc.2" = "sha256-G2M0SyCWitPORvI3IeR2juuzLn1cOLhzbH6Y9lq71I8=";
-              # "const-serialize-0.7.0-rc.2" = pkgs.lib.fakeHash;
+              "axum-login-0.18.0" = "sha256-CxxVN0uEicYW+mgyqWWw6sn+jXe64xkJZLbFWaXUeKM=";
             };
             meta.mainProgram = "server";
           };
@@ -298,8 +297,7 @@
             '';
             cargoLock.lockFile = ./Cargo.lock;
             cargoLock.outputHashes = {
-              # "const-serialize-0.7.0-rc.2" = "sha256-G2M0SyCWitPORvI3IeR2juuzLn1cOLhzbH6Y9lq71I8=";
-              # "const-serialize-0.7.0-rc.2" = pkgs.lib.fakeHash;
+              "axum-login-0.18.0" = "sha256-CxxVN0uEicYW+mgyqWWw6sn+jXe64xkJZLbFWaXUeKM=";
             };
             meta = {
               description = "CLI tool to validate Penguin Nurse database records";
