@@ -99,3 +99,10 @@ version = "4.3.1"
 ecosystem = "npm"
 vulnerability.ignore = true
 reason = "GHSA-gcqx-w48m-w2h4 has no fixed version; transitive dependency of @rollup/plugin-node-resolve"
+
+[[PackageOverrides]]
+name = "minimatch"
+version = "3.1.5"
+ecosystem = "npm"
+vulnerability.ignore = true
+reason = "GHSA-g3hv-75wg-m249 concerns globparts amplification in minimatch 10.2.6; minimatch 3.1.5 lacks this code path"
