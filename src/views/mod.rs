@@ -15,3 +15,6 @@ pub use users::{UserDetail, UserList};
 
 mod consumables;
 pub use consumables::ConsumableList;
+
+mod schedules;
+pub use schedules::ScheduleList;

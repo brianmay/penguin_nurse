@@ -3,13 +3,13 @@ use std::sync::Arc;
 use chrono::NaiveDate;
 use dioxus::prelude::*;
 
-use components::{consumables, navbar::Navbar, timeline, users};
+use components::{consumables, navbar::Navbar, schedules, timeline, users};
 use dioxus_fullstack::{ServerFnError, use_server_future};
 use dioxus_router::{Routable, Router};
 use penguin_nurse::models::{User, UserId};
 use views::{
-    ConsumableList, Home, IncompleteList, Login, Logout, TimelineList, UserDetail, UserList,
-    get_user,
+    ConsumableList, Home, IncompleteList, Login, Logout, ScheduleList, TimelineList, UserDetail,
+    UserList, get_user,
 };
 
 pub use penguin_nurse::models;
@@ -44,6 +44,8 @@ enum Route {
     UserDetail { user_id: UserId, dialog: users::DetailsDialogReference },
     #[route("/consumables?:dialog")]
     ConsumableList {dialog: consumables::ListDialogReference },
+    #[route("/schedules?:dialog")]
+    ScheduleList { dialog: schedules::ListDialogReference },
     #[route("/:..segments")]
     NotFound { segments: Vec<String> },
 }

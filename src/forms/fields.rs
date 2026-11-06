@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use chrono::{DateTime, FixedOffset, Local, NaiveDate, TimeDelta, Utc};
+use chrono::{DateTime, FixedOffset, Local, NaiveDate, NaiveTime, TimeDelta, Utc};
 use classes::classes;
 use dioxus::{prelude::*, signals::Signal};
 use dioxus_fullstack::ServerFnError;
@@ -585,6 +585,42 @@ pub fn InputDate(
                 oninput: move |e| {
                     value.set(e.value());
                 },
+            }
+            FieldMessage { validate, disabled }
+        }
+    }
+}
+
+#[component]
+pub fn InputTime(
+    id: &'static str,
+    label: &'static str,
+    value: Signal<String>,
+    validate: Memo<Result<NaiveTime, ValidationError>>,
+    disabled: Memo<bool>,
+) -> Element {
+    rsx! {
+        div { class: "mb-5",
+            label { r#for: id, class: get_label_classes(), "{label}" }
+            input {
+                // A text field, not a time picker: the picker's 12/24 hour
+                // display follows the browser locale and cannot be forced to
+                // 24 hour format.
+                r#type: "text",
+                class: get_input_classes(validate().is_ok(), disabled()),
+                id,
+                placeholder: "HH:MM",
+                value: "{value()}",
+                disabled,
+                oninput: move |e| {
+                    value.set(e.value());
+                },
+            }
+            ActionButton {
+                on_click: move |_e| {
+                    value.set(Local::now().format("%H:%M").to_string());
+                },
+                "Now"
             }
             FieldMessage { validate, disabled }
         }

@@ -19,7 +19,8 @@ pub use fields::{
     InputBoolean, InputColour, InputConsumable, InputConsumableUnitType, InputConsumptionType,
     InputConsumptionTypeMaybe, InputDate, InputDateTime, InputDuration, InputExerciseCalories,
     InputExerciseRpe, InputExerciseType, InputNumber, InputOptionDateTimeUtc, InputPassword,
-    InputPooBristolType, InputSex, InputString, InputSymptomIntensity, InputTextArea, InputUrgency,
+    InputPooBristolType, InputSex, InputString, InputSymptomIntensity, InputTextArea, InputTime,
+    InputUrgency,
 };
 pub use saving::MyForm;
 pub use saving::Saving;
@@ -36,7 +37,8 @@ pub use validation::{
     validate_optional_chrono_duration, validate_optional_duration, validate_optional_leakage,
     validate_optional_mls, validate_optional_poo_quantity, validate_password, validate_pulse,
     validate_sex, validate_symptom_extra_details, validate_symptom_intensity, validate_systolic_bp,
-    validate_urgency, validate_username, validate_waist_circumference, validate_weight,
+    validate_time_of_day, validate_urgency, validate_username, validate_waist_circumference,
+    validate_weight,
 };
 
 mod values;

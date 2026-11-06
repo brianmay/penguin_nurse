@@ -184,6 +184,34 @@ diesel::table! {
 }
 
 diesel::table! {
+    schedule_consumables (parent_id, consumable_id) {
+        parent_id -> Int8,
+        consumable_id -> Int8,
+        quantity -> Nullable<Numeric>,
+        liquid_mls -> Nullable<Numeric>,
+        comments -> Nullable<Text>,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::ConsumptionType;
+
+    schedules (id) {
+        id -> Int8,
+        user_id -> Int8,
+        time_of_day -> Time,
+        consumption_type -> ConsumptionType,
+        comments -> Nullable<Text>,
+        active -> Bool,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     session (id) {
         id -> Text,
         data -> Jsonb,
@@ -307,6 +335,9 @@ diesel::joinable!(health_metrics -> users (user_id));
 diesel::joinable!(notes -> users (user_id));
 diesel::joinable!(poos -> users (user_id));
 diesel::joinable!(refluxs -> users (user_id));
+diesel::joinable!(schedule_consumables -> consumables (consumable_id));
+diesel::joinable!(schedule_consumables -> schedules (parent_id));
+diesel::joinable!(schedules -> users (user_id));
 diesel::joinable!(symptoms -> users (user_id));
 diesel::joinable!(user_groups -> groups (group_id));
 diesel::joinable!(user_groups -> users (user_id));
@@ -324,6 +355,8 @@ diesel::allow_tables_to_appear_in_same_query!(
     notes,
     poos,
     refluxs,
+    schedule_consumables,
+    schedules,
     session,
     symptoms,
     user_groups,

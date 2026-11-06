@@ -1,5 +1,5 @@
 use bigdecimal::BigDecimal;
-use chrono::{DateTime, FixedOffset, NaiveDate, TimeDelta, Utc};
+use chrono::{DateTime, FixedOffset, NaiveDate, NaiveTime, TimeDelta, Utc};
 use palette::Hsv;
 use tap::Pipe;
 
@@ -44,6 +44,10 @@ pub fn validate_email(str: &str) -> Result<String, ValidationError> {
 }
 
 pub fn validate_date_of_birth(str: &str) -> Result<Option<NaiveDate>, ValidationError> {
+    validate_field_value(str)
+}
+
+pub fn validate_time_of_day(str: &str) -> Result<NaiveTime, ValidationError> {
     validate_field_value(str)
 }
 

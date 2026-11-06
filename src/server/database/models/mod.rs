@@ -12,6 +12,8 @@ pub mod nested_consumables;
 pub mod notes;
 pub mod poos;
 pub mod refluxs;
+pub mod schedule_consumables;
+pub mod schedules;
 pub mod session;
 pub mod symptoms;
 pub mod users;

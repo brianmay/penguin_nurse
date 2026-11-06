@@ -4,7 +4,8 @@ use penguin_nurse::server::database::connection::DatabaseConnection;
 use penguin_nurse::server::database::models::{
     consumables::Consumable, consumption_consumables::ConsumptionConsumable,
     consumptions::Consumption, exercises::Exercise, nested_consumables::NestedConsumable,
-    poos::Poo, refluxs::Reflux, wees::Wee,
+    poos::Poo, refluxs::Reflux, schedule_consumables::ScheduleConsumable, schedules::Schedule,
+    wees::Wee,
 };
 use penguin_nurse::server::database::schema;
 
@@ -27,6 +28,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\nChecking consumptions...");
     let consumption_errors = check_consumptions(&mut conn).await?;
     total_errors += consumption_errors;
+
+    // Check all schedules
+    println!("\nChecking schedules...");
+    let schedule_errors = check_schedules(&mut conn).await?;
+    total_errors += schedule_errors;
 
     // Check all exercises
     println!("\nChecking exercises...");
@@ -173,6 +179,66 @@ async fn check_consumptions(
 
     if error_count == 0 {
         println!("  ✓ No consumption errors found");
+    }
+
+    Ok(error_count)
+}
+
+async fn check_schedules(
+    conn: &mut DatabaseConnection,
+) -> Result<usize, Box<dyn std::error::Error>> {
+    use schema::consumables::dsl as q_consumables;
+    use schema::schedule_consumables;
+    use schema::schedules::dsl::*;
+
+    // Get all schedules
+    let all_schedules: Vec<Schedule> = schedules.select(Schedule::as_select()).load(conn).await?;
+
+    let mut error_count = 0;
+
+    for schedule in all_schedules {
+        // Get schedule_consumables for this schedule
+        let items: Vec<(ScheduleConsumable, Consumable)> = schedule_consumables::table
+            .inner_join(
+                schema::consumables::table
+                    .on(schedule_consumables::consumable_id.eq(q_consumables::id)),
+            )
+            .filter(schedule_consumables::parent_id.eq(schedule.id))
+            .select((ScheduleConsumable::as_select(), Consumable::as_select()))
+            .load(conn)
+            .await?;
+
+        // Convert to frontend models
+        let frontend_schedule = penguin_nurse::models::Schedule::from(schedule.clone());
+        let schedule_items: Vec<penguin_nurse::models::ScheduleItem> = items
+            .into_iter()
+            .map(|(sc, c)| {
+                penguin_nurse::models::ScheduleItem::new(
+                    penguin_nurse::models::ScheduleConsumable::from(sc),
+                    penguin_nurse::models::Consumable::from(c),
+                )
+            })
+            .collect();
+
+        // Run error checks using validation module
+        let errors =
+            penguin_nurse::validation::schedule_errors(&frontend_schedule, Some(&schedule_items));
+
+        if !errors.is_empty() {
+            println!(
+                "\n  Schedule: {} (ID: {})",
+                frontend_schedule.name(),
+                schedule.id
+            );
+            for error in errors {
+                println!("    ✗ {}", error);
+                error_count += 1;
+            }
+        }
+    }
+
+    if error_count == 0 {
+        println!("  ✓ No schedule errors found");
     }
 
     Ok(error_count)

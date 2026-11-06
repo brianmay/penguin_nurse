@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use chrono::{DateTime, FixedOffset, Local, NaiveDate, TimeDelta, Utc};
+use chrono::{DateTime, FixedOffset, Local, NaiveDate, NaiveTime, TimeDelta, Utc};
 use dioxus::prelude::*;
 use palette::RgbHue;
 use thiserror::Error;
@@ -129,6 +129,28 @@ impl FieldValue for NaiveDate {
         }
         match NaiveDate::parse_from_str(value, "%Y-%m-%d") {
             Ok(date) => Ok(date),
+            Err(_) => Err(FieldValueError::InvalidValue),
+        }
+    }
+}
+
+impl FieldValue for NaiveTime {
+    type RawValue = String;
+    type DerefValue = str;
+
+    fn as_raw(&self) -> String {
+        self.format("%H:%M").to_string()
+    }
+
+    fn from_raw(value: &str) -> Result<Self, FieldValueError> {
+        let value = value.trim();
+        if value.is_empty() {
+            return Err(FieldValueError::RequiredValue);
+        }
+        match NaiveTime::parse_from_str(value, "%H:%M")
+            .or_else(|_| NaiveTime::parse_from_str(value, "%H:%M:%S"))
+        {
+            Ok(time) => Ok(time),
             Err(_) => Err(FieldValueError::InvalidValue),
         }
     }

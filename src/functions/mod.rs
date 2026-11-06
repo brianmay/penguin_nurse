@@ -8,6 +8,7 @@ pub mod health_metrics;
 pub mod notes;
 pub mod poos;
 pub mod refluxs;
+pub mod schedules;
 pub mod symptoms;
 pub mod users;
 pub mod wee_urges;
