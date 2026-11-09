@@ -25,8 +25,8 @@ pub enum Error {
     #[error("Error decoding session data: {0}")]
     Decode(serde_json::Error),
 
-    #[error("Error parsing session expiry date: {0}")]
-    DecodeSlice(#[from] base64::DecodeSliceError),
+    #[error("Error parsing session ID: {0}")]
+    DecodeSlice(<Id as std::str::FromStr>::Err),
 }
 
 impl From<Error> for session_store::Error {
@@ -204,6 +204,24 @@ mod tests {
     use super::*;
     use chrono::{Datelike, TimeZone, Timelike};
     use time::{Month, macros::datetime};
+
+    #[test]
+    fn test_session_id_parsing() {
+        let id = Id::default();
+        assert_eq!(
+            id.to_string()
+                .parse::<Id>()
+                .map_err(Error::DecodeSlice)
+                .unwrap(),
+            id
+        );
+        assert!(
+            "invalid!"
+                .parse::<Id>()
+                .map_err(Error::DecodeSlice)
+                .is_err()
+        );
+    }
 
     #[test]
     fn test_time_to_chrono() {
