@@ -94,7 +94,7 @@ async fn auth(
     Extension(oidc_client): Extension<ClientState>,
     Extension(database_pool): Extension<DatabasePool>,
     Query(params): Query<HashMap<String, String>>,
-    mut session: Extension<AuthSession>,
+    session: Extension<AuthSession>,
     request: Request,
     next: Next,
 ) -> Result<Response, Error> {

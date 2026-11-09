@@ -19,6 +19,13 @@ pub enum ConsumptionType {
     SpitOut,
     Inject,
     ApplySkin,
+    ApplyLips,
+    ApplyToes,
+    ApplyEars,
+    ApplyHair,
+    ApplyEyes,
+    ApplyFace,
+    ApplyHands,
 }
 
 impl From<ConsumptionType> for models::ConsumptionType {
@@ -30,6 +37,13 @@ impl From<ConsumptionType> for models::ConsumptionType {
             ConsumptionType::SpitOut => models::ConsumptionType::SpitOut,
             ConsumptionType::Inject => models::ConsumptionType::Inject,
             ConsumptionType::ApplySkin => models::ConsumptionType::ApplySkin,
+            ConsumptionType::ApplyLips => models::ConsumptionType::ApplyLips,
+            ConsumptionType::ApplyToes => models::ConsumptionType::ApplyToes,
+            ConsumptionType::ApplyEars => models::ConsumptionType::ApplyEars,
+            ConsumptionType::ApplyHair => models::ConsumptionType::ApplyHair,
+            ConsumptionType::ApplyEyes => models::ConsumptionType::ApplyEyes,
+            ConsumptionType::ApplyFace => models::ConsumptionType::ApplyFace,
+            ConsumptionType::ApplyHands => models::ConsumptionType::ApplyHands,
         }
     }
 }
@@ -43,6 +57,13 @@ impl From<models::ConsumptionType> for ConsumptionType {
             models::ConsumptionType::SpitOut => ConsumptionType::SpitOut,
             models::ConsumptionType::Inject => ConsumptionType::Inject,
             models::ConsumptionType::ApplySkin => ConsumptionType::ApplySkin,
+            models::ConsumptionType::ApplyLips => ConsumptionType::ApplyLips,
+            models::ConsumptionType::ApplyToes => ConsumptionType::ApplyToes,
+            models::ConsumptionType::ApplyEars => ConsumptionType::ApplyEars,
+            models::ConsumptionType::ApplyHair => ConsumptionType::ApplyHair,
+            models::ConsumptionType::ApplyEyes => ConsumptionType::ApplyEyes,
+            models::ConsumptionType::ApplyFace => ConsumptionType::ApplyFace,
+            models::ConsumptionType::ApplyHands => ConsumptionType::ApplyHands,
         }
     }
 }
@@ -55,13 +76,14 @@ pub struct Consumption {
     pub id: i64,
     pub user_id: i64,
     pub time: DateTime<Utc>,
-    pub duration: TimeDelta,
+    pub duration: Option<TimeDelta>,
     pub liquid_mls: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub utc_offset: i32,
     pub consumption_type: ConsumptionType,
+    pub complete: bool,
 }
 
 const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
@@ -79,6 +101,7 @@ impl From<Consumption> for crate::models::Consumption {
             duration: consumption.duration,
             liquid_mls: consumption.liquid_mls,
             comments: consumption.comments,
+            complete: consumption.complete,
             created_at: consumption.created_at,
             updated_at: consumption.updated_at,
             consumption_type: consumption.consumption_type.into(),
@@ -102,6 +125,39 @@ pub async fn get_consumptions_for_time_range(
             .filter(q_user_id.eq(user_id))
             .filter(q_time.ge(start))
             .filter(q_time.lt(end))
+            .load(conn)
+            .await?
+    };
+
+    let nested: Vec<(ConsumptionConsumable, Consumable)> =
+        ConsumptionConsumable::belonging_to(&consumptions)
+            .inner_join(schema::consumables::table)
+            .load(conn)
+            .await?;
+
+    let result: Vec<_> = nested
+        .grouped_by(&consumptions)
+        .into_iter()
+        .zip(consumptions)
+        .map(|(a, b)| (b, a))
+        .collect();
+
+    Ok(result)
+}
+
+pub async fn get_consumptions_incomplete(
+    conn: &mut DatabaseConnection,
+    user_id: i64,
+) -> Result<Vec<(Consumption, Vec<(ConsumptionConsumable, Consumable)>)>, diesel::result::Error> {
+    let consumptions: Vec<Consumption> = {
+        use crate::server::database::schema::consumptions::complete as q_complete;
+        use crate::server::database::schema::consumptions::table;
+        use crate::server::database::schema::consumptions::user_id as q_user_id;
+
+        table
+            .select(Consumption::as_select())
+            .filter(q_user_id.eq(user_id))
+            .filter(q_complete.eq(false))
             .load(conn)
             .await?
     };
@@ -147,10 +203,11 @@ pub struct NewConsumption<'a> {
     pub user_id: i64,
     pub time: DateTime<Utc>,
     pub utc_offset: i32,
-    pub duration: TimeDelta,
+    pub duration: Option<TimeDelta>,
     pub consumption_type: ConsumptionType,
     pub liquid_mls: Option<&'a bigdecimal::BigDecimal>,
     pub comments: Option<&'a str>,
+    pub complete: bool,
 }
 
 impl<'a> NewConsumption<'a> {
@@ -163,6 +220,7 @@ impl<'a> NewConsumption<'a> {
             consumption_type: consumption.consumption_type.into(),
             liquid_mls: consumption.liquid_mls.as_ref(),
             comments: consumption.comments.as_deref(),
+            complete: consumption.complete,
         }
     }
 }
@@ -184,10 +242,11 @@ pub async fn create_consumption(
 pub struct ChangeConsumption<'a> {
     pub time: Option<DateTime<Utc>>,
     pub utc_offset: Option<i32>,
-    pub duration: Option<TimeDelta>,
+    pub duration: Option<Option<TimeDelta>>,
     pub consumption_type: Option<ConsumptionType>,
     pub liquid_mls: Option<Option<&'a bigdecimal::BigDecimal>>,
     pub comments: Option<Option<&'a str>>,
+    pub complete: Option<bool>,
 }
 
 impl<'a> ChangeConsumption<'a> {
@@ -205,6 +264,7 @@ impl<'a> ChangeConsumption<'a> {
             consumption_type: consumption.consumption_type.map_into().into_option(),
             liquid_mls: consumption.liquid_mls.as_inner_ref().into_option(),
             comments: consumption.comments.map_inner_deref().into_option(),
+            complete: consumption.complete.into_option(),
         }
     }
 }

@@ -56,7 +56,7 @@ impl Display for ConsumableUnit {
     }
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ConsumableId(i64);
 
 impl ConsumableId {

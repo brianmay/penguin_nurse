@@ -1,3 +1,7 @@
+use std::collections::BTreeMap;
+
+use chrono::NaiveDate;
+
 use crate::models::{Exercise, HealthMetric, Symptom, WeeUrge};
 
 use super::ConsumptionWithItems;
@@ -149,6 +153,15 @@ impl Timeline {
 
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
+    }
+
+    pub fn grouped_by_date(&self) -> BTreeMap<NaiveDate, Vec<&Entry>> {
+        let mut groups: BTreeMap<NaiveDate, Vec<&Entry>> = BTreeMap::new();
+        for entry in &self.0 {
+            let date = entry.time.date_naive();
+            groups.entry(date).or_default().push(entry);
+        }
+        groups
     }
 }
 

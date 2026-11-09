@@ -85,3 +85,24 @@ version = "0.16.4"
 ecosystem = "crates.io"
 vulnerability.ignore = true
 reason = "Transitive dependency of dioxus-server 0.7.x which constrains lru to ^0.16.0 — cannot be upgraded without a major dioxus version bump"
+
+[[PackageOverrides]]
+name = "block-buffer"
+version = "0.10.4"
+ecosystem = "crates.io"
+vulnerability.ignore = true
+reason = "GHSA-qwgh-2vcv-g2f7 has no fixed version; transitive dependency of digest 0.10.x (RustCrypto) which is required by many crates"
+
+[[PackageOverrides]]
+name = "deepmerge"
+version = "4.3.1"
+ecosystem = "npm"
+vulnerability.ignore = true
+reason = "GHSA-gcqx-w48m-w2h4 has no fixed version; transitive dependency of @rollup/plugin-node-resolve"
+
+[[PackageOverrides]]
+name = "minimatch"
+version = "3.1.5"
+ecosystem = "npm"
+vulnerability.ignore = true
+reason = "GHSA-g3hv-75wg-m249 concerns globparts amplification in minimatch 10.2.6; minimatch 3.1.5 lacks this code path"

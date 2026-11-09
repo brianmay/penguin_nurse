@@ -59,13 +59,14 @@ diesel::table! {
         id -> Int8,
         user_id -> Int8,
         time -> Timestamptz,
-        duration -> Interval,
+        duration -> Nullable<Interval>,
         liquid_mls -> Nullable<Numeric>,
         comments -> Nullable<Text>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
         utc_offset -> Int4,
         consumption_type -> ConsumptionType,
+        complete -> Bool,
     }
 }
 
@@ -78,7 +79,7 @@ diesel::table! {
         user_id -> Int8,
         time -> Timestamptz,
         utc_offset -> Int4,
-        duration -> Interval,
+        duration -> Nullable<Interval>,
         location -> Nullable<Text>,
         distance -> Nullable<Numeric>,
         calories -> Nullable<Int4>,
@@ -87,6 +88,7 @@ diesel::table! {
         comments -> Nullable<Text>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        complete -> Bool,
     }
 }
 
@@ -150,10 +152,10 @@ diesel::table! {
         id -> Int8,
         user_id -> Int8,
         time -> Timestamptz,
-        duration -> Interval,
+        duration -> Nullable<Interval>,
         urgency -> Int4,
-        quantity -> Int4,
-        bristol -> Int4,
+        quantity -> Nullable<Int4>,
+        bristol -> Nullable<Int4>,
         colour_hue -> Nullable<Float4>,
         colour_saturation -> Nullable<Float4>,
         colour_value -> Nullable<Float4>,
@@ -161,6 +163,7 @@ diesel::table! {
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
         utc_offset -> Int4,
+        complete -> Bool,
     }
 }
 
@@ -170,10 +173,39 @@ diesel::table! {
         user_id -> Int8,
         time -> Timestamptz,
         utc_offset -> Int4,
-        duration -> Interval,
+        duration -> Nullable<Interval>,
         location -> Nullable<Text>,
         severity -> Int4,
         comments -> Nullable<Text>,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+        complete -> Bool,
+    }
+}
+
+diesel::table! {
+    schedule_consumables (parent_id, consumable_id) {
+        parent_id -> Int8,
+        consumable_id -> Int8,
+        quantity -> Nullable<Numeric>,
+        liquid_mls -> Nullable<Numeric>,
+        comments -> Nullable<Text>,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::ConsumptionType;
+
+    schedules (id) {
+        id -> Int8,
+        user_id -> Int8,
+        time_of_day -> Time,
+        consumption_type -> ConsumptionType,
+        comments -> Nullable<Text>,
+        active -> Bool,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
     }
@@ -280,9 +312,9 @@ diesel::table! {
         id -> Int8,
         user_id -> Int8,
         time -> Timestamptz,
-        duration -> Interval,
+        duration -> Nullable<Interval>,
         urgency -> Int4,
-        mls -> Int4,
+        mls -> Nullable<Int4>,
         colour_hue -> Nullable<Float4>,
         colour_saturation -> Nullable<Float4>,
         colour_value -> Nullable<Float4>,
@@ -290,7 +322,8 @@ diesel::table! {
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
         utc_offset -> Int4,
-        leakage -> Int4,
+        leakage -> Nullable<Int4>,
+        complete -> Bool,
     }
 }
 
@@ -302,6 +335,9 @@ diesel::joinable!(health_metrics -> users (user_id));
 diesel::joinable!(notes -> users (user_id));
 diesel::joinable!(poos -> users (user_id));
 diesel::joinable!(refluxs -> users (user_id));
+diesel::joinable!(schedule_consumables -> consumables (consumable_id));
+diesel::joinable!(schedule_consumables -> schedules (parent_id));
+diesel::joinable!(schedules -> users (user_id));
 diesel::joinable!(symptoms -> users (user_id));
 diesel::joinable!(user_groups -> groups (group_id));
 diesel::joinable!(user_groups -> users (user_id));
@@ -319,6 +355,8 @@ diesel::allow_tables_to_appear_in_same_query!(
     notes,
     poos,
     refluxs,
+    schedule_consumables,
+    schedules,
     session,
     symptoms,
     user_groups,

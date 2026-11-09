@@ -1,5 +1,32 @@
-/// Validation/linting utilities for consumables and consumptions
-use crate::models::{Consumable, ConsumableItem, Consumption, ConsumptionItem};
+/// Validation/linting utilities for consumables, consumptions, and schedules
+use crate::models::{
+    Consumable, ConsumableItem, Consumption, ConsumptionItem, ConsumptionType, EntryData, Exercise,
+    Poo, Reflux, Schedule, ScheduleItem, Wee,
+};
+
+/// True when an ingredient with the `ingredient` consumption type is allowed
+/// inside a parent with the `parent` consumption type.
+///
+/// Exact matches are always allowed. Additionally, an apply skin ingredient is
+/// the generic form of applying to a specific skin site, so it is also allowed
+/// for parents applied to toes, hands, face or ears. Lips, hair and eyes are
+/// not generic skin sites, so they require an exact match, as does the reverse
+/// direction (a site-specific ingredient inside an apply skin parent).
+fn ingredient_type_matches(ingredient: ConsumptionType, parent: ConsumptionType) -> bool {
+    if ingredient == parent {
+        return true;
+    }
+    matches!(
+        (ingredient, parent),
+        (
+            ConsumptionType::ApplySkin,
+            ConsumptionType::ApplyToes
+                | ConsumptionType::ApplyHands
+                | ConsumptionType::ApplyFace
+                | ConsumptionType::ApplyEars
+        )
+    )
+}
 
 pub fn consumable_errors(
     consumable: &Consumable,
@@ -11,7 +38,7 @@ pub fn consumable_errors(
         for nc in nested_consumables {
             if let (Some(nc_type), Some(consumable_type)) =
                 (nc.consumable.consumption_type, consumable.consumption_type)
-                && nc_type != consumable_type
+                && !ingredient_type_matches(nc_type, consumable_type)
             {
                 errors.push(format!(
                     "Ingredient {} has consumption type {} which does not match parent consumption type {}",
@@ -32,11 +59,15 @@ pub fn consumption_errors(
 ) -> Vec<String> {
     let mut errors = Vec::new();
 
-    if consumption.duration.num_seconds() < 2 {
-        errors.push(format!(
-            "Duration {} is suspiciously short",
-            consumption.duration
-        ));
+    if !consumption.complete {
+        errors.push("Incomplete entry".to_string());
+    }
+
+    if consumption.complete
+        && let Some(duration) = consumption.duration
+        && duration.num_seconds() < 2
+    {
+        errors.push(format!("Duration {} is suspiciously short", duration));
     }
 
     if let Some(consumption_consumables) = &consumption_consumables {
@@ -59,7 +90,7 @@ pub fn consumption_errors(
     if let Some(consumption_consumables) = &consumption_consumables {
         for ci in consumption_consumables.iter() {
             if let Some(consumption_type) = ci.consumable.consumption_type
-                && consumption_type != consumption.consumption_type
+                && !ingredient_type_matches(consumption_type, consumption.consumption_type)
             {
                 errors.push(format!(
                     "Ingredient {} has consumption type {} which does not match parent consumption type {}",
@@ -74,6 +105,114 @@ pub fn consumption_errors(
     errors
 }
 
+pub fn schedule_errors(
+    schedule: &Schedule,
+    schedule_consumables: Option<&Vec<ScheduleItem>>,
+) -> Vec<String> {
+    let mut errors = Vec::new();
+
+    // check for any scheduled consumables with consumption type that doesn't
+    // match the schedule
+    if let Some(schedule_consumables) = schedule_consumables {
+        for item in schedule_consumables.iter() {
+            if let Some(consumption_type) = item.consumable.consumption_type
+                && !ingredient_type_matches(consumption_type, schedule.consumption_type)
+            {
+                errors.push(format!(
+                    "Ingredient {} has consumption type {} which does not match schedule consumption type {}",
+                    item.consumable.name,
+                    consumption_type.as_title(),
+                    schedule.consumption_type.as_title(),
+                ));
+            }
+        }
+    }
+
+    errors
+}
+
+pub fn exercise_errors(exercise: &Exercise) -> Vec<String> {
+    let mut errors = Vec::new();
+
+    if !exercise.complete {
+        errors.push("Incomplete entry".to_string());
+    }
+
+    if exercise.complete
+        && let Some(duration) = exercise.duration
+        && duration.num_seconds() < 2
+    {
+        errors.push(format!("Duration {} is suspiciously short", duration));
+    }
+
+    errors
+}
+
+pub fn reflux_errors(reflux: &Reflux) -> Vec<String> {
+    let mut errors = Vec::new();
+
+    if !reflux.complete {
+        errors.push("Incomplete entry".to_string());
+    }
+
+    if reflux.complete
+        && let Some(duration) = reflux.duration
+        && duration.num_seconds() < 1
+    {
+        errors.push(format!("Duration {} is suspiciously short", duration));
+    }
+
+    errors
+}
+
+pub fn wee_errors(wee: &Wee) -> Vec<String> {
+    let mut errors = Vec::new();
+
+    if !wee.complete {
+        errors.push("Incomplete entry".to_string());
+    }
+
+    if wee.complete
+        && let Some(duration) = wee.duration
+        && duration.num_seconds() < 2
+    {
+        errors.push(format!("Duration {} is suspiciously short", duration));
+    }
+
+    errors
+}
+
+pub fn poo_errors(poo: &Poo) -> Vec<String> {
+    let mut errors = Vec::new();
+
+    if !poo.complete {
+        errors.push("Incomplete entry".to_string());
+    }
+
+    if poo.complete
+        && let Some(duration) = poo.duration
+        && duration.num_seconds() < 2
+    {
+        errors.push(format!("Duration {} is suspiciously short", duration));
+    }
+
+    errors
+}
+
+pub fn entry_errors(entry_data: &EntryData) -> Vec<String> {
+    match entry_data {
+        EntryData::Wee(wee) => wee_errors(wee),
+        EntryData::WeeUrge(_) => Vec::new(),
+        EntryData::Poo(poo) => poo_errors(poo),
+        EntryData::Consumption(consumption) => {
+            consumption_errors(&consumption.consumption, Some(&consumption.items))
+        }
+        EntryData::Exercise(exercise) => exercise_errors(exercise),
+        EntryData::HealthMetric(_) | EntryData::Symptom(_) | EntryData::Note(_) => Vec::new(),
+        EntryData::Reflux(reflux) => reflux_errors(reflux),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use bigdecimal::BigDecimal;
@@ -82,7 +221,8 @@ mod tests {
     use crate::models::{
         Consumable, ConsumableId, ConsumableItem, ConsumableUnit, ConsumptionConsumable,
         ConsumptionConsumableId, ConsumptionId, ConsumptionItem, ConsumptionType, NestedConsumable,
-        NestedConsumableId,
+        NestedConsumableId, Schedule, ScheduleConsumable, ScheduleConsumableId, ScheduleId,
+        ScheduleItem,
     };
     use crate::models::{Consumption, UserId};
 
@@ -138,10 +278,11 @@ mod tests {
             id: ConsumptionId::new(1),
             user_id: UserId::new(1),
             time: chrono::DateTime::parse_from_rfc3339("2024-01-01T12:00:00+00:00").unwrap(),
-            duration: chrono::TimeDelta::seconds(duration_secs),
+            duration: Some(chrono::TimeDelta::seconds(duration_secs)),
             consumption_type,
             liquid_mls,
             comments: None,
+            complete: true,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         }
@@ -161,6 +302,40 @@ mod tests {
                 ),
                 quantity: None,
                 liquid_mls,
+                comments: None,
+                created_at: Utc::now(),
+                updated_at: Utc::now(),
+            },
+            make_consumable(consumable_id, consumption_type),
+        )
+    }
+
+    fn make_schedule(consumption_type: ConsumptionType) -> Schedule {
+        Schedule {
+            id: ScheduleId::new(1),
+            user_id: UserId::new(1),
+            time_of_day: chrono::NaiveTime::from_hms_opt(8, 0, 0).unwrap(),
+            consumption_type,
+            comments: None,
+            active: true,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        }
+    }
+
+    fn make_schedule_item(
+        schedule_id: i64,
+        consumable_id: i64,
+        consumption_type: Option<ConsumptionType>,
+    ) -> ScheduleItem {
+        ScheduleItem::new(
+            ScheduleConsumable {
+                id: ScheduleConsumableId::new(
+                    ScheduleId::new(schedule_id),
+                    ConsumableId::new(consumable_id),
+                ),
+                quantity: None,
+                liquid_mls: None,
                 comments: None,
                 created_at: Utc::now(),
                 updated_at: Utc::now(),
@@ -212,6 +387,130 @@ mod tests {
         let parent_set = make_consumable(1, Some(ConsumptionType::Digest));
         let ingredient_none = make_consumable_item(1, 2, None, None);
         assert!(consumable_errors(&parent_set, Some(&vec![ingredient_none])).is_empty());
+    }
+
+    #[test]
+    fn consumable_specific_apply_parent_accepts_apply_skin_ingredient() {
+        for parent_type in [
+            ConsumptionType::ApplyToes,
+            ConsumptionType::ApplyHands,
+            ConsumptionType::ApplyFace,
+            ConsumptionType::ApplyEars,
+        ] {
+            let parent = make_consumable(1, Some(parent_type));
+            let ingredient = make_consumable_item(1, 2, None, Some(ConsumptionType::ApplySkin));
+            assert!(
+                consumable_errors(&parent, Some(&vec![ingredient])).is_empty(),
+                "{parent_type:?} should accept an apply skin ingredient"
+            );
+        }
+    }
+
+    #[test]
+    fn consumable_non_skin_apply_parent_rejects_apply_skin_ingredient() {
+        for parent_type in [
+            ConsumptionType::ApplyLips,
+            ConsumptionType::ApplyHair,
+            ConsumptionType::ApplyEyes,
+        ] {
+            let parent = make_consumable(1, Some(parent_type));
+            let ingredient = make_consumable_item(1, 2, None, Some(ConsumptionType::ApplySkin));
+            assert_eq!(
+                consumable_errors(&parent, Some(&vec![ingredient])).len(),
+                1,
+                "{parent_type:?} should reject an apply skin ingredient"
+            );
+        }
+    }
+
+    #[test]
+    fn consumable_apply_skin_parent_rejects_specific_apply_ingredient() {
+        let parent = make_consumable(1, Some(ConsumptionType::ApplySkin));
+        let ingredient = make_consumable_item(1, 2, None, Some(ConsumptionType::ApplyToes));
+        assert_eq!(consumable_errors(&parent, Some(&vec![ingredient])).len(), 1);
+    }
+
+    // ── schedule_errors ───────────────────────────────────────────────────────
+
+    #[test]
+    fn schedule_no_ingredients_returns_no_errors() {
+        let schedule = make_schedule(ConsumptionType::Digest);
+        assert!(schedule_errors(&schedule, None).is_empty());
+    }
+
+    #[test]
+    fn schedule_empty_ingredient_list_returns_no_errors() {
+        let schedule = make_schedule(ConsumptionType::Digest);
+        assert!(schedule_errors(&schedule, Some(&vec![])).is_empty());
+    }
+
+    #[test]
+    fn schedule_matching_consumption_types_returns_no_errors() {
+        let schedule = make_schedule(ConsumptionType::Digest);
+        let item = make_schedule_item(1, 2, Some(ConsumptionType::Digest));
+        assert!(schedule_errors(&schedule, Some(&vec![item])).is_empty());
+    }
+
+    #[test]
+    fn schedule_mismatched_consumption_type_returns_error() {
+        let schedule = make_schedule(ConsumptionType::Digest);
+        let item = make_schedule_item(1, 2, Some(ConsumptionType::InhaleNose));
+        let errors = schedule_errors(&schedule, Some(&vec![item]));
+        assert_eq!(errors.len(), 1);
+        assert!(errors[0].contains("consumable-2"));
+        assert!(errors[0].contains(ConsumptionType::InhaleNose.as_title()));
+        assert!(errors[0].contains(ConsumptionType::Digest.as_title()));
+        assert!(errors[0].contains("schedule"));
+    }
+
+    #[test]
+    fn schedule_none_consumption_type_on_ingredient_skips_check() {
+        // The schedule always has a consumption type, but an ingredient
+        // without one should not be flagged.
+        let schedule = make_schedule(ConsumptionType::Digest);
+        let item = make_schedule_item(1, 2, None);
+        assert!(schedule_errors(&schedule, Some(&vec![item])).is_empty());
+    }
+
+    #[test]
+    fn schedule_specific_apply_type_accepts_apply_skin_ingredient() {
+        for consumption_type in [
+            ConsumptionType::ApplyToes,
+            ConsumptionType::ApplyHands,
+            ConsumptionType::ApplyFace,
+            ConsumptionType::ApplyEars,
+        ] {
+            let schedule = make_schedule(consumption_type);
+            let item = make_schedule_item(1, 2, Some(ConsumptionType::ApplySkin));
+            assert!(
+                schedule_errors(&schedule, Some(&vec![item])).is_empty(),
+                "{consumption_type:?} should accept an apply skin ingredient"
+            );
+        }
+    }
+
+    #[test]
+    fn schedule_non_skin_apply_type_rejects_apply_skin_ingredient() {
+        for consumption_type in [
+            ConsumptionType::ApplyLips,
+            ConsumptionType::ApplyHair,
+            ConsumptionType::ApplyEyes,
+        ] {
+            let schedule = make_schedule(consumption_type);
+            let item = make_schedule_item(1, 2, Some(ConsumptionType::ApplySkin));
+            assert_eq!(
+                schedule_errors(&schedule, Some(&vec![item])).len(),
+                1,
+                "{consumption_type:?} should reject an apply skin ingredient"
+            );
+        }
+    }
+
+    #[test]
+    fn schedule_apply_skin_type_rejects_specific_apply_ingredient() {
+        let schedule = make_schedule(ConsumptionType::ApplySkin);
+        let item = make_schedule_item(1, 2, Some(ConsumptionType::ApplyToes));
+        assert_eq!(schedule_errors(&schedule, Some(&vec![item])).len(), 1);
     }
 
     // ── consumption_errors ────────────────────────────────────────────────────
@@ -298,5 +597,61 @@ mod tests {
             Some(ConsumptionType::Digest),
         );
         assert!(consumption_errors(&c, Some(&vec![item])).is_empty());
+    }
+
+    #[test]
+    fn consumption_specific_apply_type_accepts_apply_skin_ingredient() {
+        for consumption_type in [
+            ConsumptionType::ApplyToes,
+            ConsumptionType::ApplyHands,
+            ConsumptionType::ApplyFace,
+            ConsumptionType::ApplyEars,
+        ] {
+            let c = make_consumption(10, Some(BigDecimal::from(100)), consumption_type);
+            let item = make_consumption_item(
+                1,
+                1,
+                Some(BigDecimal::from(100)),
+                Some(ConsumptionType::ApplySkin),
+            );
+            assert!(
+                consumption_errors(&c, Some(&vec![item])).is_empty(),
+                "{consumption_type:?} should accept an apply skin ingredient"
+            );
+        }
+    }
+
+    #[test]
+    fn consumption_non_skin_apply_type_rejects_apply_skin_ingredient() {
+        for consumption_type in [
+            ConsumptionType::ApplyLips,
+            ConsumptionType::ApplyHair,
+            ConsumptionType::ApplyEyes,
+        ] {
+            let c = make_consumption(10, Some(BigDecimal::from(100)), consumption_type);
+            let item = make_consumption_item(
+                1,
+                1,
+                Some(BigDecimal::from(100)),
+                Some(ConsumptionType::ApplySkin),
+            );
+            assert_eq!(
+                consumption_errors(&c, Some(&vec![item])).len(),
+                1,
+                "{consumption_type:?} should reject an apply skin ingredient"
+            );
+        }
+    }
+
+    #[test]
+    fn consumption_apply_skin_type_rejects_specific_apply_ingredient() {
+        let c = make_consumption(10, Some(BigDecimal::from(100)), ConsumptionType::ApplySkin);
+        let item = make_consumption_item(
+            1,
+            1,
+            Some(BigDecimal::from(100)),
+            Some(ConsumptionType::ApplyToes),
+        );
+        assert_eq!(consumption_errors(&c, Some(&vec![item])).len(), 1);
     }
 }

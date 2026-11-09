@@ -16,6 +16,13 @@ pub enum ConsumptionType {
     SpitOut,
     Inject,
     ApplySkin,
+    ApplyLips,
+    ApplyToes,
+    ApplyEars,
+    ApplyHair,
+    ApplyEyes,
+    ApplyFace,
+    ApplyHands,
 }
 
 impl ConsumptionType {
@@ -27,6 +34,13 @@ impl ConsumptionType {
             Self::SpitOut => "spit_out",
             Self::Inject => "inject",
             Self::ApplySkin => "apply_skin",
+            Self::ApplyLips => "apply_lips",
+            Self::ApplyToes => "apply_toes",
+            Self::ApplyEars => "apply_ears",
+            Self::ApplyHair => "apply_hair",
+            Self::ApplyEyes => "apply_eyes",
+            Self::ApplyFace => "apply_face",
+            Self::ApplyHands => "apply_hands",
         }
     }
 
@@ -38,6 +52,13 @@ impl ConsumptionType {
             Self::SpitOut => "Spit out",
             Self::Inject => "Inject",
             Self::ApplySkin => "Apply skin",
+            Self::ApplyLips => "Apply lips",
+            Self::ApplyToes => "Apply toes",
+            Self::ApplyEars => "Apply ears",
+            Self::ApplyHair => "Apply hair",
+            Self::ApplyEyes => "Apply eyes",
+            Self::ApplyFace => "Apply face",
+            Self::ApplyHands => "Apply hands",
         }
     }
 }
@@ -73,10 +94,11 @@ pub struct Consumption {
     pub id: ConsumptionId,
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: chrono::TimeDelta,
+    pub duration: Option<chrono::TimeDelta>,
     pub consumption_type: ConsumptionType,
     pub liquid_mls: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
+    pub complete: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -103,18 +125,20 @@ impl ConsumptionWithItems {
 pub struct NewConsumption {
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: chrono::TimeDelta,
+    pub duration: Option<chrono::TimeDelta>,
     pub consumption_type: ConsumptionType,
     pub liquid_mls: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
+    pub complete: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeConsumption {
     pub user_id: MaybeSet<UserId>,
     pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
-    pub duration: MaybeSet<chrono::TimeDelta>,
+    pub duration: MaybeSet<Option<chrono::TimeDelta>>,
     pub consumption_type: MaybeSet<ConsumptionType>,
     pub liquid_mls: MaybeSet<Option<bigdecimal::BigDecimal>>,
     pub comments: MaybeSet<Option<String>>,
+    pub complete: MaybeSet<bool>,
 }

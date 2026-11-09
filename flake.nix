@@ -27,9 +27,9 @@
         wasm-bindgen-cli = pkgs.buildWasmBindgenCli rec {
           src = pkgs.fetchCrate {
             pname = "wasm-bindgen-cli";
-            version = "0.2.126";
+            version = "0.2.130";
             registryDl = "https://static.crates.io/crates";
-            hash = "sha256-H6Is3fiZVxZCfOMWK5dWMSrtn50VGv0sfdnsT+cTtyk=";
+            hash = "sha256-9Og1O/6/VC3sc5hBjoIWBErmLW2UHGMsTQO+6+m/dng=";
           };
           # src = pkgs.fetchFromGitHub {
           #   owner = "rustwasm";
@@ -41,7 +41,7 @@
           cargoDeps = pkgs.rustPlatform.fetchCargoVendor {
             inherit src;
             inherit (src) pname version;
-            hash = "sha256-VucqkXbCi4qtQzY/HrXiDnbSURsagPsdNVMn1Tw3UiY=";
+            hash = "sha256-j81sUf1m5yXU4FJfGj7GV+hdqVCV8mRmNb0QIsMCjqw=";
             # hash = pkgs.lib.fakeHash;
           };
         };
@@ -258,8 +258,7 @@
             '';
             cargoLock.lockFile = ./Cargo.lock;
             cargoLock.outputHashes = {
-              # "const-serialize-0.7.0-rc.2" = "sha256-G2M0SyCWitPORvI3IeR2juuzLn1cOLhzbH6Y9lq71I8=";
-              # "const-serialize-0.7.0-rc.2" = pkgs.lib.fakeHash;
+              "axum-login-0.18.0" = "sha256-CxxVN0uEicYW+mgyqWWw6sn+jXe64xkJZLbFWaXUeKM=";
             };
             meta.mainProgram = "server";
           };
@@ -298,8 +297,7 @@
             '';
             cargoLock.lockFile = ./Cargo.lock;
             cargoLock.outputHashes = {
-              # "const-serialize-0.7.0-rc.2" = "sha256-G2M0SyCWitPORvI3IeR2juuzLn1cOLhzbH6Y9lq71I8=";
-              # "const-serialize-0.7.0-rc.2" = pkgs.lib.fakeHash;
+              "axum-login-0.18.0" = "sha256-CxxVN0uEicYW+mgyqWWw6sn+jXe64xkJZLbFWaXUeKM=";
             };
             meta = {
               description = "CLI tool to validate Penguin Nurse database records";

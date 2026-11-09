@@ -5,6 +5,7 @@ use dioxus::prelude::*;
 use dioxus_fullstack::ServerFnError;
 use dioxus_router::ToQueryArgument;
 use itertools::intersperse;
+use penguin_nurse::validation::consumable_errors;
 use tap::Pipe;
 use thiserror::Error;
 
@@ -1011,31 +1012,6 @@ pub fn ConsumableSummary(
             }
         }
     }
-}
-
-pub fn consumable_errors(
-    consumable: &Consumable,
-    nested_consumables: Option<&Vec<ConsumableItem>>,
-) -> Vec<String> {
-    let mut errors = Vec::new();
-
-    if let Some(nested_consumables) = nested_consumables {
-        for nc in nested_consumables {
-            if let (Some(nc_type), Some(consumable_type)) =
-                (nc.consumable.consumption_type, consumable.consumption_type)
-                && nc_type != consumable_type
-            {
-                errors.push(format!(
-                    "Ingredient {} has consumption type {} which does not match parent consumption type {}",
-                    nc.consumable.name,
-                    nc_type.as_title(),
-                    consumable_type.as_title(),
-                ));
-            }
-        }
-    }
-
-    errors
 }
 
 #[component]

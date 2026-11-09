@@ -8,13 +8,14 @@ pub mod navbar;
 pub mod notes;
 pub mod poos;
 pub mod refluxs;
+pub mod schedules;
 pub mod symptoms;
 pub mod timeline;
 pub mod users;
 pub mod wee_urges;
 pub mod wees;
 
-mod times;
+pub mod times;
 
 use dioxus::prelude::*;
 

@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use chrono::{DateTime, FixedOffset, Local, NaiveDate, TimeDelta, Utc};
+use chrono::{DateTime, FixedOffset, Local, NaiveDate, NaiveTime, TimeDelta, Utc};
 use classes::classes;
 use dioxus::{prelude::*, signals::Signal};
 use dioxus_fullstack::ServerFnError;
@@ -15,7 +15,8 @@ use crate::{
         consumptions::ConsumptionTypeIcon,
         events::{UrgencyIcon, UrgencyLabel},
         exercises::{ExerciseRpeIcon, ExerciseRpeLabel, ExerciseTypeIcon},
-        poos::PooBristolIcon,
+        poos::{PooBristolIcon, PooBristolLabel},
+        times::time_delta_to_string,
     },
     forms::{
         Barcode, validate_colour_hue, validate_colour_saturation, validate_colour_value,
@@ -42,22 +43,13 @@ fn get_label_classes() -> String {
     ]
 }
 
-fn get_checkbox_classes(is_valid: bool, is_disabled: bool) -> String {
+fn get_toggle_classes(is_valid: bool, is_disabled: bool) -> String {
     let classes = classes![
-        "bg-gray-100",
-        "checkbox",
+        "toggle",
         "dark:bg-gray-700",
-        "dark:focus:ring-blue-500",
-        "dark:ring-offset-gray-800",
         "dark:text-white",
         "focus:ring-2",
         "focus:ring-blue-500",
-        "h-4",
-        "ring-offset-2",
-        "ring-offset-gray-100",
-        "rounded",
-        "text-gray-900",
-        "w-4",
         "focus:outline-none"
     ];
 
@@ -66,10 +58,10 @@ fn get_checkbox_classes(is_valid: bool, is_disabled: bool) -> String {
     }
 
     if is_valid {
-        return classes + " " + &classes!["border-green-500", "dark:border-green-500"];
+        return classes + " " + &classes!["toggle-success"];
     }
 
-    classes + &classes!["border-red-500", "dark:border-red-500"]
+    classes + &classes!["toggle-error"]
 }
 
 fn get_input_classes(is_valid: bool, is_disabled: bool) -> String {
@@ -226,12 +218,11 @@ fn PullDownMenu<D: 'static + Clone + PartialEq + FieldLabel>(
         els[index] = el;
     };
 
+    let mut clicking_inside = use_signal(|| false);
+
     rsx! {
         div {
             class: "absolute z-10 shadow-lg bg-gray-50 border border-gray-50 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500",
-            onblur: move |_| {
-                search.set(None);
-            },
             input {
                 r#type: "text",
                 class: get_input_classes(true, false),
@@ -249,6 +240,12 @@ fn PullDownMenu<D: 'static + Clone + PartialEq + FieldLabel>(
                     focus_idx.set(0);
                 },
                 onkeydown: onkeydown_input,
+                onblur: move |_| {
+                    if !clicking_inside() {
+                        search.set(None);
+                    }
+                    clicking_inside.set(false);
+                },
                 tabindex: "-1",
             }
             ul { class: "p-2 shadow rounded-box", onkeydown: onkeydown_list,
@@ -260,6 +257,9 @@ fn PullDownMenu<D: 'static + Clone + PartialEq + FieldLabel>(
                         li {
                             key: "{item.id}",
                             class: "flex px-4 py-2 hover:bg-gray-800 hover:text-gray-100 cursor-pointer gap-4",
+                            onmousedown: move |_evt| {
+                                clicking_inside.set(true);
+                            },
                             onclick: {
                                 let value = item.value.clone();
                                 move |_| {
@@ -303,6 +303,7 @@ fn InputSearch<D: 'static + Clone + Eq + FieldLabel, T: 'static + Clone + Eq>(
     options: Memo<Vec<PullDownMenuItem<D>>>,
     search: Signal<Option<String>>,
     on_change: Option<Callback<Option<D>>>,
+    none_label: Element,
 ) -> Element {
     let mut button: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
     let mut open = use_memo(move || search.read().as_ref().is_some());
@@ -340,7 +341,7 @@ fn InputSearch<D: 'static + Clone + Eq + FieldLabel, T: 'static + Clone + Eq>(
                         if let Some(selected_option) = value.read().deref() {
                             { selected_option.as_label() }
                         } else {
-                            rsx! { "Select..." }
+                            { none_label }
                         }
                     }
                 }
@@ -591,12 +592,48 @@ pub fn InputDate(
 }
 
 #[component]
+pub fn InputTime(
+    id: &'static str,
+    label: &'static str,
+    value: Signal<String>,
+    validate: Memo<Result<NaiveTime, ValidationError>>,
+    disabled: Memo<bool>,
+) -> Element {
+    rsx! {
+        div { class: "mb-5",
+            label { r#for: id, class: get_label_classes(), "{label}" }
+            input {
+                // A text field, not a time picker: the picker's 12/24 hour
+                // display follows the browser locale and cannot be forced to
+                // 24 hour format.
+                r#type: "text",
+                class: get_input_classes(validate().is_ok(), disabled()),
+                id,
+                placeholder: "HH:MM",
+                value: "{value()}",
+                disabled,
+                oninput: move |e| {
+                    value.set(e.value());
+                },
+            }
+            ActionButton {
+                on_click: move |_e| {
+                    value.set(Local::now().format("%H:%M").to_string());
+                },
+                "Now"
+            }
+            FieldMessage { validate, disabled }
+        }
+    }
+}
+
+#[component]
 pub fn InputDuration(
     id: &'static str,
     label: &'static str,
     value: Signal<String>,
     start_time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    validate: Memo<Result<TimeDelta, ValidationError>>,
+    validate: Memo<Result<Option<TimeDelta>, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
     rsx! {
@@ -626,6 +663,9 @@ pub fn InputDuration(
                 }
             }
             FieldMessage { validate, disabled }
+            if let Ok(Some(d)) = validate() {
+                span { class: "text-sm text-base-content/60", "{time_delta_to_string(d)}" }
+            }
         }
     }
 }
@@ -649,6 +689,11 @@ pub fn InputSelect<D: 'static + Clone + Eq + FieldLabel, T: 'static + Clone + Eq
     options: Vec<InputOption<D>>,
 ) -> Element {
     let search: Signal<Option<String>> = use_signal(|| None);
+    let none_label = options
+        .iter()
+        .find(|opt| opt.value.is_none())
+        .map(|opt| opt.label.clone())
+        .unwrap_or_else(|| rsx! { "Select..." });
     let filtered_options = use_memo(move || {
         let query = search.read().as_ref().map(|s| s.to_lowercase());
         options
@@ -680,6 +725,7 @@ pub fn InputSelect<D: 'static + Clone + Eq + FieldLabel, T: 'static + Clone + Eq
             disabled,
             options: filtered_options,
             search,
+            none_label,
         }
     }
 }
@@ -892,26 +938,33 @@ pub fn InputPooBristolType(
     id: &'static str,
     label: &'static str,
     value: Signal<Option<Bristol>>,
-    validate: Memo<Result<Bristol, ValidationError>>,
+    validate: Memo<Result<Option<Bristol>, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
-    let options = Bristol::all_values()
-        .iter()
-        .map(|bristol| {
-            let id = bristol.as_id();
-            let icon = rsx! {
-                PooBristolIcon { bristol: *bristol }
-            };
-            let label = bristol.as_title();
-            InputOption {
-                id: id.to_string(),
-                value: Some(*bristol),
-                icon,
-                title: label.to_string(),
-                label: rsx! { "{label}" },
-            }
-        })
-        .collect::<Vec<_>>();
+    let options = std::iter::once(InputOption {
+        id: "none".to_string(),
+        value: None,
+        icon: rsx! {},
+        title: "None".to_string(),
+        label: rsx! { "None" },
+    })
+    .chain(Bristol::all_values().iter().map(|bristol| {
+        let id = bristol.as_id();
+        let icon = rsx! {
+            PooBristolIcon { bristol: *bristol }
+        };
+        let label = bristol.as_title();
+        InputOption {
+            id: id.to_string(),
+            value: Some(*bristol),
+            icon,
+            title: label.to_string(),
+            label: rsx! {
+                PooBristolLabel { bristol: *bristol }
+            },
+        }
+    }))
+    .collect::<Vec<_>>();
 
     rsx! {
         InputSelect {
@@ -1042,11 +1095,11 @@ pub fn InputBoolean(
     disabled: Memo<bool>,
 ) -> Element {
     rsx! {
-        div {
+        div { class: "mb-5",
             label { r#for: id, class: get_label_classes(), "{label}" }
             input {
                 r#type: "checkbox",
-                class: get_checkbox_classes(true, disabled()),
+                class: get_toggle_classes(true, disabled()),
                 id,
                 checked: value(),
                 disabled,
@@ -1304,6 +1357,7 @@ pub fn InputConsumable(
                 options: filtered_options,
                 search,
                 on_change: Some(on_change),
+                none_label: rsx! { "Select..." },
             }
             div { class: "gap-2",
                 CreateButton { on_click: move |_e| create_form.set(true), "Create" }

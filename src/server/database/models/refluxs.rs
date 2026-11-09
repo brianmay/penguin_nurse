@@ -17,10 +17,11 @@ pub struct Reflux {
     pub user_id: i64,
     pub time: DateTime<Utc>,
     pub utc_offset: i32,
-    pub duration: TimeDelta,
+    pub duration: Option<TimeDelta>,
     pub location: Option<String>,
     pub severity: i32,
     pub comments: Option<String>,
+    pub complete: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -40,6 +41,7 @@ impl From<Reflux> for crate::models::Reflux {
             location: reflux.location,
             severity: reflux.severity,
             comments: reflux.comments,
+            complete: reflux.complete,
             created_at: reflux.created_at,
             updated_at: reflux.updated_at,
         }
@@ -62,6 +64,22 @@ pub async fn get_refluxs_for_time_range(
         .filter(q_user_id.eq(user_id))
         .filter(q_time.ge(start))
         .filter(q_time.lt(end))
+        .load(conn)
+        .await
+}
+
+pub async fn get_refluxs_incomplete(
+    conn: &mut DatabaseConnection,
+    user_id: i64,
+) -> Result<Vec<Reflux>, diesel::result::Error> {
+    use crate::server::database::schema::refluxs::complete as q_complete;
+    use crate::server::database::schema::refluxs::table;
+    use crate::server::database::schema::refluxs::user_id as q_user_id;
+
+    table
+        .select(Reflux::as_select())
+        .filter(q_user_id.eq(user_id))
+        .filter(q_complete.eq(false))
         .load(conn)
         .await
 }
@@ -91,10 +109,11 @@ pub struct NewReflux<'a> {
     pub user_id: i64,
     pub time: DateTime<Utc>,
     pub utc_offset: i32,
-    pub duration: TimeDelta,
+    pub duration: Option<TimeDelta>,
     pub location: Option<&'a str>,
     pub severity: i32,
     pub comments: Option<&'a str>,
+    pub complete: bool,
 }
 
 impl<'a> NewReflux<'a> {
@@ -107,6 +126,7 @@ impl<'a> NewReflux<'a> {
             location: reflux.location.as_deref(),
             severity: reflux.severity,
             comments: reflux.comments.as_deref(),
+            complete: reflux.complete,
         }
     }
 }
@@ -128,10 +148,11 @@ pub async fn create_reflux(
 pub struct ChangeReflux<'a> {
     pub time: Option<DateTime<Utc>>,
     pub utc_offset: Option<i32>,
-    pub duration: Option<TimeDelta>,
+    pub duration: Option<Option<TimeDelta>>,
     pub location: Option<Option<&'a str>>,
     pub severity: Option<i32>,
     pub comments: Option<Option<&'a str>>,
+    pub complete: Option<bool>,
 }
 
 impl<'a> ChangeReflux<'a> {
@@ -149,6 +170,7 @@ impl<'a> ChangeReflux<'a> {
             location: reflux.location.map_inner_deref().into_option(),
             severity: reflux.severity.into_option(),
             comments: reflux.comments.map_inner_deref().into_option(),
+            complete: reflux.complete.into_option(),
         }
     }
 }

@@ -4,6 +4,7 @@ use chrono::{NaiveDate, Utc};
 use dioxus::prelude::*;
 use dioxus_fullstack::ServerFnError;
 use dioxus_router::navigator;
+use penguin_nurse::validation::entry_errors;
 use tap::Pipe;
 
 use crate::{
@@ -12,11 +13,10 @@ use crate::{
         StrIcon,
         buttons::{ChangeButton, CreateButton, DeleteButton, NavButton},
         consumptions::{
-            self, ConsumptionDetails, ConsumptionItemList, ConsumptionTypeIcon,
-            consumption_duration, consumption_errors,
+            self, ConsumptionDetails, ConsumptionDuration, ConsumptionItemList, ConsumptionTypeIcon,
         },
         events::EventTime,
-        exercises::{ExerciseDetails, ExerciseTypeIcon},
+        exercises::{ExerciseDetails, ExerciseDuration, ExerciseTypeIcon},
         health_metrics::{HealthMetricDetails, HealthMetricIcon, health_metric_title},
         notes::{NoteDetails, note_icon, note_title},
         poos::{self, PooDetails, PooDuration, PooIcon, poo_title},
@@ -55,9 +55,15 @@ fn EntryRow(
     let update_dialog_reference = DialogReference::get_update_dialog_reference(&entry);
     let delete_dialog_reference = DialogReference::get_delete_dialog_reference(&entry);
 
+    let row_class = if entry.data.is_complete() {
+        "hover:bg-gray-500 border-blue-300 mt-2 mb-2 p-2 border-2 w-full sm:w-auto sm:border-none inline-block sm:table-row"
+    } else {
+        "hover:bg-gray-500 border-blue-300 mt-2 mb-2 p-2 border-2 w-full sm:w-auto sm:border-none inline-block sm:table-row bg-gray-800 dark:bg-gray-400 opacity-60"
+    };
+
     rsx! {
         tr {
-            class: "hover:bg-gray-500 border-blue-300 mt-2 mb-2 p-2 border-2 w-full sm:w-auto sm:border-none inline-block sm:table-row",
+            class: row_class,
             onclick: move |_| selected.set(Some(id)),
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 EventTime { time: entry.time }
@@ -111,7 +117,7 @@ fn EntryRow(
                             }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                            consumption_duration { duration: consumption.consumption.duration }
+                            ConsumptionDuration { duration: consumption.consumption.duration }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             ConsumptionDetails { consumption: consumption.consumption.clone() }
@@ -133,8 +139,7 @@ fn EntryRow(
 
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-
-                            WeeDuration { duration: exercise.duration }
+                            ExerciseDuration { duration: exercise.duration }
                         }
                         td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                             ExerciseDetails { exercise: exercise.clone() }
@@ -190,24 +195,19 @@ fn EntryRow(
                 }
             }
         }
-        if let EntryData::Consumption(consumption) = &entry.data {
-            {
-                let errors = consumption_errors(
-                    &consumption.consumption,
-                    Some(&consumption.items),
-                );
-                errors
-                    .into_iter()
-                    .map(|error| {
-                        rsx! {
-                            tr {
-                                td { colspan: 4, class: "block sm:table-cell",
-                                    div { class: "text-error", {error} }
-                                }
+        {
+            let errors = entry_errors(&entry.data);
+            errors
+                .into_iter()
+                .map(|error| {
+                    rsx! {
+                        tr {
+                            td { colspan: 4, class: "block sm:table-cell",
+                                div { class: "text-error", {error} }
                             }
                         }
-                    })
-            }
+                    }
+                })
         }
 
         if selected() == Some(id) {

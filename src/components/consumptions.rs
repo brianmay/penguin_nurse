@@ -2,6 +2,7 @@ use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use dioxus::prelude::*;
 use dioxus_fullstack::ServerFnError;
 use itertools::intersperse;
+use penguin_nurse::validation::consumption_errors;
 
 use crate::{
     components::{
@@ -11,10 +12,10 @@ use crate::{
     },
     forms::{
         Dialog, EditError, FieldValue, FormCloseButton, FormDeleteButton, FormEditButton,
-        FormSaveCancelButton, InputConsumable, InputConsumptionType, InputDateTime, InputDuration,
-        InputNumber, InputTextArea, Saving, ValidationError, validate_comments,
+        FormSaveCancelButton, InputBoolean, InputConsumable, InputConsumptionType, InputDateTime,
+        InputDuration, InputNumber, InputTextArea, Saving, ValidationError, validate_comments,
         validate_consumable_millilitres, validate_consumable_quantity, validate_consumption_type,
-        validate_duration, validate_fixed_offset_date_time,
+        validate_fixed_offset_date_time, validate_optional_duration,
     },
     functions::consumptions::{
         create_consumption, create_consumption_consumable, delete_consumption,
@@ -37,13 +38,17 @@ pub enum Operation {
 #[derive(Debug, Clone)]
 struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    duration: Memo<Result<TimeDelta, ValidationError>>,
+    duration: Memo<Result<Option<TimeDelta>, ValidationError>>,
     consumption_type: Memo<Result<ConsumptionType, ValidationError>>,
     liquid_mls: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
-async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumption, EditError> {
+async fn do_save(
+    op: &Operation,
+    validate: &Validate,
+    complete: bool,
+) -> Result<Consumption, EditError> {
     let time = validate.time.read().clone()?;
     let duration = validate.duration.read().clone()?;
     let consumption_type = validate.consumption_type.read().clone()?;
@@ -59,6 +64,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumption, Edi
                 liquid_mls,
                 comments,
                 consumption_type,
+                complete,
             };
             create_consumption(updates).await.map_err(EditError::Server)
         }
@@ -70,6 +76,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumption, Edi
                 consumption_type: MaybeSet::Set(consumption_type),
                 liquid_mls: MaybeSet::Set(liquid_mls),
                 comments: MaybeSet::Set(comments),
+                complete: MaybeSet::Set(complete),
             };
             update_consumption(consumption.id, changes)
                 .await
@@ -94,6 +101,11 @@ pub fn ConsumptionUpdate(
         Operation::Update { consumption } => consumption.duration.as_raw(),
     });
 
+    let complete = use_signal(|| match &op {
+        Operation::Create { .. } => false,
+        Operation::Update { consumption } => consumption.complete,
+    });
+
     let consumption_type = use_signal(|| match &op {
         Operation::Create { .. } => None,
         Operation::Update { consumption } => Some(consumption.consumption_type),
@@ -111,7 +123,7 @@ pub fn ConsumptionUpdate(
 
     let validate = Validate {
         time: use_memo(move || validate_fixed_offset_date_time(&time())),
-        duration: use_memo(move || validate_duration(&duration())),
+        duration: use_memo(move || validate_optional_duration(*complete.read(), &duration())),
         consumption_type: use_memo(move || validate_consumption_type(consumption_type())),
         liquid_mls: use_memo(move || validate_consumable_millilitres(&liquid_mls())),
         comments: use_memo(move || validate_comments(&comments())),
@@ -132,13 +144,15 @@ pub fn ConsumptionUpdate(
 
     let op_clone = op.clone();
     let validate_clone = validate.clone();
+    let complete_clone = *complete.read();
     let on_save = use_callback(move |()| {
         let op = op_clone.clone();
         let validate = validate_clone.clone();
+        let complete = complete_clone;
         spawn(async move {
             saving.set(Saving::Yes);
 
-            let result = do_save(&op, &validate).await;
+            let result = do_save(&op, &validate, complete).await;
 
             match result {
                 Ok(consumable) => {
@@ -176,6 +190,13 @@ pub fn ConsumptionUpdate(
                 validate: validate.time,
                 disabled,
             }
+            InputConsumptionType {
+                id: "consumption_type",
+                label: "Type",
+                value: consumption_type,
+                validate: validate.consumption_type,
+                disabled,
+            }
             InputDuration {
                 id: "duration",
                 label: "Duration",
@@ -184,11 +205,10 @@ pub fn ConsumptionUpdate(
                 validate: validate.duration,
                 disabled,
             }
-            InputConsumptionType {
-                id: "consumption_type",
-                label: "Type",
-                value: consumption_type,
-                validate: validate.consumption_type,
+            InputBoolean {
+                id: "complete",
+                label: "Complete",
+                value: complete,
                 disabled,
             }
             InputNumber {
@@ -278,6 +298,13 @@ const MOUTH_SVG: Asset = asset!("/assets/consumption/mouth.svg");
 const SPIT_SVG: Asset = asset!("/assets/consumption/spit.svg");
 const INJECT_SVG: Asset = asset!("/assets/consumption/inject.svg");
 const SKIN_SVG: Asset = asset!("/assets/consumption/skin.svg");
+const LIPS_SVG: Asset = asset!("/assets/consumption/lips.svg");
+const TOES_SVG: Asset = asset!("/assets/consumption/toes.svg");
+const EARS_SVG: Asset = asset!("/assets/consumption/ears.svg");
+const HAIR_SVG: Asset = asset!("/assets/consumption/hair.svg");
+const EYES_SVG: Asset = asset!("/assets/consumption/eyes.svg");
+const FACE_SVG: Asset = asset!("/assets/consumption/face.svg");
+const HANDS_SVG: Asset = asset!("/assets/consumption/hands.svg");
 
 #[component]
 pub fn ConsumptionTypeIcon(consumption_type: ConsumptionType) -> Element {
@@ -288,6 +315,13 @@ pub fn ConsumptionTypeIcon(consumption_type: ConsumptionType) -> Element {
         ConsumptionType::SpitOut => SPIT_SVG,
         ConsumptionType::Inject => INJECT_SVG,
         ConsumptionType::ApplySkin => SKIN_SVG,
+        ConsumptionType::ApplyLips => LIPS_SVG,
+        ConsumptionType::ApplyToes => TOES_SVG,
+        ConsumptionType::ApplyEars => EARS_SVG,
+        ConsumptionType::ApplyHair => HAIR_SVG,
+        ConsumptionType::ApplyEyes => EYES_SVG,
+        ConsumptionType::ApplyFace => FACE_SVG,
+        ConsumptionType::ApplyHands => HANDS_SVG,
     };
     let alt = consumption_type.as_title();
     rsx! {
@@ -296,17 +330,23 @@ pub fn ConsumptionTypeIcon(consumption_type: ConsumptionType) -> Element {
 }
 
 #[component]
-pub fn consumption_duration(duration: chrono::TimeDelta) -> Element {
-    let text = time_delta_to_string(duration);
-
-    rsx! {
-        if duration.num_seconds() < 2 {
-            span { class: "text-error", {text} }
-        } else if duration.num_minutes() < 60 {
-            span { class: "text-success", {text} }
-        } else {
-            span { class: "text-error", {text} }
+pub fn ConsumptionDuration(duration: Option<chrono::TimeDelta>) -> Element {
+    match duration {
+        Some(d) => {
+            let text = time_delta_to_string(d);
+            rsx! {
+                if d.num_seconds() < 2 {
+                    span { class: "text-error", {text} }
+                } else if d.num_minutes() < 60 {
+                    span { class: "text-success", {text} }
+                } else {
+                    span { class: "text-error", {text} }
+                }
+            }
         }
+        None => rsx! {
+            span { class: "text-gray-400", "No duration" }
+        },
     }
 }
 
@@ -807,7 +847,7 @@ pub fn ConsumptionSummary(
             EventDateTimeShort { time: consumption.time }
         }
         div {
-            consumption_duration { duration: consumption.duration }
+            ConsumptionDuration { duration: consumption.duration }
         }
         if let Some(mls) = consumption.liquid_mls {
             div {
@@ -828,54 +868,6 @@ pub fn ConsumptionSummary(
             Markdown { content: comments.to_string() }
         }
     }
-}
-
-pub fn consumption_errors(
-    consumption: &Consumption,
-    consumption_consumables: Option<&Vec<ConsumptionItem>>,
-) -> Vec<String> {
-    let mut errors = Vec::new();
-
-    if consumption.duration.num_seconds() < 2 {
-        errors.push(format!(
-            "Duration {} is suspiciously short",
-            consumption.duration
-        ));
-    }
-
-    if let Some(consumption_consumables) = &consumption_consumables {
-        let zero = bigdecimal::BigDecimal::from(0);
-        let expected_mls = consumption.liquid_mls.as_ref().unwrap_or(&zero);
-        let total_nested_mls: bigdecimal::BigDecimal = consumption_consumables
-            .iter()
-            .filter_map(|ci| ci.nested.liquid_mls.as_ref())
-            .cloned()
-            .sum();
-        if *expected_mls != total_nested_mls {
-            errors.push(format!(
-                "Liquid ml total from ingredients {}ml does not match consumption liquid ml {}ml",
-                total_nested_mls, expected_mls,
-            ));
-        }
-    }
-
-    // check for any nested consumables with consumption type that doesn't match parent
-    if let Some(consumption_consumables) = &consumption_consumables {
-        for ci in consumption_consumables.iter() {
-            if let Some(consumption_type) = ci.consumable.consumption_type
-                && consumption_type != consumption.consumption_type
-            {
-                errors.push(format!(
-                    "Ingredient {} has consumption type {} which does not match parent consumption type {}",
-                    ci.consumable.name,
-                    consumption_type.as_title(),
-                    consumption.consumption_type.as_title(),
-                ));
-            }
-        }
-    }
-
-    errors
 }
 
 #[component]

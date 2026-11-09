@@ -1,0 +1,5 @@
+DROP INDEX CONCURRENTLY idx_wees_user_incomplete;
+DROP INDEX CONCURRENTLY idx_poos_user_incomplete;
+DROP INDEX CONCURRENTLY idx_exercises_user_incomplete;
+DROP INDEX CONCURRENTLY idx_consumptions_user_incomplete;
+DROP INDEX CONCURRENTLY idx_refluxs_user_incomplete;

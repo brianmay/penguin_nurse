@@ -1,4 +1,5 @@
-use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
+use chrono::Duration;
+use chrono::{DateTime, FixedOffset, Local, Utc};
 use classes::classes;
 use dioxus::prelude::*;
 use palette::Hsv;
@@ -10,11 +11,11 @@ use crate::{
         times::time_delta_to_string,
     },
     forms::{
-        Colour, Dialog, EditError, FieldValue, FormSaveCancelButton, InputColour, InputDateTime,
-        InputDuration, InputNumber, InputSymptomIntensity, InputTextArea, InputUrgency, Saving,
-        ValidationError, validate_colour, validate_comments, validate_duration,
-        validate_fixed_offset_date_time, validate_symptom_intensity, validate_urgency,
-        validate_wee_millilitres,
+        Colour, Dialog, EditError, FieldValue, FormSaveCancelButton, InputBoolean, InputColour,
+        InputDateTime, InputDuration, InputNumber, InputTextArea, InputUrgency, Saving,
+        ValidationError, validate_colour_maybe, validate_comments, validate_fixed_offset_date_time,
+        validate_optional_chrono_duration, validate_optional_leakage, validate_optional_mls,
+        validate_urgency,
     },
     functions::wees::{create_wee, delete_wee, update_wee},
     models::{ChangeWee, MaybeSet, NewWee, Urgency, UserId, Wee},
@@ -29,15 +30,15 @@ pub enum Operation {
 #[derive(Debug, Clone)]
 struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    duration: Memo<Result<TimeDelta, ValidationError>>,
+    duration: Memo<Result<Option<Duration>, ValidationError>>,
     urgency: Memo<Result<Urgency, ValidationError>>,
-    leakage: Memo<Result<i32, ValidationError>>,
-    mls: Memo<Result<i32, ValidationError>>,
+    leakage: Memo<Result<Option<i32>, ValidationError>>,
+    mls: Memo<Result<Option<i32>, ValidationError>>,
     colour: Memo<Result<Option<Hsv>, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
-async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> {
+async fn do_save(op: &Operation, validate: &Validate, complete: bool) -> Result<Wee, EditError> {
     let time = validate.time.read().clone()?;
     let duration = validate.duration.read().clone()?;
     let urgency = validate.urgency.read().clone()?;
@@ -57,6 +58,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> 
                 mls,
                 colour,
                 comments,
+                complete,
             };
             create_wee(updates).await.map_err(EditError::Server)
         }
@@ -70,6 +72,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Wee, EditError> 
                 mls: MaybeSet::Set(mls),
                 colour: MaybeSet::Set(colour),
                 comments: MaybeSet::Set(comments),
+                complete: MaybeSet::Set(complete),
             };
             update_wee(wee.id, changes).await.map_err(EditError::Server)
         }
@@ -86,17 +89,21 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
         Operation::Create { .. } => String::new(),
         Operation::Update { wee } => wee.duration.as_raw(),
     });
+    let complete = use_signal(|| match &op {
+        Operation::Create { .. } => false,
+        Operation::Update { wee } => wee.complete,
+    });
     let urgency = use_signal(|| match &op {
         Operation::Create { .. } => None,
         Operation::Update { wee } => Some(wee.urgency),
     });
     let leakage = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { wee } => wee.leakage.as_raw(),
+        Operation::Update { wee } => wee.leakage.map(|l| l.to_string()).unwrap_or_default(),
     });
     let mls = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { wee } => wee.mls.as_raw(),
+        Operation::Update { wee } => wee.mls.map(|m| m.to_string()).unwrap_or_default(),
     });
     let colour = use_signal(|| match &op {
         Operation::Create { .. } => (String::new(), String::new(), String::new()),
@@ -118,14 +125,16 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
     });
 
     let validate = {
-        let validate_mls = use_memo(move || validate_wee_millilitres(&mls()));
+        let mls_validate = use_memo(move || validate_optional_mls(*complete.read(), &mls()));
         Validate {
             time: use_memo(move || validate_fixed_offset_date_time(&time())),
-            duration: use_memo(move || validate_duration(&duration())),
+            duration: use_memo(move || {
+                validate_optional_chrono_duration(*complete.read(), &duration())
+            }),
             urgency: use_memo(move || validate_urgency(urgency())),
-            leakage: use_memo(move || validate_symptom_intensity(&leakage())),
-            mls: validate_mls,
-            colour: use_memo(move || validate_colour(&validate_mls.read(), colour())),
+            leakage: use_memo(move || validate_optional_leakage(*complete.read(), &leakage())),
+            mls: mls_validate,
+            colour: use_memo(move || validate_colour_maybe(&mls_validate.read(), colour())),
             comments: use_memo(move || validate_comments(&comments())),
         }
     };
@@ -147,13 +156,15 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
 
     let op_clone = op.clone();
     let validate_clone = validate.clone();
+    let complete_clone = *complete.read();
     let on_save = use_callback(move |()| {
         let op = op_clone.clone();
         let validate = validate_clone.clone();
+        let complete = complete_clone;
         spawn(async move {
             saving.set(Saving::Yes);
 
-            let result = do_save(&op, &validate).await;
+            let result = do_save(&op, &validate, complete).await;
 
             match result {
                 Ok(wee) => {
@@ -189,6 +200,13 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
                 validate: validate.time,
                 disabled,
             }
+            InputUrgency {
+                id: "urgency",
+                label: "Urgency",
+                value: urgency,
+                validate: validate.urgency,
+                disabled,
+            }
             InputDuration {
                 id: "duration",
                 label: "Duration",
@@ -197,23 +215,22 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
                 validate: validate.duration,
                 disabled,
             }
-            InputUrgency {
-                id: "urgency",
-                label: "Urgency",
-                value: urgency,
-                validate: validate.urgency,
+            InputBoolean {
+                id: "complete",
+                label: "Complete",
+                value: complete,
                 disabled,
             }
-            InputSymptomIntensity {
+            InputNumber {
                 id: "leakage",
-                label: "Leakage",
+                label: "Leakage (0-10)".to_string(),
                 value: leakage,
                 validate: validate.leakage,
                 disabled,
             }
             InputNumber {
                 id: "mls",
-                label: "Quantity",
+                label: "Quantity (ml)".to_string(),
                 value: mls,
                 validate: validate.mls,
                 disabled,
@@ -319,38 +336,49 @@ pub fn wee_title() -> &'static str {
 }
 
 #[component]
-pub fn WeeDuration(duration: chrono::TimeDelta) -> Element {
-    let text = time_delta_to_string(duration);
-
-    let classes = if duration.num_seconds() == 0 {
-        classes!["text-error"]
-    } else if duration.num_seconds() < 60 {
-        classes!["text-success"]
-    } else if duration.num_minutes() < 3 {
-        classes!["text-warning"]
-    } else {
-        classes!["text-error"]
-    };
-
-    rsx! {
-        span { class: classes, {text} }
+pub fn WeeDuration(duration: Option<chrono::Duration>) -> Element {
+    match duration {
+        Some(d) => {
+            let text = time_delta_to_string(d);
+            let classes = if d.num_seconds() == 0 {
+                classes!["text-error"]
+            } else if d.num_seconds() < 60 {
+                classes!["text-success"]
+            } else if d.num_minutes() < 3 {
+                classes!["text-warning"]
+            } else {
+                classes!["text-error"]
+            };
+            rsx! {
+                span { class: classes, {text} }
+            }
+        }
+        None => rsx! {
+            span { class: "text-gray-400", "No duration" }
+        },
     }
 }
 
 #[component]
-pub fn WeeMls(mls: i32) -> Element {
-    let classes = if mls == 0 {
-        classes!["text-error"]
-    } else if mls < 100 {
-        classes!["text-warning"]
-    } else if mls < 500 {
-        classes!["text-success"]
-    } else {
-        classes!["text-error"]
-    };
-
-    rsx! {
-        span { class: classes, {mls.to_string() + " ml"} }
+pub fn WeeMls(mls: Option<i32>) -> Element {
+    match mls {
+        Some(m) => {
+            let classes = if m == 0 {
+                classes!["text-error"]
+            } else if m < 100 {
+                classes!["text-warning"]
+            } else if m < 500 {
+                classes!["text-success"]
+            } else {
+                classes!["text-error"]
+            };
+            rsx! {
+                span { class: classes, {m.to_string() + " ml"} }
+            }
+        }
+        None => rsx! {
+            span { class: "text-gray-400", "No quantity" }
+        },
     }
 }
 
@@ -397,10 +425,12 @@ pub fn WeeSummary(wee: Wee) -> Element {
         div {
             EventDateTimeShort { time: wee.time }
         }
-        WeeMls { mls: wee.mls }
-        WeeDuration { duration: wee.duration }
-        UrgencyLabel { urgency: wee.urgency }
-        SymptomIntensity { intensity: wee.leakage }
+        div { WeeMls { mls: wee.mls } }
+        div { WeeDuration { duration: wee.duration } }
+        div { UrgencyLabel { urgency: wee.urgency } }
+        if let Some(leakage) = wee.leakage {
+            SymptomIntensity { intensity: leakage }
+        }
         event_colour { colour: wee.colour }
         if let Some(comments) = &wee.comments {
             Markdown { content: comments.to_string() }
@@ -418,10 +448,12 @@ pub fn WeeDetails(wee: Wee) -> Element {
             div {
                 UrgencyLabel { urgency: wee.urgency }
             }
-            SymptomDisplay {
-                name: "Leakage".to_string(),
-                intensity: wee.leakage,
-                extra: None,
+            if let Some(leakage) = wee.leakage {
+                SymptomDisplay {
+                    name: "Leakage".to_string(),
+                    intensity: leakage,
+                    extra: None,
+                }
             }
         }
         if let Some(comments) = &wee.comments {

@@ -15,6 +15,7 @@ pub enum ExerciseType {
     Running,
     Cycling,
     IndoorCycling,
+    Treadmill,
     Jumping,
     Skipping,
     Flying,
@@ -28,6 +29,7 @@ impl From<ExerciseType> for models::ExerciseType {
             ExerciseType::Running => models::ExerciseType::Running,
             ExerciseType::Cycling => models::ExerciseType::Cycling,
             ExerciseType::IndoorCycling => models::ExerciseType::IndoorCycling,
+            ExerciseType::Treadmill => models::ExerciseType::Treadmill,
             ExerciseType::Jumping => models::ExerciseType::Jumping,
             ExerciseType::Skipping => models::ExerciseType::Skipping,
             ExerciseType::Flying => models::ExerciseType::Flying,
@@ -43,6 +45,7 @@ impl From<models::ExerciseType> for ExerciseType {
             models::ExerciseType::Running => ExerciseType::Running,
             models::ExerciseType::Cycling => ExerciseType::Cycling,
             models::ExerciseType::IndoorCycling => ExerciseType::IndoorCycling,
+            models::ExerciseType::Treadmill => ExerciseType::Treadmill,
             models::ExerciseType::Jumping => ExerciseType::Jumping,
             models::ExerciseType::Skipping => ExerciseType::Skipping,
             models::ExerciseType::Flying => ExerciseType::Flying,
@@ -60,13 +63,14 @@ pub struct Exercise {
     pub user_id: i64,
     pub time: DateTime<Utc>,
     pub utc_offset: i32,
-    pub duration: TimeDelta,
+    pub duration: Option<TimeDelta>,
     pub location: Option<String>,
     pub distance: Option<bigdecimal::BigDecimal>,
     pub calories: Option<i32>,
     pub rpe: Option<i32>,
     pub exercise_type: ExerciseType,
     pub comments: Option<String>,
+    pub complete: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -91,6 +95,7 @@ impl From<Exercise> for crate::models::Exercise {
                 .rpe
                 .map(|rpe| rpe.try_into().unwrap_or(models::ExerciseRpe::Rpe1)),
             comments: exercise.comments,
+            complete: exercise.complete,
             created_at: exercise.created_at,
             updated_at: exercise.updated_at,
             exercise_type: exercise.exercise_type.into(),
@@ -114,6 +119,22 @@ pub async fn get_exercises_for_time_range(
         .filter(q_user_id.eq(user_id))
         .filter(q_time.ge(start))
         .filter(q_time.lt(end))
+        .load(conn)
+        .await
+}
+
+pub async fn get_exercises_incomplete(
+    conn: &mut DatabaseConnection,
+    user_id: i64,
+) -> Result<Vec<Exercise>, diesel::result::Error> {
+    use crate::server::database::schema::exercises::complete as q_complete;
+    use crate::server::database::schema::exercises::table;
+    use crate::server::database::schema::exercises::user_id as q_user_id;
+
+    table
+        .select(Exercise::as_select())
+        .filter(q_user_id.eq(user_id))
+        .filter(q_complete.eq(false))
         .load(conn)
         .await
 }
@@ -143,13 +164,14 @@ pub struct NewExercise<'a> {
     pub user_id: i64,
     pub time: DateTime<Utc>,
     pub utc_offset: i32,
-    pub duration: TimeDelta,
+    pub duration: Option<TimeDelta>,
     pub location: Option<&'a str>,
     pub distance: Option<&'a bigdecimal::BigDecimal>,
     pub calories: Option<i32>,
     pub rpe: Option<i32>,
     pub exercise_type: ExerciseType,
     pub comments: Option<&'a str>,
+    pub complete: bool,
 }
 
 impl<'a> NewExercise<'a> {
@@ -165,6 +187,7 @@ impl<'a> NewExercise<'a> {
             rpe: exercise.rpe.map(|rpe| rpe.into()),
             exercise_type: exercise.exercise_type.into(),
             comments: exercise.comments.as_deref(),
+            complete: exercise.complete,
         }
     }
 }
@@ -186,13 +209,14 @@ pub async fn create_exercise(
 pub struct ChangeExercise<'a> {
     pub time: Option<DateTime<Utc>>,
     pub utc_offset: Option<i32>,
-    pub duration: Option<TimeDelta>,
+    pub duration: Option<Option<TimeDelta>>,
     pub location: Option<Option<&'a str>>,
     pub distance: Option<Option<&'a bigdecimal::BigDecimal>>,
     pub calories: Option<Option<i32>>,
     pub rpe: Option<Option<i32>>,
     pub exercise_type: Option<ExerciseType>,
     pub comments: Option<Option<&'a str>>,
+    pub complete: Option<bool>,
 }
 
 impl<'a> ChangeExercise<'a> {
@@ -213,6 +237,7 @@ impl<'a> ChangeExercise<'a> {
             rpe: exercise.rpe.map_inner_into().into_option(),
             exercise_type: exercise.exercise_type.map_into().into_option(),
             comments: exercise.comments.map_inner_deref().into_option(),
+            complete: exercise.complete.into_option(),
         }
     }
 }

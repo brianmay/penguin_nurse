@@ -191,6 +191,7 @@ pub fn WeeUrgeDelete(
             {wee_urge.id.to_string()}
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
+        WeeUrgeSummary { wee_urge: wee_urge.clone() }
         form {
             novalidate: true,
             action: "javascript:void(0)",
@@ -268,7 +269,7 @@ pub fn WeeUrgeSummary(wee_urge: WeeUrge) -> Element {
         div {
             EventDateTimeShort { time: wee_urge.time }
         }
-        UrgencyLabel { urgency: wee_urge.urgency }
+        div { UrgencyLabel { urgency: wee_urge.urgency } }
         if let Some(comments) = &wee_urge.comments {
             Markdown { content: comments.to_string() }
         }

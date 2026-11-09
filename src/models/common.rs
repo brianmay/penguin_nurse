@@ -139,11 +139,11 @@ impl Urgency {
     pub fn as_title(&self) -> &'static str {
         match self {
             Urgency::U0 => "No urgency",
-            Urgency::U1 => "Extremely mild urgency",
-            Urgency::U2 => "Mild urgency",
-            Urgency::U3 => "Normal urgency",
-            Urgency::U4 => "Severe urgency",
-            Urgency::U5 => "Extreme urgency",
+            Urgency::U1 => "Mild urgency",
+            Urgency::U2 => "Normal urgency",
+            Urgency::U3 => "High urgency",
+            Urgency::U4 => "Extreme urgency",
+            Urgency::U5 => "Too late urgency",
         }
     }
 }

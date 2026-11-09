@@ -15,10 +15,10 @@ pub struct Poo {
     pub id: i64,
     pub user_id: i64,
     pub time: chrono::DateTime<chrono::Utc>,
-    pub duration: chrono::Duration,
+    pub duration: Option<chrono::Duration>,
     pub urgency: i32,
-    pub quantity: i32,
-    pub bristol: i32,
+    pub quantity: Option<i32>,
+    pub bristol: Option<i32>,
     pub colour_hue: Option<f32>,
     pub colour_saturation: Option<f32>,
     pub colour_value: Option<f32>,
@@ -26,6 +26,7 @@ pub struct Poo {
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub utc_offset: i32,
+    pub complete: bool,
 }
 
 const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
@@ -42,6 +43,8 @@ impl From<Poo> for crate::models::Poo {
             _ => None,
         };
 
+        let bristol = poo.bristol.and_then(|b| b.try_into().ok());
+
         Self {
             id: PooId::new(poo.id),
             user_id: UserId::new(poo.user_id),
@@ -49,9 +52,10 @@ impl From<Poo> for crate::models::Poo {
             duration: poo.duration,
             urgency: poo.urgency.try_into().unwrap_or_default(),
             quantity: poo.quantity,
-            bristol: poo.bristol.try_into().unwrap_or_default(),
+            bristol,
             colour,
             comments: poo.comments,
+            complete: poo.complete,
             created_at: poo.created_at,
             updated_at: poo.updated_at,
         }
@@ -74,6 +78,22 @@ pub async fn get_poos_for_time_range(
         .filter(q_user_id.eq(user_id))
         .filter(q_time.ge(start))
         .filter(q_time.lt(end))
+        .load(conn)
+        .await
+}
+
+pub async fn get_poos_incomplete(
+    conn: &mut DatabaseConnection,
+    user_id: i64,
+) -> Result<Vec<Poo>, diesel::result::Error> {
+    use crate::server::database::schema::poos::complete as q_complete;
+    use crate::server::database::schema::poos::table;
+    use crate::server::database::schema::poos::user_id as q_user_id;
+
+    table
+        .select(Poo::as_select())
+        .filter(q_user_id.eq(user_id))
+        .filter(q_complete.eq(false))
         .load(conn)
         .await
 }
@@ -103,14 +123,15 @@ pub struct NewPoo<'a> {
     user_id: i64,
     time: chrono::DateTime<chrono::Utc>,
     utc_offset: i32,
-    duration: chrono::Duration,
+    duration: Option<chrono::Duration>,
     urgency: i32,
-    quantity: i32,
-    bristol: i32,
+    quantity: Option<i32>,
+    bristol: Option<i32>,
     colour_hue: Option<f32>,
     colour_saturation: Option<f32>,
     colour_value: Option<f32>,
     comments: Option<&'a str>,
+    complete: bool,
 }
 
 impl<'a> NewPoo<'a> {
@@ -122,11 +143,12 @@ impl<'a> NewPoo<'a> {
             duration: poo.duration,
             urgency: poo.urgency.into(),
             quantity: poo.quantity,
-            bristol: poo.bristol.into(),
+            bristol: poo.bristol.map(|b| b.into()),
             colour_hue: poo.colour.map(|colour| colour.hue.into_inner()),
             colour_saturation: poo.colour.map(|colour| colour.saturation),
             colour_value: poo.colour.map(|colour| colour.value),
             comments: poo.comments.as_deref(),
+            complete: poo.complete,
         }
     }
 }
@@ -150,14 +172,15 @@ pub async fn create_poo(
 pub struct ChangePoo<'a> {
     pub time: Option<chrono::DateTime<chrono::Utc>>,
     pub utc_offset: Option<i32>,
-    pub duration: Option<chrono::Duration>,
+    pub duration: Option<Option<chrono::Duration>>,
     pub urgency: Option<i32>,
-    pub quantity: Option<i32>,
-    pub bristol: Option<i32>,
+    pub quantity: Option<Option<i32>>,
+    pub bristol: Option<Option<i32>>,
     pub colour_hue: Option<Option<f32>>,
     pub colour_saturation: Option<Option<f32>>,
     pub colour_value: Option<Option<f32>>,
     pub comments: Option<Option<&'a str>>,
+    pub complete: Option<bool>,
 }
 
 impl<'a> ChangePoo<'a> {
@@ -171,7 +194,7 @@ impl<'a> ChangePoo<'a> {
             duration: poo.duration.into_option(),
             urgency: poo.urgency.map_into().into_option(),
             quantity: poo.quantity.into_option(),
-            bristol: poo.bristol.map_into().into_option(),
+            bristol: poo.bristol.map(|x| x.map(|b| b.into())).into_option(),
             colour_hue: poo
                 .colour
                 .map(|x| x.map(|colour| colour.hue.into_inner()))
@@ -185,6 +208,7 @@ impl<'a> ChangePoo<'a> {
                 .map(|x| x.map(|colour| colour.value))
                 .into_option(),
             comments: poo.comments.map_inner_deref().into_option(),
+            complete: poo.complete.into_option(),
         }
     }
 }

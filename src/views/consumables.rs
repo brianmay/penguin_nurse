@@ -4,6 +4,7 @@ use chrono::Local;
 use dioxus::prelude::*;
 use dioxus_fullstack::ServerFnError;
 use dioxus_router::navigator;
+use penguin_nurse::validation::consumable_errors;
 use tap::Pipe;
 
 use crate::{
@@ -12,7 +13,7 @@ use crate::{
         buttons::{ChangeButton, CreateButton},
         consumables::{
             ActiveDialog, ConsumableDialog, ConsumableItemList, ListDialogReference, Operation,
-            OrganicIcon, consumable_errors,
+            OrganicIcon,
         },
         events::Markdown,
     },

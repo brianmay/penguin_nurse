@@ -39,10 +39,11 @@ pub struct Reflux {
     pub id: RefluxId,
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: chrono::TimeDelta,
+    pub duration: Option<chrono::TimeDelta>,
     pub location: Option<String>,
     pub severity: i32,
     pub comments: Option<String>,
+    pub complete: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -58,18 +59,20 @@ impl Reflux {
 pub struct NewReflux {
     pub user_id: UserId,
     pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: chrono::TimeDelta,
+    pub duration: Option<chrono::TimeDelta>,
     pub location: Option<String>,
     pub severity: i32,
     pub comments: Option<String>,
+    pub complete: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeReflux {
     pub user_id: MaybeSet<UserId>,
     pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
-    pub duration: MaybeSet<chrono::TimeDelta>,
+    pub duration: MaybeSet<Option<chrono::TimeDelta>>,
     pub location: MaybeSet<Option<String>>,
     pub severity: MaybeSet<i32>,
     pub comments: MaybeSet<Option<String>>,
+    pub complete: MaybeSet<bool>,
 }

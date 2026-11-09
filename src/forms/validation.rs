@@ -1,5 +1,5 @@
 use bigdecimal::BigDecimal;
-use chrono::{DateTime, FixedOffset, NaiveDate, TimeDelta, Utc};
+use chrono::{DateTime, FixedOffset, NaiveDate, NaiveTime, TimeDelta, Utc};
 use palette::Hsv;
 use tap::Pipe;
 
@@ -44,6 +44,10 @@ pub fn validate_email(str: &str) -> Result<String, ValidationError> {
 }
 
 pub fn validate_date_of_birth(str: &str) -> Result<Option<NaiveDate>, ValidationError> {
+    validate_field_value(str)
+}
+
+pub fn validate_time_of_day(str: &str) -> Result<NaiveTime, ValidationError> {
     validate_field_value(str)
 }
 
@@ -107,12 +111,44 @@ pub fn validate_maybe_date_time(str: &str) -> Result<Option<DateTime<Utc>>, Vali
     validate_field_value(str)
 }
 
-pub fn validate_duration(str: &str) -> Result<TimeDelta, ValidationError> {
-    validate_field_value(str)
+pub fn validate_optional_duration(
+    complete: bool,
+    str: &str,
+) -> Result<Option<TimeDelta>, ValidationError> {
+    if str.trim().is_empty() {
+        if complete {
+            Err(ValidationError(
+                "Duration is required when marked complete".to_string(),
+            ))
+        } else {
+            Ok(None)
+        }
+    } else {
+        match validate_field_value::<TimeDelta>(str) {
+            Ok(td) => Ok(Some(td)),
+            Err(e) => Err(e),
+        }
+    }
 }
 
-pub fn validate_wee_millilitres(str: &str) -> Result<i32, ValidationError> {
-    validate_in_range_exclusive(str, 0, 10_000)
+pub fn validate_optional_chrono_duration(
+    complete: bool,
+    str: &str,
+) -> Result<Option<chrono::Duration>, ValidationError> {
+    if str.trim().is_empty() {
+        if complete {
+            Err(ValidationError(
+                "Duration is required when marked complete".to_string(),
+            ))
+        } else {
+            Ok(None)
+        }
+    } else {
+        match validate_field_value::<chrono::Duration>(str) {
+            Ok(d) => Ok(Some(d)),
+            Err(e) => Err(e),
+        }
+    }
 }
 
 pub fn validate_consumable_quantity(
@@ -151,10 +187,6 @@ pub fn validate_exercise_type(
     exercise_type.ok_or_else(|| ValidationError("Exercise type is required".to_string()))
 }
 
-pub fn validate_bristol(bristol_type: Option<Bristol>) -> Result<Bristol, ValidationError> {
-    bristol_type.ok_or_else(|| ValidationError("Bristol type is required".to_string()))
-}
-
 pub fn validate_colour_hue(str: &str) -> Result<Option<f32>, ValidationError> {
     validate_in_range_maybe(str, -180.0, 360.0)
 }
@@ -167,31 +199,47 @@ pub fn validate_colour_value(str: &str) -> Result<Option<f32>, ValidationError> 
     validate_in_range_maybe(str, 0.0, 1.0)
 }
 
-pub fn validate_colour(
-    quality: &Result<i32, ValidationError>,
+pub fn validate_colour_maybe(
+    quality: &Result<Option<i32>, ValidationError>,
     (hue, saturation, value): (String, String, String),
 ) -> Result<Option<Hsv>, ValidationError> {
-    let empty = matches!(quality, Ok(0));
+    if quality.is_err() {
+        return Ok(None);
+    }
 
     let hue = validate_colour_hue(str::trim(&hue));
     let saturation = validate_colour_saturation(str::trim(&saturation));
     let value = validate_colour_value(str::trim(&value));
 
-    match (empty, hue, saturation, value) {
-        (false, Ok(Some(hue)), Ok(Some(saturation)), Ok(Some(value))) => {
-            Ok(Some(Hsv::new(hue, saturation, value)))
-        }
-        (false, Ok(None), Ok(None), Ok(None)) => Ok(None),
-        (false, Ok(None), _, _) | (false, _, Ok(None), _) | (false, _, _, Ok(None)) => {
-            Err(ValidationError("Colour must be completely set".to_string()))
-        }
-        (true, Ok(None), Ok(None), Ok(None)) => Ok(None),
-        (true, Ok(Some(_)), _, _) | (true, _, Ok(Some(_)), _) | (true, _, _, Ok(Some(_))) => Err(
-            ValidationError("Colour must be completely empty if quality is 0".to_string()),
-        ),
-        (_, Err(_err), _, _) | (_, _, Err(_err), _) | (_, _, _, Err(_err)) => {
-            Err(ValidationError("Invalid colour".to_string()))
-        }
+    match quality.as_ref() {
+        Ok(None) => match (hue, saturation, value) {
+            (Ok(Some(hue)), Ok(Some(saturation)), Ok(Some(value))) => {
+                Ok(Some(Hsv::new(hue, saturation, value)))
+            }
+            (Ok(None), Ok(None), Ok(None)) => Ok(None),
+            (Ok(None), _, _) | (_, Ok(None), _) | (_, _, Ok(None)) => {
+                Err(ValidationError("Colour must be completely set".to_string()))
+            }
+            (Err(e), _, _) | (_, Err(e), _) | (_, _, Err(e)) => Err(e.clone()),
+        },
+        Ok(Some(0)) => match (hue, saturation, value) {
+            (Ok(None), Ok(None), Ok(None)) => Ok(None),
+            (Ok(Some(_)), _, _) | (_, Ok(Some(_)), _) | (_, _, Ok(Some(_))) => Err(
+                ValidationError("Colour must be completely empty if quality is 0".to_string()),
+            ),
+            (Err(e), _, _) | (_, Err(e), _) | (_, _, Err(e)) => Err(e.clone()),
+        },
+        Ok(Some(_)) => match (hue, saturation, value) {
+            (Ok(Some(hue)), Ok(Some(saturation)), Ok(Some(value))) => {
+                Ok(Some(Hsv::new(hue, saturation, value)))
+            }
+            (Ok(None), Ok(None), Ok(None)) => Ok(None),
+            (Ok(None), _, _) | (_, Ok(None), _) | (_, _, Ok(None)) => {
+                Err(ValidationError("Colour must be completely set".to_string()))
+            }
+            (Err(e), _, _) | (_, Err(e), _) | (_, _, Err(e)) => Err(e.clone()),
+        },
+        Err(_) => Ok(None),
     }
 }
 
@@ -199,8 +247,93 @@ pub fn validate_urgency(urgency: Option<Urgency>) -> Result<Urgency, ValidationE
     urgency.ok_or_else(|| ValidationError("Urgency is required".to_string()))
 }
 
-pub fn validate_poo_quantity(str: &str) -> Result<i32, ValidationError> {
-    validate_in_range(str, 0, 10)
+pub fn validate_optional_poo_quantity(
+    complete: bool,
+    str: &str,
+) -> Result<Option<i32>, ValidationError> {
+    if str.trim().is_empty() {
+        if complete {
+            Err(ValidationError(
+                "Quantity is required when marked complete".to_string(),
+            ))
+        } else {
+            Ok(None)
+        }
+    } else {
+        match validate_in_range(str, 0, 10) {
+            Ok(v) => Ok(Some(v)),
+            Err(e) => Err(e),
+        }
+    }
+}
+
+pub fn validate_optional_leakage(
+    complete: bool,
+    str: &str,
+) -> Result<Option<i32>, ValidationError> {
+    if str.trim().is_empty() {
+        if complete {
+            Err(ValidationError(
+                "Leakage is required when marked complete".to_string(),
+            ))
+        } else {
+            Ok(None)
+        }
+    } else {
+        match validate_in_range(str, 0, 10) {
+            Ok(v) => Ok(Some(v)),
+            Err(e) => Err(e),
+        }
+    }
+}
+
+pub fn validate_optional_mls(complete: bool, str: &str) -> Result<Option<i32>, ValidationError> {
+    if str.trim().is_empty() {
+        if complete {
+            Err(ValidationError(
+                "Quantity is required when marked complete".to_string(),
+            ))
+        } else {
+            Ok(None)
+        }
+    } else {
+        match validate_in_range_exclusive(str, 0, 10_000) {
+            Ok(v) => Ok(Some(v)),
+            Err(e) => Err(e),
+        }
+    }
+}
+
+pub fn validate_optional_bristol(
+    complete: bool,
+    bristol: Option<Bristol>,
+) -> Result<Option<Bristol>, ValidationError> {
+    if bristol.is_none() {
+        if complete {
+            Err(ValidationError(
+                "Bristol type is required when marked complete".to_string(),
+            ))
+        } else {
+            Ok(None)
+        }
+    } else {
+        Ok(bristol)
+    }
+}
+
+pub fn validate_bristol_quantity(
+    bristol: &Result<Option<Bristol>, ValidationError>,
+    quantity: &Result<Option<i32>, ValidationError>,
+) -> Result<(), ValidationError> {
+    match (bristol, quantity) {
+        (Ok(Some(Bristol::B0)), Ok(Some(q))) if *q > 0 => Err(ValidationError(
+            "Quantity must be 0 when Bristol is B0".to_string(),
+        )),
+        (Ok(Some(b)), Ok(Some(q))) if *b != Bristol::B0 && *q == 0 => Err(ValidationError(
+            "Quantity must be greater than 0 when Bristol is not B0".to_string(),
+        )),
+        _ => Ok(()),
+    }
 }
 
 pub fn validate_in_range<T>(str: &str, min: T, max: T) -> Result<T, ValidationError>

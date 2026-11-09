@@ -97,3 +97,20 @@ pub use consumption_consumables::ConsumptionConsumable;
 pub use consumption_consumables::ConsumptionConsumableId;
 pub use consumption_consumables::ConsumptionItem;
 pub use consumption_consumables::NewConsumptionConsumable;
+
+mod schedules;
+pub use schedules::ChangeSchedule;
+pub use schedules::NewSchedule;
+pub use schedules::Schedule;
+pub use schedules::ScheduleDue;
+pub use schedules::ScheduleId;
+pub use schedules::ScheduleItemStatus;
+pub use schedules::ScheduleStatus;
+pub use schedules::ScheduleWithItems;
+
+mod schedule_consumables;
+pub use schedule_consumables::ChangeScheduleConsumable;
+pub use schedule_consumables::NewScheduleConsumable;
+pub use schedule_consumables::ScheduleConsumable;
+pub use schedule_consumables::ScheduleConsumableId;
+pub use schedule_consumables::ScheduleItem;

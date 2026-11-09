@@ -1,6 +1,6 @@
 use crate::{
     Route,
-    components::{consumables, timeline},
+    components::{consumables, schedules, timeline},
     dt::get_date_for_dt,
     use_user,
 };
@@ -89,6 +89,18 @@ pub fn Navbar() -> Element {
                                 dialog: timeline::DialogReference::Idle,
                             },
                             title: "Today",
+                            show_menu,
+                        }
+                        MenuItem {
+                            route: Route::IncompleteList { },
+                            title: "Incomplete",
+                            show_menu,
+                        }
+                        MenuItem {
+                            route: Route::ScheduleList {
+                                dialog: schedules::ListDialogReference::Idle,
+                            },
+                            title: "Schedules",
                             show_menu,
                         }
                         MenuItem {

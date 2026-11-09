@@ -59,6 +59,51 @@ pub async fn get_consumptions_for_time_range(
 }
 
 #[server]
+pub async fn get_consumptions_incomplete(
+    user_id: UserId,
+) -> Result<Vec<models::ConsumptionWithItems>, ServerFnError> {
+    pub fn items_to_front_end(
+        items: Vec<(
+            crate::server::database::models::consumption_consumables::ConsumptionConsumable,
+            crate::server::database::models::consumables::Consumable,
+        )>,
+    ) -> Vec<models::ConsumptionItem> {
+        items
+            .into_iter()
+            .map(|(consumption_consumable, consumable)| {
+                models::ConsumptionItem::new(
+                    models::ConsumptionConsumable::from(consumption_consumable),
+                    models::Consumable::from(consumable),
+                )
+            })
+            .collect()
+    }
+
+    let logged_in_user_id = get_user_id().await?;
+    if user_id != logged_in_user_id {
+        return Err(ServerFnError::new(
+            "User ID does not match the logged in user",
+        ));
+    }
+
+    let mut conn = get_database_connection().await?;
+    crate::server::database::models::consumptions::get_consumptions_incomplete(
+        &mut conn,
+        user_id.as_inner(),
+    )
+    .await
+    .map(|x| {
+        x.into_iter()
+            .map(|(consumption, items)| {
+                ConsumptionWithItems::new(consumption.into(), items_to_front_end(items))
+            })
+            .collect()
+    })
+    .map_err(AppError::from)
+    .map_err(ServerFnError::from)
+}
+
+#[server]
 pub async fn get_child_consumables(
     parent_id: ConsumptionId,
 ) -> Result<Vec<models::ConsumptionItem>, ServerFnError> {

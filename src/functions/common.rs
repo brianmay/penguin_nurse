@@ -34,8 +34,8 @@ pub async fn get_database_connection() -> Result<DatabaseConnection, ServerFnErr
 pub async fn get_user_id() -> Result<UserId, ServerFnError> {
     let session: Session = FullstackContext::extract().await?;
     session
-        .user
-        .as_ref()
+        .user()
+        .await
         .map(|x| UserId::new(x.id))
         .ok_or(ServerFnError::new("Not Logged In".to_string()))
 }
@@ -43,8 +43,8 @@ pub async fn get_user_id() -> Result<UserId, ServerFnError> {
 pub async fn assert_is_admin() -> Result<(), ServerFnError> {
     let session: Session = FullstackContext::extract().await?;
     let user = session
-        .user
-        .as_ref()
+        .user()
+        .await
         .ok_or(ServerFnError::new("Not Logged In".to_string()))?;
     user.is_admin
         .then_some(())

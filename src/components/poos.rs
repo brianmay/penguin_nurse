@@ -1,4 +1,5 @@
-use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
+use chrono::Duration;
+use chrono::{DateTime, FixedOffset, Local, Utc};
 use classes::classes;
 use dioxus::prelude::*;
 use palette::Hsv;
@@ -9,10 +10,11 @@ use crate::{
         times::time_delta_to_string,
     },
     forms::{
-        Colour, Dialog, EditError, FieldValue, FormSaveCancelButton, InputColour, InputDateTime,
-        InputDuration, InputNumber, InputPooBristolType, InputTextArea, InputUrgency, Saving,
-        ValidationError, validate_bristol, validate_colour, validate_comments, validate_duration,
-        validate_fixed_offset_date_time, validate_poo_quantity, validate_urgency,
+        Colour, Dialog, EditError, FieldValue, FormSaveCancelButton, InputBoolean, InputColour,
+        InputDateTime, InputDuration, InputNumber, InputPooBristolType, InputTextArea,
+        InputUrgency, Saving, ValidationError, validate_bristol_quantity, validate_colour_maybe,
+        validate_comments, validate_fixed_offset_date_time, validate_optional_bristol,
+        validate_optional_chrono_duration, validate_optional_poo_quantity, validate_urgency,
     },
     functions::poos::{create_poo, delete_poo, update_poo},
     models::{Bristol, ChangePoo, MaybeSet, NewPoo, Poo, Urgency, UserId},
@@ -27,15 +29,16 @@ pub enum Operation {
 #[derive(Debug, Clone)]
 struct Validate {
     time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    duration: Memo<Result<TimeDelta, ValidationError>>,
+    duration: Memo<Result<Option<Duration>, ValidationError>>,
     urgency: Memo<Result<Urgency, ValidationError>>,
-    quantity: Memo<Result<i32, ValidationError>>,
-    bristol: Memo<Result<Bristol, ValidationError>>,
+    quantity: Memo<Result<Option<i32>, ValidationError>>,
+    bristol: Memo<Result<Option<Bristol>, ValidationError>>,
+    bristol_quantity: Memo<Result<(), ValidationError>>,
     colour: Memo<Result<Option<Hsv>, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
-async fn do_save(op: &Operation, validate: &Validate) -> Result<Poo, EditError> {
+async fn do_save(op: &Operation, validate: &Validate, complete: bool) -> Result<Poo, EditError> {
     let time = validate.time.read().clone()?;
     let duration = validate.duration.read().clone()?;
     let urgency = validate.urgency.read().clone()?;
@@ -55,6 +58,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Poo, EditError> 
                 bristol,
                 colour,
                 comments,
+                complete,
             };
             create_poo(updates).await.map_err(EditError::Server)
         }
@@ -68,6 +72,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Poo, EditError> 
                 bristol: MaybeSet::Set(bristol),
                 colour: MaybeSet::Set(colour),
                 comments: MaybeSet::Set(comments),
+                complete: MaybeSet::Set(complete),
             };
             update_poo(poo.id, changes).await.map_err(EditError::Server)
         }
@@ -84,17 +89,21 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
         Operation::Create { .. } => String::new(),
         Operation::Update { poo } => poo.duration.as_raw(),
     });
+    let complete = use_signal(|| match &op {
+        Operation::Create { .. } => false,
+        Operation::Update { poo } => poo.complete,
+    });
     let urgency = use_signal(|| match &op {
         Operation::Create { .. } => None,
         Operation::Update { poo } => Some(poo.urgency),
     });
     let quantity = use_signal(|| match &op {
         Operation::Create { .. } => String::new(),
-        Operation::Update { poo } => poo.quantity.as_raw(),
+        Operation::Update { poo } => poo.quantity.map(|q| q.to_string()).unwrap_or_default(),
     });
     let bristol = use_signal(|| match &op {
         Operation::Create { .. } => None,
-        Operation::Update { poo } => Some(poo.bristol),
+        Operation::Update { poo } => poo.bristol,
     });
     let colour = use_signal(|| match &op {
         Operation::Create { .. } => (String::new(), String::new(), String::new()),
@@ -115,15 +124,22 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
         Operation::Update { poo } => poo.comments.as_ref().cloned().unwrap_or_default(),
     });
 
+    let quantity_validate =
+        use_memo(move || validate_optional_poo_quantity(*complete.read(), &quantity()));
+    let bristol_validate = use_memo(move || validate_optional_bristol(*complete.read(), bristol()));
     let validate = {
-        let validate_quantity = use_memo(move || validate_poo_quantity(&quantity()));
         Validate {
             time: use_memo(move || validate_fixed_offset_date_time(&time())),
-            duration: use_memo(move || validate_duration(&duration())),
+            duration: use_memo(move || {
+                validate_optional_chrono_duration(*complete.read(), &duration())
+            }),
             urgency: use_memo(move || validate_urgency(urgency())),
-            quantity: validate_quantity,
-            bristol: use_memo(move || validate_bristol(bristol())),
-            colour: use_memo(move || validate_colour(&validate_quantity.read(), colour())),
+            quantity: quantity_validate,
+            bristol: bristol_validate,
+            bristol_quantity: use_memo(move || {
+                validate_bristol_quantity(&bristol_validate.read(), &quantity_validate.read())
+            }),
+            colour: use_memo(move || validate_colour_maybe(&quantity_validate.read(), colour())),
             comments: use_memo(move || validate_comments(&comments())),
         }
     };
@@ -138,6 +154,7 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
             || validate.urgency.read().is_err()
             || validate.quantity.read().is_err()
             || validate.bristol.read().is_err()
+            || validate.bristol_quantity.read().is_err()
             || validate.colour.read().is_err()
             || validate.comments.read().is_err()
             || disabled()
@@ -145,13 +162,15 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
 
     let op_clone = op.clone();
     let validate_clone = validate.clone();
+    let complete_clone = *complete.read();
     let on_save = use_callback(move |()| {
         let op = op_clone.clone();
         let validate = validate_clone.clone();
+        let complete = complete_clone;
         spawn(async move {
             saving.set(Saving::Yes);
 
-            let result = do_save(&op, &validate).await;
+            let result = do_save(&op, &validate, complete).await;
             match result {
                 Ok(poo) => {
                     saving.set(Saving::Finished(Ok(())));
@@ -186,6 +205,13 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
                 validate: validate.time,
                 disabled,
             }
+            InputUrgency {
+                id: "urgency",
+                label: "Urgency",
+                value: urgency,
+                validate: validate.urgency,
+                disabled,
+            }
             InputDuration {
                 id: "duration",
                 label: "Duration",
@@ -194,11 +220,10 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
                 validate: validate.duration,
                 disabled,
             }
-            InputUrgency {
-                id: "urgency",
-                label: "Urgency",
-                value: urgency,
-                validate: validate.urgency,
+            InputBoolean {
+                id: "complete",
+                label: "Complete",
+                value: complete,
                 disabled,
             }
             InputNumber {
@@ -214,6 +239,9 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
                 value: bristol,
                 validate: validate.bristol,
                 disabled,
+            }
+            if let Err(err) = &*validate.bristol_quantity.read() {
+                div { class: "text-red-500", "{err}" }
             }
             InputColour {
                 id: "colour",
@@ -315,41 +343,51 @@ pub fn poo_title() -> &'static str {
 }
 
 #[component]
-pub fn PooDuration(duration: chrono::TimeDelta) -> Element {
-    let text = time_delta_to_string(duration);
-
-    let classes = if duration.num_seconds() == 0 {
-        classes!["text-error"]
-    } else if duration.num_minutes() < 3 {
-        classes!["text-success"]
-    } else if duration.num_minutes() < 10 {
-        classes!["text-warning"]
-    } else {
-        classes!["text-error"]
-    };
-
-    rsx! {
-        span { class: classes, {text} }
+pub fn PooDuration(duration: Option<chrono::Duration>) -> Element {
+    match duration {
+        Some(d) => {
+            let text = time_delta_to_string(d);
+            let classes = if d.num_seconds() == 0 {
+                classes!["text-error"]
+            } else if d.num_minutes() < 3 {
+                classes!["text-success"]
+            } else if d.num_minutes() < 10 {
+                classes!["text-warning"]
+            } else {
+                classes!["text-error"]
+            };
+            rsx! {
+                span { class: classes, {text} }
+            }
+        }
+        None => rsx! {
+            span { class: "text-gray-400", "No duration" }
+        },
     }
 }
 
 #[component]
-pub fn PooBristolLabel(bristol: Bristol) -> Element {
-    let bristol_string = bristol.as_title();
-
-    let classes = match bristol {
-        Bristol::B0 => classes!["text-error"],
-        Bristol::B1 => classes!["text-error"],
-        Bristol::B2 => classes!["text-success"],
-        Bristol::B3 => classes!["text-success"],
-        Bristol::B4 => classes!["text-success"],
-        Bristol::B5 => classes!["text-warning"],
-        Bristol::B6 => classes!["text-warning"],
-        Bristol::B7 => classes!["text-error"],
-    };
-
-    rsx! {
-        span { class: classes, {bristol_string} }
+pub fn PooBristolLabel(bristol: Option<Bristol>) -> Element {
+    match bristol {
+        Some(b) => {
+            let bristol_string = b.as_title();
+            let classes = match b {
+                Bristol::B0 => classes!["text-error"],
+                Bristol::B1 => classes!["text-error"],
+                Bristol::B2 => classes!["text-success"],
+                Bristol::B3 => classes!["text-success"],
+                Bristol::B4 => classes!["text-success"],
+                Bristol::B5 => classes!["text-warning"],
+                Bristol::B6 => classes!["text-warning"],
+                Bristol::B7 => classes!["text-error"],
+            };
+            rsx! {
+                span { class: classes, {bristol_string} }
+            }
+        }
+        None => rsx! {
+            span { class: "text-gray-400", "No Bristol type" }
+        },
     }
 }
 
@@ -371,17 +409,23 @@ pub fn PooBristolIcon(bristol: Bristol) -> Element {
 }
 
 #[component]
-pub fn PooQuantity(quantity: i32) -> Element {
-    let classes = if quantity == 0 {
-        classes!["text-error"]
-    } else if quantity < 2 {
-        classes!["text-warning"]
-    } else {
-        classes!["text-success"]
-    };
-
-    rsx! {
-        span { class: classes, {quantity.to_string() + " out of 10"} }
+pub fn PooQuantity(quantity: Option<i32>) -> Element {
+    match quantity {
+        Some(q) => {
+            let classes = if q == 0 {
+                classes!["text-error"]
+            } else if q < 2 {
+                classes!["text-warning"]
+            } else {
+                classes!["text-success"]
+            };
+            rsx! {
+                span { class: classes, {q.to_string() + " out of 10"} }
+            }
+        }
+        None => rsx! {
+            span { class: "text-gray-400", "No quantity" }
+        },
     }
 }
 
