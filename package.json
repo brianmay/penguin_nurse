@@ -15,7 +15,7 @@
   },
   "overrides": {
     "@tailwindcss/typography": {
-      "postcss-selector-parser": "7.2.0"
+      "postcss-selector-parser": "7.2.1"
     },
     "serialize-javascript": "7.1.4"
   }
