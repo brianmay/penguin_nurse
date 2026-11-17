@@ -106,3 +106,31 @@ version = "3.1.5"
 ecosystem = "npm"
 vulnerability.ignore = true
 reason = "GHSA-g3hv-75wg-m249 concerns globparts amplification in minimatch 10.2.6; minimatch 3.1.5 lacks this code path"
+
+[[PackageOverrides]]
+name = "chrono"
+version = "0.4.45"
+ecosystem = "crates.io"
+vulnerability.ignore = true
+reason = "RUSTSEC-2026-0543 reports chrono as unmaintained and lists no patched version; suppress until the required date/time dependency can be migrated"
+
+[[PackageOverrides]]
+name = "chrono-tz"
+version = "0.10.4"
+ecosystem = "crates.io"
+vulnerability.ignore = true
+reason = "RUSTSEC-2026-0555 reports chrono-tz as unmaintained and lists no patched version; suppress until the required timezone dependency can be migrated"
+
+[[PackageOverrides]]
+name = "picomatch"
+version = "2.3.2"
+ecosystem = "npm"
+vulnerability.ignore = true
+reason = "GHSA-fc5q-39xc-vjpf has no patched version; this transitive dependency is dev-only and not shipped with the application"
+
+[[PackageOverrides]]
+name = "picomatch"
+version = "4.0.7"
+ecosystem = "npm"
+vulnerability.ignore = true
+reason = "GHSA-fc5q-39xc-vjpf has no patched version; this transitive dependency is dev-only and not shipped with the application"
