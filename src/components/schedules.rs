@@ -1,11 +1,11 @@
 use std::{collections::HashSet, num::ParseIntError, str::FromStr};
 
-use chrono::{Local, NaiveTime, Utc};
+use chrono::{Local, NaiveTime};
 use dioxus::prelude::*;
 use dioxus_fullstack::ServerFnError;
 use dioxus_router::ToQueryArgument;
 use itertools::intersperse;
-use penguin_nurse::validation::schedule_errors;
+use penguin_nurse::validation::{ingredient_type_matches, schedule_errors};
 use tap::Pipe;
 use thiserror::Error;
 
@@ -16,7 +16,6 @@ use crate::{
         consumptions::{ConsumptionItemList, ConsumptionTypeIcon},
         events::{EventDateTimeShort, Markdown},
     },
-    dt::{get_date_for_dt, get_utc_times_for_date},
     forms::{
         Dialog, EditError, FieldValue, FormCloseButton, FormDeleteButton, FormEditButton,
         FormSaveCancelButton, InputBoolean, InputConsumable, InputConsumptionType, InputNumber,
@@ -25,8 +24,7 @@ use crate::{
         validate_time_of_day,
     },
     functions::consumptions::{
-        create_consumption, create_consumption_consumable, get_consumptions_for_time_range,
-        get_consumptions_incomplete,
+        create_consumption, create_consumption_consumable, get_consumptions_incomplete,
     },
     functions::schedules::{
         create_schedule, create_schedule_consumable, delete_schedule, delete_schedule_consumable,
@@ -960,7 +958,8 @@ pub fn ScheduleDue(
 }
 
 /// Dialog to pick an existing consumption to add scheduled ingredients to.
-/// Offers today's consumptions plus incomplete ones.
+/// Offers incomplete consumptions whose consumption type is compatible with
+/// the schedule's consumption type.
 #[component]
 pub fn ScheduleAddToConsumption(
     schedule: Schedule,
@@ -969,25 +968,21 @@ pub fn ScheduleAddToConsumption(
     on_added: Callback<Consumption>,
 ) -> Element {
     let user_id = schedule.user_id;
+    let schedule_type = schedule.consumption_type;
 
     let mut consumptions: Resource<Result<Vec<ConsumptionWithItems>, ServerFnError>> =
         use_resource(move || async move {
-            let date = get_date_for_dt(Utc::now());
-            let (start, end) = get_utc_times_for_date(date)?;
+            let list = get_consumptions_incomplete(user_id).await?;
 
-            let mut list = get_consumptions_for_time_range(user_id, start, end).await?;
-
-            let incomplete = get_consumptions_incomplete(user_id).await?;
-            for consumption in incomplete {
-                if !list
-                    .iter()
-                    .any(|existing| existing.consumption.id == consumption.consumption.id)
-                {
-                    list.push(consumption);
-                }
-            }
-
-            Ok(list)
+            // The schedule's consumption type plays the ingredient role
+            // relative to the consumption's parent type, e.g. an ApplySkin
+            // schedule can be added to an ApplyToes consumption.
+            list.into_iter()
+                .filter(|consumption| {
+                    ingredient_type_matches(schedule_type, consumption.consumption.consumption_type)
+                })
+                .collect::<Vec<_>>()
+                .pipe(Ok)
         });
 
     let mut state = use_signal(|| State::Idle);
@@ -1039,7 +1034,9 @@ pub fn ScheduleAddToConsumption(
             }
             Some(Ok(consumptions)) if consumptions.is_empty() => {
                 rsx! {
-                    p { class: "alert alert-info", "No consumptions found for today." }
+                    p { class: "alert alert-info",
+                        "No incomplete consumptions with a compatible consumption type found."
+                    }
                 }
             }
             Some(Ok(list)) => {

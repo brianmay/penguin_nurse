@@ -12,7 +12,7 @@ use crate::models::{
 /// for parents applied to toes, hands, face or ears. Lips, hair and eyes are
 /// not generic skin sites, so they require an exact match, as does the reverse
 /// direction (a site-specific ingredient inside an apply skin parent).
-fn ingredient_type_matches(ingredient: ConsumptionType, parent: ConsumptionType) -> bool {
+pub fn ingredient_type_matches(ingredient: ConsumptionType, parent: ConsumptionType) -> bool {
     if ingredient == parent {
         return true;
     }
