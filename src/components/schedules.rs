@@ -33,7 +33,7 @@ use crate::{
         get_child_schedule_consumables, update_schedule, update_schedule_consumable,
     },
     models::{
-        ChangeSchedule, ChangeScheduleConsumable, Consumable, ConsumableId,
+        ChangeSchedule, ChangeScheduleConsumable, Consumable, ConsumableId, Consumption,
         ConsumptionConsumableId, ConsumptionId, ConsumptionType, ConsumptionWithItems, MaybeSet,
         NewConsumption, NewConsumptionConsumable, NewSchedule, NewScheduleConsumable, Schedule,
         ScheduleConsumable, ScheduleConsumableId, ScheduleId, ScheduleItem, ScheduleStatus, UserId,
@@ -754,11 +754,12 @@ fn ConsumableScheduleForm(
 }
 
 /// Records the given scheduled ingredients as a new, incomplete consumption
-/// with the current time and the schedule's consumption type.
+/// with the current time and the schedule's consumption type, returning the
+/// new consumption.
 async fn record_items_as_consumption(
     schedule: &Schedule,
     items: Vec<ScheduleItem>,
-) -> Result<(), ServerFnError> {
+) -> Result<Consumption, ServerFnError> {
     let new_consumption = NewConsumption {
         user_id: schedule.user_id,
         time: Local::now().fixed_offset(),
@@ -770,7 +771,9 @@ async fn record_items_as_consumption(
     };
     let consumption = create_consumption(new_consumption).await?;
 
-    add_items_to_consumption(consumption.id, items).await
+    add_items_to_consumption(consumption.id, items).await?;
+
+    consumption.pipe(Ok)
 }
 
 /// Adds the given scheduled ingredients to an existing consumption.
@@ -805,7 +808,7 @@ fn selected_items(status: &ScheduleStatus, selected: &HashSet<ConsumableId>) -> 
 #[component]
 pub fn ScheduleDue(
     status: ReadSignal<ScheduleStatus>,
-    on_recorded: Callback<()>,
+    on_recorded: Callback<Consumption>,
     on_add_existing: Callback<(Schedule, Vec<ScheduleItem>)>,
 ) -> Element {
     let unrecorded: Vec<ScheduleItem> = status()
@@ -848,8 +851,13 @@ pub fn ScheduleDue(
         spawn(async move {
             state.set(State::Saving);
             let result = record_items_as_consumption(&schedule, items).await;
-            state.set(State::Finished(result));
-            on_recorded(());
+            match result {
+                Ok(consumption) => {
+                    state.set(State::Finished(Ok(())));
+                    on_recorded(consumption);
+                }
+                Err(err) => state.set(State::Finished(Err(err))),
+            }
         });
     });
 
@@ -915,7 +923,7 @@ pub fn ScheduleDue(
                 }
                 State::Finished(Ok(())) => {
                     rsx! {
-                        div { class: "alert alert-success", "Recorded! Finish the details on the Incomplete page." }
+                        div { class: "alert alert-success", "Recorded!" }
                     }
                 }
                 State::Finished(Err(err)) => {
@@ -958,7 +966,7 @@ pub fn ScheduleAddToConsumption(
     schedule: Schedule,
     items: Vec<ScheduleItem>,
     on_close: Callback<()>,
-    on_added: Callback<()>,
+    on_added: Callback<Consumption>,
 ) -> Element {
     let user_id = schedule.user_id;
 
@@ -1043,12 +1051,14 @@ pub fn ScheduleAddToConsumption(
                                     class: "p-4 mb-1 bg-gray-700 border-2 rounded-lg border-gray-500 hover:border-gray-50",
                                     onclick: {
                                         let consumption_id = consumption.consumption.id;
+                                        let consumption_clone = consumption.consumption.clone();
                                         let items_clone = items.clone();
                                         move |_| {
                                             if *state.read() == State::Saving {
                                                 return;
                                             }
                                             let items_clone = items_clone.clone();
+                                            let consumption = consumption_clone.clone();
                                             spawn(async move {
                                                 state.set(State::Saving);
                                                 let result = add_items_to_consumption(
@@ -1056,9 +1066,16 @@ pub fn ScheduleAddToConsumption(
                                                     items_clone,
                                                 )
                                                 .await;
-                                                state.set(State::Finished(result));
                                                 consumptions.restart();
-                                                on_added(());
+                                                match result {
+                                                    Ok(()) => {
+                                                        state.set(State::Finished(Ok(())));
+                                                        on_added(consumption);
+                                                    }
+                                                    Err(err) => {
+                                                        state.set(State::Finished(Err(err)));
+                                                    }
+                                                }
                                             });
                                         }
                                     },

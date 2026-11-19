@@ -12,7 +12,10 @@ use crate::{
     components::{
         StrIcon,
         buttons::{ChangeButton, CreateButton, DeleteButton},
-        consumptions::ConsumptionTypeIcon,
+        consumptions::{
+            ActiveDialog as ConsumptionActiveDialog, ConsumptionDialog, ConsumptionTypeIcon,
+            Operation as ConsumptionOperation,
+        },
         events::Markdown,
         schedules::{
             ActiveDialog, ListDialogReference, Operation, ScheduleAddToConsumption, ScheduleDialog,
@@ -21,7 +24,10 @@ use crate::{
     },
     forms::Dialog,
     functions::schedules::{get_schedule_by_id, get_schedules, get_today_schedule_status},
-    models::{Schedule, ScheduleId, ScheduleItem, ScheduleStatus, ScheduleWithItems},
+    models::{
+        Consumable, Consumption, Schedule, ScheduleId, ScheduleItem, ScheduleStatus,
+        ScheduleWithItems,
+    },
     use_user,
 };
 
@@ -196,8 +202,44 @@ pub fn ScheduleList(dialog: ReadSignal<Option<ListDialogReference>>) -> Element 
 
     let mut picker: Signal<Option<(Schedule, Vec<ScheduleItem>)>> = use_signal(|| None);
 
-    let on_recorded = Callback::new(move |()| {
+    // Consumption edit dialog opened after recording scheduled ingredients.
+    // Holds the same dialog variants the timeline view uses, so ingredients
+    // are reachable the same way.
+    let mut consumption_dialog: Signal<Option<ConsumptionActiveDialog>> = use_signal(|| None);
+
+    let show_consumption_update_basic = Callback::new(move |consumption: Consumption| {
+        consumption_dialog.set(Some(ConsumptionActiveDialog::UpdateBasic(
+            ConsumptionOperation::Update { consumption },
+        )));
+    });
+
+    let show_consumption_update_ingredients = Callback::new(move |consumption: Consumption| {
+        consumption_dialog.set(Some(ConsumptionActiveDialog::UpdateIngredients(
+            consumption,
+        )));
+    });
+
+    let show_consumption_ingredient_update_basic = Callback::new(
+        move |(consumption, consumable): (Consumption, Consumable)| {
+            consumption_dialog.set(Some(ConsumptionActiveDialog::NestedIngredient(
+                consumption,
+                consumable,
+            )));
+        },
+    );
+
+    let show_consumption_ingredient_update_ingredients = Callback::new(
+        move |(consumption, consumable): (Consumption, Consumable)| {
+            consumption_dialog.set(Some(ConsumptionActiveDialog::NestedIngredients(
+                consumption,
+                consumable,
+            )));
+        },
+    );
+
+    let on_recorded = Callback::new(move |consumption: Consumption| {
         status.restart();
+        show_consumption_update_basic(consumption);
     });
 
     let on_add_existing = Callback::new(move |(schedule, items): (Schedule, Vec<ScheduleItem>)| {
@@ -447,11 +489,44 @@ pub fn ScheduleList(dialog: ReadSignal<Option<ListDialogReference>>) -> Element 
                     on_close: move |_| {
                         picker.set(None);
                     },
-                    on_added: move |()| {
+                    on_added: move |consumption: Consumption| {
                         picker.set(None);
                         status.restart();
+                        show_consumption_update_basic(consumption);
                     },
                 }
+            }
+        }
+
+        if let Some(dialog) = consumption_dialog() {
+            ConsumptionDialog {
+                dialog: dialog.clone(),
+                on_change: move |_consumption: Consumption| {
+                    status.restart();
+                },
+                on_change_ingredients: move |_consumption: Consumption| {
+                    status.restart();
+                },
+                on_delete: move |_consumption: Consumption| {
+                    status.restart();
+                },
+                show_update_basic: move |consumption: Consumption| {
+                    show_consumption_update_basic(consumption);
+                },
+                show_update_ingredients: move |consumption: Consumption| {
+                    show_consumption_update_ingredients(consumption);
+                },
+                show_ingredient_update_basic:
+                    move |(consumption, consumable): (Consumption, Consumable)| {
+                        show_consumption_ingredient_update_basic((consumption, consumable));
+                    },
+                show_ingredient_update_ingredients:
+                    move |(consumption, consumable): (Consumption, Consumable)| {
+                        show_consumption_ingredient_update_ingredients((consumption, consumable));
+                    },
+                on_close: move |()| {
+                    consumption_dialog.set(None);
+                },
             }
         }
     }
