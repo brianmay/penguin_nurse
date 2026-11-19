@@ -1,9 +1,9 @@
 use std::ops::Deref;
 
-use chrono::Local;
 use dioxus::prelude::*;
 use dioxus_fullstack::ServerFnError;
 use dioxus_router::navigator;
+use jiff::tz::TimeZone;
 use tap::Pipe;
 
 use crate::Route;
@@ -153,7 +153,7 @@ pub fn UserDetail(user_id: UserId, dialog: ReadSignal<Option<DetailsDialogRefere
                         }
                         tr {
                             td { "Date of Birth" }
-                            td { {obj.date_of_birth.map(|d| d.format("%Y-%m-%d").to_string()).unwrap_or_default()} }
+                            td { {obj.date_of_birth.map(|d| d.strftime("%Y-%m-%d").to_string()).unwrap_or_default()} }
                         }
                         tr {
                             td { "Sex" }
@@ -161,11 +161,11 @@ pub fn UserDetail(user_id: UserId, dialog: ReadSignal<Option<DetailsDialogRefere
                         }
                         tr {
                             td { "Created" }
-                            td { {obj.created_at.with_timezone(&Local).to_string()} }
+                            td { {obj.created_at.to_zoned_datetime(TimeZone::system()).strftime("%Y-%m-%d %H:%M:%S%.f %:z").to_string()} }
                         }
                         tr {
                             td { "Updated" }
-                            td { {obj.updated_at.with_timezone(&Local).to_string()} }
+                            td { {obj.updated_at.to_zoned_datetime(TimeZone::system()).strftime("%Y-%m-%d %H:%M:%S%.f %:z").to_string()} }
                         }
                     }
                 }

@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use chrono::NaiveDate;
+use jiff::civil::Date;
 
 use crate::models::{Exercise, HealthMetric, Symptom, WeeUrge};
 
@@ -26,7 +26,7 @@ impl Timeline {
     pub fn add_wee(&mut self, wee: Wee) {
         self.0.push(Entry {
             event: Event::Start,
-            time: wee.time,
+            time: wee.time.clone(),
             data: EntryData::Wee(wee),
         });
     }
@@ -40,7 +40,7 @@ impl Timeline {
     pub fn add_wee_urge(&mut self, wee_urge: WeeUrge) {
         self.0.push(Entry {
             event: Event::Start,
-            time: wee_urge.time,
+            time: wee_urge.time.clone(),
             data: EntryData::WeeUrge(wee_urge),
         });
     }
@@ -54,7 +54,7 @@ impl Timeline {
     pub fn add_poo(&mut self, poo: Poo) {
         self.0.push(Entry {
             event: Event::Start,
-            time: poo.time,
+            time: poo.time.clone(),
             data: EntryData::Poo(poo),
         });
     }
@@ -68,7 +68,7 @@ impl Timeline {
     pub fn add_consumption(&mut self, consumption: ConsumptionWithItems) {
         self.0.push(Entry {
             event: Event::Start,
-            time: consumption.consumption.time,
+            time: consumption.consumption.time.clone(),
             data: EntryData::Consumption(consumption),
         });
     }
@@ -82,7 +82,7 @@ impl Timeline {
     pub fn add_exercise(&mut self, exercise: Exercise) {
         self.0.push(Entry {
             event: Event::Start,
-            time: exercise.time,
+            time: exercise.time.clone(),
             data: EntryData::Exercise(exercise),
         });
     }
@@ -96,7 +96,7 @@ impl Timeline {
     pub fn add_health_metric(&mut self, health_metric: HealthMetric) {
         self.0.push(Entry {
             event: Event::Start,
-            time: health_metric.time,
+            time: health_metric.time.clone(),
             data: EntryData::HealthMetric(health_metric),
         });
     }
@@ -110,7 +110,7 @@ impl Timeline {
     pub fn add_symptom(&mut self, symptom: Symptom) {
         self.0.push(Entry {
             event: Event::Start,
-            time: symptom.time,
+            time: symptom.time.clone(),
             data: EntryData::Symptom(symptom),
         });
     }
@@ -124,7 +124,7 @@ impl Timeline {
     pub fn add_reflux(&mut self, reflux: crate::models::Reflux) {
         self.0.push(Entry {
             event: Event::Start,
-            time: reflux.time,
+            time: reflux.time.clone(),
             data: EntryData::Reflux(reflux),
         });
     }
@@ -138,13 +138,13 @@ impl Timeline {
     pub fn add_note(&mut self, note: crate::models::Note) {
         self.0.push(Entry {
             event: Event::Start,
-            time: note.time,
+            time: note.time.clone(),
             data: EntryData::Note(note),
         });
     }
 
     pub fn sort(&mut self) {
-        self.0.sort_by_key(|a| a.time);
+        self.0.sort_by_key(|a| a.time.clone());
     }
 
     pub fn iter(&self) -> std::slice::Iter<'_, Entry> {
@@ -155,10 +155,10 @@ impl Timeline {
         self.0.is_empty()
     }
 
-    pub fn grouped_by_date(&self) -> BTreeMap<NaiveDate, Vec<&Entry>> {
-        let mut groups: BTreeMap<NaiveDate, Vec<&Entry>> = BTreeMap::new();
+    pub fn grouped_by_date(&self) -> BTreeMap<Date, Vec<&Entry>> {
+        let mut groups: BTreeMap<Date, Vec<&Entry>> = BTreeMap::new();
         for entry in &self.0 {
-            let date = entry.time.date_naive();
+            let date = entry.time.date();
             groups.entry(date).or_default().push(entry);
         }
         groups

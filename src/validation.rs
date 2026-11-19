@@ -80,7 +80,7 @@ pub fn consumption_errors(
 
     if consumption.complete
         && let Some(duration) = consumption.duration
-        && duration.num_seconds() < 2
+        && duration.as_secs() < 2
     {
         errors.push(format!("Duration {} is suspiciously short", duration));
     }
@@ -155,7 +155,7 @@ pub fn exercise_errors(exercise: &Exercise) -> Vec<String> {
 
     if exercise.complete
         && let Some(duration) = exercise.duration
-        && duration.num_seconds() < 2
+        && duration.as_secs() < 2
     {
         errors.push(format!("Duration {} is suspiciously short", duration));
     }
@@ -172,7 +172,7 @@ pub fn reflux_errors(reflux: &Reflux) -> Vec<String> {
 
     if reflux.complete
         && let Some(duration) = reflux.duration
-        && duration.num_seconds() < 1
+        && duration.as_secs() < 1
     {
         errors.push(format!("Duration {} is suspiciously short", duration));
     }
@@ -189,7 +189,7 @@ pub fn wee_errors(wee: &Wee) -> Vec<String> {
 
     if wee.complete
         && let Some(duration) = wee.duration
-        && duration.num_seconds() < 2
+        && duration.as_secs() < 2
     {
         errors.push(format!("Duration {} is suspiciously short", duration));
     }
@@ -206,7 +206,7 @@ pub fn poo_errors(poo: &Poo) -> Vec<String> {
 
     if poo.complete
         && let Some(duration) = poo.duration
-        && duration.num_seconds() < 2
+        && duration.as_secs() < 2
     {
         errors.push(format!("Duration {} is suspiciously short", duration));
     }
@@ -231,7 +231,7 @@ pub fn entry_errors(entry_data: &EntryData) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use bigdecimal::BigDecimal;
-    use chrono::Utc;
+    use jiff::Timestamp;
 
     use crate::models::{
         Consumable, ConsumableId, ConsumableItem, ConsumableUnit, ConsumptionConsumable,
@@ -256,8 +256,8 @@ mod tests {
             comments: None,
             created: None,
             destroyed: None,
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
+            created_at: Timestamp::now(),
+            updated_at: Timestamp::now(),
             consumption_type,
         }
     }
@@ -277,8 +277,8 @@ mod tests {
                 quantity: None,
                 liquid_mls,
                 comments: None,
-                created_at: Utc::now(),
-                updated_at: Utc::now(),
+                created_at: Timestamp::now(),
+                updated_at: Timestamp::now(),
             },
             make_consumable(child_id, consumption_type),
         )
@@ -292,14 +292,14 @@ mod tests {
         Consumption {
             id: ConsumptionId::new(1),
             user_id: UserId::new(1),
-            time: chrono::DateTime::parse_from_rfc3339("2024-01-01T12:00:00+00:00").unwrap(),
-            duration: Some(chrono::TimeDelta::seconds(duration_secs)),
+            time: "2024-01-01T12:00:00+00:00[UTC]".parse().unwrap(),
+            duration: Some(jiff::SignedDuration::from_secs(duration_secs)),
             consumption_type,
             liquid_mls,
             comments: None,
             complete: true,
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
+            created_at: Timestamp::now(),
+            updated_at: Timestamp::now(),
         }
     }
 
@@ -318,8 +318,8 @@ mod tests {
                 quantity: None,
                 liquid_mls,
                 comments: None,
-                created_at: Utc::now(),
-                updated_at: Utc::now(),
+                created_at: Timestamp::now(),
+                updated_at: Timestamp::now(),
             },
             make_consumable(consumable_id, consumption_type),
         )
@@ -329,12 +329,12 @@ mod tests {
         Schedule {
             id: ScheduleId::new(1),
             user_id: UserId::new(1),
-            time_of_day: chrono::NaiveTime::from_hms_opt(8, 0, 0).unwrap(),
+            time_of_day: jiff::civil::time(8, 0, 0, 0),
             consumption_type,
             comments: None,
             active: true,
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
+            created_at: Timestamp::now(),
+            updated_at: Timestamp::now(),
         }
     }
 
@@ -352,8 +352,8 @@ mod tests {
                 quantity: None,
                 liquid_mls: None,
                 comments: None,
-                created_at: Utc::now(),
-                updated_at: Utc::now(),
+                created_at: Timestamp::now(),
+                updated_at: Timestamp::now(),
             },
             make_consumable(consumable_id, consumption_type),
         )

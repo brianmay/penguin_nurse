@@ -1,10 +1,10 @@
 use std::{collections::HashSet, num::ParseIntError, str::FromStr};
 
-use chrono::{Local, NaiveTime};
 use dioxus::prelude::*;
 use dioxus_fullstack::ServerFnError;
 use dioxus_router::ToQueryArgument;
 use itertools::intersperse;
+use jiff::{ZonedDateTime, civil::Time};
 use penguin_nurse::validation::{ingredient_type_matches, schedule_errors};
 use tap::Pipe;
 use thiserror::Error;
@@ -46,7 +46,7 @@ pub enum Operation {
 
 #[derive(Debug, Clone)]
 struct Validate {
-    time_of_day: Memo<Result<NaiveTime, ValidationError>>,
+    time_of_day: Memo<Result<Time, ValidationError>>,
     consumption_type: Memo<Result<ConsumptionType, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
@@ -761,7 +761,7 @@ async fn record_items_as_consumption(
 ) -> Result<Consumption, ServerFnError> {
     let new_consumption = NewConsumption {
         user_id: schedule.user_id,
-        time: Local::now().fixed_offset(),
+        time: ZonedDateTime::now(),
         duration: None,
         liquid_mls: None,
         comments: None,
@@ -1087,7 +1087,7 @@ pub fn ScheduleAddToConsumption(
                                                 }
                                             },
                                         }
-                                        EventDateTimeShort { time: consumption.consumption.time }
+                                        EventDateTimeShort { time: consumption.consumption.time.clone() }
                                     }
                                     if !consumption.items.is_empty() {
                                         ConsumptionItemList { list: consumption.items.clone() }

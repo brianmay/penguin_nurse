@@ -1,11 +1,11 @@
-use chrono::Utc;
 use dioxus::prelude::*;
 use dioxus_router::navigator;
+use jiff::Timestamp;
 
 use crate::{
     Route,
     components::{buttons::NavButton, timeline::DialogReference},
-    dt::get_date_for_dt,
+    dt::get_date_for_timestamp,
     use_user,
 };
 
@@ -24,7 +24,7 @@ pub fn Home() -> Element {
                 p { class: "text-green-300", "Welcome, {user.full_name}!" }
                 NavButton {
                     on_click: move |_| {
-                        let new_date = get_date_for_dt(Utc::now());
+                        let new_date = get_date_for_timestamp(Timestamp::now());
                         navigator
                             .push(Route::TimelineList {
                                 date: new_date,

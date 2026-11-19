@@ -1,20 +1,19 @@
-use chrono::Duration;
-use chrono::{DateTime, FixedOffset, Local, Utc};
 use classes::classes;
 use dioxus::prelude::*;
+use jiff::{SignedDuration, ZonedDateTime};
 use palette::Hsv;
 
 use crate::{
     components::{
         events::{EventTime, Markdown, UrgencyLabel, event_colour},
-        times::time_delta_to_string,
+        times::duration_to_string,
     },
     forms::{
         Colour, Dialog, EditError, FieldValue, FormSaveCancelButton, InputBoolean, InputColour,
         InputDateTime, InputDuration, InputNumber, InputPooBristolType, InputTextArea,
         InputUrgency, Saving, ValidationError, validate_bristol_quantity, validate_colour_maybe,
         validate_comments, validate_fixed_offset_date_time, validate_optional_bristol,
-        validate_optional_chrono_duration, validate_optional_poo_quantity, validate_urgency,
+        validate_optional_duration, validate_optional_poo_quantity, validate_urgency,
     },
     functions::poos::{create_poo, delete_poo, update_poo},
     models::{Bristol, ChangePoo, MaybeSet, NewPoo, Poo, Urgency, UserId},
@@ -28,8 +27,8 @@ pub enum Operation {
 
 #[derive(Debug, Clone)]
 struct Validate {
-    time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    duration: Memo<Result<Option<Duration>, ValidationError>>,
+    time: Memo<Result<ZonedDateTime, ValidationError>>,
+    duration: Memo<Result<Option<SignedDuration>, ValidationError>>,
     urgency: Memo<Result<Urgency, ValidationError>>,
     quantity: Memo<Result<Option<i32>, ValidationError>>,
     bristol: Memo<Result<Option<Bristol>, ValidationError>>,
@@ -82,7 +81,7 @@ async fn do_save(op: &Operation, validate: &Validate, complete: bool) -> Result<
 #[component]
 pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_raw(),
+        Operation::Create { .. } => ZonedDateTime::now().as_raw(),
         Operation::Update { poo } => poo.time.as_raw(),
     });
     let duration = use_signal(|| match &op {
@@ -130,9 +129,7 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
     let validate = {
         Validate {
             time: use_memo(move || validate_fixed_offset_date_time(&time())),
-            duration: use_memo(move || {
-                validate_optional_chrono_duration(*complete.read(), &duration())
-            }),
+            duration: use_memo(move || validate_optional_duration(*complete.read(), &duration())),
             urgency: use_memo(move || validate_urgency(urgency())),
             quantity: quantity_validate,
             bristol: bristol_validate,
@@ -343,15 +340,15 @@ pub fn poo_title() -> &'static str {
 }
 
 #[component]
-pub fn PooDuration(duration: Option<chrono::Duration>) -> Element {
+pub fn PooDuration(duration: Option<SignedDuration>) -> Element {
     match duration {
         Some(d) => {
-            let text = time_delta_to_string(d);
-            let classes = if d.num_seconds() == 0 {
+            let text = duration_to_string(d);
+            let classes = if d.as_secs() == 0 {
                 classes!["text-error"]
-            } else if d.num_minutes() < 3 {
+            } else if d.as_mins() < 3 {
                 classes!["text-success"]
-            } else if d.num_minutes() < 10 {
+            } else if d.as_mins() < 10 {
                 classes!["text-warning"]
             } else {
                 classes!["text-error"]

@@ -1,7 +1,7 @@
 use crate::models::{self, NoteId, UserId};
-use chrono::{DateTime, Utc};
 use dioxus::prelude::*;
 use dioxus_fullstack::{ServerFnError, server};
+use jiff::Timestamp;
 
 #[cfg(feature = "server")]
 use crate::models::MaybeSet;
@@ -9,11 +9,14 @@ use crate::models::MaybeSet;
 #[cfg(feature = "server")]
 use super::common::{AppError, get_database_connection, get_user_id};
 
+#[cfg(feature = "server")]
+use crate::server::datetime;
+
 #[server]
 pub async fn get_notes_for_time_range(
     user_id: UserId,
-    start: DateTime<Utc>,
-    end: DateTime<Utc>,
+    start: Timestamp,
+    end: Timestamp,
 ) -> Result<Vec<models::Note>, ServerFnError> {
     let logged_in_user_id = get_user_id().await?;
     if user_id != logged_in_user_id {
@@ -26,8 +29,8 @@ pub async fn get_notes_for_time_range(
     crate::server::database::models::notes::get_notes_for_time_range(
         &mut conn,
         user_id.as_inner(),
-        start,
-        end,
+        datetime::timestamp_to_chrono(start),
+        datetime::timestamp_to_chrono(end),
     )
     .await
     .map(|x| x.into_iter().map(|y| y.into()).collect())

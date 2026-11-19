@@ -37,24 +37,24 @@ impl std::fmt::Display for WeeId {
 pub struct Wee {
     pub id: WeeId,
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: Option<chrono::Duration>,
+    pub time: jiff::ZonedDateTime,
+    pub duration: Option<jiff::SignedDuration>,
     pub urgency: Urgency,
     pub leakage: Option<i32>,
     pub mls: Option<i32>,
     pub colour: Option<palette::Hsv>,
     pub comments: Option<String>,
     pub complete: bool,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff::Timestamp,
+    pub updated_at: jiff::Timestamp,
 }
 
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewWee {
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: Option<chrono::Duration>,
+    pub time: jiff::ZonedDateTime,
+    pub duration: Option<jiff::SignedDuration>,
     pub urgency: Urgency,
     pub leakage: Option<i32>,
     pub mls: Option<i32>,
@@ -67,8 +67,8 @@ pub struct NewWee {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeWee {
     pub user_id: MaybeSet<UserId>,
-    pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
-    pub duration: MaybeSet<Option<chrono::Duration>>,
+    pub time: MaybeSet<jiff::ZonedDateTime>,
+    pub duration: MaybeSet<Option<jiff::SignedDuration>>,
     pub urgency: MaybeSet<Urgency>,
     pub leakage: MaybeSet<Option<i32>>,
     pub mls: MaybeSet<Option<i32>>,

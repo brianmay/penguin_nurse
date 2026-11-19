@@ -1,9 +1,9 @@
 use std::ops::Deref;
 
-use chrono::Local;
 use dioxus::prelude::*;
 use dioxus_fullstack::ServerFnError;
 use dioxus_router::navigator;
+use jiff::tz::TimeZone;
 use penguin_nurse::validation::consumable_errors;
 use tap::Pipe;
 
@@ -71,13 +71,13 @@ fn EntryRow(
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 if let Some(created) = &consumable.created {
                     span { class: "sm:hidden", "Created: " }
-                    {created.with_timezone(&Local).to_string()}
+                    {created.to_zoned_datetime(TimeZone::system()).strftime("%Y-%m-%d %H:%M:%S%.f %:z").to_string()}
                 }
             }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 if let Some(destroyed) = &consumable.destroyed {
                     span { class: "sm:hidden", "Destroyed: " }
-                    {destroyed.with_timezone(&Local).to_string()}
+                    {destroyed.to_zoned_datetime(TimeZone::system()).strftime("%Y-%m-%d %H:%M:%S%.f %:z").to_string()}
                 }
             }
         }

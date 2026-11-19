@@ -1,14 +1,15 @@
+use chrono::Utc;
 use diesel::prelude::*;
 use diesel::{BelongingToDsl, ExpressionMethods, QueryDsl, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
 
-use chrono::Utc;
 use chrono::{DateTime, TimeDelta};
 
 use crate::models;
 use crate::server::database::models::consumables::Consumable;
 use crate::server::database::models::consumption_consumables::ConsumptionConsumable;
 use crate::server::database::{connection::DatabaseConnection, schema};
+use crate::server::datetime;
 
 #[derive(diesel_derive_enum::DbEnum, Debug, Copy, Clone)]
 #[db_enum(existing_type_path = "schema::sql_types::ConsumptionType")]
@@ -86,24 +87,22 @@ pub struct Consumption {
     pub complete: bool,
 }
 
-const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
-
 impl From<Consumption> for crate::models::Consumption {
     fn from(consumption: Consumption) -> Self {
-        let timezone =
-            chrono::FixedOffset::east_opt(consumption.utc_offset).unwrap_or(DEFAULT_TIMEZONE);
-        let time = consumption.time.with_timezone(&timezone);
+        let time = datetime::chrono_to_zoned(consumption.time, consumption.utc_offset);
 
         Self {
             id: models::ConsumptionId::new(consumption.id),
             user_id: models::UserId::new(consumption.user_id),
             time,
-            duration: consumption.duration,
+            duration: consumption
+                .duration
+                .map(datetime::chrono_to_signed_duration),
             liquid_mls: consumption.liquid_mls,
             comments: consumption.comments,
             complete: consumption.complete,
-            created_at: consumption.created_at,
-            updated_at: consumption.updated_at,
+            created_at: datetime::chrono_to_timestamp(consumption.created_at),
+            updated_at: datetime::chrono_to_timestamp(consumption.updated_at),
             consumption_type: consumption.consumption_type.into(),
         }
     }
@@ -214,9 +213,11 @@ impl<'a> NewConsumption<'a> {
     pub fn from_front_end(consumption: &'a crate::models::NewConsumption) -> Self {
         Self {
             user_id: consumption.user_id.as_inner(),
-            time: consumption.time.with_timezone(&Utc),
-            utc_offset: consumption.time.offset().local_minus_utc(),
-            duration: consumption.duration,
+            time: datetime::zoned_to_chrono_utc(&consumption.time),
+            utc_offset: consumption.time.offset().seconds(),
+            duration: consumption
+                .duration
+                .map(datetime::signed_duration_to_chrono),
             consumption_type: consumption.consumption_type.into(),
             liquid_mls: consumption.liquid_mls.as_ref(),
             comments: consumption.comments.as_deref(),
@@ -254,13 +255,18 @@ impl<'a> ChangeConsumption<'a> {
         Self {
             time: consumption
                 .time
-                .map(|time| time.with_timezone(&Utc))
+                .clone()
+                .map(|time| datetime::zoned_to_chrono_utc(&time))
                 .into_option(),
             utc_offset: consumption
                 .time
-                .map(|time| time.offset().local_minus_utc())
+                .clone()
+                .map(|time| time.offset().seconds())
                 .into_option(),
-            duration: consumption.duration.into_option(),
+            duration: consumption
+                .duration
+                .map(|duration| duration.map(datetime::signed_duration_to_chrono))
+                .into_option(),
             consumption_type: consumption.consumption_type.map_into().into_option(),
             liquid_mls: consumption.liquid_mls.as_inner_ref().into_option(),
             comments: consumption.comments.map_inner_deref().into_option(),

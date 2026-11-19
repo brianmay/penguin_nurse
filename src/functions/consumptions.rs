@@ -2,6 +2,7 @@ use dioxus::prelude::*;
 use dioxus_fullstack::{ServerFnError, server};
 
 use crate::models::{self, ConsumableId, ConsumptionId, UserId};
+use jiff::Timestamp;
 
 #[cfg(feature = "server")]
 use crate::models::{ConsumptionWithItems, MaybeSet};
@@ -9,11 +10,14 @@ use crate::models::{ConsumptionWithItems, MaybeSet};
 #[cfg(feature = "server")]
 use super::common::{AppError, get_database_connection, get_user_id};
 
+#[cfg(feature = "server")]
+use crate::server::datetime;
+
 #[server]
 pub async fn get_consumptions_for_time_range(
     user_id: UserId,
-    start: chrono::DateTime<chrono::Utc>,
-    end: chrono::DateTime<chrono::Utc>,
+    start: Timestamp,
+    end: Timestamp,
 ) -> Result<Vec<models::ConsumptionWithItems>, ServerFnError> {
     pub fn items_to_front_end(
         items: Vec<(
@@ -43,8 +47,8 @@ pub async fn get_consumptions_for_time_range(
     crate::server::database::models::consumptions::get_consumptions_for_time_range(
         &mut conn,
         user_id.as_inner(),
-        start,
-        end,
+        datetime::timestamp_to_chrono(start),
+        datetime::timestamp_to_chrono(end),
     )
     .await
     .map(|x| {

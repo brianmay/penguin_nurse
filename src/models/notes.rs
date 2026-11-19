@@ -1,4 +1,4 @@
-use chrono::Local;
+use jiff::tz::TimeZone;
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
@@ -38,29 +38,32 @@ impl std::fmt::Display for NoteId {
 pub struct Note {
     pub id: NoteId,
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::FixedOffset>,
+    pub time: jiff::ZonedDateTime,
     pub comments: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff::Timestamp,
+    pub updated_at: jiff::Timestamp,
 }
 
 #[allow(dead_code)]
 impl Note {
     pub fn name(&self) -> String {
-        self.time.with_timezone(&Local).time().to_string()
+        self.time
+            .with_time_zone(TimeZone::system())
+            .time()
+            .to_string()
     }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewNote {
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::FixedOffset>,
+    pub time: jiff::ZonedDateTime,
     pub comments: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeNote {
     pub user_id: MaybeSet<UserId>,
-    pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
+    pub time: MaybeSet<jiff::ZonedDateTime>,
     pub comments: MaybeSet<Option<String>>,
 }

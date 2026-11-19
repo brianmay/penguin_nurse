@@ -1,14 +1,14 @@
-use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use dioxus::prelude::*;
 use dioxus_fullstack::ServerFnError;
 use itertools::intersperse;
+use jiff::{SignedDuration, ZonedDateTime};
 use penguin_nurse::validation::consumption_errors;
 
 use crate::{
     components::{
         consumables::{self, ConsumableLabel, ConsumableUpdate, ConsumableUpdateIngredients},
         events::{EventDateTimeShort, Markdown},
-        times::time_delta_to_string,
+        times::duration_to_string,
     },
     forms::{
         Dialog, EditError, FieldValue, FormCloseButton, FormDeleteButton, FormEditButton,
@@ -37,8 +37,8 @@ pub enum Operation {
 
 #[derive(Debug, Clone)]
 struct Validate {
-    time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    duration: Memo<Result<Option<TimeDelta>, ValidationError>>,
+    time: Memo<Result<ZonedDateTime, ValidationError>>,
+    duration: Memo<Result<Option<SignedDuration>, ValidationError>>,
     consumption_type: Memo<Result<ConsumptionType, ValidationError>>,
     liquid_mls: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
@@ -92,7 +92,7 @@ pub fn ConsumptionUpdate(
     on_save: Callback<Consumption>,
 ) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_raw(),
+        Operation::Create { .. } => ZonedDateTime::now().as_raw(),
         Operation::Update { consumption } => consumption.time.as_raw(),
     });
 
@@ -330,14 +330,14 @@ pub fn ConsumptionTypeIcon(consumption_type: ConsumptionType) -> Element {
 }
 
 #[component]
-pub fn ConsumptionDuration(duration: Option<chrono::TimeDelta>) -> Element {
+pub fn ConsumptionDuration(duration: Option<SignedDuration>) -> Element {
     match duration {
         Some(d) => {
-            let text = time_delta_to_string(d);
+            let text = duration_to_string(d);
             rsx! {
-                if d.num_seconds() < 2 {
+                if d.as_secs() < 2 {
                     span { class: "text-error", {text} }
-                } else if d.num_minutes() < 60 {
+                } else if d.as_mins() < 60 {
                     span { class: "text-success", {text} }
                 } else {
                     span { class: "text-error", {text} }

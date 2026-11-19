@@ -1,6 +1,6 @@
 use crate::models::{SymptomId, UserId};
 use crate::server::database::{connection::DatabaseConnection, schema};
-use chrono::Utc;
+use crate::server::datetime;
 use diesel::prelude::*;
 use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
@@ -56,13 +56,9 @@ pub struct Symptom {
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
-const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
-
 impl From<Symptom> for crate::models::Symptom {
     fn from(symptom: Symptom) -> Self {
-        let timezone =
-            chrono::FixedOffset::east_opt(symptom.utc_offset).unwrap_or(DEFAULT_TIMEZONE);
-        let time = symptom.time.with_timezone(&timezone);
+        let time = datetime::chrono_to_zoned(symptom.time, symptom.utc_offset);
 
         Self {
             id: SymptomId::new(symptom.id),
@@ -94,8 +90,8 @@ impl From<Symptom> for crate::models::Symptom {
             anxiety: symptom.anxiety,
             depression: symptom.depression,
             insomnia: symptom.insomnia,
-            created_at: symptom.created_at,
-            updated_at: symptom.updated_at,
+            created_at: datetime::chrono_to_timestamp(symptom.created_at),
+            updated_at: datetime::chrono_to_timestamp(symptom.updated_at),
             shoulder_pain: symptom.shoulder_pain,
             hand_pain: symptom.hand_pain,
             foot_pain: symptom.foot_pain,
@@ -201,8 +197,8 @@ impl<'a> NewSymptom<'a> {
     pub fn from_front_end(symptom: &'a crate::models::NewSymptom) -> Self {
         Self {
             user_id: symptom.user_id.as_inner(),
-            time: symptom.time.with_timezone(&Utc),
-            utc_offset: symptom.time.offset().local_minus_utc(),
+            time: datetime::zoned_to_chrono_utc(&symptom.time),
+            utc_offset: symptom.time.offset().seconds(),
             appetite_loss: symptom.appetite_loss,
             fever: symptom.fever,
             cough: symptom.cough,
@@ -307,11 +303,13 @@ impl<'a> ChangeSymptom<'a> {
         Self {
             time: symptom
                 .time
-                .map(|time| time.with_timezone(&Utc))
+                .clone()
+                .map(|time| datetime::zoned_to_chrono_utc(&time))
                 .into_option(),
             utc_offset: symptom
                 .time
-                .map(|time| time.offset().local_minus_utc())
+                .clone()
+                .map(|time| time.offset().seconds())
                 .into_option(),
             appetite_loss: symptom.appetite_loss.into_option(),
             fever: symptom.fever.into_option(),

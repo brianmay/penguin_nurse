@@ -1,9 +1,11 @@
+use jiff::SignedDuration;
+
 pub fn div_rem(a: i64, b: i64) -> (i64, i64) {
     (a / b, a % b)
 }
 
-pub fn time_delta_to_string(duration: chrono::TimeDelta) -> String {
-    let seconds = duration.num_seconds();
+pub fn duration_to_string(duration: SignedDuration) -> String {
+    let seconds = duration.as_secs();
     let (negative, seconds) = if seconds < 0 {
         (true, -seconds)
     } else {
@@ -15,11 +17,11 @@ pub fn time_delta_to_string(duration: chrono::TimeDelta) -> String {
 
     let negative_string = if negative { "negative " } else { "" };
 
-    if duration.num_seconds().abs() < 60 {
+    if duration.as_secs().abs() < 60 {
         format!("{negative_string}{seconds} seconds")
-    } else if duration.num_minutes().abs() < 60 {
+    } else if (duration.as_secs() / 60).abs() < 60 {
         format!("{negative_string}{minutes} minutes + {seconds} seconds")
-    } else if duration.num_hours().abs() < 24 {
+    } else if (duration.as_secs() / 3600).abs() < 24 {
         format!("{negative_string}{hours} hours + {minutes} minutes")
     } else {
         format!("{negative_string}{days} days + {hours} hours")
@@ -40,37 +42,37 @@ mod tests {
     }
 
     #[test]
-    fn test_time_delta_to_string() {
+    fn test_duration_to_string() {
         assert_eq!(
-            time_delta_to_string(chrono::TimeDelta::seconds(10)),
+            duration_to_string(SignedDuration::from_secs(10)),
             "10 seconds"
         );
         assert_eq!(
-            time_delta_to_string(chrono::TimeDelta::seconds(-10)),
+            duration_to_string(SignedDuration::from_secs(-10)),
             "negative 10 seconds"
         );
         assert_eq!(
-            time_delta_to_string(chrono::TimeDelta::minutes(10)),
+            duration_to_string(SignedDuration::from_mins(10)),
             "10 minutes + 0 seconds"
         );
         assert_eq!(
-            time_delta_to_string(chrono::TimeDelta::minutes(-10)),
+            duration_to_string(SignedDuration::from_mins(-10)),
             "negative 10 minutes + 0 seconds"
         );
         assert_eq!(
-            time_delta_to_string(chrono::TimeDelta::hours(10)),
+            duration_to_string(SignedDuration::from_hours(10)),
             "10 hours + 0 minutes"
         );
         assert_eq!(
-            time_delta_to_string(chrono::TimeDelta::hours(-10)),
+            duration_to_string(SignedDuration::from_hours(-10)),
             "negative 10 hours + 0 minutes"
         );
         assert_eq!(
-            time_delta_to_string(chrono::TimeDelta::days(10)),
+            duration_to_string(SignedDuration::from_hours(10 * 24)),
             "10 days + 0 hours"
         );
         assert_eq!(
-            time_delta_to_string(chrono::TimeDelta::days(-10)),
+            duration_to_string(SignedDuration::from_hours(10 * -24)),
             "negative 10 days + 0 hours"
         );
     }

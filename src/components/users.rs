@@ -1,8 +1,8 @@
 use std::{num::ParseIntError, str::FromStr, sync::Arc};
 
-use chrono::NaiveDate;
 use dioxus::prelude::*;
 use dioxus_router::ToQueryArgument;
+use jiff::civil::Date;
 use tap::Pipe;
 use thiserror::Error;
 
@@ -25,7 +25,7 @@ struct ValidateSaveNewUser {
     password: Memo<Result<String, ValidationError>>,
     password_confirm: Memo<Result<String, ValidationError>>,
     is_admin: Memo<Result<bool, ValidationError>>,
-    date_of_birth: Memo<Result<Option<NaiveDate>, ValidationError>>,
+    date_of_birth: Memo<Result<Option<Date>, ValidationError>>,
     sex: Memo<Result<Option<Sex>, ValidationError>>,
 }
 
@@ -56,7 +56,7 @@ struct ValidateUpdateExistingUser {
     email: Memo<Result<String, ValidationError>>,
     full_name: Memo<Result<String, ValidationError>>,
     is_admin: Memo<Result<bool, ValidationError>>,
-    date_of_birth: Memo<Result<Option<NaiveDate>, ValidationError>>,
+    date_of_birth: Memo<Result<Option<Date>, ValidationError>>,
     sex: Memo<Result<Option<Sex>, ValidationError>>,
 }
 

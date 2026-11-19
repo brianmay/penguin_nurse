@@ -1,6 +1,6 @@
 use crate::models::{UserId, WeeUrgeId};
 use crate::server::database::{connection::DatabaseConnection, schema};
-use chrono::Utc;
+use crate::server::datetime;
 use diesel::prelude::*;
 use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
@@ -20,21 +20,17 @@ pub struct WeeUrge {
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
-const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
-
 impl From<WeeUrge> for crate::models::WeeUrge {
     fn from(wee_urge: WeeUrge) -> Self {
-        let timezone =
-            chrono::FixedOffset::east_opt(wee_urge.utc_offset).unwrap_or(DEFAULT_TIMEZONE);
-        let time = wee_urge.time.with_timezone(&timezone);
+        let time = datetime::chrono_to_zoned(wee_urge.time, wee_urge.utc_offset);
 
         Self {
             id: WeeUrgeId::new(wee_urge.id),
             user_id: UserId::new(wee_urge.user_id),
             time,
             urgency: wee_urge.urgency.try_into().unwrap_or_default(),
-            created_at: wee_urge.created_at,
-            updated_at: wee_urge.updated_at,
+            created_at: datetime::chrono_to_timestamp(wee_urge.created_at),
+            updated_at: datetime::chrono_to_timestamp(wee_urge.updated_at),
             comments: wee_urge.comments,
         }
     }
@@ -93,8 +89,8 @@ impl<'a> NewWeeUrge<'a> {
     pub fn from_front_end(wee_urge: &'a crate::models::NewWeeUrge) -> Self {
         Self {
             user_id: wee_urge.user_id.as_inner(),
-            time: wee_urge.time.with_timezone(&Utc),
-            utc_offset: wee_urge.time.offset().local_minus_utc(),
+            time: datetime::zoned_to_chrono_utc(&wee_urge.time),
+            utc_offset: wee_urge.time.offset().seconds(),
             urgency: wee_urge.urgency.into(),
             comments: wee_urge.comments.as_deref(),
         }
@@ -125,10 +121,15 @@ pub struct ChangeWeeUrge<'a> {
 impl<'a> ChangeWeeUrge<'a> {
     pub fn from_front_end(wee: &'a crate::models::ChangeWeeUrge) -> Self {
         Self {
-            time: wee.time.map(|time| time.with_timezone(&Utc)).into_option(),
+            time: wee
+                .time
+                .clone()
+                .map(|time| datetime::zoned_to_chrono_utc(&time))
+                .into_option(),
             utc_offset: wee
                 .time
-                .map(|time| time.offset().local_minus_utc())
+                .clone()
+                .map(|time| time.offset().seconds())
                 .into_option(),
             urgency: wee.urgency.map_into().into_option(),
             comments: wee.comments.map_inner_deref().into_option(),

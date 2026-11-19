@@ -64,10 +64,10 @@ pub struct User {
     pub oidc_id: Option<String>,
     pub email: String,
     pub is_admin: bool,
-    pub date_of_birth: Option<chrono::NaiveDate>,
+    pub date_of_birth: Option<jiff::civil::Date>,
     pub sex: Option<Sex>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff::Timestamp,
+    pub updated_at: jiff::Timestamp,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -89,6 +89,6 @@ pub struct ChangeUser {
     pub oidc_id: MaybeSet<Option<String>>,
     pub email: MaybeSet<String>,
     pub is_admin: MaybeSet<bool>,
-    pub date_of_birth: MaybeSet<Option<chrono::NaiveDate>>,
+    pub date_of_birth: MaybeSet<Option<jiff::civil::Date>>,
     pub sex: MaybeSet<Option<Sex>>,
 }

@@ -1,5 +1,5 @@
-use chrono::Local;
 use derive_enum_all_values::AllValues;
+use jiff::tz::TimeZone;
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
@@ -165,8 +165,8 @@ impl std::fmt::Display for ExerciseId {
 pub struct Exercise {
     pub id: ExerciseId,
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: Option<chrono::TimeDelta>,
+    pub time: jiff::ZonedDateTime,
+    pub duration: Option<jiff::SignedDuration>,
     pub location: Option<String>,
     pub distance: Option<bigdecimal::BigDecimal>,
     pub calories: Option<i32>,
@@ -174,22 +174,25 @@ pub struct Exercise {
     pub exercise_type: ExerciseType,
     pub comments: Option<String>,
     pub complete: bool,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff::Timestamp,
+    pub updated_at: jiff::Timestamp,
 }
 
 #[allow(dead_code)]
 impl Exercise {
     pub fn name(&self) -> String {
-        self.time.with_timezone(&Local).time().to_string()
+        self.time
+            .with_time_zone(TimeZone::system())
+            .time()
+            .to_string()
     }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewExercise {
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: Option<chrono::TimeDelta>,
+    pub time: jiff::ZonedDateTime,
+    pub duration: Option<jiff::SignedDuration>,
     pub location: Option<String>,
     pub distance: Option<bigdecimal::BigDecimal>,
     pub calories: Option<i32>,
@@ -202,8 +205,8 @@ pub struct NewExercise {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeExercise {
     pub user_id: MaybeSet<UserId>,
-    pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
-    pub duration: MaybeSet<Option<chrono::TimeDelta>>,
+    pub time: MaybeSet<jiff::ZonedDateTime>,
+    pub duration: MaybeSet<Option<jiff::SignedDuration>>,
     pub location: MaybeSet<Option<String>>,
     pub distance: MaybeSet<Option<bigdecimal::BigDecimal>>,
     pub calories: MaybeSet<Option<i32>>,

@@ -1,6 +1,7 @@
 use crate::models::{HealthMetricId, UserId};
 use crate::server::database::models::DatabaseConversionError;
 use crate::server::database::{connection::DatabaseConnection, schema};
+use crate::server::datetime;
 use chrono::Utc;
 use diesel::prelude::*;
 use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
@@ -35,9 +36,7 @@ impl TryFrom<HealthMetric> for crate::models::HealthMetric {
     type Error = DatabaseConversionError;
 
     fn try_from(health_metric: HealthMetric) -> Result<Self, Self::Error> {
-        let timezone = chrono::FixedOffset::east_opt(health_metric.utc_offset)
-            .ok_or(DatabaseConversionError::InvalidValue)?;
-        let time = health_metric.time.with_timezone(&timezone);
+        let time = datetime::chrono_to_zoned(health_metric.time, health_metric.utc_offset);
 
         Self {
             id: HealthMetricId::new(health_metric.id),
@@ -57,8 +56,8 @@ impl TryFrom<HealthMetric> for crate::models::HealthMetric {
             height: health_metric.height.map(|p| p.try_into()).transpose()?,
             waist_circumference: health_metric.waist_circumference,
             hip_circumference: health_metric.hip_circumference,
-            created_at: health_metric.created_at,
-            updated_at: health_metric.updated_at,
+            created_at: datetime::chrono_to_timestamp(health_metric.created_at),
+            updated_at: datetime::chrono_to_timestamp(health_metric.updated_at),
             comments: health_metric.comments,
             body_fat_pct: health_metric.body_fat_pct,
             bia_details: health_metric.bia_details,
@@ -149,8 +148,8 @@ impl<'a> NewHealthMetric<'a> {
     pub fn from_front_end(health_metric: &'a crate::models::NewHealthMetric) -> Self {
         Self {
             user_id: health_metric.user_id.as_inner(),
-            time: health_metric.time.with_timezone(&Utc),
-            utc_offset: health_metric.time.offset().local_minus_utc(),
+            time: datetime::zoned_to_chrono_utc(&health_metric.time),
+            utc_offset: health_metric.time.offset().seconds(),
             pulse: health_metric.pulse.map(|p| p.into()),
             blood_glucose: health_metric.blood_glucose.as_ref(),
             systolic_bp: health_metric.systolic_bp.map(|p| p.into()),
@@ -226,11 +225,13 @@ impl<'a> ChangeHealthMetric<'a> {
         Self {
             time: health_metric
                 .time
-                .map(|time| time.with_timezone(&Utc))
+                .clone()
+                .map(|time| datetime::zoned_to_chrono_utc(&time))
                 .into_option(),
             utc_offset: health_metric
                 .time
-                .map(|time| time.offset().local_minus_utc())
+                .clone()
+                .map(|time| time.offset().seconds())
                 .into_option(),
             pulse: health_metric.pulse.map_inner_into().into_option(),
             blood_glucose: health_metric.blood_glucose.as_inner_ref().into_option(),

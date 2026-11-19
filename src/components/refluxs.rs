@@ -1,11 +1,11 @@
-use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use dioxus::prelude::*;
+use jiff::{SignedDuration, ZonedDateTime};
 
 use crate::{
     components::{
         events::{EventDateTimeShort, Markdown},
         symptoms::SymptomDisplay,
-        times::time_delta_to_string,
+        times::duration_to_string,
     },
     forms::{
         Dialog, EditError, FieldValue, FormSaveCancelButton, InputBoolean, InputDateTime,
@@ -26,8 +26,8 @@ pub enum Operation {
 
 #[derive(Debug, Clone)]
 struct Validate {
-    time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    duration: Memo<Result<Option<TimeDelta>, ValidationError>>,
+    time: Memo<Result<ZonedDateTime, ValidationError>>,
+    duration: Memo<Result<Option<SignedDuration>, ValidationError>>,
     location: Memo<Result<Option<String>, ValidationError>>,
     severity: Memo<Result<i32, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
@@ -73,7 +73,7 @@ async fn do_save(op: &Operation, validate: &Validate, complete: bool) -> Result<
 #[component]
 pub fn RefluxUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Reflux>) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_raw(),
+        Operation::Create { .. } => ZonedDateTime::now().as_raw(),
         Operation::Update { reflux } => reflux.time.as_raw(),
     });
 
@@ -284,10 +284,10 @@ pub fn reflux_title() -> &'static str {
 }
 
 #[component]
-pub fn reflux_duration(duration: Option<chrono::TimeDelta>) -> Element {
+pub fn reflux_duration(duration: Option<SignedDuration>) -> Element {
     match duration {
         Some(d) => {
-            let text = time_delta_to_string(d);
+            let text = duration_to_string(d);
             rsx! {
                 span { {text} }
             }

@@ -1,7 +1,9 @@
 use std::str::FromStr;
 
-use chrono::{DateTime, FixedOffset, Local, NaiveDate, NaiveTime, TimeDelta, Utc};
 use dioxus::prelude::*;
+use jiff::civil::{Date, Time};
+use jiff::tz::TimeZone;
+use jiff::{SignedDuration, Timestamp, ZonedDateTime};
 use palette::RgbHue;
 use thiserror::Error;
 
@@ -74,12 +76,16 @@ impl FieldValue for RgbHue<f32> {
     }
 }
 
-impl FieldValue for DateTime<Utc> {
+impl FieldValue for Timestamp {
     type RawValue = String;
     type DerefValue = str;
 
     fn as_raw(&self) -> String {
-        self.with_timezone(&Local).to_rfc3339()
+        let local = self.to_zoned_datetime(TimeZone::system());
+        local
+            .timestamp()
+            .display_with_offset(local.offset())
+            .to_string()
     }
 
     fn from_raw(value: &str) -> Result<Self, FieldValueError> {
@@ -87,39 +93,24 @@ impl FieldValue for DateTime<Utc> {
         if value.is_empty() {
             return Err(FieldValueError::RequiredValue);
         }
-        match DateTime::parse_from_rfc3339(value) {
-            Ok(time) => Ok(time.with_timezone(&Utc)),
-            Err(_) => Err(FieldValueError::InvalidValue),
-        }
-    }
-}
-
-impl FieldValue for DateTime<FixedOffset> {
-    type RawValue = String;
-    type DerefValue = str;
-
-    fn as_raw(&self) -> String {
-        self.to_rfc3339()
-    }
-
-    fn from_raw(value: &str) -> Result<Self, FieldValueError> {
-        let value = value.trim();
-        if value.is_empty() {
-            return Err(FieldValueError::RequiredValue);
-        }
-        match DateTime::parse_from_rfc3339(value) {
+        match value.parse::<Timestamp>() {
             Ok(time) => Ok(time),
             Err(_) => Err(FieldValueError::InvalidValue),
         }
     }
 }
 
-impl FieldValue for NaiveDate {
+impl FieldValue for ZonedDateTime {
     type RawValue = String;
     type DerefValue = str;
 
     fn as_raw(&self) -> String {
-        self.format("%Y-%m-%d").to_string()
+        // Format as RFC 3339 with the original offset (and no time zone
+        // annotation), matching the previous DateTime<FixedOffset> wire
+        // format.
+        self.timestamp()
+            .display_with_offset(self.offset())
+            .to_string()
     }
 
     fn from_raw(value: &str) -> Result<Self, FieldValueError> {
@@ -127,19 +118,63 @@ impl FieldValue for NaiveDate {
         if value.is_empty() {
             return Err(FieldValueError::RequiredValue);
         }
-        match NaiveDate::parse_from_str(value, "%Y-%m-%d") {
+        match parse_zoned_date_time(value) {
+            Some(time) => Ok(time),
+            None => Err(FieldValueError::InvalidValue),
+        }
+    }
+}
+
+/// Parse a zoned datetime from user input.
+///
+/// Accepts full RFC 9557 strings with a time zone annotation, as well as
+/// plain RFC 3339 strings with a numeric offset (which `ZonedDateTime`'s
+/// `FromStr` impl rejects because the annotation is missing).
+fn parse_zoned_date_time(value: &str) -> Option<ZonedDateTime> {
+    if let Ok(zoned) = value.parse::<ZonedDateTime>() {
+        return Some(zoned);
+    }
+    if let Ok(zoned) = ZonedDateTime::strptime("%Y-%m-%dT%H:%M:%S%.f%:z", value) {
+        return Some(zoned);
+    }
+    if let Ok(zoned) = ZonedDateTime::strptime("%Y-%m-%dT%H:%M:%S%.f%z", value) {
+        return Some(zoned);
+    }
+    // RFC 3339 allows a "Z" suffix for UTC.
+    if value.ends_with(['Z', 'z'])
+        && let Ok(timestamp) = value.parse::<Timestamp>()
+    {
+        return Some(timestamp.to_zoned_datetime(TimeZone::UTC));
+    }
+    None
+}
+
+impl FieldValue for Date {
+    type RawValue = String;
+    type DerefValue = str;
+
+    fn as_raw(&self) -> String {
+        self.strftime("%Y-%m-%d").to_string()
+    }
+
+    fn from_raw(value: &str) -> Result<Self, FieldValueError> {
+        let value = value.trim();
+        if value.is_empty() {
+            return Err(FieldValueError::RequiredValue);
+        }
+        match Date::strptime("%Y-%m-%d", value) {
             Ok(date) => Ok(date),
             Err(_) => Err(FieldValueError::InvalidValue),
         }
     }
 }
 
-impl FieldValue for NaiveTime {
+impl FieldValue for Time {
     type RawValue = String;
     type DerefValue = str;
 
     fn as_raw(&self) -> String {
-        self.format("%H:%M").to_string()
+        self.strftime("%H:%M").to_string()
     }
 
     fn from_raw(value: &str) -> Result<Self, FieldValueError> {
@@ -147,22 +182,20 @@ impl FieldValue for NaiveTime {
         if value.is_empty() {
             return Err(FieldValueError::RequiredValue);
         }
-        match NaiveTime::parse_from_str(value, "%H:%M")
-            .or_else(|_| NaiveTime::parse_from_str(value, "%H:%M:%S"))
-        {
+        match Time::strptime("%H:%M", value).or_else(|_| Time::strptime("%H:%M:%S", value)) {
             Ok(time) => Ok(time),
             Err(_) => Err(FieldValueError::InvalidValue),
         }
     }
 }
 
-impl FieldValue for TimeDelta {
+impl FieldValue for SignedDuration {
     type RawValue = String;
     type DerefValue = str;
 
     fn as_raw(&self) -> String {
         let (negative, total_seconds) = {
-            let seconds = self.num_seconds();
+            let seconds = self.as_secs();
             if seconds < 0 {
                 (true, -seconds)
             } else {
@@ -236,10 +269,9 @@ impl FieldValue for TimeDelta {
             return Err(FieldValueError::InvalidValue);
         }
 
-        Ok(
-            (TimeDelta::hours(hours) + TimeDelta::minutes(minutes) + TimeDelta::seconds(seconds))
-                * negative,
-        )
+        Ok(SignedDuration::from_secs(
+            (hours * 3600 + minutes * 60 + seconds) * negative,
+        ))
     }
 }
 

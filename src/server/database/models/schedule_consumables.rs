@@ -4,6 +4,7 @@ use diesel_async::RunQueryDsl;
 
 use crate::models;
 use crate::server::database::{connection::DatabaseConnection, schema};
+use crate::server::datetime;
 
 use super::consumables::Consumable;
 use super::schedules::Schedule;
@@ -33,8 +34,8 @@ impl From<ScheduleConsumable> for crate::models::ScheduleConsumable {
             quantity: schedule_consumable.quantity,
             liquid_mls: schedule_consumable.liquid_mls,
             comments: schedule_consumable.comments,
-            created_at: schedule_consumable.created_at,
-            updated_at: schedule_consumable.updated_at,
+            created_at: datetime::chrono_to_timestamp(schedule_consumable.created_at),
+            updated_at: datetime::chrono_to_timestamp(schedule_consumable.updated_at),
         }
     }
 }

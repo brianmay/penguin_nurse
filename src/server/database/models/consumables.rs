@@ -1,15 +1,16 @@
 use std::collections::HashMap;
 
+use chrono::Utc;
 use diesel::prelude::*;
 use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
 
 use chrono::DateTime;
-use chrono::Utc;
 use tap::Pipe;
 
 use crate::models;
 use crate::server::database::{connection::DatabaseConnection, schema};
+use crate::server::datetime;
 use crate::validation::compatible_consumable_types;
 
 use super::consumptions::ConsumptionType;
@@ -74,10 +75,10 @@ impl From<Consumable> for crate::models::Consumable {
             barcode: consumable.barcode,
             is_organic: consumable.is_organic,
             unit: consumable.unit.into(),
-            created: consumable.created,
-            destroyed: consumable.destroyed,
-            created_at: consumable.created_at,
-            updated_at: consumable.updated_at,
+            created: consumable.created.map(datetime::chrono_to_timestamp),
+            destroyed: consumable.destroyed.map(datetime::chrono_to_timestamp),
+            created_at: datetime::chrono_to_timestamp(consumable.created_at),
+            updated_at: datetime::chrono_to_timestamp(consumable.updated_at),
             comments: consumable.comments,
             consumption_type: consumable.consumption_type.map(|x| x.into()),
         }
@@ -214,8 +215,8 @@ impl<'a> NewConsumable<'a> {
             is_organic: consumable.is_organic,
             unit: consumable.unit.into(),
             comments: consumable.comments.as_deref(),
-            created: consumable.created.as_ref().copied(),
-            destroyed: consumable.destroyed.as_ref().copied(),
+            created: consumable.created.map(datetime::timestamp_to_chrono),
+            destroyed: consumable.destroyed.map(datetime::timestamp_to_chrono),
             consumption_type: consumable.consumption_type.map(|x| x.into()),
         }
     }
@@ -256,8 +257,14 @@ impl<'a> ChangeConsumable<'a> {
             is_organic: consumable.is_organic.into_option(),
             unit: consumable.unit.map_into().into_option(),
             comments: consumable.comments.map_inner_deref().into_option(),
-            created: consumable.created.into_option(),
-            destroyed: consumable.destroyed.into_option(),
+            created: consumable
+                .created
+                .map(|created| created.map(datetime::timestamp_to_chrono))
+                .into_option(),
+            destroyed: consumable
+                .destroyed
+                .map(|destroyed| destroyed.map(datetime::timestamp_to_chrono))
+                .into_option(),
             consumption_type: consumable.consumption_type.map_inner_into().into_option(),
         }
     }

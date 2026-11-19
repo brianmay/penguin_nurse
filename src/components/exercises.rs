@@ -1,10 +1,10 @@
-use chrono::{DateTime, FixedOffset, Local, TimeDelta, Utc};
 use dioxus::prelude::*;
+use jiff::{SignedDuration, ZonedDateTime};
 
 use crate::{
     components::{
         events::{EventDateTimeShort, Markdown},
-        times::time_delta_to_string,
+        times::duration_to_string,
     },
     forms::{
         Dialog, EditError, FieldValue, FormSaveCancelButton, InputBoolean, InputDateTime,
@@ -18,6 +18,7 @@ use crate::{
 };
 use classes::classes;
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Operation {
     Create { user_id: UserId },
@@ -26,8 +27,8 @@ pub enum Operation {
 
 #[derive(Debug, Clone)]
 struct Validate {
-    time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    duration: Memo<Result<Option<TimeDelta>, ValidationError>>,
+    time: Memo<Result<ZonedDateTime, ValidationError>>,
+    duration: Memo<Result<Option<SignedDuration>, ValidationError>>,
     location: Memo<Result<Option<String>, ValidationError>>,
     distance: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
     calories: Memo<Result<Option<i32>, ValidationError>>,
@@ -89,7 +90,7 @@ async fn do_save(
 #[component]
 pub fn ExerciseUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Exercise>) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_raw(),
+        Operation::Create { .. } => ZonedDateTime::now().as_raw(),
         Operation::Update { exercise } => exercise.time.as_raw(),
     });
 
@@ -378,14 +379,14 @@ pub fn ExerciseRpeIcon(rpe: ExerciseRpe) -> Element {
 }
 
 #[component]
-pub fn ExerciseDuration(duration: Option<chrono::TimeDelta>) -> Element {
+pub fn ExerciseDuration(duration: Option<SignedDuration>) -> Element {
     match duration {
         Some(d) => {
-            let text = time_delta_to_string(d);
+            let text = duration_to_string(d);
             rsx! {
-                if d.num_seconds() < 2 {
+                if d.as_secs() < 2 {
                     span { class: "text-error", {text} }
-                } else if d.num_hours() < 12 {
+                } else if d.as_hours() < 12 {
                     span { class: "text-success", {text} }
                 } else {
                     span { class: "text-error", {text} }

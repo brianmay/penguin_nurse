@@ -11,6 +11,7 @@ use crate::server::database::models::consumables::Consumable;
 use crate::server::database::models::consumptions::ConsumptionType;
 use crate::server::database::models::schedule_consumables::ScheduleConsumable;
 use crate::server::database::{connection::DatabaseConnection, schema};
+use crate::server::datetime;
 
 #[derive(Queryable, Selectable, Debug, Clone, Identifiable)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -31,12 +32,12 @@ impl From<Schedule> for crate::models::Schedule {
         Self {
             id: models::ScheduleId::new(schedule.id),
             user_id: models::UserId::new(schedule.user_id),
-            time_of_day: schedule.time_of_day,
+            time_of_day: datetime::chrono_to_time(schedule.time_of_day),
             consumption_type: schedule.consumption_type.into(),
             comments: schedule.comments,
             active: schedule.active,
-            created_at: schedule.created_at,
-            updated_at: schedule.updated_at,
+            created_at: datetime::chrono_to_timestamp(schedule.created_at),
+            updated_at: datetime::chrono_to_timestamp(schedule.updated_at),
         }
     }
 }
@@ -330,7 +331,7 @@ impl<'a> NewSchedule<'a> {
     pub fn from_front_end(schedule: &'a crate::models::NewSchedule) -> Self {
         Self {
             user_id: schedule.user_id.as_inner(),
-            time_of_day: schedule.time_of_day,
+            time_of_day: datetime::time_to_chrono(schedule.time_of_day),
             consumption_type: schedule.consumption_type.into(),
             comments: schedule.comments.as_deref(),
             active: schedule.active,
@@ -362,7 +363,10 @@ pub struct ChangeSchedule<'a> {
 impl<'a> ChangeSchedule<'a> {
     pub fn from_front_end(schedule: &'a crate::models::ChangeSchedule) -> Self {
         Self {
-            time_of_day: schedule.time_of_day.into_option(),
+            time_of_day: schedule
+                .time_of_day
+                .map(datetime::time_to_chrono)
+                .into_option(),
             consumption_type: schedule.consumption_type.map_into().into_option(),
             comments: schedule.comments.map_inner_deref().into_option(),
             active: schedule.active.into_option(),

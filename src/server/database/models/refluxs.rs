@@ -1,12 +1,13 @@
+use chrono::Utc;
 use diesel::prelude::*;
 use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
 
-use chrono::Utc;
 use chrono::{DateTime, TimeDelta};
 
 use crate::models;
 use crate::server::database::{connection::DatabaseConnection, schema};
+use crate::server::datetime;
 
 #[allow(dead_code)]
 #[derive(Queryable, Selectable, Debug, Clone, Identifiable)]
@@ -26,24 +27,21 @@ pub struct Reflux {
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
-const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
-
 impl From<Reflux> for crate::models::Reflux {
     fn from(reflux: Reflux) -> Self {
-        let timezone = chrono::FixedOffset::east_opt(reflux.utc_offset).unwrap_or(DEFAULT_TIMEZONE);
-        let time = reflux.time.with_timezone(&timezone);
+        let time = datetime::chrono_to_zoned(reflux.time, reflux.utc_offset);
 
         Self {
             id: models::RefluxId::new(reflux.id),
             user_id: models::UserId::new(reflux.user_id),
             time,
-            duration: reflux.duration,
+            duration: reflux.duration.map(datetime::chrono_to_signed_duration),
             location: reflux.location,
             severity: reflux.severity,
             comments: reflux.comments,
             complete: reflux.complete,
-            created_at: reflux.created_at,
-            updated_at: reflux.updated_at,
+            created_at: datetime::chrono_to_timestamp(reflux.created_at),
+            updated_at: datetime::chrono_to_timestamp(reflux.updated_at),
         }
     }
 }
@@ -120,9 +118,9 @@ impl<'a> NewReflux<'a> {
     pub fn from_front_end(reflux: &'a crate::models::NewReflux) -> Self {
         Self {
             user_id: reflux.user_id.as_inner(),
-            time: reflux.time.with_timezone(&Utc),
-            utc_offset: reflux.time.offset().local_minus_utc(),
-            duration: reflux.duration,
+            time: datetime::zoned_to_chrono_utc(&reflux.time),
+            utc_offset: reflux.time.offset().seconds(),
+            duration: reflux.duration.map(datetime::signed_duration_to_chrono),
             location: reflux.location.as_deref(),
             severity: reflux.severity,
             comments: reflux.comments.as_deref(),
@@ -160,13 +158,18 @@ impl<'a> ChangeReflux<'a> {
         Self {
             time: reflux
                 .time
-                .map(|time| time.with_timezone(&Utc))
+                .clone()
+                .map(|time| datetime::zoned_to_chrono_utc(&time))
                 .into_option(),
             utc_offset: reflux
                 .time
-                .map(|time| time.offset().local_minus_utc())
+                .clone()
+                .map(|time| time.offset().seconds())
                 .into_option(),
-            duration: reflux.duration.into_option(),
+            duration: reflux
+                .duration
+                .map(|duration| duration.map(datetime::signed_duration_to_chrono))
+                .into_option(),
             location: reflux.location.map_inner_deref().into_option(),
             severity: reflux.severity.into_option(),
             comments: reflux.comments.map_inner_deref().into_option(),

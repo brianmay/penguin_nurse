@@ -1,12 +1,13 @@
+use chrono::Utc;
 use diesel::prelude::*;
 use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
 
-use chrono::Utc;
 use chrono::{DateTime, TimeDelta};
 
 use crate::models;
 use crate::server::database::{connection::DatabaseConnection, schema};
+use crate::server::datetime;
 
 #[derive(diesel_derive_enum::DbEnum, Debug, Copy, Clone)]
 #[db_enum(existing_type_path = "schema::sql_types::ExerciseType")]
@@ -75,19 +76,15 @@ pub struct Exercise {
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
-const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
-
 impl From<Exercise> for crate::models::Exercise {
     fn from(exercise: Exercise) -> Self {
-        let timezone =
-            chrono::FixedOffset::east_opt(exercise.utc_offset).unwrap_or(DEFAULT_TIMEZONE);
-        let time = exercise.time.with_timezone(&timezone);
+        let time = datetime::chrono_to_zoned(exercise.time, exercise.utc_offset);
 
         Self {
             id: models::ExerciseId::new(exercise.id),
             user_id: models::UserId::new(exercise.user_id),
             time,
-            duration: exercise.duration,
+            duration: exercise.duration.map(datetime::chrono_to_signed_duration),
             location: exercise.location,
             distance: exercise.distance,
             calories: exercise.calories,
@@ -96,8 +93,8 @@ impl From<Exercise> for crate::models::Exercise {
                 .map(|rpe| rpe.try_into().unwrap_or(models::ExerciseRpe::Rpe1)),
             comments: exercise.comments,
             complete: exercise.complete,
-            created_at: exercise.created_at,
-            updated_at: exercise.updated_at,
+            created_at: datetime::chrono_to_timestamp(exercise.created_at),
+            updated_at: datetime::chrono_to_timestamp(exercise.updated_at),
             exercise_type: exercise.exercise_type.into(),
         }
     }
@@ -178,9 +175,9 @@ impl<'a> NewExercise<'a> {
     pub fn from_front_end(exercise: &'a crate::models::NewExercise) -> Self {
         Self {
             user_id: exercise.user_id.as_inner(),
-            time: exercise.time.with_timezone(&Utc),
-            utc_offset: exercise.time.offset().local_minus_utc(),
-            duration: exercise.duration,
+            time: datetime::zoned_to_chrono_utc(&exercise.time),
+            utc_offset: exercise.time.offset().seconds(),
+            duration: exercise.duration.map(datetime::signed_duration_to_chrono),
             location: exercise.location.as_deref(),
             distance: exercise.distance.as_ref(),
             calories: exercise.calories,
@@ -224,13 +221,18 @@ impl<'a> ChangeExercise<'a> {
         Self {
             time: exercise
                 .time
-                .map(|time| time.with_timezone(&Utc))
+                .clone()
+                .map(|time| datetime::zoned_to_chrono_utc(&time))
                 .into_option(),
             utc_offset: exercise
                 .time
-                .map(|time| time.offset().local_minus_utc())
+                .clone()
+                .map(|time| time.offset().seconds())
                 .into_option(),
-            duration: exercise.duration.into_option(),
+            duration: exercise
+                .duration
+                .map(|duration| duration.map(datetime::signed_duration_to_chrono))
+                .into_option(),
             location: exercise.location.map_inner_deref().into_option(),
             distance: exercise.distance.as_inner_ref().into_option(),
             calories: exercise.calories.into_option(),

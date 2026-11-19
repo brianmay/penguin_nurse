@@ -1,7 +1,7 @@
 use std::{fmt::Display, str::FromStr};
 
-use chrono::{DateTime, Utc};
 use derive_enum_all_values::AllValues;
+use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 
 use crate::models::MaybeSet;
@@ -91,10 +91,10 @@ pub struct Consumable {
     pub is_organic: bool,
     pub unit: ConsumableUnit,
     pub comments: Option<String>,
-    pub created: Option<DateTime<Utc>>,
-    pub destroyed: Option<DateTime<Utc>>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created: Option<Timestamp>,
+    pub destroyed: Option<Timestamp>,
+    pub created_at: jiff::Timestamp,
+    pub updated_at: jiff::Timestamp,
     pub consumption_type: Option<ConsumptionType>,
 }
 
@@ -119,8 +119,8 @@ pub struct NewConsumable {
     pub is_organic: bool,
     pub unit: ConsumableUnit,
     pub comments: Option<String>,
-    pub created: Option<DateTime<Utc>>,
-    pub destroyed: Option<DateTime<Utc>>,
+    pub created: Option<Timestamp>,
+    pub destroyed: Option<Timestamp>,
     pub consumption_type: Option<ConsumptionType>,
 }
 
@@ -132,7 +132,7 @@ pub struct ChangeConsumable {
     pub is_organic: MaybeSet<bool>,
     pub unit: MaybeSet<ConsumableUnit>,
     pub comments: MaybeSet<Option<String>>,
-    pub created: MaybeSet<Option<DateTime<Utc>>>,
-    pub destroyed: MaybeSet<Option<DateTime<Utc>>>,
+    pub created: MaybeSet<Option<Timestamp>>,
+    pub destroyed: MaybeSet<Option<Timestamp>>,
     pub consumption_type: MaybeSet<Option<ConsumptionType>>,
 }

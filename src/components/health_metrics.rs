@@ -1,5 +1,5 @@
-use chrono::{DateTime, FixedOffset, Local, Utc};
 use dioxus::prelude::*;
+use jiff::ZonedDateTime;
 
 use crate::{
     components::events::{EventDateTimeShort, Markdown},
@@ -23,7 +23,7 @@ pub enum Operation {
 
 #[derive(Debug, Clone)]
 struct Validate {
-    time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
+    time: Memo<Result<ZonedDateTime, ValidationError>>,
     pulse: Memo<Result<Option<u16>, ValidationError>>,
     blood_glucose: Memo<Result<Option<bigdecimal::BigDecimal>, ValidationError>>,
     systolic_bp: Memo<Result<Option<u16>, ValidationError>>,
@@ -100,7 +100,7 @@ pub fn HealthMetricUpdate(
     on_save: Callback<HealthMetric>,
 ) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_raw(),
+        Operation::Create { .. } => ZonedDateTime::now().as_raw(),
         Operation::Update { health_metric } => health_metric.time.as_raw(),
     });
     let pulse = use_signal(|| match &op {

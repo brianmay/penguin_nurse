@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use chrono::NaiveDate;
 use dioxus::prelude::*;
+use jiff::civil::Date;
 
 use components::{consumables, navbar::Navbar, schedules, timeline, users};
 use dioxus_fullstack::{ServerFnError, use_server_future};
@@ -38,7 +38,7 @@ enum Route {
     #[route("/incomplete")]
     IncompleteList { },
     #[route("/:date?:dialog")]
-    TimelineList { date: NaiveDate, dialog: timeline::DialogReference},
+    TimelineList { date: Date, dialog: timeline::DialogReference},
     #[route("/users?:dialog")]
     UserList { dialog: users::ListDialogReference },
     #[route("/users/:user_id?:dialog")]

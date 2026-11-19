@@ -1,12 +1,12 @@
 use crate::{
     Route,
     components::{consumables, schedules, timeline},
-    dt::get_date_for_dt,
+    dt::get_date_for_timestamp,
     use_user,
 };
-use chrono::Utc;
 use dioxus::prelude::*;
 use dioxus_router::{Link, Outlet, use_route};
+use jiff::Timestamp;
 
 const FAVICON_SVG: Asset = asset!("/assets/favicon.svg");
 
@@ -39,7 +39,7 @@ pub fn Navbar() -> Element {
     let user_result = use_user();
     let user = user_result.as_ref().ok().and_then(|x| x.as_ref());
 
-    let date = get_date_for_dt(Utc::now());
+    let date = get_date_for_timestamp(Timestamp::now());
 
     let menu_class = if show_menu() { "" } else { "hidden" };
 

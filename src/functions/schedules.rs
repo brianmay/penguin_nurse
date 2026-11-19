@@ -30,7 +30,7 @@ fn items_to_front_end(
 #[server]
 pub async fn get_today_schedule_status(
     user_id: UserId,
-    now: chrono::DateTime<chrono::FixedOffset>,
+    now: jiff::ZonedDateTime,
 ) -> Result<Vec<models::ScheduleStatus>, ServerFnError> {
     let logged_in_user_id = get_user_id().await?;
     if user_id != logged_in_user_id {
@@ -43,7 +43,7 @@ pub async fn get_today_schedule_status(
     crate::server::database::models::schedules::get_today_schedule_status(
         &mut conn,
         user_id.as_inner(),
-        now,
+        crate::server::datetime::zoned_to_chrono_fixed(&now),
     )
     .await
     .map_err(AppError::from)

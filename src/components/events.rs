@@ -1,14 +1,16 @@
-use chrono::FixedOffset;
 use classes::classes;
 use dioxus::prelude::*;
+use jiff::ZonedDateTime;
+use jiff::civil::Time;
+use jiff::civil::time;
 use palette::IntoColor;
 
 use crate::models::Urgency;
 
-const DAY_START_TIME: chrono::NaiveTime = chrono::NaiveTime::from_hms_opt(6, 30, 0).unwrap();
-const DAY_END_TIME: chrono::NaiveTime = chrono::NaiveTime::from_hms_opt(21, 0, 0).unwrap();
+const DAY_START_TIME: Time = time(6, 30, 0, 0);
+const DAY_END_TIME: Time = time(21, 0, 0, 0);
 
-fn get_classes_for_time(date_time: chrono::DateTime<FixedOffset>) -> String {
+fn get_classes_for_time(date_time: ZonedDateTime) -> String {
     let time = date_time.time();
     if time < DAY_START_TIME {
         classes!["text-error"]
@@ -20,8 +22,8 @@ fn get_classes_for_time(date_time: chrono::DateTime<FixedOffset>) -> String {
 }
 
 #[component]
-pub fn EventDateTimeShort(time: chrono::DateTime<FixedOffset>) -> Element {
-    let string = time.format("%Y-%m-%d %H:%M").to_string();
+pub fn EventDateTimeShort(time: ZonedDateTime) -> Element {
+    let string = time.strftime("%Y-%m-%d %H:%M").to_string();
     let classes = get_classes_for_time(time);
 
     rsx! {
@@ -30,8 +32,8 @@ pub fn EventDateTimeShort(time: chrono::DateTime<FixedOffset>) -> Element {
 }
 
 #[component]
-pub fn EventTime(time: chrono::DateTime<FixedOffset>) -> Element {
-    let string = time.format("%H:%M:%S %z").to_string();
+pub fn EventTime(time: ZonedDateTime) -> Element {
+    let string = time.strftime("%H:%M:%S %z").to_string();
     let classes = get_classes_for_time(time);
 
     rsx! {

@@ -1,9 +1,9 @@
 use std::ops::Deref;
 
-use chrono::Local;
 use dioxus::prelude::*;
 use dioxus_fullstack::ServerFnError;
 use dioxus_router::navigator;
+use jiff::ZonedDateTime;
 use penguin_nurse::validation::schedule_errors;
 use tap::Pipe;
 
@@ -146,7 +146,7 @@ pub fn ScheduleList(dialog: ReadSignal<Option<ListDialogReference>>) -> Element 
     // "now" and the due/upcoming split rolls over during the day.
     let mut status: Resource<Result<Vec<ScheduleStatus>, ServerFnError>> =
         use_resource(move || async move {
-            let now = Local::now().fixed_offset();
+            let now = ZonedDateTime::now();
             get_today_schedule_status(user_id, now).await
         });
 

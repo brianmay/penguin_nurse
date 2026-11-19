@@ -33,12 +33,11 @@ pub use validation::{
     validate_diastolic_bp, validate_distance, validate_email, validate_exercise_calories,
     validate_exercise_rpe, validate_exercise_type, validate_fixed_offset_date_time,
     validate_full_name, validate_height, validate_hip_circumference, validate_location,
-    validate_maybe_date_time, validate_name, validate_optional_bristol,
-    validate_optional_chrono_duration, validate_optional_duration, validate_optional_leakage,
-    validate_optional_mls, validate_optional_poo_quantity, validate_password, validate_pulse,
-    validate_sex, validate_symptom_extra_details, validate_symptom_intensity, validate_systolic_bp,
-    validate_time_of_day, validate_urgency, validate_username, validate_waist_circumference,
-    validate_weight,
+    validate_maybe_date_time, validate_name, validate_optional_bristol, validate_optional_duration,
+    validate_optional_leakage, validate_optional_mls, validate_optional_poo_quantity,
+    validate_password, validate_pulse, validate_sex, validate_symptom_extra_details,
+    validate_symptom_intensity, validate_systolic_bp, validate_time_of_day, validate_urgency,
+    validate_username, validate_waist_circumference, validate_weight,
 };
 
 mod values;

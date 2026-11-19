@@ -1,8 +1,9 @@
 #![allow(non_snake_case)]
-use chrono::{DateTime, FixedOffset, Local, NaiveDate, NaiveTime, TimeDelta, Utc};
 use classes::classes;
 use dioxus::{prelude::*, signals::Signal};
 use dioxus_fullstack::ServerFnError;
+use jiff::civil::{Date, Time};
+use jiff::{SignedDuration, Timestamp, ZonedDateTime};
 use palette::{Hsv, IntoColor, Srgb};
 use std::{ops::Deref, rc::Rc};
 use tap::Pipe;
@@ -16,7 +17,7 @@ use crate::{
         events::{UrgencyIcon, UrgencyLabel},
         exercises::{ExerciseRpeIcon, ExerciseRpeLabel, ExerciseTypeIcon},
         poos::{PooBristolIcon, PooBristolLabel},
-        times::time_delta_to_string,
+        times::duration_to_string,
     },
     forms::{
         Barcode, validate_colour_hue, validate_colour_saturation, validate_colour_value,
@@ -503,7 +504,7 @@ pub fn InputDateTime(
     id: &'static str,
     label: &'static str,
     value: Signal<String>,
-    validate: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
+    validate: Memo<Result<ZonedDateTime, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
     rsx! {
@@ -522,7 +523,7 @@ pub fn InputDateTime(
             }
             ActionButton {
                 on_click: move |_e| {
-                    value.set(Local::now().to_rfc3339());
+                    value.set(ZonedDateTime::now().as_raw());
                 },
                 "Now"
             }
@@ -536,7 +537,7 @@ pub fn InputOptionDateTimeUtc(
     id: &'static str,
     label: &'static str,
     value: Signal<String>,
-    validate: Memo<Result<Option<DateTime<Utc>>, ValidationError>>,
+    validate: Memo<Result<Option<Timestamp>, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
     rsx! {
@@ -555,7 +556,7 @@ pub fn InputOptionDateTimeUtc(
             }
             ActionButton {
                 on_click: move |_e| {
-                    value.set(Local::now().to_rfc3339());
+                    value.set(Timestamp::now().as_raw());
                 },
                 "Now"
             }
@@ -569,7 +570,7 @@ pub fn InputDate(
     id: &'static str,
     label: &'static str,
     value: Signal<String>,
-    validate: Memo<Result<Option<NaiveDate>, ValidationError>>,
+    validate: Memo<Result<Option<Date>, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
     rsx! {
@@ -596,7 +597,7 @@ pub fn InputTime(
     id: &'static str,
     label: &'static str,
     value: Signal<String>,
-    validate: Memo<Result<NaiveTime, ValidationError>>,
+    validate: Memo<Result<Time, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
     rsx! {
@@ -618,7 +619,7 @@ pub fn InputTime(
             }
             ActionButton {
                 on_click: move |_e| {
-                    value.set(Local::now().format("%H:%M").to_string());
+                    value.set(ZonedDateTime::now().strftime("%H:%M").to_string());
                 },
                 "Now"
             }
@@ -632,8 +633,8 @@ pub fn InputDuration(
     id: &'static str,
     label: &'static str,
     value: Signal<String>,
-    start_time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    validate: Memo<Result<Option<TimeDelta>, ValidationError>>,
+    start_time: Memo<Result<ZonedDateTime, ValidationError>>,
+    validate: Memo<Result<Option<SignedDuration>, ValidationError>>,
     disabled: Memo<bool>,
 ) -> Element {
     rsx! {
@@ -656,15 +657,15 @@ pub fn InputDuration(
             if let Ok(start_time) = start_time() {
                 ActionButton {
                     on_click: move |_e| {
-                        let now: DateTime<FixedOffset> = Utc::now().into();
-                        value.set((now - start_time).as_raw());
+                        let duration = ZonedDateTime::now().duration_since(&start_time);
+                        value.set(duration.as_raw());
                     },
                     "Stop"
                 }
             }
             FieldMessage { validate, disabled }
             if let Ok(Some(d)) = validate() {
-                span { class: "text-sm text-base-content/60", "{time_delta_to_string(d)}" }
+                span { class: "text-sm text-base-content/60", "{duration_to_string(d)}" }
             }
         }
     }

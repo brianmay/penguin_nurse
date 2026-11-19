@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use chrono::NaiveTime;
+use jiff::civil::Time;
 use serde::{Deserialize, Serialize};
 
 use crate::models::{ConsumptionType, UserId, common::MaybeSet};
@@ -37,17 +37,17 @@ impl std::fmt::Display for ScheduleId {
 pub struct Schedule {
     pub id: ScheduleId,
     pub user_id: UserId,
-    pub time_of_day: NaiveTime,
+    pub time_of_day: Time,
     pub consumption_type: ConsumptionType,
     pub comments: Option<String>,
     pub active: bool,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff::Timestamp,
+    pub updated_at: jiff::Timestamp,
 }
 
 impl Schedule {
     pub fn name(&self) -> String {
-        self.time_of_day.format("%H:%M").to_string()
+        self.time_of_day.strftime("%H:%M").to_string()
     }
 }
 
@@ -67,7 +67,7 @@ impl ScheduleWithItems {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewSchedule {
     pub user_id: UserId,
-    pub time_of_day: NaiveTime,
+    pub time_of_day: Time,
     pub consumption_type: ConsumptionType,
     pub comments: Option<String>,
     pub active: bool,
@@ -76,7 +76,7 @@ pub struct NewSchedule {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeSchedule {
     pub user_id: MaybeSet<UserId>,
-    pub time_of_day: MaybeSet<NaiveTime>,
+    pub time_of_day: MaybeSet<Time>,
     pub consumption_type: MaybeSet<ConsumptionType>,
     pub comments: MaybeSet<Option<String>>,
     pub active: MaybeSet<bool>,

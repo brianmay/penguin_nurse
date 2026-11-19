@@ -1,10 +1,10 @@
-use chrono::{DateTime, FixedOffset, Local, Utc};
 use dioxus::prelude::*;
+use jiff::{SignedDuration, ZonedDateTime};
 
 use crate::{
     components::{
         events::{EventDateTimeShort, Markdown},
-        times::time_delta_to_string,
+        times::duration_to_string,
     },
     forms::{
         Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputTextArea, Saving,
@@ -23,7 +23,7 @@ pub enum Operation {
 
 #[derive(Debug, Clone)]
 struct Validate {
-    time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
+    time: Memo<Result<ZonedDateTime, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
@@ -56,7 +56,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Note, EditError>
 #[component]
 pub fn NoteUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Note>) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_raw(),
+        Operation::Create { .. } => ZonedDateTime::now().as_raw(),
         Operation::Update { note } => note.time.as_raw(),
     });
 
@@ -209,8 +209,8 @@ pub fn note_title() -> &'static str {
 }
 
 #[component]
-pub fn note_duration(duration: chrono::TimeDelta) -> Element {
-    let text = time_delta_to_string(duration);
+pub fn note_duration(duration: SignedDuration) -> Element {
+    let text = duration_to_string(duration);
 
     rsx! {
         span { {text} }

@@ -1,5 +1,6 @@
 use bigdecimal::BigDecimal;
-use chrono::{DateTime, FixedOffset, NaiveDate, NaiveTime, TimeDelta, Utc};
+use jiff::civil::{Date, Time};
+use jiff::{SignedDuration, Timestamp, ZonedDateTime};
 use palette::Hsv;
 use tap::Pipe;
 
@@ -43,11 +44,11 @@ pub fn validate_email(str: &str) -> Result<String, ValidationError> {
     Ok(str)
 }
 
-pub fn validate_date_of_birth(str: &str) -> Result<Option<NaiveDate>, ValidationError> {
+pub fn validate_date_of_birth(str: &str) -> Result<Option<Date>, ValidationError> {
     validate_field_value(str)
 }
 
-pub fn validate_time_of_day(str: &str) -> Result<NaiveTime, ValidationError> {
+pub fn validate_time_of_day(str: &str) -> Result<Time, ValidationError> {
     validate_field_value(str)
 }
 
@@ -97,24 +98,22 @@ pub fn validate_distance(str: &str) -> Result<Option<bigdecimal::BigDecimal>, Va
     validate_field_value(str)
 }
 
-// pub fn validate_utc_date_time(str: &str) -> Result<chrono::DateTime<Utc>, ValidationError> {
+// pub fn validate_utc_date_time(str: &str) -> Result<jiff::Timestamp, ValidationError> {
 //     validate_field_value(str)
 // }
 
-pub fn validate_fixed_offset_date_time(
-    str: &str,
-) -> Result<chrono::DateTime<FixedOffset>, ValidationError> {
+pub fn validate_fixed_offset_date_time(str: &str) -> Result<ZonedDateTime, ValidationError> {
     validate_field_value(str)
 }
 
-pub fn validate_maybe_date_time(str: &str) -> Result<Option<DateTime<Utc>>, ValidationError> {
+pub fn validate_maybe_date_time(str: &str) -> Result<Option<Timestamp>, ValidationError> {
     validate_field_value(str)
 }
 
 pub fn validate_optional_duration(
     complete: bool,
     str: &str,
-) -> Result<Option<TimeDelta>, ValidationError> {
+) -> Result<Option<SignedDuration>, ValidationError> {
     if str.trim().is_empty() {
         if complete {
             Err(ValidationError(
@@ -124,28 +123,8 @@ pub fn validate_optional_duration(
             Ok(None)
         }
     } else {
-        match validate_field_value::<TimeDelta>(str) {
+        match validate_field_value::<SignedDuration>(str) {
             Ok(td) => Ok(Some(td)),
-            Err(e) => Err(e),
-        }
-    }
-}
-
-pub fn validate_optional_chrono_duration(
-    complete: bool,
-    str: &str,
-) -> Result<Option<chrono::Duration>, ValidationError> {
-    if str.trim().is_empty() {
-        if complete {
-            Err(ValidationError(
-                "Duration is required when marked complete".to_string(),
-            ))
-        } else {
-            Ok(None)
-        }
-    } else {
-        match validate_field_value::<chrono::Duration>(str) {
-            Ok(d) => Ok(Some(d)),
             Err(e) => Err(e),
         }
     }

@@ -1,4 +1,4 @@
-use chrono::Local;
+use jiff::tz::TimeZone;
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
@@ -38,7 +38,7 @@ impl std::fmt::Display for SymptomId {
 pub struct Symptom {
     pub id: SymptomId,
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::FixedOffset>,
+    pub time: jiff::ZonedDateTime,
     pub appetite_loss: i32,
     pub fever: i32,
     pub cough: i32,
@@ -77,21 +77,24 @@ pub struct Symptom {
     pub feeling_cold: i32,
     pub feeling_thirsty: i32,
     pub comments: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff::Timestamp,
+    pub updated_at: jiff::Timestamp,
 }
 
 #[allow(dead_code)]
 impl Symptom {
     pub fn name(&self) -> String {
-        self.time.with_timezone(&Local).time().to_string()
+        self.time
+            .with_time_zone(TimeZone::system())
+            .time()
+            .to_string()
     }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewSymptom {
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::FixedOffset>,
+    pub time: jiff::ZonedDateTime,
     pub appetite_loss: i32,
     pub fever: i32,
     pub cough: i32,
@@ -133,7 +136,7 @@ pub struct NewSymptom {
 }
 
 impl NewSymptom {
-    pub fn default(user_id: UserId, time: chrono::DateTime<chrono::FixedOffset>) -> Self {
+    pub fn default(user_id: UserId, time: jiff::ZonedDateTime) -> Self {
         Self {
             user_id,
             time,
@@ -182,7 +185,7 @@ impl NewSymptom {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
 pub struct ChangeSymptom {
     pub user_id: MaybeSet<UserId>,
-    pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
+    pub time: MaybeSet<jiff::ZonedDateTime>,
     pub appetite_loss: MaybeSet<i32>,
     pub fever: MaybeSet<i32>,
     pub cough: MaybeSet<i32>,

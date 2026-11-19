@@ -4,6 +4,7 @@ pub mod api;
 pub mod auth;
 // pub mod context;
 pub mod database;
+pub mod datetime;
 mod handlers;
 mod oidc;
 mod session_store;

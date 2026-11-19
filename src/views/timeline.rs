@@ -1,9 +1,10 @@
 use std::ops::Deref;
 
-use chrono::{NaiveDate, Utc};
 use dioxus::prelude::*;
 use dioxus_fullstack::ServerFnError;
 use dioxus_router::navigator;
+use jiff::Timestamp;
+use jiff::civil::Date;
 use penguin_nurse::validation::entry_errors;
 use tap::Pipe;
 
@@ -26,7 +27,7 @@ use crate::{
         wee_urges::{self, WeeUrgeDetails, WeeUrgeIcon, wee_urge_title},
         wees::{self, WeeDetails, WeeDuration, WeeIcon, wee_title},
     },
-    dt::{display_date, get_date_for_dt, get_utc_times_for_date},
+    dt::{display_date, get_date_for_timestamp, get_utc_times_for_date},
     functions::{
         consumables::get_consumable_by_id,
         consumptions::{get_consumption_by_id, get_consumptions_for_time_range},
@@ -46,7 +47,7 @@ use crate::{
 #[component]
 fn EntryRow(
     entry: ReadSignal<Entry>,
-    date: ReadSignal<NaiveDate>,
+    date: ReadSignal<Date>,
     selected: Signal<Option<EntryId>>,
 ) -> Element {
     let navigator = navigator();
@@ -261,7 +262,7 @@ fn EntryRow(
 
 #[component]
 pub fn TimelineList(
-    date: ReadSignal<NaiveDate>,
+    date: ReadSignal<Date>,
     dialog: ReadSignal<Option<DialogReference>>,
 ) -> Element {
     let navigator = navigator();
@@ -671,8 +672,8 @@ pub fn TimelineList(
             div { class: "mb-2 flex flex-wrap gap-2",
                 NavButton {
                     on_click: move |_| {
-                        let new_date = date().pred_opt();
-                        if let Some(new_date) = new_date {
+                        let new_date = date().yesterday();
+                        if let Ok(new_date) = new_date {
                             navigator
                                 .push(Route::TimelineList {
                                     date: new_date,
@@ -684,7 +685,7 @@ pub fn TimelineList(
                 }
                 NavButton {
                     on_click: move |_| {
-                        let new_date = get_date_for_dt(Utc::now());
+                        let new_date = get_date_for_timestamp(Timestamp::now());
                         navigator
                             .push(Route::TimelineList {
                                 date: new_date,
@@ -695,8 +696,8 @@ pub fn TimelineList(
                 }
                 NavButton {
                     on_click: move |_| {
-                        let new_date = date().succ_opt();
-                        if let Some(new_date) = new_date {
+                        let new_date = date().tomorrow();
+                        if let Ok(new_date) = new_date {
                             navigator
                                 .push(Route::TimelineList {
                                     date: new_date,

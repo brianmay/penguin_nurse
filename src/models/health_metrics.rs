@@ -1,4 +1,4 @@
-use chrono::Local;
+use jiff::tz::TimeZone;
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
@@ -38,7 +38,7 @@ impl std::fmt::Display for HealthMetricId {
 pub struct HealthMetric {
     pub id: HealthMetricId,
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::FixedOffset>,
+    pub time: jiff::ZonedDateTime,
     pub pulse: Option<u16>,
     pub blood_glucose: Option<bigdecimal::BigDecimal>,
     pub systolic_bp: Option<u16>,
@@ -48,8 +48,8 @@ pub struct HealthMetric {
     pub waist_circumference: Option<bigdecimal::BigDecimal>,
     pub hip_circumference: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff::Timestamp,
+    pub updated_at: jiff::Timestamp,
     pub body_fat_pct: Option<bigdecimal::BigDecimal>,
     pub bia_details: Option<serde_json::Value>,
 }
@@ -57,14 +57,17 @@ pub struct HealthMetric {
 #[allow(dead_code)]
 impl HealthMetric {
     pub fn name(&self) -> String {
-        self.time.with_timezone(&Local).time().to_string()
+        self.time
+            .with_time_zone(TimeZone::system())
+            .time()
+            .to_string()
     }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewHealthMetric {
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::FixedOffset>,
+    pub time: jiff::ZonedDateTime,
     pub pulse: Option<u16>,
     pub blood_glucose: Option<bigdecimal::BigDecimal>,
     pub systolic_bp: Option<u16>,
@@ -81,7 +84,7 @@ pub struct NewHealthMetric {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeHealthMetric {
     pub user_id: MaybeSet<UserId>,
-    pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
+    pub time: MaybeSet<jiff::ZonedDateTime>,
     pub pulse: MaybeSet<Option<u16>>,
     pub blood_glucose: MaybeSet<Option<bigdecimal::BigDecimal>>,
     pub systolic_bp: MaybeSet<Option<u16>>,

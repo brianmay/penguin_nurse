@@ -1,12 +1,13 @@
+use chrono::Utc;
 use diesel::prelude::*;
 use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
 
 use chrono::DateTime;
-use chrono::Utc;
 
 use crate::models;
 use crate::server::database::{connection::DatabaseConnection, schema};
+use crate::server::datetime;
 
 #[allow(dead_code)]
 #[derive(Queryable, Selectable, Debug, Clone, Identifiable)]
@@ -22,20 +23,17 @@ pub struct Note {
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
-const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
-
 impl From<Note> for crate::models::Note {
     fn from(note: Note) -> Self {
-        let timezone = chrono::FixedOffset::east_opt(note.utc_offset).unwrap_or(DEFAULT_TIMEZONE);
-        let time = note.time.with_timezone(&timezone);
+        let time = datetime::chrono_to_zoned(note.time, note.utc_offset);
 
         Self {
             id: models::NoteId::new(note.id),
             user_id: models::UserId::new(note.user_id),
             time,
             comments: note.comments,
-            created_at: note.created_at,
-            updated_at: note.updated_at,
+            created_at: datetime::chrono_to_timestamp(note.created_at),
+            updated_at: datetime::chrono_to_timestamp(note.updated_at),
         }
     }
 }
@@ -92,8 +90,8 @@ impl<'a> NewNote<'a> {
     pub fn from_front_end(note: &'a crate::models::NewNote) -> Self {
         Self {
             user_id: note.user_id.as_inner(),
-            time: note.time.with_timezone(&Utc),
-            utc_offset: note.time.offset().local_minus_utc(),
+            time: datetime::zoned_to_chrono_utc(&note.time),
+            utc_offset: note.time.offset().seconds(),
             comments: note.comments.as_deref(),
         }
     }
@@ -122,10 +120,15 @@ pub struct ChangeNote<'a> {
 impl<'a> ChangeNote<'a> {
     pub fn from_front_end(note: &'a crate::models::ChangeNote) -> Self {
         Self {
-            time: note.time.map(|time| time.with_timezone(&Utc)).into_option(),
+            time: note
+                .time
+                .clone()
+                .map(|time| datetime::zoned_to_chrono_utc(&time))
+                .into_option(),
             utc_offset: note
                 .time
-                .map(|time| time.offset().local_minus_utc())
+                .clone()
+                .map(|time| time.offset().seconds())
                 .into_option(),
             comments: note.comments.map_inner_deref().into_option(),
         }

@@ -1,10 +1,10 @@
-use chrono::Utc;
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 
 use crate::{
     models::{PooId, UserId},
     server::database::{connection::DatabaseConnection, schema},
+    server::datetime,
 };
 
 #[allow(dead_code)]
@@ -29,12 +29,9 @@ pub struct Poo {
     pub complete: bool,
 }
 
-const DEFAULT_TIMEZONE: chrono::FixedOffset = chrono::FixedOffset::east_opt(0).unwrap();
-
 impl From<Poo> for crate::models::Poo {
     fn from(poo: Poo) -> Self {
-        let timezone = chrono::FixedOffset::east_opt(poo.utc_offset).unwrap_or(DEFAULT_TIMEZONE);
-        let time = poo.time.with_timezone(&timezone);
+        let time = datetime::chrono_to_zoned(poo.time, poo.utc_offset);
 
         let colour = match (poo.colour_hue, poo.colour_saturation, poo.colour_value) {
             (Some(hue), Some(saturation), Some(value)) => {
@@ -49,15 +46,15 @@ impl From<Poo> for crate::models::Poo {
             id: PooId::new(poo.id),
             user_id: UserId::new(poo.user_id),
             time,
-            duration: poo.duration,
+            duration: poo.duration.map(datetime::chrono_to_signed_duration),
             urgency: poo.urgency.try_into().unwrap_or_default(),
             quantity: poo.quantity,
             bristol,
             colour,
             comments: poo.comments,
             complete: poo.complete,
-            created_at: poo.created_at,
-            updated_at: poo.updated_at,
+            created_at: datetime::chrono_to_timestamp(poo.created_at),
+            updated_at: datetime::chrono_to_timestamp(poo.updated_at),
         }
     }
 }
@@ -138,9 +135,9 @@ impl<'a> NewPoo<'a> {
     pub fn from_front_end(poo: &'a crate::models::NewPoo) -> Self {
         Self {
             user_id: poo.user_id.as_inner(),
-            time: poo.time.with_timezone(&Utc),
-            utc_offset: poo.time.offset().local_minus_utc(),
-            duration: poo.duration,
+            time: datetime::zoned_to_chrono_utc(&poo.time),
+            utc_offset: poo.time.offset().seconds(),
+            duration: poo.duration.map(datetime::signed_duration_to_chrono),
             urgency: poo.urgency.into(),
             quantity: poo.quantity,
             bristol: poo.bristol.map(|b| b.into()),
@@ -186,12 +183,20 @@ pub struct ChangePoo<'a> {
 impl<'a> ChangePoo<'a> {
     pub fn from_front_end(poo: &'a crate::models::ChangePoo) -> Self {
         Self {
-            time: poo.time.map(|time| time.with_timezone(&Utc)).into_option(),
+            time: poo
+                .time
+                .clone()
+                .map(|time| datetime::zoned_to_chrono_utc(&time))
+                .into_option(),
             utc_offset: poo
                 .time
-                .map(|time| time.offset().local_minus_utc())
+                .clone()
+                .map(|time| time.offset().seconds())
                 .into_option(),
-            duration: poo.duration.into_option(),
+            duration: poo
+                .duration
+                .map(|duration| duration.map(datetime::signed_duration_to_chrono))
+                .into_option(),
             urgency: poo.urgency.map_into().into_option(),
             quantity: poo.quantity.into_option(),
             bristol: poo.bristol.map(|x| x.map(|b| b.into())).into_option(),

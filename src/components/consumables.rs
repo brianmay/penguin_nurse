@@ -1,10 +1,11 @@
 use std::{num::ParseIntError, str::FromStr};
 
-use chrono::{DateTime, Local, Utc};
 use dioxus::prelude::*;
 use dioxus_fullstack::ServerFnError;
 use dioxus_router::ToQueryArgument;
 use itertools::intersperse;
+use jiff::Timestamp;
+use jiff::tz::TimeZone;
 use penguin_nurse::validation::consumable_errors;
 use tap::Pipe;
 use thiserror::Error;
@@ -44,8 +45,8 @@ struct Validate {
     is_organic: Memo<Result<bool, ValidationError>>,
     unit: Memo<Result<ConsumableUnit, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
-    created: Memo<Result<Option<DateTime<Utc>>, ValidationError>>,
-    destroyed: Memo<Result<Option<DateTime<Utc>>, ValidationError>>,
+    created: Memo<Result<Option<Timestamp>, ValidationError>>,
+    destroyed: Memo<Result<Option<Timestamp>, ValidationError>>,
     consumption_type: Memo<Result<Option<ConsumptionType>, ValidationError>>,
 }
 
@@ -56,8 +57,8 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<Consumable, Edit
     let is_organic = validate.is_organic.read().clone()?;
     let unit = validate.unit.read().clone()?;
     let comments = validate.comments.read().clone()?;
-    let created: Option<DateTime<Utc>> = validate.created.read().clone()?;
-    let destroyed: Option<DateTime<Utc>> = validate.destroyed.read().clone()?;
+    let created: Option<Timestamp> = validate.created.read().clone()?;
+    let destroyed: Option<Timestamp> = validate.destroyed.read().clone()?;
     let consumption_type = validate.consumption_type.read().clone()?;
 
     match op {
@@ -1003,13 +1004,13 @@ pub fn ConsumableSummary(
         div {
             if let Some(created) = &consumable.created {
                 span { class: "sm:hidden", "Created: " }
-                {created.with_timezone(&Local).to_string()}
+                {created.to_zoned_datetime(TimeZone::system()).strftime("%Y-%m-%d %H:%M:%S%.f %:z").to_string()}
             }
         }
         div {
             if let Some(destroyed) = &consumable.destroyed {
                 span { class: "sm:hidden", "Destroyed: " }
-                {destroyed.with_timezone(&Local).to_string()}
+                {destroyed.to_zoned_datetime(TimeZone::system()).strftime("%Y-%m-%d %H:%M:%S%.f %:z").to_string()}
             }
         }
     }
@@ -1029,12 +1030,12 @@ pub fn ConsumableLabel(consumable: Consumable) -> Element {
             div { {brand.clone()} }
         }
         if let Some(dt) = &consumable.created {
-            div { {dt.with_timezone(&Local).format("%Y-%m-%d").to_string()} }
+            div { {dt.to_zoned_datetime(TimeZone::system()).strftime("%Y-%m-%d").to_string()} }
         }
         if let Some(dt) = &consumable.destroyed {
             div {
                 "Destroyed: "
-                {dt.with_timezone(&Local).format("%Y-%m-%d").to_string()}
+                {dt.to_zoned_datetime(TimeZone::system()).strftime("%Y-%m-%d").to_string()}
             }
         }
         if let Some(comments) = &consumable.comments {

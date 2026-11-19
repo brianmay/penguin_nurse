@@ -9,6 +9,7 @@ use tap::Pipe;
 use crate::models::UserId;
 use crate::server::database::connection::DatabaseConnection;
 use crate::server::database::schema;
+use crate::server::datetime;
 
 #[derive(diesel_derive_enum::DbEnum, Debug, Copy, Clone)]
 #[db_enum(existing_type_path = "schema::sql_types::Sex")]
@@ -97,10 +98,10 @@ impl From<User> for crate::models::User {
             oidc_id: user.oidc_id,
             email: user.email,
             is_admin: user.is_admin,
-            date_of_birth: user.date_of_birth,
+            date_of_birth: user.date_of_birth.map(datetime::chrono_to_date),
             sex: user.sex.map(|s| s.into()),
-            created_at: user.created_at,
-            updated_at: user.updated_at,
+            created_at: datetime::chrono_to_timestamp(user.created_at),
+            updated_at: datetime::chrono_to_timestamp(user.updated_at),
         }
     }
 }
@@ -158,7 +159,10 @@ impl<'a> UpdateUser<'a> {
             oidc_id: user.oidc_id.map_inner_deref().into_option(),
             email: user.email.as_deref().into_option(),
             is_admin: user.is_admin.into_option(),
-            date_of_birth: user.date_of_birth.into_option(),
+            date_of_birth: user
+                .date_of_birth
+                .map(|date| date.map(datetime::date_to_chrono))
+                .into_option(),
             sex: user.sex.map(|s| s.map(|s| s.into())).into_option(),
         }
     }

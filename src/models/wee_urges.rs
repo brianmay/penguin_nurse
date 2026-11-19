@@ -38,18 +38,18 @@ impl std::fmt::Display for WeeUrgeId {
 pub struct WeeUrge {
     pub id: WeeUrgeId,
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::FixedOffset>,
+    pub time: jiff::ZonedDateTime,
     pub urgency: Urgency,
     pub comments: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff::Timestamp,
+    pub updated_at: jiff::Timestamp,
 }
 
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewWeeUrge {
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::FixedOffset>,
+    pub time: jiff::ZonedDateTime,
     pub urgency: Urgency,
     pub comments: Option<String>,
 }
@@ -58,7 +58,7 @@ pub struct NewWeeUrge {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeWeeUrge {
     pub user_id: MaybeSet<UserId>,
-    pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
+    pub time: MaybeSet<jiff::ZonedDateTime>,
     pub urgency: MaybeSet<Urgency>,
     pub comments: MaybeSet<Option<String>>,
 }

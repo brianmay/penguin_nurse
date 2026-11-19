@@ -10,13 +10,15 @@ use axum::{
     routing::{get, post},
 };
 use chrono::{Datelike, Utc};
-use chrono_tz::Tz;
+use jiff::Timestamp;
+use jiff::tz::TimeZone;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
 use crate::server::database::connection::DatabasePool;
 use crate::server::database::models::health_metrics as db_health_metrics;
 use crate::server::database::models::users::{self as db_users, Sex};
+use crate::server::datetime;
 
 // ---------------------------------------------------------------------------
 // API key authentication middleware
@@ -251,14 +253,11 @@ async fn post_measurement(
         .body_fat_deci_pct
         .map(|v| bigdecimal::BigDecimal::from(v) / bigdecimal::BigDecimal::from(10u32));
 
-    let tz: Tz = body
-        .timezone
-        .parse()
+    let tz = TimeZone::get(&body.timezone)
         .map_err(|e| error_response(StatusCode::BAD_REQUEST, &format!("invalid timezone: {e}")))?;
 
     let now_utc = Utc::now();
-    let now_local = now_utc.with_timezone(&tz);
-    let now_fixed = now_local.fixed_offset();
+    let now_fixed = datetime::zoned_to_chrono_fixed(&Timestamp::now().to_zoned_datetime(tz));
     let bia_details = body.details.unwrap_or(serde_json::json!({}));
 
     let new_metric = db_health_metrics::NewHealthMetric::for_kiosk(

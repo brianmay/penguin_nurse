@@ -1,6 +1,6 @@
-use chrono::{DateTime, FixedOffset, Local, Utc};
 use derive_enum_all_values::AllValues;
 use dioxus::prelude::*;
+use jiff::ZonedDateTime;
 
 use crate::{
     components::events::{EventDateTimeShort, Markdown},
@@ -149,7 +149,7 @@ fn build_form_inputs(op: &Operation) -> (Vec<SymptomInput>, Memo<bool>) {
 fn inputs_to_new_symptom(
     inputs: &[SymptomInput],
     user_id: UserId,
-    time: DateTime<FixedOffset>,
+    time: ZonedDateTime,
     comments: Option<String>,
 ) -> Result<NewSymptom, ValidationError> {
     let mut s = NewSymptom {
@@ -171,7 +171,7 @@ fn inputs_to_new_symptom(
 
 fn inputs_to_change_symptom(
     inputs: &[SymptomInput],
-    time: DateTime<FixedOffset>,
+    time: ZonedDateTime,
     comments: Option<String>,
 ) -> Result<ChangeSymptom, ValidationError> {
     let mut s = ChangeSymptom {
@@ -567,7 +567,7 @@ pub fn collect_symptom_fields<'a>(
 
 #[derive(Debug, Clone)]
 struct Validate {
-    time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
+    time: Memo<Result<ZonedDateTime, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
 
@@ -598,7 +598,7 @@ async fn do_save(
 #[component]
 pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Symptom>) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_raw(),
+        Operation::Create { .. } => ZonedDateTime::now().as_raw(),
         Operation::Update { symptom } => symptom.time.as_raw(),
     });
     let comments = use_signal(|| match &op {
@@ -906,7 +906,7 @@ pub fn SymptomDetails(symptom: Symptom) -> Element {
     //         div { class: "inline-block ml-2", {desc} }
     //     }),
     rsx! {
-        h3 { class: "text-lg font-bold", {symptom.time.format("%Y-%m-%d %H:%M:%S %:z").to_string()} }
+        h3 { class: "text-lg font-bold", {symptom.time.strftime("%Y-%m-%d %H:%M:%S %:z").to_string()} }
         for category in SymptomCategory::all_values() {
             {
                 let fields = collect_symptom_fields(&symptom, *category);

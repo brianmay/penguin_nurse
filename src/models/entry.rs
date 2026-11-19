@@ -1,4 +1,4 @@
-use chrono::{DateTime, FixedOffset};
+use jiff::ZonedDateTime;
 
 use crate::models::{
     Exercise, ExerciseId, HealthMetric, HealthMetricId, Note, NoteId, Reflux, RefluxId, Symptom,
@@ -58,7 +58,7 @@ pub enum EntryData {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Entry {
     pub event: Event,
-    pub time: DateTime<FixedOffset>,
+    pub time: ZonedDateTime,
     pub data: EntryData,
 }
 

@@ -1,5 +1,5 @@
-use chrono::{DateTime, FixedOffset, Local, Utc};
 use dioxus::prelude::*;
+use jiff::ZonedDateTime;
 
 use crate::{
     components::events::{EventDateTimeShort, Markdown, UrgencyLabel},
@@ -20,7 +20,7 @@ pub enum Operation {
 
 #[derive(Debug, Clone)]
 struct Validate {
-    time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
+    time: Memo<Result<ZonedDateTime, ValidationError>>,
     urgency: Memo<Result<Urgency, ValidationError>>,
     comments: Memo<Result<Option<String>, ValidationError>>,
 }
@@ -57,7 +57,7 @@ async fn do_save(op: &Operation, validate: &Validate) -> Result<WeeUrge, EditErr
 #[component]
 pub fn WeeUrgeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<WeeUrge>) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_raw(),
+        Operation::Create { .. } => ZonedDateTime::now().as_raw(),
         Operation::Update { wee_urge } => wee_urge.time.as_raw(),
     });
     let urgency = use_signal(|| match &op {

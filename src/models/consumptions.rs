@@ -1,5 +1,5 @@
-use chrono::Local;
 use derive_enum_all_values::AllValues;
+use jiff::tz::TimeZone;
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
@@ -93,19 +93,22 @@ impl std::fmt::Display for ConsumptionId {
 pub struct Consumption {
     pub id: ConsumptionId,
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: Option<chrono::TimeDelta>,
+    pub time: jiff::ZonedDateTime,
+    pub duration: Option<jiff::SignedDuration>,
     pub consumption_type: ConsumptionType,
     pub liquid_mls: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
     pub complete: bool,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff::Timestamp,
+    pub updated_at: jiff::Timestamp,
 }
 
 impl Consumption {
     pub fn name(&self) -> String {
-        self.time.with_timezone(&Local).time().to_string()
+        self.time
+            .with_time_zone(TimeZone::system())
+            .time()
+            .to_string()
     }
 }
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -124,8 +127,8 @@ impl ConsumptionWithItems {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewConsumption {
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: Option<chrono::TimeDelta>,
+    pub time: jiff::ZonedDateTime,
+    pub duration: Option<jiff::SignedDuration>,
     pub consumption_type: ConsumptionType,
     pub liquid_mls: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
@@ -135,8 +138,8 @@ pub struct NewConsumption {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeConsumption {
     pub user_id: MaybeSet<UserId>,
-    pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
-    pub duration: MaybeSet<Option<chrono::TimeDelta>>,
+    pub time: MaybeSet<jiff::ZonedDateTime>,
+    pub duration: MaybeSet<Option<jiff::SignedDuration>>,
     pub consumption_type: MaybeSet<ConsumptionType>,
     pub liquid_mls: MaybeSet<Option<bigdecimal::BigDecimal>>,
     pub comments: MaybeSet<Option<String>>,

@@ -1,20 +1,19 @@
-use chrono::Duration;
-use chrono::{DateTime, FixedOffset, Local, Utc};
 use classes::classes;
 use dioxus::prelude::*;
+use jiff::{SignedDuration, ZonedDateTime};
 use palette::Hsv;
 
 use crate::{
     components::{
         events::{EventDateTimeShort, Markdown, UrgencyLabel, event_colour},
         symptoms::{SymptomDisplay, SymptomIntensity},
-        times::time_delta_to_string,
+        times::duration_to_string,
     },
     forms::{
         Colour, Dialog, EditError, FieldValue, FormSaveCancelButton, InputBoolean, InputColour,
         InputDateTime, InputDuration, InputNumber, InputTextArea, InputUrgency, Saving,
         ValidationError, validate_colour_maybe, validate_comments, validate_fixed_offset_date_time,
-        validate_optional_chrono_duration, validate_optional_leakage, validate_optional_mls,
+        validate_optional_duration, validate_optional_leakage, validate_optional_mls,
         validate_urgency,
     },
     functions::wees::{create_wee, delete_wee, update_wee},
@@ -29,8 +28,8 @@ pub enum Operation {
 
 #[derive(Debug, Clone)]
 struct Validate {
-    time: Memo<Result<DateTime<FixedOffset>, ValidationError>>,
-    duration: Memo<Result<Option<Duration>, ValidationError>>,
+    time: Memo<Result<ZonedDateTime, ValidationError>>,
+    duration: Memo<Result<Option<SignedDuration>, ValidationError>>,
     urgency: Memo<Result<Urgency, ValidationError>>,
     leakage: Memo<Result<Option<i32>, ValidationError>>,
     mls: Memo<Result<Option<i32>, ValidationError>>,
@@ -82,7 +81,7 @@ async fn do_save(op: &Operation, validate: &Validate, complete: bool) -> Result<
 #[component]
 pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> Element {
     let time = use_signal(|| match &op {
-        Operation::Create { .. } => Utc::now().with_timezone(&Local).fixed_offset().as_raw(),
+        Operation::Create { .. } => ZonedDateTime::now().as_raw(),
         Operation::Update { wee } => wee.time.as_raw(),
     });
     let duration = use_signal(|| match &op {
@@ -128,9 +127,7 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
         let mls_validate = use_memo(move || validate_optional_mls(*complete.read(), &mls()));
         Validate {
             time: use_memo(move || validate_fixed_offset_date_time(&time())),
-            duration: use_memo(move || {
-                validate_optional_chrono_duration(*complete.read(), &duration())
-            }),
+            duration: use_memo(move || validate_optional_duration(*complete.read(), &duration())),
             urgency: use_memo(move || validate_urgency(urgency())),
             leakage: use_memo(move || validate_optional_leakage(*complete.read(), &leakage())),
             mls: mls_validate,
@@ -336,15 +333,15 @@ pub fn wee_title() -> &'static str {
 }
 
 #[component]
-pub fn WeeDuration(duration: Option<chrono::Duration>) -> Element {
+pub fn WeeDuration(duration: Option<SignedDuration>) -> Element {
     match duration {
         Some(d) => {
-            let text = time_delta_to_string(d);
-            let classes = if d.num_seconds() == 0 {
+            let text = duration_to_string(d);
+            let classes = if d.as_secs() == 0 {
                 classes!["text-error"]
-            } else if d.num_seconds() < 60 {
+            } else if d.as_secs() < 60 {
                 classes!["text-success"]
-            } else if d.num_minutes() < 3 {
+            } else if d.as_mins() < 3 {
                 classes!["text-warning"]
             } else {
                 classes!["text-error"]

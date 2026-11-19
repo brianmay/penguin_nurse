@@ -1,4 +1,4 @@
-use chrono::Local;
+use jiff::tz::TimeZone;
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
@@ -38,28 +38,31 @@ impl std::fmt::Display for RefluxId {
 pub struct Reflux {
     pub id: RefluxId,
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: Option<chrono::TimeDelta>,
+    pub time: jiff::ZonedDateTime,
+    pub duration: Option<jiff::SignedDuration>,
     pub location: Option<String>,
     pub severity: i32,
     pub comments: Option<String>,
     pub complete: bool,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff::Timestamp,
+    pub updated_at: jiff::Timestamp,
 }
 
 #[allow(dead_code)]
 impl Reflux {
     pub fn name(&self) -> String {
-        self.time.with_timezone(&Local).time().to_string()
+        self.time
+            .with_time_zone(TimeZone::system())
+            .time()
+            .to_string()
     }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct NewReflux {
     pub user_id: UserId,
-    pub time: chrono::DateTime<chrono::FixedOffset>,
-    pub duration: Option<chrono::TimeDelta>,
+    pub time: jiff::ZonedDateTime,
+    pub duration: Option<jiff::SignedDuration>,
     pub location: Option<String>,
     pub severity: i32,
     pub comments: Option<String>,
@@ -69,8 +72,8 @@ pub struct NewReflux {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ChangeReflux {
     pub user_id: MaybeSet<UserId>,
-    pub time: MaybeSet<chrono::DateTime<chrono::FixedOffset>>,
-    pub duration: MaybeSet<Option<chrono::TimeDelta>>,
+    pub time: MaybeSet<jiff::ZonedDateTime>,
+    pub duration: MaybeSet<Option<jiff::SignedDuration>>,
     pub location: MaybeSet<Option<String>>,
     pub severity: MaybeSet<i32>,
     pub comments: MaybeSet<Option<String>>,

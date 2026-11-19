@@ -38,8 +38,8 @@ pub struct NestedConsumable {
     pub quantity: Option<bigdecimal::BigDecimal>,
     pub liquid_mls: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff::Timestamp,
+    pub updated_at: jiff::Timestamp,
 }
 
 #[allow(dead_code)]
