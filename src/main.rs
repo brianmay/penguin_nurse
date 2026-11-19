@@ -13,6 +13,7 @@ use views::{
 };
 
 pub use penguin_nurse::models;
+pub use penguin_nurse::validation;
 
 mod components;
 mod dt;

@@ -10,6 +10,7 @@ use tap::Pipe;
 
 use crate::models;
 use crate::server::database::{connection::DatabaseConnection, schema};
+use crate::validation::compatible_consumable_types;
 
 use super::consumptions::ConsumptionType;
 use super::nested_consumables::NestedConsumable;
@@ -95,7 +96,7 @@ pub async fn search_consumables_with_nested(
     use crate::server::database::schema::nested_consumables::table as nested_table;
 
     let consumables =
-        search_consumables(conn, search, include_only_created, include_destroyed).await?;
+        search_consumables(conn, search, include_only_created, include_destroyed, None).await?;
 
     let nested: Vec<(NestedConsumable, Consumable)> = nested_table
         .filter(q_nested::parent_id.eq_any(consumables.iter().map(|x| x.id)))
@@ -125,6 +126,7 @@ pub async fn search_consumables(
     search: &str,
     include_only_created: bool,
     include_destroyed: bool,
+    consumption_type: Option<models::ConsumptionType>,
 ) -> Result<Vec<Consumable>, diesel::result::Error> {
     use crate::server::database::schema::consumables::dsl as q;
     use crate::server::database::schema::consumables::table;
@@ -152,6 +154,22 @@ pub async fn search_consumables(
             } else {
                 x.filter(q::destroyed.is_null())
             }
+        })
+        .pipe(|x| match consumption_type {
+            // Consumables without a consumption type are always offered:
+            // their type is unknown, not incompatible.
+            Some(parent) => {
+                let compatible: Vec<ConsumptionType> = compatible_consumable_types(parent)
+                    .into_iter()
+                    .map(ConsumptionType::from)
+                    .collect();
+                x.filter(
+                    q::consumption_type
+                        .is_null()
+                        .or(q::consumption_type.eq_any(compatible)),
+                )
+            }
+            None => x,
         })
         .get_results(conn)
         .await

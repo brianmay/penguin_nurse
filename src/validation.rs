@@ -28,6 +28,21 @@ pub fn ingredient_type_matches(ingredient: ConsumptionType, parent: ConsumptionT
     )
 }
 
+/// The consumable consumption types selectable for a parent (consumption,
+/// schedule, or parent consumable) with the given consumption type.
+///
+/// Selection mirrors `ingredient_type_matches`: the parent's own type plus,
+/// for the specific skin sites (toes, hands, face, ears), the generic apply
+/// skin type. Consumables with no consumption type are always selectable
+/// (handled by callers): their type is unknown, not incompatible.
+pub fn compatible_consumable_types(parent: ConsumptionType) -> Vec<ConsumptionType> {
+    ConsumptionType::all_values()
+        .iter()
+        .copied()
+        .filter(|&consumable_type| ingredient_type_matches(consumable_type, parent))
+        .collect()
+}
+
 pub fn consumable_errors(
     consumable: &Consumable,
     nested_consumables: Option<&Vec<ConsumableItem>>,
@@ -428,6 +443,64 @@ mod tests {
         let parent = make_consumable(1, Some(ConsumptionType::ApplySkin));
         let ingredient = make_consumable_item(1, 2, None, Some(ConsumptionType::ApplyToes));
         assert_eq!(consumable_errors(&parent, Some(&vec![ingredient])).len(), 1);
+    }
+
+    // ── compatible_consumable_types ───────────────────────────────────────────
+
+    #[test]
+    fn compatible_types_non_apply_type_is_exact_match_only() {
+        for parent_type in [
+            ConsumptionType::Digest,
+            ConsumptionType::InhaleNose,
+            ConsumptionType::InhaleMouth,
+            ConsumptionType::SpitOut,
+            ConsumptionType::Inject,
+        ] {
+            assert_eq!(
+                compatible_consumable_types(parent_type),
+                vec![parent_type],
+                "{parent_type:?} should only accept exact matches"
+            );
+        }
+    }
+
+    #[test]
+    fn compatible_types_specific_skin_sites_accept_apply_skin() {
+        for parent_type in [
+            ConsumptionType::ApplyToes,
+            ConsumptionType::ApplyHands,
+            ConsumptionType::ApplyFace,
+            ConsumptionType::ApplyEars,
+        ] {
+            assert_eq!(
+                compatible_consumable_types(parent_type),
+                vec![ConsumptionType::ApplySkin, parent_type],
+                "{parent_type:?} should accept apply skin and itself"
+            );
+        }
+    }
+
+    #[test]
+    fn compatible_types_apply_skin_is_exact_match_only() {
+        assert_eq!(
+            compatible_consumable_types(ConsumptionType::ApplySkin),
+            vec![ConsumptionType::ApplySkin]
+        );
+    }
+
+    #[test]
+    fn compatible_types_lips_hair_eyes_are_exact_match_only() {
+        for parent_type in [
+            ConsumptionType::ApplyLips,
+            ConsumptionType::ApplyHair,
+            ConsumptionType::ApplyEyes,
+        ] {
+            assert_eq!(
+                compatible_consumable_types(parent_type),
+                vec![parent_type],
+                "{parent_type:?} is not a generic skin site"
+            );
+        }
     }
 
     // ── schedule_errors ───────────────────────────────────────────────────────

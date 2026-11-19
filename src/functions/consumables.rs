@@ -58,6 +58,7 @@ pub async fn search_consumables(
     query: String,
     include_only_created: bool,
     include_destroyed: bool,
+    consumption_type: Option<models::ConsumptionType>,
 ) -> Result<Vec<models::Consumable>, ServerFnError> {
     let _logged_in_user_id = get_user_id().await?;
 
@@ -67,6 +68,7 @@ pub async fn search_consumables(
         &query,
         include_only_created,
         include_destroyed,
+        consumption_type,
     )
     .await
     .map(|x| x.into_iter().map(|y| y.into()).collect())

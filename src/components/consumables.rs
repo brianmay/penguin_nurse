@@ -808,6 +808,7 @@ pub fn ConsumableUpdateIngredients(
                     },
                     create_form,
                     disabled,
+                    consumption_type: consumable.consumption_type,
                 }
                 if !create_form() {
                     FormEditButton {

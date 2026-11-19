@@ -612,6 +612,7 @@ pub fn ScheduleUpdateIngredients(
                     },
                     create_form,
                     disabled,
+                    consumption_type: Some(schedule.consumption_type),
                 }
                 if !create_form() {
                     FormEditButton {

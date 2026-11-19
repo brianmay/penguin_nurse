@@ -695,6 +695,7 @@ pub fn ConsumptionUpdateIngredients(
                     },
                     create_form,
                     disabled,
+                    consumption_type: Some(consumption.consumption_type),
                 }
                 if !create_form() {
                     FormEditButton {

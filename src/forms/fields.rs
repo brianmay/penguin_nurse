@@ -1255,6 +1255,13 @@ pub fn InputColour(
     }
 }
 
+/// Search/select field for consumables.
+///
+/// `consumption_type` is the consumption type of the consumption, schedule,
+/// or parent consumable being edited. Search results are limited to
+/// consumables compatible with it (see `compatible_consumable_types`);
+/// `None` disables the filter, e.g. for a parent consumable with no
+/// consumption type.
 #[component]
 pub fn InputConsumable(
     id: &'static str,
@@ -1264,6 +1271,7 @@ pub fn InputConsumable(
     on_create: Callback<Consumable>,
     on_change: Callback<Option<Consumable>>,
     mut create_form: Signal<bool>,
+    consumption_type: Option<ConsumptionType>,
 ) -> Element {
     let mut search = use_signal(|| None);
     let barcode = use_signal(String::new);
@@ -1281,7 +1289,7 @@ pub fn InputConsumable(
             if let Some(query) = query
                 && !query.is_empty()
             {
-                search_consumables(query, false, false)
+                search_consumables(query, false, false, consumption_type)
                     .await
                     .unwrap()
                     .into_iter()
