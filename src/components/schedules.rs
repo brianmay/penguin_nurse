@@ -931,7 +931,7 @@ pub fn ScheduleDue(
                 }
             }
 
-            div { class: "flex gap-2",
+            div { class: "flex flex-wrap gap-2",
                 button {
                     r#type: "button",
                     class: "btn btn-outline btn-secondary align-top",
