@@ -40,18 +40,18 @@ impl From<Error> for session_store::Error {
     }
 }
 
-pub fn time_to_chrono(expiry_date: time::OffsetDateTime) -> chrono::DateTime<chrono::Utc> {
-    // if we can't convert the expiry date to a chrono type, return the current time i.e. effectively assume our session has expired
-    chrono::DateTime::from_timestamp(expiry_date.unix_timestamp(), expiry_date.nanosecond())
-        .unwrap_or(chrono::Utc::now())
+pub fn time_to_jiff(expiry_date: time::OffsetDateTime) -> jiff::Timestamp {
+    // if we can't convert the expiry date to a timestamp, return the current
+    // time i.e. effectively assume our session has expired
+    jiff::Timestamp::new(
+        expiry_date.unix_timestamp(),
+        expiry_date.nanosecond() as i32,
+    )
+    .unwrap_or(jiff::Timestamp::now())
 }
 
-pub fn chono_to_time(expiry_date: chrono::DateTime<chrono::Utc>) -> time::OffsetDateTime {
-    let timestamp = expiry_date.timestamp();
-    let subsec_nanos = expiry_date.timestamp_subsec_nanos();
-
-    time::OffsetDateTime::from_unix_timestamp(timestamp)
-        .map(|x| x + time::Duration::nanoseconds(subsec_nanos as i64))
+pub fn jiff_to_time(expiry_date: jiff::Timestamp) -> time::OffsetDateTime {
+    time::OffsetDateTime::from_unix_timestamp_nanos(expiry_date.as_nanosecond())
         .unwrap_or(time::OffsetDateTime::now_utc())
 }
 
@@ -68,7 +68,7 @@ impl PostgresStore {
     ///
     /// # Examples
     ///
-    /// ```rust,no_run
+    /// ```ignore
     /// use tower_sessions_sqlx_store::{sqlx::PgPool, PostgresStore};
     ///
     /// # tokio_test::block_on(async {
@@ -104,7 +104,7 @@ impl PostgresStore {
             conn,
             &record.id.to_string(),
             json,
-            time_to_chrono(record.expiry_date),
+            time_to_jiff(record.expiry_date),
         )
         .await
         .map_err(database::connection::Error::from)
@@ -177,7 +177,7 @@ impl SessionStore for PostgresStore {
                 Record {
                     id: session.id.parse().map_err(Error::DecodeSlice)?,
                     data: serde_json::from_value(session.data).map_err(Error::Decode)?,
-                    expiry_date: chono_to_time(session.expiry_date),
+                    expiry_date: jiff_to_time(session.expiry_date.to_jiff()),
                 }
                 .pipe(Some)
                 .pipe(Ok)
@@ -202,7 +202,7 @@ impl SessionStore for PostgresStore {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::{Datelike, TimeZone, Timelike};
+    use jiff::tz::TimeZone;
     use time::{Month, macros::datetime};
 
     #[test]
@@ -224,26 +224,24 @@ mod tests {
     }
 
     #[test]
-    fn test_time_to_chrono() {
+    fn test_time_to_jiff() {
         let expiry_date = datetime!(2021-01-01 00:00:00).assume_utc();
-        let chrono_date = time_to_chrono(expiry_date);
-        assert_eq!(chrono_date.year(), 2021);
-        assert_eq!(chrono_date.month(), 1);
-        assert_eq!(chrono_date.day(), 1);
-        assert_eq!(chrono_date.hour(), 0);
-        assert_eq!(chrono_date.minute(), 0);
-        assert_eq!(chrono_date.second(), 0);
-        assert_eq!(chrono_date.nanosecond(), 0);
+        let jiff_date = time_to_jiff(expiry_date);
+        let zoned = jiff_date.to_zoned_datetime(TimeZone::UTC);
+        assert_eq!(zoned.year(), 2021);
+        assert_eq!(zoned.month(), 1);
+        assert_eq!(zoned.day(), 1);
+        assert_eq!(zoned.hour(), 0);
+        assert_eq!(zoned.minute(), 0);
+        assert_eq!(zoned.second(), 0);
+        assert_eq!(zoned.subsec_nanosecond(), 0);
     }
 
     #[test]
-    fn test_chrono_to_time() {
-        let chrono_date = chrono::Utc
-            .with_ymd_and_hms(2021, 1, 1, 0, 0, 0)
-            .single()
-            .unwrap();
+    fn test_jiff_to_time() {
+        let jiff_date: jiff::Timestamp = "2021-01-01T00:00:00Z".parse().unwrap();
 
-        let expiry_date = chono_to_time(chrono_date);
+        let expiry_date = jiff_to_time(jiff_date);
         assert_eq!(expiry_date.year(), 2021);
         assert_eq!(expiry_date.month(), Month::January);
         assert_eq!(expiry_date.day(), 1);

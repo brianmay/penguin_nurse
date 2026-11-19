@@ -3,11 +3,11 @@
 #![allow(unused)]
 #![allow(clippy::all)]
 
-use chrono::DateTime;
-use chrono::offset::Utc;
 use diesel::dsl::exists;
 use diesel::{prelude::*, select};
 use diesel_async::{AsyncConnection, RunQueryDsl};
+use jiff::Timestamp;
+use jiff_diesel::ToDiesel;
 use serde::Serialize;
 use tap::Pipe;
 use tokio::fs::File;
@@ -23,7 +23,7 @@ use crate::server::database::schema;
 pub struct Session {
     pub id: String,
     pub data: serde_json::Value,
-    pub expiry_date: DateTime<Utc>,
+    pub expiry_date: jiff_diesel::Timestamp,
 }
 
 pub async fn session_exists(
@@ -47,7 +47,7 @@ pub async fn load_session(
     table
         .select(Session::as_select())
         .filter(schema::session::id.eq(id))
-        .filter(schema::session::expiry_date.gt(Utc::now()))
+        .filter(schema::session::expiry_date.gt(Timestamp::now().to_diesel()))
         .get_result(conn)
         .await
         .optional()?
@@ -58,7 +58,7 @@ pub async fn create_or_update_session(
     conn: &mut DatabaseConnection,
     id: &str,
     data: serde_json::Value,
-    expiry_date: DateTime<Utc>,
+    expiry_date: Timestamp,
 ) -> Result<(), diesel::result::Error> {
     use schema::session::table;
     use schema::session::{data as q_data, expiry_date as q_expiry_date, id as q_id};
@@ -67,11 +67,11 @@ pub async fn create_or_update_session(
         .values((
             q_id.eq(id),
             q_data.eq(data.clone()),
-            q_expiry_date.eq(expiry_date),
+            q_expiry_date.eq(expiry_date.to_diesel()),
         ))
         .on_conflict(q_id)
         .do_update()
-        .set((q_data.eq(data), q_expiry_date.eq(expiry_date)))
+        .set((q_data.eq(data), q_expiry_date.eq(expiry_date.to_diesel())))
         .execute(conn)
         .await?;
 
@@ -83,7 +83,7 @@ pub async fn delete_expired(conn: &mut DatabaseConnection) -> Result<(), diesel:
     use schema::session::table;
 
     table
-        .filter(expiry_date.lt(Utc::now()))
+        .filter(expiry_date.lt(Timestamp::now().to_diesel()))
         .pipe(|filter| diesel::delete(filter))
         .execute(conn)
         .await?;

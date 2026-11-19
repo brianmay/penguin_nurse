@@ -4,6 +4,7 @@ use crate::server::datetime;
 use diesel::prelude::*;
 use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
+use jiff_diesel::ToDiesel;
 
 #[allow(dead_code)]
 #[derive(Queryable, Selectable, Debug, Clone)]
@@ -12,25 +13,25 @@ use diesel_async::RunQueryDsl;
 pub struct WeeUrge {
     pub id: i64,
     pub user_id: i64,
-    pub time: chrono::DateTime<chrono::Utc>,
+    pub time: jiff_diesel::Timestamp,
     pub utc_offset: i32,
     pub urgency: i32,
     pub comments: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff_diesel::Timestamp,
+    pub updated_at: jiff_diesel::Timestamp,
 }
 
 impl From<WeeUrge> for crate::models::WeeUrge {
     fn from(wee_urge: WeeUrge) -> Self {
-        let time = datetime::chrono_to_zoned(wee_urge.time, wee_urge.utc_offset);
+        let time = datetime::zoned_from_parts(wee_urge.time.to_jiff(), wee_urge.utc_offset);
 
         Self {
             id: WeeUrgeId::new(wee_urge.id),
             user_id: UserId::new(wee_urge.user_id),
             time,
             urgency: wee_urge.urgency.try_into().unwrap_or_default(),
-            created_at: datetime::chrono_to_timestamp(wee_urge.created_at),
-            updated_at: datetime::chrono_to_timestamp(wee_urge.updated_at),
+            created_at: wee_urge.created_at.to_jiff(),
+            updated_at: wee_urge.updated_at.to_jiff(),
             comments: wee_urge.comments,
         }
     }
@@ -39,8 +40,8 @@ impl From<WeeUrge> for crate::models::WeeUrge {
 pub async fn get_wee_urges_for_time_range(
     conn: &mut DatabaseConnection,
     user_id: i64,
-    start: chrono::DateTime<chrono::Utc>,
-    end: chrono::DateTime<chrono::Utc>,
+    start: jiff::Timestamp,
+    end: jiff::Timestamp,
 ) -> Result<Vec<WeeUrge>, diesel::result::Error> {
     // use crate::server::database::schema::wee_urges::duration as q_duration;
     use crate::server::database::schema::wee_urges::table;
@@ -50,8 +51,8 @@ pub async fn get_wee_urges_for_time_range(
     table
         .select(WeeUrge::as_select())
         .filter(q_user_id.eq(user_id))
-        .filter(q_time.ge(start))
-        .filter(q_time.lt(end))
+        .filter(q_time.ge(start.to_diesel()))
+        .filter(q_time.lt(end.to_diesel()))
         .load(conn)
         .await
 }
@@ -79,7 +80,7 @@ pub async fn get_wee_urge_by_id(
 #[diesel(table_name = schema::wee_urges)]
 pub struct NewWeeUrge<'a> {
     user_id: i64,
-    time: chrono::DateTime<chrono::Utc>,
+    time: jiff_diesel::Timestamp,
     utc_offset: i32,
     urgency: i32,
     comments: Option<&'a str>,
@@ -89,7 +90,7 @@ impl<'a> NewWeeUrge<'a> {
     pub fn from_front_end(wee_urge: &'a crate::models::NewWeeUrge) -> Self {
         Self {
             user_id: wee_urge.user_id.as_inner(),
-            time: datetime::zoned_to_chrono_utc(&wee_urge.time),
+            time: wee_urge.time.timestamp().to_diesel(),
             utc_offset: wee_urge.time.offset().seconds(),
             urgency: wee_urge.urgency.into(),
             comments: wee_urge.comments.as_deref(),
@@ -112,7 +113,7 @@ pub async fn create_wee_urge(
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::wee_urges)]
 pub struct ChangeWeeUrge<'a> {
-    time: Option<chrono::DateTime<chrono::Utc>>,
+    time: Option<jiff_diesel::Timestamp>,
     utc_offset: Option<i32>,
     urgency: Option<i32>,
     comments: Option<Option<&'a str>>,
@@ -124,7 +125,7 @@ impl<'a> ChangeWeeUrge<'a> {
             time: wee
                 .time
                 .clone()
-                .map(|time| datetime::zoned_to_chrono_utc(&time))
+                .map(|time| time.timestamp().to_diesel())
                 .into_option(),
             utc_offset: wee
                 .time

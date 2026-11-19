@@ -94,6 +94,10 @@ in
         PORT = toString cfg.port;
         BASE_URL = cfg.base_url;
         DATABASE_URL = "postgresql:///penguin_nurse?host=/var/run/postgresql";
+        # jiff looks up named time zones (e.g. the kiosk API's `timezone`
+        # field) in the IANA database; NixOS has no /usr/share/zoneinfo, so
+        # point it at the tzdata package.
+        TZDIR = "${pkgs.tzdata}/share/zoneinfo";
       };
     };
   };

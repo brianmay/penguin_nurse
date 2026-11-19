@@ -2,10 +2,10 @@ use crate::models::{HealthMetricId, UserId};
 use crate::server::database::models::DatabaseConversionError;
 use crate::server::database::{connection::DatabaseConnection, schema};
 use crate::server::datetime;
-use chrono::Utc;
 use diesel::prelude::*;
 use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
+use jiff_diesel::ToDiesel;
 use tap::Pipe;
 
 #[allow(dead_code)]
@@ -15,7 +15,7 @@ use tap::Pipe;
 pub struct HealthMetric {
     pub id: i64,
     pub user_id: i64,
-    pub time: chrono::DateTime<chrono::Utc>,
+    pub time: jiff_diesel::Timestamp,
     pub utc_offset: i32,
     pub pulse: Option<i32>,
     pub blood_glucose: Option<bigdecimal::BigDecimal>,
@@ -26,8 +26,8 @@ pub struct HealthMetric {
     pub waist_circumference: Option<bigdecimal::BigDecimal>,
     pub hip_circumference: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff_diesel::Timestamp,
+    pub updated_at: jiff_diesel::Timestamp,
     pub body_fat_pct: Option<bigdecimal::BigDecimal>,
     pub bia_details: Option<serde_json::Value>,
 }
@@ -36,7 +36,8 @@ impl TryFrom<HealthMetric> for crate::models::HealthMetric {
     type Error = DatabaseConversionError;
 
     fn try_from(health_metric: HealthMetric) -> Result<Self, Self::Error> {
-        let time = datetime::chrono_to_zoned(health_metric.time, health_metric.utc_offset);
+        let time =
+            datetime::zoned_from_parts(health_metric.time.to_jiff(), health_metric.utc_offset);
 
         Self {
             id: HealthMetricId::new(health_metric.id),
@@ -56,8 +57,8 @@ impl TryFrom<HealthMetric> for crate::models::HealthMetric {
             height: health_metric.height.map(|p| p.try_into()).transpose()?,
             waist_circumference: health_metric.waist_circumference,
             hip_circumference: health_metric.hip_circumference,
-            created_at: datetime::chrono_to_timestamp(health_metric.created_at),
-            updated_at: datetime::chrono_to_timestamp(health_metric.updated_at),
+            created_at: health_metric.created_at.to_jiff(),
+            updated_at: health_metric.updated_at.to_jiff(),
             comments: health_metric.comments,
             body_fat_pct: health_metric.body_fat_pct,
             bia_details: health_metric.bia_details,
@@ -69,8 +70,8 @@ impl TryFrom<HealthMetric> for crate::models::HealthMetric {
 pub async fn get_health_metrics_for_time_range(
     conn: &mut DatabaseConnection,
     user_id: i64,
-    start: chrono::DateTime<chrono::Utc>,
-    end: chrono::DateTime<chrono::Utc>,
+    start: jiff::Timestamp,
+    end: jiff::Timestamp,
 ) -> Result<Vec<HealthMetric>, diesel::result::Error> {
     // use crate::server::database::schema::health_metrics::duration as q_duration;
     use crate::server::database::schema::health_metrics::table;
@@ -80,8 +81,8 @@ pub async fn get_health_metrics_for_time_range(
     table
         .select(HealthMetric::as_select())
         .filter(q_user_id.eq(user_id))
-        .filter(q_time.ge(start))
-        .filter(q_time.lt(end))
+        .filter(q_time.ge(start.to_diesel()))
+        .filter(q_time.lt(end.to_diesel()))
         .load(conn)
         .await
 }
@@ -129,7 +130,7 @@ pub async fn get_latest_height(
 #[diesel(table_name = schema::health_metrics)]
 pub struct NewHealthMetric<'a> {
     user_id: i64,
-    time: chrono::DateTime<chrono::Utc>,
+    time: jiff_diesel::Timestamp,
     utc_offset: i32,
     pulse: Option<i32>,
     blood_glucose: Option<&'a bigdecimal::BigDecimal>,
@@ -148,7 +149,7 @@ impl<'a> NewHealthMetric<'a> {
     pub fn from_front_end(health_metric: &'a crate::models::NewHealthMetric) -> Self {
         Self {
             user_id: health_metric.user_id.as_inner(),
-            time: datetime::zoned_to_chrono_utc(&health_metric.time),
+            time: health_metric.time.timestamp().to_diesel(),
             utc_offset: health_metric.time.offset().seconds(),
             pulse: health_metric.pulse.map(|p| p.into()),
             blood_glucose: health_metric.blood_glucose.as_ref(),
@@ -166,15 +167,15 @@ impl<'a> NewHealthMetric<'a> {
 
     pub fn for_kiosk(
         user_id: i64,
-        time: chrono::DateTime<chrono::FixedOffset>,
+        time: jiff::ZonedDateTime,
         weight_kg: &'a bigdecimal::BigDecimal,
         body_fat_pct: Option<&'a bigdecimal::BigDecimal>,
         bia_details: Option<&'a serde_json::Value>,
     ) -> Self {
         Self {
             user_id,
-            time: time.with_timezone(&Utc),
-            utc_offset: time.offset().local_minus_utc(),
+            time: time.timestamp().to_diesel(),
+            utc_offset: time.offset().seconds(),
             pulse: None,
             blood_glucose: None,
             systolic_bp: None,
@@ -205,7 +206,7 @@ pub async fn create_health_metric(
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::health_metrics)]
 pub struct ChangeHealthMetric<'a> {
-    time: Option<chrono::DateTime<chrono::Utc>>,
+    time: Option<jiff_diesel::Timestamp>,
     utc_offset: Option<i32>,
     pulse: Option<Option<i32>>,
     blood_glucose: Option<Option<&'a bigdecimal::BigDecimal>>,
@@ -226,7 +227,7 @@ impl<'a> ChangeHealthMetric<'a> {
             time: health_metric
                 .time
                 .clone()
-                .map(|time| datetime::zoned_to_chrono_utc(&time))
+                .map(|time| time.timestamp().to_diesel())
                 .into_option(),
             utc_offset: health_metric
                 .time

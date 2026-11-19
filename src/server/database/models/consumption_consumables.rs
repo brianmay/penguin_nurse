@@ -4,7 +4,6 @@ use diesel_async::RunQueryDsl;
 
 use crate::models;
 use crate::server::database::{connection::DatabaseConnection, schema};
-use crate::server::datetime;
 
 use super::consumables::Consumable;
 use super::consumptions::Consumption;
@@ -21,8 +20,8 @@ pub struct ConsumptionConsumable {
     pub quantity: Option<bigdecimal::BigDecimal>,
     pub liquid_mls: Option<bigdecimal::BigDecimal>,
     pub comments: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff_diesel::Timestamp,
+    pub updated_at: jiff_diesel::Timestamp,
 }
 
 impl From<ConsumptionConsumable> for crate::models::ConsumptionConsumable {
@@ -35,8 +34,8 @@ impl From<ConsumptionConsumable> for crate::models::ConsumptionConsumable {
             quantity: consumption_consumable.quantity,
             liquid_mls: consumption_consumable.liquid_mls,
             comments: consumption_consumable.comments,
-            created_at: datetime::chrono_to_timestamp(consumption_consumable.created_at),
-            updated_at: datetime::chrono_to_timestamp(consumption_consumable.updated_at),
+            created_at: consumption_consumable.created_at.to_jiff(),
+            updated_at: consumption_consumable.updated_at.to_jiff(),
         }
     }
 }

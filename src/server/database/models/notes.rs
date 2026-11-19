@@ -1,13 +1,11 @@
-use chrono::Utc;
 use diesel::prelude::*;
 use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
 
-use chrono::DateTime;
-
 use crate::models;
 use crate::server::database::{connection::DatabaseConnection, schema};
 use crate::server::datetime;
+use jiff_diesel::ToDiesel;
 
 #[allow(dead_code)]
 #[derive(Queryable, Selectable, Debug, Clone, Identifiable)]
@@ -16,24 +14,24 @@ use crate::server::datetime;
 pub struct Note {
     pub id: i64,
     pub user_id: i64,
-    pub time: DateTime<Utc>,
+    pub time: jiff_diesel::Timestamp,
     pub utc_offset: i32,
     pub comments: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff_diesel::Timestamp,
+    pub updated_at: jiff_diesel::Timestamp,
 }
 
 impl From<Note> for crate::models::Note {
     fn from(note: Note) -> Self {
-        let time = datetime::chrono_to_zoned(note.time, note.utc_offset);
+        let time = datetime::zoned_from_parts(note.time.to_jiff(), note.utc_offset);
 
         Self {
             id: models::NoteId::new(note.id),
             user_id: models::UserId::new(note.user_id),
             time,
             comments: note.comments,
-            created_at: datetime::chrono_to_timestamp(note.created_at),
-            updated_at: datetime::chrono_to_timestamp(note.updated_at),
+            created_at: note.created_at.to_jiff(),
+            updated_at: note.updated_at.to_jiff(),
         }
     }
 }
@@ -41,8 +39,8 @@ impl From<Note> for crate::models::Note {
 pub async fn get_notes_for_time_range(
     conn: &mut DatabaseConnection,
     user_id: i64,
-    start: chrono::DateTime<chrono::Utc>,
-    end: chrono::DateTime<chrono::Utc>,
+    start: jiff::Timestamp,
+    end: jiff::Timestamp,
 ) -> Result<Vec<Note>, diesel::result::Error> {
     // use crate::server::database::schema::notes::duration as q_duration;
     use crate::server::database::schema::notes::table;
@@ -52,8 +50,8 @@ pub async fn get_notes_for_time_range(
     table
         .select(Note::as_select())
         .filter(q_user_id.eq(user_id))
-        .filter(q_time.ge(start))
-        .filter(q_time.lt(end))
+        .filter(q_time.ge(start.to_diesel()))
+        .filter(q_time.lt(end.to_diesel()))
         .load(conn)
         .await
 }
@@ -81,7 +79,7 @@ pub async fn get_note_by_id(
 #[diesel(table_name = schema::notes)]
 pub struct NewNote<'a> {
     pub user_id: i64,
-    pub time: DateTime<Utc>,
+    pub time: jiff_diesel::Timestamp,
     pub utc_offset: i32,
     pub comments: Option<&'a str>,
 }
@@ -90,7 +88,7 @@ impl<'a> NewNote<'a> {
     pub fn from_front_end(note: &'a crate::models::NewNote) -> Self {
         Self {
             user_id: note.user_id.as_inner(),
-            time: datetime::zoned_to_chrono_utc(&note.time),
+            time: note.time.timestamp().to_diesel(),
             utc_offset: note.time.offset().seconds(),
             comments: note.comments.as_deref(),
         }
@@ -112,7 +110,7 @@ pub async fn create_note(
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::notes)]
 pub struct ChangeNote<'a> {
-    pub time: Option<DateTime<Utc>>,
+    pub time: Option<jiff_diesel::Timestamp>,
     pub utc_offset: Option<i32>,
     pub comments: Option<Option<&'a str>>,
 }
@@ -123,7 +121,7 @@ impl<'a> ChangeNote<'a> {
             time: note
                 .time
                 .clone()
-                .map(|time| datetime::zoned_to_chrono_utc(&time))
+                .map(|time| time.timestamp().to_diesel())
                 .into_option(),
             utc_offset: note
                 .time

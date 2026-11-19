@@ -1,5 +1,7 @@
+use diesel::pg::data_types::PgInterval;
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
+use jiff_diesel::ToDiesel;
 
 use crate::{
     models::{PooId, UserId},
@@ -14,8 +16,8 @@ use crate::{
 pub struct Poo {
     pub id: i64,
     pub user_id: i64,
-    pub time: chrono::DateTime<chrono::Utc>,
-    pub duration: Option<chrono::Duration>,
+    pub time: jiff_diesel::Timestamp,
+    pub duration: Option<jiff_diesel::Span>,
     pub urgency: i32,
     pub quantity: Option<i32>,
     pub bristol: Option<i32>,
@@ -23,15 +25,15 @@ pub struct Poo {
     pub colour_saturation: Option<f32>,
     pub colour_value: Option<f32>,
     pub comments: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff_diesel::Timestamp,
+    pub updated_at: jiff_diesel::Timestamp,
     pub utc_offset: i32,
     pub complete: bool,
 }
 
 impl From<Poo> for crate::models::Poo {
     fn from(poo: Poo) -> Self {
-        let time = datetime::chrono_to_zoned(poo.time, poo.utc_offset);
+        let time = datetime::zoned_from_parts(poo.time.to_jiff(), poo.utc_offset);
 
         let colour = match (poo.colour_hue, poo.colour_saturation, poo.colour_value) {
             (Some(hue), Some(saturation), Some(value)) => {
@@ -46,15 +48,17 @@ impl From<Poo> for crate::models::Poo {
             id: PooId::new(poo.id),
             user_id: UserId::new(poo.user_id),
             time,
-            duration: poo.duration.map(datetime::chrono_to_signed_duration),
+            duration: poo
+                .duration
+                .map(|span| datetime::span_to_signed_duration(span.to_jiff())),
             urgency: poo.urgency.try_into().unwrap_or_default(),
             quantity: poo.quantity,
             bristol,
             colour,
             comments: poo.comments,
             complete: poo.complete,
-            created_at: datetime::chrono_to_timestamp(poo.created_at),
-            updated_at: datetime::chrono_to_timestamp(poo.updated_at),
+            created_at: poo.created_at.to_jiff(),
+            updated_at: poo.updated_at.to_jiff(),
         }
     }
 }
@@ -62,8 +66,8 @@ impl From<Poo> for crate::models::Poo {
 pub async fn get_poos_for_time_range(
     conn: &mut DatabaseConnection,
     user_id: i64,
-    start: chrono::DateTime<chrono::Utc>,
-    end: chrono::DateTime<chrono::Utc>,
+    start: jiff::Timestamp,
+    end: jiff::Timestamp,
 ) -> Result<Vec<Poo>, diesel::result::Error> {
     // use crate::server::database::schema::wees::duration as q_duration;
     use crate::server::database::schema::poos::table;
@@ -73,8 +77,8 @@ pub async fn get_poos_for_time_range(
     table
         .select(Poo::as_select())
         .filter(q_user_id.eq(user_id))
-        .filter(q_time.ge(start))
-        .filter(q_time.lt(end))
+        .filter(q_time.ge(start.to_diesel()))
+        .filter(q_time.lt(end.to_diesel()))
         .load(conn)
         .await
 }
@@ -118,9 +122,9 @@ pub async fn get_poo_by_id(
 #[diesel(table_name = schema::poos)]
 pub struct NewPoo<'a> {
     user_id: i64,
-    time: chrono::DateTime<chrono::Utc>,
+    time: jiff_diesel::Timestamp,
     utc_offset: i32,
-    duration: Option<chrono::Duration>,
+    duration: Option<PgInterval>,
     urgency: i32,
     quantity: Option<i32>,
     bristol: Option<i32>,
@@ -135,9 +139,9 @@ impl<'a> NewPoo<'a> {
     pub fn from_front_end(poo: &'a crate::models::NewPoo) -> Self {
         Self {
             user_id: poo.user_id.as_inner(),
-            time: datetime::zoned_to_chrono_utc(&poo.time),
+            time: poo.time.timestamp().to_diesel(),
             utc_offset: poo.time.offset().seconds(),
-            duration: poo.duration.map(datetime::signed_duration_to_chrono),
+            duration: poo.duration.map(datetime::signed_duration_to_interval),
             urgency: poo.urgency.into(),
             quantity: poo.quantity,
             bristol: poo.bristol.map(|b| b.into()),
@@ -167,9 +171,9 @@ pub async fn create_poo(
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::poos)]
 pub struct ChangePoo<'a> {
-    pub time: Option<chrono::DateTime<chrono::Utc>>,
+    pub time: Option<jiff_diesel::Timestamp>,
     pub utc_offset: Option<i32>,
-    pub duration: Option<Option<chrono::Duration>>,
+    pub duration: Option<Option<PgInterval>>,
     pub urgency: Option<i32>,
     pub quantity: Option<Option<i32>>,
     pub bristol: Option<Option<i32>>,
@@ -186,7 +190,7 @@ impl<'a> ChangePoo<'a> {
             time: poo
                 .time
                 .clone()
-                .map(|time| datetime::zoned_to_chrono_utc(&time))
+                .map(|time| time.timestamp().to_diesel())
                 .into_option(),
             utc_offset: poo
                 .time
@@ -195,7 +199,7 @@ impl<'a> ChangePoo<'a> {
                 .into_option(),
             duration: poo
                 .duration
-                .map(|duration| duration.map(datetime::signed_duration_to_chrono))
+                .map(|duration| duration.map(datetime::signed_duration_to_interval))
                 .into_option(),
             urgency: poo.urgency.map_into().into_option(),
             quantity: poo.quantity.into_option(),

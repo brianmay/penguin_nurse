@@ -1,13 +1,12 @@
-use chrono::Utc;
 use diesel::prelude::*;
 use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
 
-use chrono::{DateTime, TimeDelta};
-
 use crate::models;
 use crate::server::database::{connection::DatabaseConnection, schema};
 use crate::server::datetime;
+use diesel::pg::data_types::PgInterval;
+use jiff_diesel::ToDiesel;
 
 #[derive(diesel_derive_enum::DbEnum, Debug, Copy, Clone)]
 #[db_enum(existing_type_path = "schema::sql_types::ExerciseType")]
@@ -62,9 +61,9 @@ impl From<models::ExerciseType> for ExerciseType {
 pub struct Exercise {
     pub id: i64,
     pub user_id: i64,
-    pub time: DateTime<Utc>,
+    pub time: jiff_diesel::Timestamp,
     pub utc_offset: i32,
-    pub duration: Option<TimeDelta>,
+    pub duration: Option<jiff_diesel::Span>,
     pub location: Option<String>,
     pub distance: Option<bigdecimal::BigDecimal>,
     pub calories: Option<i32>,
@@ -72,19 +71,21 @@ pub struct Exercise {
     pub exercise_type: ExerciseType,
     pub comments: Option<String>,
     pub complete: bool,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff_diesel::Timestamp,
+    pub updated_at: jiff_diesel::Timestamp,
 }
 
 impl From<Exercise> for crate::models::Exercise {
     fn from(exercise: Exercise) -> Self {
-        let time = datetime::chrono_to_zoned(exercise.time, exercise.utc_offset);
+        let time = datetime::zoned_from_parts(exercise.time.to_jiff(), exercise.utc_offset);
 
         Self {
             id: models::ExerciseId::new(exercise.id),
             user_id: models::UserId::new(exercise.user_id),
             time,
-            duration: exercise.duration.map(datetime::chrono_to_signed_duration),
+            duration: exercise
+                .duration
+                .map(|span| datetime::span_to_signed_duration(span.to_jiff())),
             location: exercise.location,
             distance: exercise.distance,
             calories: exercise.calories,
@@ -93,8 +94,8 @@ impl From<Exercise> for crate::models::Exercise {
                 .map(|rpe| rpe.try_into().unwrap_or(models::ExerciseRpe::Rpe1)),
             comments: exercise.comments,
             complete: exercise.complete,
-            created_at: datetime::chrono_to_timestamp(exercise.created_at),
-            updated_at: datetime::chrono_to_timestamp(exercise.updated_at),
+            created_at: exercise.created_at.to_jiff(),
+            updated_at: exercise.updated_at.to_jiff(),
             exercise_type: exercise.exercise_type.into(),
         }
     }
@@ -103,8 +104,8 @@ impl From<Exercise> for crate::models::Exercise {
 pub async fn get_exercises_for_time_range(
     conn: &mut DatabaseConnection,
     user_id: i64,
-    start: chrono::DateTime<chrono::Utc>,
-    end: chrono::DateTime<chrono::Utc>,
+    start: jiff::Timestamp,
+    end: jiff::Timestamp,
 ) -> Result<Vec<Exercise>, diesel::result::Error> {
     // use crate::server::database::schema::exercises::duration as q_duration;
     use crate::server::database::schema::exercises::table;
@@ -114,8 +115,8 @@ pub async fn get_exercises_for_time_range(
     table
         .select(Exercise::as_select())
         .filter(q_user_id.eq(user_id))
-        .filter(q_time.ge(start))
-        .filter(q_time.lt(end))
+        .filter(q_time.ge(start.to_diesel()))
+        .filter(q_time.lt(end.to_diesel()))
         .load(conn)
         .await
 }
@@ -159,9 +160,9 @@ pub async fn get_exercise_by_id(
 #[diesel(table_name = schema::exercises)]
 pub struct NewExercise<'a> {
     pub user_id: i64,
-    pub time: DateTime<Utc>,
+    pub time: jiff_diesel::Timestamp,
     pub utc_offset: i32,
-    pub duration: Option<TimeDelta>,
+    pub duration: Option<PgInterval>,
     pub location: Option<&'a str>,
     pub distance: Option<&'a bigdecimal::BigDecimal>,
     pub calories: Option<i32>,
@@ -175,9 +176,9 @@ impl<'a> NewExercise<'a> {
     pub fn from_front_end(exercise: &'a crate::models::NewExercise) -> Self {
         Self {
             user_id: exercise.user_id.as_inner(),
-            time: datetime::zoned_to_chrono_utc(&exercise.time),
+            time: exercise.time.timestamp().to_diesel(),
             utc_offset: exercise.time.offset().seconds(),
-            duration: exercise.duration.map(datetime::signed_duration_to_chrono),
+            duration: exercise.duration.map(datetime::signed_duration_to_interval),
             location: exercise.location.as_deref(),
             distance: exercise.distance.as_ref(),
             calories: exercise.calories,
@@ -204,9 +205,9 @@ pub async fn create_exercise(
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::exercises)]
 pub struct ChangeExercise<'a> {
-    pub time: Option<DateTime<Utc>>,
+    pub time: Option<jiff_diesel::Timestamp>,
     pub utc_offset: Option<i32>,
-    pub duration: Option<Option<TimeDelta>>,
+    pub duration: Option<Option<PgInterval>>,
     pub location: Option<Option<&'a str>>,
     pub distance: Option<Option<&'a bigdecimal::BigDecimal>>,
     pub calories: Option<Option<i32>>,
@@ -222,7 +223,7 @@ impl<'a> ChangeExercise<'a> {
             time: exercise
                 .time
                 .clone()
-                .map(|time| datetime::zoned_to_chrono_utc(&time))
+                .map(|time| time.timestamp().to_diesel())
                 .into_option(),
             utc_offset: exercise
                 .time
@@ -231,7 +232,7 @@ impl<'a> ChangeExercise<'a> {
                 .into_option(),
             duration: exercise
                 .duration
-                .map(|duration| duration.map(datetime::signed_duration_to_chrono))
+                .map(|duration| duration.map(datetime::signed_duration_to_interval))
                 .into_option(),
             location: exercise.location.map_inner_deref().into_option(),
             distance: exercise.distance.as_inner_ref().into_option(),

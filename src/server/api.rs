@@ -9,8 +9,8 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{get, post},
 };
-use chrono::{Datelike, Utc};
 use jiff::Timestamp;
+use jiff::civil::Date;
 use jiff::tz::TimeZone;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
@@ -18,7 +18,6 @@ use tokio::sync::RwLock;
 use crate::server::database::connection::DatabasePool;
 use crate::server::database::models::health_metrics as db_health_metrics;
 use crate::server::database::models::users::{self as db_users, Sex};
-use crate::server::datetime;
 
 // ---------------------------------------------------------------------------
 // API key authentication middleware
@@ -112,11 +111,11 @@ async fn get_users(
         )
     })?;
 
-    let today = Utc::now().date_naive();
+    let today = Timestamp::now().to_zoned_datetime(TimeZone::UTC).date();
     let mut users = Vec::with_capacity(db_user_list.len());
 
     for db_user in db_user_list {
-        let age = compute_age(db_user.date_of_birth, today);
+        let age = compute_age(db_user.date_of_birth.map(|date| date.to_jiff()), today);
         let sex = match db_user.sex {
             Some(s) => sex_to_string(s),
             None => continue,
@@ -143,7 +142,7 @@ async fn get_users(
     Ok(Json(UsersResponse { users }))
 }
 
-fn compute_age(date_of_birth: Option<chrono::NaiveDate>, today: chrono::NaiveDate) -> u8 {
+fn compute_age(date_of_birth: Option<Date>, today: Date) -> u8 {
     match date_of_birth {
         Some(dob) => {
             let years = today.year() - dob.year();
@@ -256,8 +255,8 @@ async fn post_measurement(
     let tz = TimeZone::get(&body.timezone)
         .map_err(|e| error_response(StatusCode::BAD_REQUEST, &format!("invalid timezone: {e}")))?;
 
-    let now_utc = Utc::now();
-    let now_fixed = datetime::zoned_to_chrono_fixed(&Timestamp::now().to_zoned_datetime(tz));
+    let now = Timestamp::now();
+    let now_fixed = now.to_zoned_datetime(tz);
     let bia_details = body.details.unwrap_or(serde_json::json!({}));
 
     let new_metric = db_health_metrics::NewHealthMetric::for_kiosk(
@@ -278,7 +277,10 @@ async fn post_measurement(
         })?;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let timestamp = now_utc.format("%Y-%m-%dT%H:%M:%SZ").to_string();
+    let timestamp = now
+        .to_zoned_datetime(TimeZone::UTC)
+        .strftime("%Y-%m-%dT%H:%M:%SZ")
+        .to_string();
 
     Ok((
         StatusCode::CREATED,

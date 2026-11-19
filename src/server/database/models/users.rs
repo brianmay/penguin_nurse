@@ -9,7 +9,6 @@ use tap::Pipe;
 use crate::models::UserId;
 use crate::server::database::connection::DatabaseConnection;
 use crate::server::database::schema;
-use crate::server::datetime;
 
 #[derive(diesel_derive_enum::DbEnum, Debug, Copy, Clone)]
 #[db_enum(existing_type_path = "schema::sql_types::Sex")]
@@ -43,8 +42,8 @@ impl From<crate::models::Sex> for Sex {
 pub struct Group {
     pub id: i64,
     pub name: String,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff_diesel::Timestamp,
+    pub updated_at: jiff_diesel::Timestamp,
 }
 
 #[allow(dead_code)]
@@ -71,9 +70,9 @@ pub struct User {
     pub oidc_id: Option<String>,
     pub email: String,
     pub is_admin: bool,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
-    pub date_of_birth: Option<chrono::NaiveDate>,
+    pub created_at: jiff_diesel::Timestamp,
+    pub updated_at: jiff_diesel::Timestamp,
+    pub date_of_birth: Option<jiff_diesel::Date>,
     pub sex: Option<Sex>,
 }
 
@@ -98,10 +97,10 @@ impl From<User> for crate::models::User {
             oidc_id: user.oidc_id,
             email: user.email,
             is_admin: user.is_admin,
-            date_of_birth: user.date_of_birth.map(datetime::chrono_to_date),
+            date_of_birth: user.date_of_birth.map(|date| date.to_jiff()),
             sex: user.sex.map(|s| s.into()),
-            created_at: datetime::chrono_to_timestamp(user.created_at),
-            updated_at: datetime::chrono_to_timestamp(user.updated_at),
+            created_at: user.created_at.to_jiff(),
+            updated_at: user.updated_at.to_jiff(),
         }
     }
 }
@@ -143,7 +142,7 @@ pub struct UpdateUser<'a> {
     pub oidc_id: Option<Option<&'a str>>,
     pub email: Option<&'a str>,
     pub is_admin: Option<bool>,
-    pub date_of_birth: Option<Option<chrono::NaiveDate>>,
+    pub date_of_birth: Option<Option<jiff_diesel::Date>>,
     pub sex: Option<Option<Sex>>,
 }
 
@@ -161,7 +160,7 @@ impl<'a> UpdateUser<'a> {
             is_admin: user.is_admin.into_option(),
             date_of_birth: user
                 .date_of_birth
-                .map(|date| date.map(datetime::date_to_chrono))
+                .map(|date| date.map(jiff_diesel::Date::from))
                 .into_option(),
             sex: user.sex.map(|s| s.map(|s| s.into())).into_option(),
         }

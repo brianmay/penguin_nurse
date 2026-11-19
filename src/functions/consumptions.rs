@@ -10,9 +10,6 @@ use crate::models::{ConsumptionWithItems, MaybeSet};
 #[cfg(feature = "server")]
 use super::common::{AppError, get_database_connection, get_user_id};
 
-#[cfg(feature = "server")]
-use crate::server::datetime;
-
 #[server]
 pub async fn get_consumptions_for_time_range(
     user_id: UserId,
@@ -47,8 +44,8 @@ pub async fn get_consumptions_for_time_range(
     crate::server::database::models::consumptions::get_consumptions_for_time_range(
         &mut conn,
         user_id.as_inner(),
-        datetime::timestamp_to_chrono(start),
-        datetime::timestamp_to_chrono(end),
+        start,
+        end,
     )
     .await
     .map(|x| {

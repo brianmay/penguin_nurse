@@ -4,14 +4,16 @@ use diesel::prelude::*;
 use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
 
-use chrono::{DateTime, FixedOffset, NaiveDate, NaiveTime, TimeZone, Utc};
+use jiff::civil::{Date, Time, time};
+use jiff::tz::TimeZone;
+use jiff::{Timestamp, ZonedDateTime};
+use jiff_diesel::ToDiesel;
 
 use crate::models;
 use crate::server::database::models::consumables::Consumable;
 use crate::server::database::models::consumptions::ConsumptionType;
 use crate::server::database::models::schedule_consumables::ScheduleConsumable;
 use crate::server::database::{connection::DatabaseConnection, schema};
-use crate::server::datetime;
 
 #[derive(Queryable, Selectable, Debug, Clone, Identifiable)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -19,12 +21,12 @@ use crate::server::datetime;
 pub struct Schedule {
     pub id: i64,
     pub user_id: i64,
-    pub time_of_day: NaiveTime,
+    pub time_of_day: jiff_diesel::Time,
     pub consumption_type: ConsumptionType,
     pub comments: Option<String>,
     pub active: bool,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff_diesel::Timestamp,
+    pub updated_at: jiff_diesel::Timestamp,
 }
 
 impl From<Schedule> for crate::models::Schedule {
@@ -32,52 +34,46 @@ impl From<Schedule> for crate::models::Schedule {
         Self {
             id: models::ScheduleId::new(schedule.id),
             user_id: models::UserId::new(schedule.user_id),
-            time_of_day: datetime::chrono_to_time(schedule.time_of_day),
+            time_of_day: schedule.time_of_day.to_jiff(),
             consumption_type: schedule.consumption_type.into(),
             comments: schedule.comments,
             active: schedule.active,
-            created_at: datetime::chrono_to_timestamp(schedule.created_at),
-            updated_at: datetime::chrono_to_timestamp(schedule.updated_at),
+            created_at: schedule.created_at.to_jiff(),
+            updated_at: schedule.updated_at.to_jiff(),
         }
     }
 }
 
 /// The local time-of-day at which a new day starts, as used by the timeline
 /// views. Entries before this time belong to the previous day.
-const DAY_START_TIME: NaiveTime = NaiveTime::from_hms_opt(6, 30, 0).unwrap();
+const DAY_START_TIME: Time = time(6, 30, 0, 0);
 
 /// Returns the app-day containing `now`: the local date the day belongs to,
 /// the date of the next day, and the UTC window (day 06:30 local to next day
 /// 06:30 local).
 ///
-/// The offset of `now` is used for all conversions; a `FixedOffset` has no DST
-/// transitions, so the conversions are always unambiguous.
-fn day_window(now: DateTime<FixedOffset>) -> (NaiveDate, NaiveDate, DateTime<Utc>, DateTime<Utc>) {
-    let offset = *now.offset();
-    let now_local = now.naive_local();
-    let day_date = if now_local.time() < DAY_START_TIME {
-        now_local.date().pred_opt().unwrap_or(now_local.date())
-    } else {
-        now_local.date()
-    };
-    let next_day_date = day_date.succ_opt().unwrap_or(day_date);
+/// The offset of `now` is used for all conversions; a fixed-offset time zone
+/// has no DST transitions, so the conversions are always unambiguous.
+fn day_window(now: &ZonedDateTime) -> (Date, Date, Timestamp, Timestamp) {
+    let timezone = TimeZone::fixed(now.offset());
 
-    let start = offset
-        .from_local_datetime(
-            &day_date
-                .and_hms_opt(6, 30, 0)
-                .expect("06:30:00 is a valid time"),
-        )
-        .unwrap()
-        .with_timezone(&Utc);
-    let end = offset
-        .from_local_datetime(
-            &next_day_date
-                .and_hms_opt(6, 30, 0)
-                .expect("06:30:00 is a valid time"),
-        )
-        .unwrap()
-        .with_timezone(&Utc);
+    let day_date = if now.time() < DAY_START_TIME {
+        now.date().yesterday().unwrap_or(now.date())
+    } else {
+        now.date()
+    };
+    let next_day_date = day_date.tomorrow().unwrap_or(day_date);
+
+    // A fixed-offset time zone has no gaps or folds, so these conversions
+    // cannot be ambiguous.
+    let start = timezone
+        .to_zoned_datetime(day_date.to_datetime(DAY_START_TIME))
+        .expect("fixed-offset zone conversions are unambiguous")
+        .timestamp();
+    let end = timezone
+        .to_zoned_datetime(next_day_date.to_datetime(DAY_START_TIME))
+        .expect("fixed-offset zone conversions are unambiguous")
+        .timestamp();
 
     (day_date, next_day_date, start, end)
 }
@@ -85,7 +81,7 @@ fn day_window(now: DateTime<FixedOffset>) -> (NaiveDate, NaiveDate, DateTime<Utc
 /// A scheduled occurrence of a consumable: the local date and time it falls
 /// on, and the id of the schedule it belongs to. Ordering is by date/time,
 /// then schedule id.
-type Occurrence = ((NaiveDate, NaiveTime), i64);
+type Occurrence = ((Date, Time), i64);
 
 /// Returns every active schedule for the user, with the status of its
 /// occurrence for the app-day containing `now`.
@@ -103,9 +99,9 @@ type Occurrence = ((NaiveDate, NaiveTime), i64);
 pub async fn get_today_schedule_status(
     conn: &mut DatabaseConnection,
     user_id: i64,
-    now: DateTime<FixedOffset>,
+    now: ZonedDateTime,
 ) -> Result<Vec<models::ScheduleStatus>, diesel::result::Error> {
-    let (day_date, next_day_date, start, end) = day_window(now);
+    let (day_date, next_day_date, start, end) = day_window(&now);
 
     let schedules: Vec<Schedule> = {
         use crate::server::database::schema::schedules::active as q_active;
@@ -129,28 +125,28 @@ pub async fn get_today_schedule_status(
         .await?;
 
     // Local times of the day's consumptions of each consumable, in order.
-    let consumption_times: HashMap<i64, Vec<(NaiveDate, NaiveTime)>> = {
+    let consumption_times: HashMap<i64, Vec<(Date, Time)>> = {
         use crate::server::database::schema::consumption_consumables::consumable_id as q_consumable_id;
         use crate::server::database::schema::consumption_consumables::table as consumption_consumables_table;
         use crate::server::database::schema::consumptions::dsl as q_consumptions;
 
-        let rows: Vec<(i64, DateTime<Utc>)> = consumption_consumables_table
+        let rows: Vec<(i64, jiff_diesel::Timestamp)> = consumption_consumables_table
             .inner_join(schema::consumptions::table)
             .filter(q_consumptions::user_id.eq(user_id))
-            .filter(q_consumptions::time.ge(start))
-            .filter(q_consumptions::time.lt(end))
+            .filter(q_consumptions::time.ge(start.to_diesel()))
+            .filter(q_consumptions::time.lt(end.to_diesel()))
             .select((q_consumable_id, q_consumptions::time))
             .load(conn)
             .await?;
 
-        let offset = *now.offset();
-        let mut times: HashMap<i64, Vec<(NaiveDate, NaiveTime)>> = HashMap::new();
+        let timezone = TimeZone::fixed(now.offset());
+        let mut times: HashMap<i64, Vec<(Date, Time)>> = HashMap::new();
         for (consumable_id, time) in rows {
-            let local = time.with_timezone(&offset);
+            let local = time.to_jiff().to_zoned_datetime(timezone.clone());
             times
                 .entry(consumable_id)
                 .or_default()
-                .push((local.date_naive(), local.time()));
+                .push((local.date(), local.time()));
         }
         for list in times.values_mut() {
             list.sort();
@@ -161,18 +157,19 @@ pub async fn get_today_schedule_status(
     // The local date and time of each schedule's occurrence within the day
     // window (a schedule before 06:30 belongs to the end of the window, i.e.
     // the next calendar day).
-    let occurrence_by_schedule: HashMap<i64, (NaiveDate, NaiveTime)> = schedules
+    let occurrence_by_schedule: HashMap<i64, (Date, Time)> = schedules
         .iter()
         .map(|schedule| {
+            let time_of_day = schedule.time_of_day.to_jiff();
             (
                 schedule.id,
                 (
-                    if schedule.time_of_day < DAY_START_TIME {
+                    if time_of_day < DAY_START_TIME {
                         next_day_date
                     } else {
                         day_date
                     },
-                    schedule.time_of_day,
+                    time_of_day,
                 ),
             )
         })
@@ -222,14 +219,12 @@ pub async fn get_today_schedule_status(
 
     let grouped: Vec<Vec<(ScheduleConsumable, Consumable)>> = items.grouped_by(&schedules);
 
-    let now_local = now.naive_local();
-
     let result: Vec<_> = schedules
         .into_iter()
         .zip(grouped)
         .map(|(schedule, items)| {
             let due = if let Some(&occurrence) = occurrence_by_schedule.get(&schedule.id)
-                && (now_local.date(), now_local.time()) >= occurrence
+                && (now.date(), now.time()) >= occurrence
             {
                 models::ScheduleDue::Due
             } else {
@@ -321,7 +316,7 @@ pub async fn get_schedule_by_id(
 #[diesel(table_name = schema::schedules)]
 pub struct NewSchedule<'a> {
     pub user_id: i64,
-    pub time_of_day: NaiveTime,
+    pub time_of_day: jiff_diesel::Time,
     pub consumption_type: ConsumptionType,
     pub comments: Option<&'a str>,
     pub active: bool,
@@ -331,7 +326,7 @@ impl<'a> NewSchedule<'a> {
     pub fn from_front_end(schedule: &'a crate::models::NewSchedule) -> Self {
         Self {
             user_id: schedule.user_id.as_inner(),
-            time_of_day: datetime::time_to_chrono(schedule.time_of_day),
+            time_of_day: schedule.time_of_day.to_diesel(),
             consumption_type: schedule.consumption_type.into(),
             comments: schedule.comments.as_deref(),
             active: schedule.active,
@@ -354,7 +349,7 @@ pub async fn create_schedule(
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::schedules)]
 pub struct ChangeSchedule<'a> {
-    pub time_of_day: Option<NaiveTime>,
+    pub time_of_day: Option<jiff_diesel::Time>,
     pub consumption_type: Option<ConsumptionType>,
     pub comments: Option<Option<&'a str>>,
     pub active: Option<bool>,
@@ -365,7 +360,7 @@ impl<'a> ChangeSchedule<'a> {
         Self {
             time_of_day: schedule
                 .time_of_day
-                .map(datetime::time_to_chrono)
+                .map(jiff_diesel::Time::from)
                 .into_option(),
             consumption_type: schedule.consumption_type.map_into().into_option(),
             comments: schedule.comments.map_inner_deref().into_option(),

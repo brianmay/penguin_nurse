@@ -4,6 +4,7 @@ use crate::server::datetime;
 use diesel::prelude::*;
 use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
+use jiff_diesel::ToDiesel;
 
 #[allow(dead_code)]
 #[derive(Queryable, Selectable, Debug, Clone)]
@@ -12,7 +13,7 @@ use diesel_async::RunQueryDsl;
 pub struct Symptom {
     pub id: i64,
     pub user_id: i64,
-    pub time: chrono::DateTime<chrono::Utc>,
+    pub time: jiff_diesel::Timestamp,
     pub utc_offset: i32,
     pub appetite_loss: i32,
     pub fever: i32,
@@ -52,13 +53,13 @@ pub struct Symptom {
     pub feeling_cold: i32,
     pub feeling_thirsty: i32,
     pub comments: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff_diesel::Timestamp,
+    pub updated_at: jiff_diesel::Timestamp,
 }
 
 impl From<Symptom> for crate::models::Symptom {
     fn from(symptom: Symptom) -> Self {
-        let time = datetime::chrono_to_zoned(symptom.time, symptom.utc_offset);
+        let time = datetime::zoned_from_parts(symptom.time.to_jiff(), symptom.utc_offset);
 
         Self {
             id: SymptomId::new(symptom.id),
@@ -90,8 +91,8 @@ impl From<Symptom> for crate::models::Symptom {
             anxiety: symptom.anxiety,
             depression: symptom.depression,
             insomnia: symptom.insomnia,
-            created_at: datetime::chrono_to_timestamp(symptom.created_at),
-            updated_at: datetime::chrono_to_timestamp(symptom.updated_at),
+            created_at: symptom.created_at.to_jiff(),
+            updated_at: symptom.updated_at.to_jiff(),
             shoulder_pain: symptom.shoulder_pain,
             hand_pain: symptom.hand_pain,
             foot_pain: symptom.foot_pain,
@@ -111,8 +112,8 @@ impl From<Symptom> for crate::models::Symptom {
 pub async fn get_symptoms_for_time_range(
     conn: &mut DatabaseConnection,
     user_id: i64,
-    start: chrono::DateTime<chrono::Utc>,
-    end: chrono::DateTime<chrono::Utc>,
+    start: jiff::Timestamp,
+    end: jiff::Timestamp,
 ) -> Result<Vec<Symptom>, diesel::result::Error> {
     // use crate::server::database::schema::symptoms::duration as q_duration;
     use crate::server::database::schema::symptoms::table;
@@ -122,8 +123,8 @@ pub async fn get_symptoms_for_time_range(
     table
         .select(Symptom::as_select())
         .filter(q_user_id.eq(user_id))
-        .filter(q_time.ge(start))
-        .filter(q_time.lt(end))
+        .filter(q_time.ge(start.to_diesel()))
+        .filter(q_time.lt(end.to_diesel()))
         .load(conn)
         .await
 }
@@ -151,7 +152,7 @@ pub async fn get_symptom_by_id(
 #[diesel(table_name = schema::symptoms)]
 pub struct NewSymptom<'a> {
     user_id: i64,
-    time: chrono::DateTime<chrono::Utc>,
+    time: jiff_diesel::Timestamp,
     utc_offset: i32,
     appetite_loss: i32,
     fever: i32,
@@ -197,7 +198,7 @@ impl<'a> NewSymptom<'a> {
     pub fn from_front_end(symptom: &'a crate::models::NewSymptom) -> Self {
         Self {
             user_id: symptom.user_id.as_inner(),
-            time: datetime::zoned_to_chrono_utc(&symptom.time),
+            time: symptom.time.timestamp().to_diesel(),
             utc_offset: symptom.time.offset().seconds(),
             appetite_loss: symptom.appetite_loss,
             fever: symptom.fever,
@@ -256,7 +257,7 @@ pub async fn create_symptom(
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::symptoms)]
 pub struct ChangeSymptom<'a> {
-    time: Option<chrono::DateTime<chrono::Utc>>,
+    time: Option<jiff_diesel::Timestamp>,
     utc_offset: Option<i32>,
     appetite_loss: Option<i32>,
     fever: Option<i32>,
@@ -304,7 +305,7 @@ impl<'a> ChangeSymptom<'a> {
             time: symptom
                 .time
                 .clone()
-                .map(|time| datetime::zoned_to_chrono_utc(&time))
+                .map(|time| time.timestamp().to_diesel())
                 .into_option(),
             utc_offset: symptom
                 .time

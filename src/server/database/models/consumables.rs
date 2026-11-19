@@ -1,16 +1,13 @@
 use std::collections::HashMap;
 
-use chrono::Utc;
 use diesel::prelude::*;
 use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
 
-use chrono::DateTime;
 use tap::Pipe;
 
 use crate::models;
 use crate::server::database::{connection::DatabaseConnection, schema};
-use crate::server::datetime;
 use crate::validation::compatible_consumable_types;
 
 use super::consumptions::ConsumptionType;
@@ -59,10 +56,10 @@ pub struct Consumable {
     pub is_organic: bool,
     pub unit: ConsumableUnit,
     pub comments: Option<String>,
-    pub created: Option<chrono::DateTime<chrono::Utc>>,
-    pub destroyed: Option<chrono::DateTime<chrono::Utc>>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created: Option<jiff_diesel::Timestamp>,
+    pub destroyed: Option<jiff_diesel::Timestamp>,
+    pub created_at: jiff_diesel::Timestamp,
+    pub updated_at: jiff_diesel::Timestamp,
     pub consumption_type: Option<ConsumptionType>,
 }
 
@@ -75,10 +72,10 @@ impl From<Consumable> for crate::models::Consumable {
             barcode: consumable.barcode,
             is_organic: consumable.is_organic,
             unit: consumable.unit.into(),
-            created: consumable.created.map(datetime::chrono_to_timestamp),
-            destroyed: consumable.destroyed.map(datetime::chrono_to_timestamp),
-            created_at: datetime::chrono_to_timestamp(consumable.created_at),
-            updated_at: datetime::chrono_to_timestamp(consumable.updated_at),
+            created: consumable.created.map(|created| created.to_jiff()),
+            destroyed: consumable.destroyed.map(|created| created.to_jiff()),
+            created_at: consumable.created_at.to_jiff(),
+            updated_at: consumable.updated_at.to_jiff(),
             comments: consumable.comments,
             consumption_type: consumable.consumption_type.map(|x| x.into()),
         }
@@ -201,8 +198,8 @@ pub struct NewConsumable<'a> {
     pub is_organic: bool,
     pub unit: ConsumableUnit,
     pub comments: Option<&'a str>,
-    pub created: Option<DateTime<Utc>>,
-    pub destroyed: Option<DateTime<Utc>>,
+    pub created: Option<jiff_diesel::Timestamp>,
+    pub destroyed: Option<jiff_diesel::Timestamp>,
     pub consumption_type: Option<ConsumptionType>,
 }
 
@@ -215,8 +212,8 @@ impl<'a> NewConsumable<'a> {
             is_organic: consumable.is_organic,
             unit: consumable.unit.into(),
             comments: consumable.comments.as_deref(),
-            created: consumable.created.map(datetime::timestamp_to_chrono),
-            destroyed: consumable.destroyed.map(datetime::timestamp_to_chrono),
+            created: consumable.created.map(jiff_diesel::Timestamp::from),
+            destroyed: consumable.destroyed.map(jiff_diesel::Timestamp::from),
             consumption_type: consumable.consumption_type.map(|x| x.into()),
         }
     }
@@ -243,8 +240,8 @@ pub struct ChangeConsumable<'a> {
     pub is_organic: Option<bool>,
     pub unit: Option<ConsumableUnit>,
     pub comments: Option<Option<&'a str>>,
-    pub created: Option<Option<DateTime<Utc>>>,
-    pub destroyed: Option<Option<DateTime<Utc>>>,
+    pub created: Option<Option<jiff_diesel::Timestamp>>,
+    pub destroyed: Option<Option<jiff_diesel::Timestamp>>,
     pub consumption_type: Option<Option<ConsumptionType>>,
 }
 
@@ -259,11 +256,11 @@ impl<'a> ChangeConsumable<'a> {
             comments: consumable.comments.map_inner_deref().into_option(),
             created: consumable
                 .created
-                .map(|created| created.map(datetime::timestamp_to_chrono))
+                .map(|created| created.map(jiff_diesel::Timestamp::from))
                 .into_option(),
             destroyed: consumable
                 .destroyed
-                .map(|destroyed| destroyed.map(datetime::timestamp_to_chrono))
+                .map(|destroyed| destroyed.map(jiff_diesel::Timestamp::from))
                 .into_option(),
             consumption_type: consumable.consumption_type.map_inner_into().into_option(),
         }

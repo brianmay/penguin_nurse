@@ -1,9 +1,11 @@
 use crate::models::{UserId, WeeId};
 use crate::server::database::{connection::DatabaseConnection, schema};
 use crate::server::datetime;
+use diesel::pg::data_types::PgInterval;
 use diesel::prelude::*;
 use diesel::{ExpressionMethods, QueryDsl, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
+use jiff_diesel::ToDiesel;
 
 #[allow(dead_code)]
 #[derive(Queryable, Selectable, Debug, Clone)]
@@ -12,16 +14,16 @@ use diesel_async::RunQueryDsl;
 pub struct Wee {
     pub id: i64,
     pub user_id: i64,
-    pub time: chrono::DateTime<chrono::Utc>,
-    pub duration: Option<chrono::Duration>,
+    pub time: jiff_diesel::Timestamp,
+    pub duration: Option<jiff_diesel::Span>,
     pub urgency: i32,
     pub mls: Option<i32>,
     pub colour_hue: Option<f32>,
     pub colour_saturation: Option<f32>,
     pub colour_value: Option<f32>,
     pub comments: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: jiff_diesel::Timestamp,
+    pub updated_at: jiff_diesel::Timestamp,
     pub utc_offset: i32,
     pub leakage: Option<i32>,
     pub complete: bool,
@@ -29,7 +31,7 @@ pub struct Wee {
 
 impl From<Wee> for crate::models::Wee {
     fn from(wee: Wee) -> Self {
-        let time = datetime::chrono_to_zoned(wee.time, wee.utc_offset);
+        let time = datetime::zoned_from_parts(wee.time.to_jiff(), wee.utc_offset);
 
         let colour = match (wee.colour_hue, wee.colour_saturation, wee.colour_value) {
             (Some(hue), Some(saturation), Some(value)) => {
@@ -42,14 +44,16 @@ impl From<Wee> for crate::models::Wee {
             id: WeeId::new(wee.id),
             user_id: UserId::new(wee.user_id),
             time,
-            duration: wee.duration.map(datetime::chrono_to_signed_duration),
+            duration: wee
+                .duration
+                .map(|span| datetime::span_to_signed_duration(span.to_jiff())),
             urgency: wee.urgency.try_into().unwrap_or_default(),
             leakage: wee.leakage,
             mls: wee.mls,
             colour,
             complete: wee.complete,
-            created_at: datetime::chrono_to_timestamp(wee.created_at),
-            updated_at: datetime::chrono_to_timestamp(wee.updated_at),
+            created_at: wee.created_at.to_jiff(),
+            updated_at: wee.updated_at.to_jiff(),
             comments: wee.comments,
         }
     }
@@ -58,8 +62,8 @@ impl From<Wee> for crate::models::Wee {
 pub async fn get_wees_for_time_range(
     conn: &mut DatabaseConnection,
     user_id: i64,
-    start: chrono::DateTime<chrono::Utc>,
-    end: chrono::DateTime<chrono::Utc>,
+    start: jiff::Timestamp,
+    end: jiff::Timestamp,
 ) -> Result<Vec<Wee>, diesel::result::Error> {
     // use crate::server::database::schema::wees::duration as q_duration;
     use crate::server::database::schema::wees::table;
@@ -69,8 +73,8 @@ pub async fn get_wees_for_time_range(
     table
         .select(Wee::as_select())
         .filter(q_user_id.eq(user_id))
-        .filter(q_time.ge(start))
-        .filter(q_time.lt(end))
+        .filter(q_time.ge(start.to_diesel()))
+        .filter(q_time.lt(end.to_diesel()))
         .load(conn)
         .await
 }
@@ -114,9 +118,9 @@ pub async fn get_wee_by_id(
 #[diesel(table_name = schema::wees)]
 pub struct NewWee<'a> {
     user_id: i64,
-    time: chrono::DateTime<chrono::Utc>,
+    time: jiff_diesel::Timestamp,
     utc_offset: i32,
-    duration: Option<chrono::Duration>,
+    duration: Option<PgInterval>,
     urgency: i32,
     leakage: Option<i32>,
     mls: Option<i32>,
@@ -131,9 +135,9 @@ impl<'a> NewWee<'a> {
     pub fn from_front_end(wee: &'a crate::models::NewWee) -> Self {
         Self {
             user_id: wee.user_id.as_inner(),
-            time: datetime::zoned_to_chrono_utc(&wee.time),
+            time: wee.time.timestamp().to_diesel(),
             utc_offset: wee.time.offset().seconds(),
-            duration: wee.duration.map(datetime::signed_duration_to_chrono),
+            duration: wee.duration.map(datetime::signed_duration_to_interval),
             urgency: wee.urgency.into(),
             leakage: wee.leakage,
             mls: wee.mls,
@@ -161,9 +165,9 @@ pub async fn create_wee(
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = schema::wees)]
 pub struct ChangeWee<'a> {
-    time: Option<chrono::DateTime<chrono::Utc>>,
+    time: Option<jiff_diesel::Timestamp>,
     utc_offset: Option<i32>,
-    duration: Option<Option<chrono::Duration>>,
+    duration: Option<Option<PgInterval>>,
     urgency: Option<i32>,
     leakage: Option<Option<i32>>,
     mls: Option<Option<i32>>,
@@ -180,7 +184,7 @@ impl<'a> ChangeWee<'a> {
             time: wee
                 .time
                 .clone()
-                .map(|time| datetime::zoned_to_chrono_utc(&time))
+                .map(|time| time.timestamp().to_diesel())
                 .into_option(),
             utc_offset: wee
                 .time
@@ -189,7 +193,7 @@ impl<'a> ChangeWee<'a> {
                 .into_option(),
             duration: wee
                 .duration
-                .map(|duration| duration.map(datetime::signed_duration_to_chrono))
+                .map(|duration| duration.map(datetime::signed_duration_to_interval))
                 .into_option(),
             urgency: wee.urgency.map_into().into_option(),
             leakage: wee.leakage.into_option(),

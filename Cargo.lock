@@ -1287,7 +1287,6 @@ dependencies = [
  "bigdecimal",
  "bitflags 2.13.2",
  "byteorder",
- "chrono",
  "diesel_derives",
  "downcast-rs",
  "itoa",
@@ -3439,6 +3438,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "jiff-diesel"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e6b5ecd45a915436964f1bc65d62b1a32e9212dc10bf3af42ab051cfcfb5e0ee"
+dependencies = [
+ "diesel",
+ "jiff",
+]
+
+[[package]]
 name = "jiff-static"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4567,7 +4576,6 @@ dependencies = [
  "base64 0.23.1",
  "bb8",
  "bigdecimal",
- "chrono",
  "classes",
  "derive-enum-all-values",
  "diesel",
@@ -4583,6 +4591,7 @@ dependencies = [
  "gloo-timers 0.4.1",
  "itertools 0.15.0",
  "jiff",
+ "jiff-diesel",
  "openid",
  "palette",
  "password-auth",

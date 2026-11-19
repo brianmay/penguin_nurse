@@ -292,7 +292,12 @@ mod tests {
         Consumption {
             id: ConsumptionId::new(1),
             user_id: UserId::new(1),
-            time: "2024-01-01T12:00:00+00:00[UTC]".parse().unwrap(),
+            // Constructed without a named time zone so that the tests do not
+            // need a time zone database (the nix build sandbox has none).
+            time: jiff::civil::date(2024, 1, 1)
+                .at(12, 0, 0, 0)
+                .to_zoned_datetime(jiff::tz::TimeZone::UTC)
+                .unwrap(),
             duration: Some(jiff::SignedDuration::from_secs(duration_secs)),
             consumption_type,
             liquid_mls,

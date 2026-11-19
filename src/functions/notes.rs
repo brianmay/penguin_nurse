@@ -9,9 +9,6 @@ use crate::models::MaybeSet;
 #[cfg(feature = "server")]
 use super::common::{AppError, get_database_connection, get_user_id};
 
-#[cfg(feature = "server")]
-use crate::server::datetime;
-
 #[server]
 pub async fn get_notes_for_time_range(
     user_id: UserId,
@@ -29,8 +26,8 @@ pub async fn get_notes_for_time_range(
     crate::server::database::models::notes::get_notes_for_time_range(
         &mut conn,
         user_id.as_inner(),
-        datetime::timestamp_to_chrono(start),
-        datetime::timestamp_to_chrono(end),
+        start,
+        end,
     )
     .await
     .map(|x| x.into_iter().map(|y| y.into()).collect())
