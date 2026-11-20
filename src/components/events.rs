@@ -1,10 +1,13 @@
 use classes::classes;
 use dioxus::prelude::*;
+use jiff::Timestamp;
 use jiff::ZonedDateTime;
 use jiff::civil::Time;
 use jiff::civil::time;
+use jiff::tz::TimeZone;
 use palette::IntoColor;
 
+use crate::dt::display_age;
 use crate::models::Urgency;
 
 const DAY_START_TIME: Time = time(6, 30, 0, 0);
@@ -38,6 +41,37 @@ pub fn EventTime(time: ZonedDateTime) -> Element {
 
     rsx! {
         span { class: classes, {string} }
+    }
+}
+
+#[component]
+pub fn RecordTimestamps(created_at: Timestamp, updated_at: Timestamp) -> Element {
+    let created_at = created_at
+        .to_zoned_datetime(TimeZone::system())
+        .strftime("%Y-%m-%d %H:%M:%S%.f %:z")
+        .to_string();
+    let updated_at = updated_at
+        .to_zoned_datetime(TimeZone::system())
+        .strftime("%Y-%m-%d %H:%M:%S%.f %:z")
+        .to_string();
+
+    rsx! {
+        div { class: "text-sm text-base-content/60",
+            "Created: {created_at} · Updated: {updated_at}"
+        }
+    }
+}
+
+#[component]
+pub fn RecordTimestampsCompact(created_at: Timestamp, updated_at: Timestamp) -> Element {
+    let now = Timestamp::now();
+    let created = display_age(created_at, now);
+    let updated = display_age(updated_at, now);
+
+    rsx! {
+        div { class: "text-xs text-base-content/60",
+            "created {created}, updated {updated}"
+        }
     }
 }
 

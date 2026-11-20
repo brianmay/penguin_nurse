@@ -11,7 +11,7 @@ use tap::Pipe;
 use thiserror::Error;
 
 use crate::{
-    components::events::Markdown,
+    components::events::{Markdown, RecordTimestamps},
     forms::{
         Barcode, Dialog, EditError, FieldValue, FormCloseButton, FormDeleteButton, FormEditButton,
         FormSaveCancelButton, InputBoolean, InputConsumable, InputConsumableUnitType,
@@ -203,6 +203,12 @@ pub fn ConsumableUpdate(
                 Operation::Update { consumable } => {
                     format!("Edit Consumable {}", consumable.name)
                 }
+            }
+        }
+        if let Operation::Update { consumable } = &op {
+            RecordTimestamps {
+                created_at: consumable.created_at,
+                updated_at: consumable.updated_at,
             }
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }

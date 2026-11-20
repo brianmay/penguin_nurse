@@ -5,7 +5,7 @@ use palette::Hsv;
 
 use crate::{
     components::{
-        events::{EventTime, Markdown, UrgencyLabel, event_colour},
+        events::{EventTime, Markdown, RecordTimestamps, UrgencyLabel, event_colour},
         times::duration_to_string,
     },
     forms::{
@@ -184,6 +184,9 @@ pub fn PooUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Poo>) -> 
                 Operation::Create { .. } => "Create Poo".to_string(),
                 Operation::Update { poo } => format!("Edit Poo {}", poo.id),
             }
+        }
+        if let Operation::Update { poo } = &op {
+            RecordTimestamps { created_at: poo.created_at, updated_at: poo.updated_at }
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
         form {

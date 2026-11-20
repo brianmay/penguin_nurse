@@ -3,7 +3,7 @@ use jiff::{SignedDuration, ZonedDateTime};
 
 use crate::{
     components::{
-        events::{EventDateTimeShort, Markdown},
+        events::{EventDateTimeShort, Markdown, RecordTimestamps},
         symptoms::SymptomDisplay,
         times::duration_to_string,
     },
@@ -151,6 +151,9 @@ pub fn RefluxUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Reflux
                 Operation::Create { .. } => "Create Reflux".to_string(),
                 Operation::Update { reflux } => format!("Edit Reflux {}", reflux.name()),
             }
+        }
+        if let Operation::Update { reflux } = &op {
+            RecordTimestamps { created_at: reflux.created_at, updated_at: reflux.updated_at }
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
         form {

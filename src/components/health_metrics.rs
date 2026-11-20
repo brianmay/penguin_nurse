@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 use jiff::ZonedDateTime;
 
 use crate::{
-    components::events::{EventDateTimeShort, Markdown},
+    components::events::{EventDateTimeShort, Markdown, RecordTimestamps},
     forms::{
         Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputNumber,
         InputTextArea, Saving, ValidationError, validate_blood_glucose, validate_body_fat_pct,
@@ -230,6 +230,12 @@ pub fn HealthMetricUpdate(
                 Operation::Update { health_metric } => {
                     format!("Edit HealthMetric {}", health_metric.id)
                 }
+            }
+        }
+        if let Operation::Update { health_metric } = &op {
+            RecordTimestamps {
+                created_at: health_metric.created_at,
+                updated_at: health_metric.updated_at,
             }
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }

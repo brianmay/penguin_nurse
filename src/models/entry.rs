@@ -1,4 +1,4 @@
-use jiff::ZonedDateTime;
+use jiff::{Timestamp, ZonedDateTime};
 
 use crate::models::{
     Exercise, ExerciseId, HealthMetric, HealthMetricId, Note, NoteId, Reflux, RefluxId, Symptom,
@@ -74,6 +74,34 @@ impl Entry {
             EntryData::Symptom(symptom) => EntryId::Symptom(symptom.id),
             EntryData::Reflux(reflux) => EntryId::Reflux(reflux.id),
             EntryData::Note(note) => EntryId::Note(note.id),
+        }
+    }
+
+    pub fn get_created_at(&self) -> Timestamp {
+        match &self.data {
+            EntryData::Poo(poo) => poo.created_at,
+            EntryData::Wee(wee) => wee.created_at,
+            EntryData::WeeUrge(wee_urge) => wee_urge.created_at,
+            EntryData::Consumption(consumption) => consumption.consumption.created_at,
+            EntryData::Exercise(exercise) => exercise.created_at,
+            EntryData::HealthMetric(health_metric) => health_metric.created_at,
+            EntryData::Symptom(symptom) => symptom.created_at,
+            EntryData::Reflux(reflux) => reflux.created_at,
+            EntryData::Note(note) => note.created_at,
+        }
+    }
+
+    pub fn get_updated_at(&self) -> Timestamp {
+        match &self.data {
+            EntryData::Poo(poo) => poo.updated_at,
+            EntryData::Wee(wee) => wee.updated_at,
+            EntryData::WeeUrge(wee_urge) => wee_urge.updated_at,
+            EntryData::Consumption(consumption) => consumption.consumption.updated_at,
+            EntryData::Exercise(exercise) => exercise.updated_at,
+            EntryData::HealthMetric(health_metric) => health_metric.updated_at,
+            EntryData::Symptom(symptom) => symptom.updated_at,
+            EntryData::Reflux(reflux) => reflux.updated_at,
+            EntryData::Note(note) => note.updated_at,
         }
     }
 }

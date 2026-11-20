@@ -5,7 +5,7 @@ use palette::Hsv;
 
 use crate::{
     components::{
-        events::{EventDateTimeShort, Markdown, UrgencyLabel, event_colour},
+        events::{EventDateTimeShort, Markdown, RecordTimestamps, UrgencyLabel, event_colour},
         symptoms::{SymptomDisplay, SymptomIntensity},
         times::duration_to_string,
     },
@@ -179,6 +179,9 @@ pub fn WeeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Wee>) -> 
                 Operation::Create { .. } => "Create Wee".to_string(),
                 Operation::Update { wee } => format!("Edit Wee {}", wee.id),
             }
+        }
+        if let Operation::Update { wee } = &op {
+            RecordTimestamps { created_at: wee.created_at, updated_at: wee.updated_at }
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
         form {

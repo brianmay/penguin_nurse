@@ -16,7 +16,7 @@ use crate::{
         consumptions::{
             self, ConsumptionDetails, ConsumptionDuration, ConsumptionItemList, ConsumptionTypeIcon,
         },
-        events::EventTime,
+        events::{EventTime, RecordTimestampsCompact},
         exercises::{ExerciseDetails, ExerciseDuration, ExerciseTypeIcon},
         health_metrics::{HealthMetricDetails, HealthMetricIcon, health_metric_title},
         notes::{NoteDetails, note_icon, note_title},
@@ -67,7 +67,11 @@ fn EntryRow(
             class: row_class,
             onclick: move |_| selected.set(Some(id)),
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
-                EventTime { time: entry.time }
+                EventTime { time: entry.time.clone() }
+                RecordTimestampsCompact {
+                    created_at: entry.get_created_at(),
+                    updated_at: entry.get_updated_at(),
+                }
             }
             match &entry.data {
                 EntryData::Wee(wee) => {

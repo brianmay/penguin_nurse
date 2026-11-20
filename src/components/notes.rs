@@ -3,7 +3,7 @@ use jiff::{SignedDuration, ZonedDateTime};
 
 use crate::{
     components::{
-        events::{EventDateTimeShort, Markdown},
+        events::{EventDateTimeShort, Markdown, RecordTimestamps},
         times::duration_to_string,
     },
     forms::{
@@ -104,6 +104,9 @@ pub fn NoteUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Note>) -
                 Operation::Create { .. } => "Create Note".to_string(),
                 Operation::Update { note } => format!("Edit Note {}", note.name()),
             }
+        }
+        if let Operation::Update { note } = &op {
+            RecordTimestamps { created_at: note.created_at, updated_at: note.updated_at }
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
         form {

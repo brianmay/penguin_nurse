@@ -15,7 +15,7 @@ use crate::{
             ActiveDialog, ConsumableDialog, ConsumableItemList, ListDialogReference, Operation,
             OrganicIcon,
         },
-        events::Markdown,
+        events::{Markdown, RecordTimestampsCompact},
     },
     forms::Barcode,
     functions::consumables::{get_consumable_by_id, search_consumables_with_nested},
@@ -44,6 +44,10 @@ fn EntryRow(
                     OrganicIcon {}
                 }
                 {consumable.name}
+                RecordTimestampsCompact {
+                    created_at: consumable.created_at,
+                    updated_at: consumable.updated_at,
+                }
             }
             td { class: "block sm:table-cell border-blue-300 sm:border-t-2",
                 if let Some(brand) = &consumable.brand {

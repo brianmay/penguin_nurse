@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 use jiff::ZonedDateTime;
 
 use crate::{
-    components::events::{EventDateTimeShort, Markdown, UrgencyLabel},
+    components::events::{EventDateTimeShort, Markdown, RecordTimestamps, UrgencyLabel},
     forms::{
         Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputTextArea,
         InputUrgency, Saving, ValidationError, validate_comments, validate_fixed_offset_date_time,
@@ -112,6 +112,9 @@ pub fn WeeUrgeUpdate(op: Operation, on_cancel: Callback, on_save: Callback<WeeUr
                 Operation::Create { .. } => "Create Wee Urge".to_string(),
                 Operation::Update { wee_urge } => format!("Edit Wee Urge {}", wee_urge.id),
             }
+        }
+        if let Operation::Update { wee_urge } = &op {
+            RecordTimestamps { created_at: wee_urge.created_at, updated_at: wee_urge.updated_at }
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
         form {

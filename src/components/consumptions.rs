@@ -7,7 +7,7 @@ use penguin_nurse::validation::consumption_errors;
 use crate::{
     components::{
         consumables::{self, ConsumableLabel, ConsumableUpdate, ConsumableUpdateIngredients},
-        events::{EventDateTimeShort, Markdown},
+        events::{EventDateTimeShort, Markdown, RecordTimestamps},
         times::duration_to_string,
     },
     forms::{
@@ -171,6 +171,12 @@ pub fn ConsumptionUpdate(
                 Operation::Update { consumption } => {
                     format!("Edit Consumption {}", consumption.name())
                 }
+            }
+        }
+        if let Operation::Update { consumption } = &op {
+            RecordTimestamps {
+                created_at: consumption.created_at,
+                updated_at: consumption.updated_at,
             }
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }

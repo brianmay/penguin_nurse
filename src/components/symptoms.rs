@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 use jiff::ZonedDateTime;
 
 use crate::{
-    components::events::{EventDateTimeShort, Markdown},
+    components::events::{EventDateTimeShort, Markdown, RecordTimestamps},
     forms::{
         Dialog, EditError, FieldValue, FormSaveCancelButton, InputDateTime, InputString,
         InputSymptomIntensity, InputTextArea, Saving, ValidationError, validate_comments,
@@ -648,6 +648,9 @@ pub fn SymptomUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Sympt
                 Operation::Create { .. } => "Create Symptom".to_string(),
                 Operation::Update { symptom } => format!("Edit Symptom {}", symptom.id),
             }
+        }
+        if let Operation::Update { symptom } = &op {
+            RecordTimestamps { created_at: symptom.created_at, updated_at: symptom.updated_at }
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
         form {

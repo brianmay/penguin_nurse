@@ -3,7 +3,7 @@ use jiff::{SignedDuration, ZonedDateTime};
 
 use crate::{
     components::{
-        events::{EventDateTimeShort, Markdown},
+        events::{EventDateTimeShort, Markdown, RecordTimestamps},
         times::duration_to_string,
     },
     forms::{
@@ -189,6 +189,9 @@ pub fn ExerciseUpdate(op: Operation, on_cancel: Callback, on_save: Callback<Exer
                 Operation::Create { .. } => "Create Exercise".to_string(),
                 Operation::Update { exercise } => format!("Edit Exercise {}", exercise.name()),
             }
+        }
+        if let Operation::Update { exercise } = &op {
+            RecordTimestamps { created_at: exercise.created_at, updated_at: exercise.updated_at }
         }
         p { class: "py-4", "Press ESC key or click the button below to close" }
         form {
