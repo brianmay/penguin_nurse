@@ -334,6 +334,7 @@
 
           testScript = ''
             machine.wait_for_unit("penguin-nurse.service")
+            machine.succeed("systemctl is-active --quiet postgresql-setup.service")
             machine.wait_for_open_port(4000)
             machine.succeed("${pkgs.curl}/bin/curl --fail -v http://localhost:4000/_health")
           '';

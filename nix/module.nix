@@ -81,8 +81,14 @@ in
 
     systemd.services.penguin-nurse = {
       wantedBy = [ "multi-user.target" ];
-      after = [ "postgresql.service" ];
-      requires = [ "postgresql.service" ];
+      after = [
+        "postgresql.service"
+        "postgresql-setup.service"
+      ];
+      requires = [
+        "postgresql.service"
+        "postgresql-setup.service"
+      ];
       partOf = [ "postgresql.service" ];
       serviceConfig = {
         User = "penguin_nurse";
